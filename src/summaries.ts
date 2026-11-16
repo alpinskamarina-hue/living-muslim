@@ -1,0 +1,38 @@
+import { useEffect, useState } from 'react';
+import bundled from './summaries/atomic.json';
+
+export interface Summary { book: string; n: number; title: string; md: string; date: string }
+
+export const SUMMARY_BOOKS: Record<string, { title: string; author: string }> = {
+  'atomic-habits': { title: 'Атомные привычки', author: 'Джеймс Клир · пересказ по главам' },
+};
+
+/** Bundled chapters plus any new ones written to the artifact db collection "summaries". */
+export function useSummaries(): Summary[] {
+  const [list, setList] = useState<Summary[]>(bundled as Summary[]);
+  useEffect(() => {
+    let unsub: (() => void) | null = null;
+    let alive = true;
+    (async () => {
+      try {
+        const db = window.claude ? await window.claude.use('db') : null;
+        if (!db || !alive) return;
+        unsub = db.collection('summaries').onSnapshot(
+          (snap: any) => {
+            const byKey = new Map<string, Summary>();
+            for (const s of bundled as Summary[]) byKey.set(`${s.book}:${s.n}`, s);
+            snap.docs.forEach((d: any) => {
+              if (!d.exists) return;
+              const x = d.data() as Summary;
+              if (x && typeof x.n === 'number' && typeof x.md === 'string' && x.book) byKey.set(`${x.book}:${x.n}`, x);
+            });
+            setList([...byKey.values()].sort((a, b) => a.n - b.n));
+          },
+          () => {},
+        );
+      } catch { /* bundled chapters stay */ }
+    })();
+    return () => { alive = false; unsub?.(); };
+  }, []);
+  return list;
+}
