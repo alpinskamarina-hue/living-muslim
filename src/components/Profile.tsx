@@ -1,5 +1,6 @@
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
+import { authMe, signInUrl, signOut } from '../auth';
 import { useState } from 'react';
 import type { AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
@@ -65,6 +66,8 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
         <span><b>Living Muslim Pro</b><small>Цели, книги, курсы, большой Круг. 14 дней бесплатно</small></span>
         <i aria-hidden="true">›</i>
       </button>
+
+      <AccountCard />
 
       <label className="field">
         <span>Как к тебе обращаться</span>
@@ -154,6 +157,26 @@ function HabitGroup({ title, list, onEdit, action }: {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** Email account: who is signed in, or a way to sign in. Hidden inside claude.ai, where there is no site to sign in on. */
+function AccountCard() {
+  const me = authMe();
+  if (typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname)) return null;
+  if (!me) {
+    return (
+      <a className="acct" href={signInUrl}>
+        <span><b>Войти по почте</b><small>Чтобы не потерять данные и получать новости приложения</small></span>
+        <i aria-hidden="true">›</i>
+      </a>
+    );
+  }
+  return (
+    <div className="acct">
+      <span><b>{me.email}</b><small>Ты вошёл по почте</small></span>
+      <button type="button" className="link-btn" onClick={async () => { if (confirm('Выйти из аккаунта на этом устройстве? Привычки и отметки останутся здесь.')) { await signOut(); location.reload(); } }}>Выйти</button>
     </div>
   );
 }

@@ -17,7 +17,7 @@
     var q = new URLSearchParams(location.search);
     if (q.get('c')) { location.replace('/app/?c=' + encodeURIComponent(q.get('c'))); return; }
     if (q.has('home')) return;
-    try { if (localStorage.getItem('qadam.v1') || localStorage.getItem('lm.cloud') || localStorage.getItem('lm.signup')) location.replace('/app/'); } catch (e) {}
+    try { if (localStorage.getItem('qadam.v1') || localStorage.getItem('lm.cloud') || localStorage.getItem('lm.signup') || localStorage.getItem('lm.auth')) location.replace('/app/'); } catch (e) {}
   })();
 </script>
 <style>
@@ -79,6 +79,14 @@ section { padding: 72px 0; }
 .form .btn { width: 100%; }
 .form small { font-size: 12.5px; opacity: .7; }
 .form .err { color: #ffd3c4; font-size: 13.5px; }
+.form .code-step { display: grid; gap: 10px; }
+.form .code-step[hidden], .form .row[hidden], .form small[hidden] { display: none; }
+.form .code-step p { margin: 0; font-size: 14.5px; line-height: 1.45; }
+.form .code-step input { min-height: 54px; text-align: center; font-size: 24px; letter-spacing: 6px; font-weight: 700; }
+.form .code-step input::placeholder { letter-spacing: 0; font-size: 16px; font-weight: 500; }
+.form .links { display: flex; gap: 16px; flex-wrap: wrap; }
+.form .lnk { background: none; border: 0; padding: 4px 0; color: inherit; opacity: .8; text-decoration: underline; font: inherit; font-size: 13.5px; cursor: pointer; }
+.form .err .skip { color: inherit; font-weight: 700; }
 .light .form input { background: var(--surface); color: var(--ink); border-color: var(--line); }
 .light .form input::placeholder { color: var(--ink-2); }
 @media (max-width: 520px) { .form .row { flex-direction: column; } }
@@ -377,6 +385,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 <footer>
   <div class="wrap">
     <span>© 2026 Living Muslim</span>
+    <span><a href="/?home&amp;login#join"><span lang="ru">Войти по почте</span><span lang="en">Sign in with email</span></a></span>
     <span><a href="/app/"><span lang="ru">Уже пользуюсь, открыть приложение</span><span lang="en">Already using it? Open the app</span></a></span>
   </div>
 </footer>
@@ -397,6 +406,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       i.setAttribute('aria-label', i.placeholder);
     });
     try { localStorage.setItem('lm.lang', l); } catch (e) {}
+    document.querySelectorAll('.js-signup button[type=submit]').forEach(function (b) { b.dispatchEvent(new Event('lm-lang')); });
   }
   var saved = null; try { saved = localStorage.getItem('lm.lang'); } catch (e) {}
   var q = new URLSearchParams(location.search).get('lang');
@@ -404,29 +414,123 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   btn.addEventListener('click', function () { setLang(root.getAttribute('data-l') === 'ru' ? 'en' : 'ru'); });
 
   var T = {
-    ru: { name: 'Напиши имя.', email: 'Похоже, в почте опечатка.', go: 'Открываю приложение…' },
-    en: { name: 'Please enter your name.', email: 'That email looks off.', go: 'Opening the app…' }
+    ru: { name: 'Напиши имя.', email: 'Похоже, в почте опечатка.', sending: 'Отправляю код…', go: 'Открываю приложение…', check: 'Проверяю…',
+      sent: 'Мы отправили письмо на ', codeHint: 'Введи код из письма или просто нажми ссылку в нём.', code: 'Код из письма', enter: 'Войти',
+      again: 'Отправить ещё раз', other: 'Другая почта', wait: 'Письмо уже в пути. Новое можно запросить через минуту.',
+      bad: 'Код не подошёл или устарел. Проверь письмо или запроси новый.', fail: 'Не получилось отправить письмо. Попробуй ещё раз чуть позже.',
+      skip: 'Продолжить без входа', net: 'Нет связи. Проверь интернет.', resent: 'Отправили новое письмо.', start: 'Начать бесплатно', login: 'Получить код' },
+    en: { name: 'Please enter your name.', email: 'That email looks off.', sending: 'Sending the code…', go: 'Opening the app…', check: 'Checking…',
+      sent: 'We sent an email to ', codeHint: 'Enter the code from the email, or just tap the link in it.', code: 'Code from the email', enter: 'Sign in',
+      again: 'Send again', other: 'Use another email', wait: 'The email is on its way. You can ask for a new one in a minute.',
+      bad: 'That code didn’t work or has expired. Check the email or ask for a new one.', fail: 'Couldn’t send the email. Please try again a bit later.',
+      skip: 'Continue without signing in', net: 'No connection. Check your internet.', resent: 'We sent a new email.', start: 'Start for free', login: 'Get a code' }
   };
+  var L = function () { return T[root.getAttribute('data-l')]; };
+  var loginMode = new URLSearchParams(location.search).has('login');
+  var APP = '/app/';
+
+  function api(path, body) {
+    return fetch(SB + path, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, status: r.status, body: j }; }); });
+  }
+  function jwt(t) {
+    try { var p = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); return JSON.parse(decodeURIComponent(escape(atob(p + '==='.slice((p.length + 3) % 4))))); } catch (e) { return null; }
+  }
+  function remember(rec) { try { localStorage.setItem('lm.signup', JSON.stringify(rec)); localStorage.setItem('lm.lang', rec.lang); } catch (x) {} }
+  function listSignup(rec) {
+    return api('/rest/v1/rpc/lm_signup', { p_name: rec.name, p_email: rec.email, p_lang: rec.lang, p_source: rec.source })
+      .then(function (r) { if (r.ok) { rec.pending = false; remember(rec); } }).catch(function () {});
+  }
 
   document.querySelectorAll('.js-signup').forEach(function (f) {
+    var row = f.querySelector('.row'), btn0 = f.querySelector('button[type=submit]'), err = f.querySelector('.err');
+    var small = f.querySelector('small');
+    if (loginMode) { f.name.style.display = 'none'; f.name.required = false; }
+    var rec = null, step = 1;
+
+    // Step 2 UI, built once.
+    var box = document.createElement('div'); box.className = 'code-step'; box.hidden = true;
+    box.innerHTML = '<p class="sent"></p><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10">' +
+      '<div class="links"><button type="button" class="lnk again"></button><button type="button" class="lnk other"></button></div>';
+    f.insertBefore(box, btn0);
+    var codeIn = box.querySelector('input');
+    var paintTexts = function () {
+      btn0.textContent = step === 2 ? L().enter : loginMode ? L().login : L().start;
+      codeIn.placeholder = L().code; codeIn.setAttribute('aria-label', L().code);
+      box.querySelector('.again').textContent = L().again; box.querySelector('.other').textContent = L().other;
+      if (rec) box.querySelector('.sent').innerHTML = '';
+      if (rec) { var p = box.querySelector('.sent'); p.appendChild(document.createTextNode(L().sent)); var b = document.createElement('b'); b.textContent = rec.email; p.appendChild(b); p.appendChild(document.createTextNode('. ' + L().codeHint)); }
+    };
+    btn0.addEventListener('lm-lang', paintTexts);
+    paintTexts();
+
+    var showErr = function (msg, withSkip) {
+      err.textContent = msg;
+      if (withSkip) {
+        var a = document.createElement('a'); a.href = APP; a.textContent = ' ' + L().skip; a.className = 'skip';
+        a.addEventListener('click', function () { if (rec) remember(rec); });
+        err.appendChild(a);
+      }
+    };
+    var busy = function (on, text) { btn0.disabled = on; if (on) btn0.textContent = text; else paintTexts(); };
+
+    var sendCode = function (isResend) {
+      busy(true, L().sending);
+      var redirect = location.origin + APP;
+      return api('/auth/v1/otp?redirect_to=' + encodeURIComponent(redirect), { email: rec.email, create_user: true, data: { name: rec.name, lang: rec.lang } })
+        .then(function (r) {
+          busy(false);
+          if (r.ok) {
+            step = 2; row.hidden = true; if (small) small.hidden = true; box.hidden = false; paintTexts();
+            err.textContent = isResend ? L().resent : '';
+            codeIn.focus();
+            return;
+          }
+          if (r.status === 429) { showErr(L().wait); if (!isResend) { step = 2; row.hidden = true; box.hidden = false; paintTexts(); } return; }
+          if (r.status === 400 && /email/i.test(r.body.msg || r.body.error_description || '')) { showErr(L().email); return; }
+          remember(rec); listSignup(rec);
+          showErr(L().fail, true);
+        }, function () { busy(false); showErr(L().net); });
+    };
+
+    var verify = function () {
+      var token = codeIn.value.replace(/\D/g, '');
+      if (token.length < 6) { showErr(L().bad); codeIn.focus(); return; }
+      err.textContent = ''; busy(true, L().check);
+      api('/auth/v1/verify', { type: 'email', email: rec.email, token: token }).then(function (r) {
+        if (!r.ok || !r.body.access_token) { busy(false); showErr(L().bad); codeIn.select(); return; }
+        var c = jwt(r.body.access_token) || {};
+        var name = rec.name || (c.user_metadata && c.user_metadata.name) || '';
+        try {
+          localStorage.setItem('lm.auth', JSON.stringify({
+            access_token: r.body.access_token, refresh_token: r.body.refresh_token,
+            expires_at: c.exp ? c.exp * 1000 : Date.now() + (r.body.expires_in || 3600) * 1000,
+            user: { id: c.sub || (r.body.user && r.body.user.id), email: rec.email, name: name || undefined }
+          }));
+        } catch (x) {}
+        btn0.textContent = L().go;
+        rec.name = name;
+        var go = function () { location.href = APP; };
+        if (name) { remember(rec); var t = setTimeout(go, 3000); listSignup(rec).then(function () { clearTimeout(t); go(); }); }
+        else go();
+      }, function () { busy(false); showErr(L().net); });
+    };
+
+    box.querySelector('.again').addEventListener('click', function () { sendCode(true); });
+    box.querySelector('.other').addEventListener('click', function () {
+      step = 1; box.hidden = true; row.hidden = false; if (small) small.hidden = false; codeIn.value = ''; err.textContent = ''; paintTexts(); f.email.focus();
+    });
+
     f.addEventListener('submit', function (e) {
       e.preventDefault();
-      var l = root.getAttribute('data-l'), err = f.querySelector('.err');
+      if (step === 2) { verify(); return; }
+      var l = root.getAttribute('data-l');
       var name = f.name.value.trim(), email = f.email.value.trim().toLowerCase();
-      if (name.length < 2) { err.textContent = T[l].name; f.name.focus(); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = T[l].email; f.email.focus(); return; }
+      if (!loginMode && name.length < 2) { showErr(L().name); f.name.focus(); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { showErr(L().email); f.email.focus(); return; }
       err.textContent = '';
-      var b = f.querySelector('button'); b.disabled = true; b.textContent = T[l].go;
-      var rec = { name: name, email: email, lang: l, source: location.search.slice(0, 120), pending: true };
-      try { localStorage.setItem('lm.signup', JSON.stringify(rec)); localStorage.setItem('lm.lang', l); } catch (x) {}
-      var done = function () { location.href = '/app/'; };
-      var t = setTimeout(done, 4000);
-      fetch(SB + '/rest/v1/rpc/lm_signup', {
-        method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_name: name, p_email: email, p_lang: l, p_source: rec.source })
-      }).then(function (r) {
-        if (r.ok) { rec.pending = false; try { localStorage.setItem('lm.signup', JSON.stringify(rec)); } catch (x) {} }
-      }).catch(function () {}).then(function () { clearTimeout(t); done(); });
+      rec = { name: name, email: email, lang: l, source: location.search.slice(0, 120), pending: true };
+      sendCode(false);
     });
   });
 })();
