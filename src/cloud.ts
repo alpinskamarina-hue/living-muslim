@@ -40,7 +40,7 @@ export function pendingInvite(): string {
 
 export function cloudMe(): CloudId | null { return load(); }
 
-export function inviteLink(code: string) { return `${location.origin}/?c=${code}`; }
+export function inviteLink(code: string) { return `${location.origin}/app/?c=${code}`; }
 
 async function ensureId(name: string): Promise<CloudId> {
   let me = load();
@@ -166,7 +166,24 @@ function makeRuntime(me: CloudId & { circle: string }) {
   return { db, user };
 }
 
+/** Sign-up from the landing page: retry sending it if the first attempt failed. */
+function flushSignup() {
+  try {
+    const rec = JSON.parse(localStorage.getItem('lm.signup') || 'null');
+    if (!rec?.pending || !rec.email) return;
+    rpc('lm_signup', { p_name: rec.name, p_email: rec.email, p_lang: rec.lang, p_source: rec.source || '' })
+      .then(() => localStorage.setItem('lm.signup', JSON.stringify({ ...rec, pending: false })))
+      .catch(() => { /* try again next time */ });
+  } catch { /* */ }
+}
+
+/** Name typed on the landing page, used to greet the user in the app. */
+export function signupName(): string {
+  try { return JSON.parse(localStorage.getItem('lm.signup') || 'null')?.name || ''; } catch { return ''; }
+}
+
 if (isCloud) {
+  flushSignup();
   const me = load();
   const rt = me?.circle ? makeRuntime(me as CloudId & { circle: string }) : null;
   window.claude = {

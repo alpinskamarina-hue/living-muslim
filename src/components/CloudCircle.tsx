@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, setName } from '../cloud';
+import { signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, setName } from '../cloud';
 
 /** First visit to Circle on the standalone site: pick a name, then create a circle or join by invite. */
 export function CloudSetup() {
   const me = cloudMe();
-  const [name, setN] = useState(me?.name ?? '');
+  const [name, setN] = useState(me?.name || signupName());
   const [code, setCode] = useState(pendingInvite());
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');

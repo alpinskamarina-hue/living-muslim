@@ -1,3 +1,4 @@
+import { signupName } from './cloud';
 import { useCallback, useEffect, useState } from 'react';
 import type { Anchor, AppState, Habit, Mark, PrayerMark } from './types';
 import { addDays, dayKey, daysBetween } from './dates';
@@ -17,7 +18,7 @@ export const initialState = (): AppState => ({
   hard: {},
   notes: {},
   prayers: {},
-  settings: { place: 'Амстердам', lat: 52.3676, lng: 4.9041, method: 'MuslimWorldLeague', madhab: 'shafi', name: '' },
+  settings: { place: 'Амстердам', lat: 52.3676, lng: 4.9041, method: 'MuslimWorldLeague', madhab: 'shafi', name: signupName() },
 });
 
 function load(): AppState {
