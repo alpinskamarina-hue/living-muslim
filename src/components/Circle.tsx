@@ -6,6 +6,8 @@ import type { KhatmApi } from '../khatm';
 import { KhatmSection } from './Khatm';
 import type { IftarApi } from '../iftar';
 import { IftarSection } from './Iftar';
+import { CloudSetup, CloudInvite } from './CloudCircle';
+import { isCloud } from '../cloud';
 
 interface Props {
   circle: CircleApi;
@@ -30,6 +32,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
 
   if (status === 'loading')
     return <div className="page"><h1 className="page-h">Круг</h1><p className="page-sub">Подключаюсь…</p></div>;
+
+  if (status === 'off' && isCloud) return <CloudSetup />;
 
   if (status === 'off')
     return (
@@ -118,7 +122,9 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
 
       <p className="tiny">🤲 — «сделал за тебя дуа», ✨ — «машаАллах». Лайков и счётчиков подписчиков нет: круг для поддержки, не для показа.</p>
 
-      {isOwner && (
+      {isCloud && <CloudInvite isOwner={isOwner} />}
+
+      {!isCloud && isOwner && (
         <div className="invite">
           <b>Как пригласить</b>
           <p>Открой меню «Поделиться» у этой страницы на claude.ai и добавь человека с уровнем «Участник» (Contributor). Он откроет ту же ссылку, нажмёт «Присоединиться», и вы увидите друг друга.</p>

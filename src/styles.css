@@ -687,3 +687,12 @@ button:disabled { opacity: .5; cursor: default; }
 .logo-lockup b { font-family: var(--f-display); font-size: 30px; font-weight: 700; color: var(--ink); line-height: 1; }
 .logo-lockup small { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink-2); }
 @media (prefers-color-scheme: dark) { .logo-lockup { color: var(--ink); } }
+
+/* Circle on the standalone site */
+.cl-setup { display: grid; gap: 10px; }
+.cl-f { display: grid; gap: 6px; font-size: 13.5px; color: var(--ink-2); }
+.cl-f input, .cl-row input { min-height: 44px; border-radius: 12px; border: 1px solid var(--line, #d9e2dc); padding: 0 12px; font: inherit; color: var(--ink); background: var(--surface, #fff); }
+.cl-row { display: flex; gap: 8px; margin-top: 8px; }
+.cl-row input { flex: 1 1 auto; min-width: 0; }
+.cl-row .pri-btn { flex: none; padding: 0 16px; }
+.invite .link-btn { padding: 6px 0; }

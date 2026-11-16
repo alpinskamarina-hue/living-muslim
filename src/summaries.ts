@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import bundled from './summaries/atomic.json';
+import { cloudSummaries, isCloud } from './cloud';
 
 export interface Summary { book: string; n: number; title: string; md: string; date: string }
 
@@ -14,6 +15,14 @@ export function useSummaries(): Summary[] {
     let unsub: (() => void) | null = null;
     let alive = true;
     (async () => {
+      if (isCloud) {
+        const extra = await cloudSummaries();
+        if (!alive || !extra.length) return;
+        const byKey = new Map<string, Summary>();
+        for (const s of [...(bundled as Summary[]), ...extra]) if (s && typeof s.n === 'number' && typeof s.md === 'string' && s.book) byKey.set(`${s.book}:${s.n}`, s);
+        setList([...byKey.values()].sort((a, b) => a.n - b.n));
+        return;
+      }
       try {
         const db = window.claude ? await window.claude.use('db') : null;
         if (!db || !alive) return;

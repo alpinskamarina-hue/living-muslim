@@ -36,7 +36,11 @@ const LABELS: Record<Tab, string> = { today: 'Сегодня', practice: 'Пра
 
 export function App() {
   const [state, update, replace] = useAppState();
-  const [tab, setTab] = useState<Tab>('today');
+  const [tab, setTab] = useState<Tab>(() => {
+    try { const t = sessionStorage.getItem('lm.tab'); sessionStorage.removeItem('lm.tab'); if (t === 'circle') return 'circle' as Tab; } catch { /* */ }
+    try { if (new URLSearchParams(location.search).get('c')) return 'circle' as Tab; } catch { /* */ }
+    return 'today';
+  });
   const [now, setNow] = useState(() => new Date());
   const [sheet, setSheet] = useState<null | { editing?: Habit; anchor: Anchor }>(null);
 
