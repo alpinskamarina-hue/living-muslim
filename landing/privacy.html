@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конфиденциальность · Living Muslim</title>
+<meta name="theme-color" content="#0f5132">
+<style>
+:root { --ink: #14261c; --ink-2: #4f6357; --bg: #fbfaf6; --line: #e3e8e2; --green: #0f5132; --gold: #b88a2c; }
+@media (prefers-color-scheme: dark) { :root { --ink: #ecf1ed; --ink-2: #a9bbb0; --bg: #0c1611; --line: #22362b; --gold: #d9ad55; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 Manrope, system-ui, -apple-system, sans-serif; }
+header { background: var(--green); color: #f6ecd4; padding: 18px 20px; }
+header a { color: inherit; text-decoration: none; font-weight: 700; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+h1 { font-family: Georgia, serif; font-size: 34px; line-height: 1.1; margin: 8px 0 4px; }
+h2 { font-size: 18px; margin: 28px 0 6px; }
+p, li { color: var(--ink-2); }
+small { color: var(--ink-2); }
+nav { display: flex; gap: 12px; margin-top: 8px; }
+nav button { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+html[data-l="ru"] [lang="en"], html[data-l="en"] [lang="ru"] { display: none; }
+</style>
+</head>
+<body>
+<header><a href="/">Living Muslim</a></header>
+<main>
+<nav><button type="button" onclick="document.documentElement.dataset.l='ru'">RU</button><button type="button" onclick="document.documentElement.dataset.l='en'">EN</button></nav>
+
+<div lang="ru">
+<h1>Конфиденциальность</h1>
+<small>Обновлено 17 ноября 2026</small>
+<p>Коротко: твои привычки, отметки намазов и заметки хранятся на твоём устройстве. Мы не показываем рекламу и не продаём данные.</p>
+<h2>Что хранится только на твоём устройстве</h2>
+<ul><li>Привычки, отметки, мухасаба и заметки</li><li>Цели, книги, прогресс в Коране и курсах</li><li>Настройки: город, метод расчёта, тема</li></ul>
+<p>Эти данные не уходят на наш сервер. Если удалишь данные браузера или приложение, они пропадут, поэтому делай резервную копию в Профиле.</p>
+<h2>Что хранится на сервере</h2>
+<ul>
+<li><b>Почта и имя</b>, если ты зарегистрировался. Нужны для входа и новостей приложения.</li>
+<li><b>Круг</b>, если ты в него вступил: имя, которое видят друзья, и итог дня (сколько отмечено привычек и намазов). Названия привычек и заметки в Круг не попадают.</li>
+</ul>
+<p>Сервер базы данных находится в Евросоюзе (Ирландия, Supabase). Письма для входа отправляются через Brevo. Сайт размещён на Vercel.</p>
+<h2>Твои права</h2>
+<p>Ты можешь в любой момент попросить показать, исправить или удалить твои данные на сервере, а также отписаться от новостей. Выйти из Круга можно в самом приложении.</p>
+<h2>Реклама и аналитика</h2>
+<p>Рекламы нет. Сторонних трекеров и рекламных пикселей нет.</p>
+</div>
+
+<div lang="en">
+<h1>Privacy</h1>
+<small>Updated 17 November 2026</small>
+<p>In short: your habits, prayer check-ins and notes stay on your device. We show no ads and never sell data.</p>
+<h2>Stored only on your device</h2>
+<ul><li>Habits, check-ins, muhasabah and notes</li><li>Goals, books, Quran and course progress</li><li>Settings: city, calculation method, theme</li></ul>
+<p>This data is not sent to our server. If you clear your browser data or remove the app, it is gone, so keep a backup from your Profile.</p>
+<h2>Stored on our server</h2>
+<ul>
+<li><b>Email and name</b>, if you signed up. Used for signing in and app news.</li>
+<li><b>Circle</b>, if you joined one: the name your friends see and your daily total (how many habits and prayers you checked). Habit names and notes never go to the Circle.</li>
+</ul>
+<p>The database is hosted in the EU (Ireland, Supabase). Sign-in emails are sent via Brevo. The site is hosted on Vercel.</p>
+<h2>Your rights</h2>
+<p>You can ask us at any time to show, correct or delete your data on the server, or unsubscribe from news. You can leave a Circle inside the app.</p>
+<h2>Ads and analytics</h2>
+<p>No ads. No third-party trackers or ad pixels.</p>
+</div>
+</main>
+<script>var l='';try{l=localStorage.getItem('lm.lang')}catch(e){}document.documentElement.dataset.l = (l || (/^ru|^uk|^be|^kk/i.test(navigator.language) ? 'ru' : 'en'));</script>
+</body>
+</html>

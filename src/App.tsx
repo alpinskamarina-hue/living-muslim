@@ -55,7 +55,14 @@ export function App() {
   const place = here(state, today);
   const { lat, lng, method, madhab } = place;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const times = useMemo(() => prayerTimes(place, now), [today, lat, lng, method, madhab]);
+  const offKey = JSON.stringify(state.settings.offsets ?? {});
+  const times = useMemo(() => prayerTimes({ ...place, offsets: state.settings.offsets }, now), [today, lat, lng, method, madhab, offKey]);
+  const { theme = 'auto', textScale = 1 } = state.settings;
+  useEffect(() => {
+    const r = document.documentElement;
+    if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
+    document.body.style.zoom = textScale === 1 ? '' : String(textScale);
+  }, [theme, textScale]);
   const [safar, setSafar] = useState(false);
   const [ramadan, setRamadan] = useState(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);

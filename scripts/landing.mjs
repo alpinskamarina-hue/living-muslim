@@ -4,4 +4,5 @@ mkdirSync('dist/app', { recursive: true });
 renameSync('dist/index.html', 'dist/app/index.html');
 for (const f of readdirSync('dist')) if (/^quran-.*\.json$/.test(f)) copyFileSync(`dist/${f}`, `dist/app/${f}`);
 copyFileSync('landing/index.html', 'dist/index.html');
+copyFileSync('landing/privacy.html', 'dist/privacy.html');
 console.log('landing at /, app at /app/');

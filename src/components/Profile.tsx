@@ -1,11 +1,11 @@
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
 import { authMe, signInUrl, signOut } from '../auth';
-import { useState } from 'react';
-import type { AppState, Habit, MethodId } from '../types';
+import { useRef, useState } from 'react';
+import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { METHODS, PLACES, type DayTimes } from '../prayer';
-import { hhmm } from '../dates';
+import { addDays, dayKey, daysBetween, hhmm, plural } from '../dates';
 import { ACTIVE_LIMIT, initialState, slotsUsed } from '../store';
 
 interface Props {
@@ -19,15 +19,119 @@ interface Props {
 export function Profile({ state, update, replace, times, onEdit }: Props) {
   const s = state.settings;
   const set = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
+  const [page, setPage] = useState<Page>('main');
+  const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
+  const back = () => go('main');
+
+  if (page === 'pro') return <ProPlans onBack={back} />;
+  if (page === 'prayer') return <Sub title="Намазы" onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
+  if (page === 'habits') return <Sub title="Мои привычки" onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
+  if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
+  if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
+  if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
+  if (page === 'account') return <Sub title="Аккаунт" onBack={back}><AccountPage s={s} set={set} /></Sub>;
+
+  const me = authMe();
+  const st = stats(state);
+  const used = slotsUsed(state);
+  const name = s.name.trim() || me?.name || 'Друг';
+  const methodName = METHODS.find((m) => m.id === s.method)?.ru ?? '';
+  const theme = s.theme === 'light' ? 'светлая' : s.theme === 'dark' ? 'тёмная' : 'как в телефоне';
+
+  return (
+    <div className="page">
+      <div className="me-card">
+        <div className="me-top">
+          <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>
+          <div>
+            <b>{name}</b>
+            <small>{me?.email ?? 'Вход по почте не выполнен'}</small>
+            <small>С нами {st.days} {plural(st.days, 'день', 'дня', 'дней')}</small>
+          </div>
+        </div>
+        <div className="me-stats">
+          <div><b>{st.onTime}<i>/35</i></b><small>намазов вовремя за неделю</small></div>
+          <div><b>{st.formed}</b><small>{plural(st.formed, 'привычка закреплена', 'привычки закреплены', 'привычек закреплено')}</small></div>
+          <div><b>{st.chapters}</b><small>{plural(st.chapters, 'глава прочитана', 'главы прочитаны', 'глав прочитано')}</small></div>
+        </div>
+      </div>
+
+      <button type="button" className="pro-entry" onClick={() => go('pro')}>
+        <span className="pro-badge">PRO</span>
+        <span><b>Living Muslim Pro</b><small>Цели, книги, курсы, большой Круг. 14 дней бесплатно</small></span>
+        <i aria-hidden="true">›</i>
+      </button>
+
+      <div className="menu">
+        {!onClaude && <Row icon="👤" title="Аккаунт" sub={me ? `${me.email} · имя «${name}»` : 'Войти по почте, имя'} onClick={() => go('account')} />}
+        {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
+        <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
+        <Row icon="🌱" title="Мои привычки" sub={`${used} из ${ACTIVE_LIMIT} мест занято`} onClick={() => go('habits')} />
+        <Row icon="🎨" title="Внешний вид" sub={`Тема ${theme} · текст ${s.textScale && s.textScale > 1 ? 'крупнее' : 'обычный'}`} onClick={() => go('look')} />
+        <Row icon="💾" title="Данные" sub="Резервная копия, перенос, удаление" onClick={() => go('data')} />
+        <Row icon="🤝" title="Помощь" sub={SUPPORT_EMAIL ? "Написать нам, поделиться, конфиденциальность" : "Поделиться приложением, конфиденциальность"} onClick={() => go('help')} />
+      </div>
+
+      <LogoLockup />
+      <p className="tiny ver">Версия 0.2<br />«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»</p>
+    </div>
+  );
+}
+
+type Page = 'main' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
+const SUPPORT_EMAIL = '';
+const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+function stats(state: AppState) {
+  const today = dayKey(new Date());
+  let onTime = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = state.prayers[addDays(today, -i)] ?? {};
+    for (const a of ANCHORS) if (d[a] === 'ontime') onTime++;
+  }
+  const keys = [...Object.keys(state.log), ...Object.keys(state.prayers), ...state.habits.map((h) => h.createdAt)].filter(Boolean).sort();
+  const days = keys.length ? Math.max(1, daysBetween(keys[0], today) + 1) : 1;
+  return { onTime, formed: state.habits.filter((h) => h.formed).length, chapters: state.summaryRead?.length ?? 0, days };
+}
+
+function Row({ icon, title, sub, onClick }: { icon: string; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button type="button" className="menu-row" onClick={onClick}>
+      <span className="mi" aria-hidden="true">{icon}</span>
+      <span className="mt"><b>{title}</b><small>{sub}</small></span>
+      <i aria-hidden="true">›</i>
+    </button>
+  );
+}
+
+function Sub({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
+  return (
+    <div className="page">
+      <button type="button" className="link-btn pro-back" onClick={onBack}>← Профиль</button>
+      <h1 className="page-h">{title}</h1>
+      {children}
+    </div>
+  );
+}
+
+type SetFn = (patch: Partial<AppState['settings']>) => void;
+
+function AccountPage({ s, set }: { s: AppState['settings']; set: SetFn }) {
+  return (
+    <>
+      <label className="field">
+        <span>Как к тебе обращаться</span>
+        <input value={s.name} onChange={(e) => set({ name: e.target.value })} placeholder="Имя" maxLength={40} />
+      </label>
+      <AccountCard />
+      {!onClaude && <p className="tiny">Почта нужна, чтобы не потерять доступ и получать новости приложения. Привычки и заметки пока хранятся на этом устройстве.</p>}
+    </>
+  );
+}
+
+function PrayerSettings({ s, set, times }: { s: AppState['settings']; set: SetFn; times: DayTimes }) {
   const [geo, setGeo] = useState('');
-  const [io, setIo] = useState('');
-  const [msg, setMsg] = useState('');
-
-  const byStatus = (st: Habit['status']) => state.habits.filter((h) => h.status === st);
-  const setStatus = (id: string, status: Habit['status']) =>
-    update((x) => ({ ...x, habits: x.habits.map((h) => (h.id === id ? { ...h, status } : h)) }));
-  const remove = (id: string) => update((x) => ({ ...x, habits: x.habits.filter((h) => h.id !== id) }));
-
   const locate = () => {
     if (!navigator.geolocation) return setGeo('Геолокация недоступна, выбери город из списка.');
     setGeo('Определяю…');
@@ -37,49 +141,30 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
       { timeout: 10000 },
     );
   };
-
-  const exportData = async () => {
-    const json = JSON.stringify(state);
-    setIo(json);
-    try { await navigator.clipboard.writeText(json); setMsg('Скопировано. Сохрани текст в заметках.'); } catch { setMsg('Скопируй текст из поля ниже.'); }
+  const off = s.offsets ?? {};
+  const bump = (a: Anchor, d: number) => {
+    const v = Math.max(-30, Math.min(30, (off[a] ?? 0) + d));
+    set({ offsets: { ...off, [a]: v } });
   };
-  const importData = () => {
-    try {
-      const d = JSON.parse(io) as AppState;
-      if (d.version !== 1 || !Array.isArray(d.habits)) throw new Error();
-      replace({ ...initialState(), ...d });
-      setMsg('Данные загружены.');
-    } catch { setMsg('Не похоже на копию данных из приложения.'); }
-  };
-
-  const used = slotsUsed(state);
-  const [pro, setPro] = useState(false);
-  if (pro) return <ProPlans onBack={() => { setPro(false); window.scrollTo(0, 0); }} />;
-
+  const anyOff = ANCHORS.some((a) => off[a]);
   return (
-    <div className="page">
-      <h1 className="page-h">Профиль</h1>
-      <p className="page-sub">Настройки намазов, твои привычки и данные.</p>
-
-      <button type="button" className="pro-entry" onClick={() => { setPro(true); window.scrollTo(0, 0); }}>
-        <span className="pro-badge">PRO</span>
-        <span><b>Living Muslim Pro</b><small>Цели, книги, курсы, большой Круг. 14 дней бесплатно</small></span>
-        <i aria-hidden="true">›</i>
-      </button>
-
-      <AccountCard />
-
-      <label className="field">
-        <span>Как к тебе обращаться</span>
-        <input value={s.name} onChange={(e) => set({ name: e.target.value })} placeholder="Имя" />
-      </label>
-
-      <h2 className="sub-h">Время намазов</h2>
-      <div className="times">
-        {(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const).map((a) => (
-          <div key={a}><span className="ar">{ANCHOR_LABEL[a].ar}</span><b>{hhmm(times[a])}</b><small>{ANCHOR_LABEL[a].ru}</small></div>
-        ))}
+    <>
+      <div className="adj">
+        {ANCHORS.map((a) => {
+          const v = off[a] ?? 0;
+          return (
+            <div key={a} className="adj-row">
+              <span className="ar">{ANCHOR_LABEL[a].ar}</span>
+              <span className="an"><b>{ANCHOR_LABEL[a].ru}</b><small>{v ? `${v > 0 ? '+' : '−'}${Math.abs(v)} мин` : 'по расчёту'}</small></span>
+              <button type="button" aria-label={`${ANCHOR_LABEL[a].ru} на минуту раньше`} onClick={() => bump(a, -1)}>−</button>
+              <b className="at">{hhmm(times[a])}</b>
+              <button type="button" aria-label={`${ANCHOR_LABEL[a].ru} на минуту позже`} onClick={() => bump(a, 1)}>+</button>
+            </div>
+          );
+        })}
       </div>
+      <p className="tiny">Сверь время с мечетью рядом и поправь кнопками − и + по минуте.{anyOff && <> <button type="button" className="link-btn" onClick={() => set({ offsets: {} })}>Сбросить поправки</button></>}</p>
+
       <label className="field">
         <span>Город</span>
         <select
@@ -105,9 +190,19 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
           <option value="hanafi">Ханафи (Аср позже)</option>
         </select>
       </label>
-      <p className="tiny">Сверь время с мечетью рядом. Если расходится, попробуй другой метод.</p>
+    </>
+  );
+}
 
-      <h2 className="sub-h">Мои привычки <small>{used} из {ACTIVE_LIMIT} мест занято</small></h2>
+function HabitsSettings({ state, update, onEdit }: { state: AppState; update: Props['update']; onEdit: Props['onEdit'] }) {
+  const byStatus = (st: Habit['status']) => state.habits.filter((h) => h.status === st);
+  const setStatus = (id: string, status: Habit['status']) =>
+    update((x) => ({ ...x, habits: x.habits.map((h) => (h.id === id ? { ...h, status } : h)) }));
+  const remove = (id: string) => update((x) => ({ ...x, habits: x.habits.filter((h) => h.id !== id) }));
+  const used = slotsUsed(state);
+  return (
+    <>
+      <p className="page-sub">{used} из {ACTIVE_LIMIT} мест занято. Нажми на привычку, чтобы изменить её.</p>
       <HabitGroup title="Активные" list={byStatus('active')} onEdit={onEdit} action={(h) => ['В архив', () => setStatus(h.id, 'archived')]} />
       <HabitGroup title="Очередь «Скоро»" list={byStatus('queued')} onEdit={onEdit} action={(h) => ['Убрать', () => setStatus(h.id, 'archived')]} />
       <HabitGroup
@@ -116,24 +211,107 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
         onEdit={onEdit}
         action={(h) => (used < ACTIVE_LIMIT ? ['Вернуть', () => setStatus(h.id, 'active')] : ['Удалить', () => remove(h.id)])}
       />
+      {!state.habits.length && <p className="tiny">Привычек пока нет. Добавь первую на экране «Сегодня».</p>}
+    </>
+  );
+}
 
-      <h2 className="sub-h">Данные</h2>
-      <p className="tiny">Всё хранится только на этом устройстве. Никакой рекламы и аккаунта. Чтобы перенести на другой телефон, скопируй данные и вставь там.</p>
-      <div className="row2 light">
-        <button type="button" onClick={exportData}>Скопировать данные</button>
-        <button type="button" onClick={importData} disabled={!io.trim()}>Загрузить из поля</button>
+function LookSettings({ s, set }: { s: AppState['settings']; set: SetFn }) {
+  const theme = s.theme ?? 'auto';
+  const size = s.textScale ?? 1;
+  return (
+    <>
+      <h2 className="sub-h">Тема</h2>
+      <div className="seg3" role="radiogroup" aria-label="Тема">
+        {([['auto', 'Как в телефоне'], ['light', 'Светлая'], ['dark', 'Тёмная']] as const).map(([v, l]) => (
+          <button key={v} type="button" role="radio" aria-checked={theme === v} onClick={() => set({ theme: v })}>{l}</button>
+        ))}
       </div>
+      <h2 className="sub-h">Размер текста</h2>
+      <div className="seg3" role="radiogroup" aria-label="Размер текста">
+        {([[1, 'Обычный'], [1.1, 'Крупнее'], [1.2, 'Крупный']] as const).map(([v, l]) => (
+          <button key={v} type="button" role="radio" aria-checked={size === v} onClick={() => set({ textScale: v })} style={{ fontSize: `${14 * v}px` }}>{l}</button>
+        ))}
+      </div>
+      <p className="tiny">Настройки сохраняются на этом устройстве.</p>
+    </>
+  );
+}
+
+function DataSettings({ state, replace }: { state: AppState; replace: Props['replace'] }) {
+  const [msg, setMsg] = useState('');
+  const [wipe, setWipe] = useState('');
+  const file = useRef<HTMLInputElement>(null);
+
+  const download = () => {
+    const blob = new Blob([JSON.stringify(state)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `living-muslim-${dayKey(new Date())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    setMsg('Файл сохранён. Храни его в надёжном месте, например в облаке телефона.');
+  };
+  const load = async (f: File) => {
+    try {
+      const d = JSON.parse(await f.text()) as AppState;
+      if (d.version !== 1 || !Array.isArray(d.habits)) throw new Error();
+      if (!confirm('Заменить все данные на этом устройстве данными из файла?')) return;
+      replace({ ...initialState(), ...d });
+      setMsg('Данные загружены из файла.');
+    } catch { setMsg('Это не файл резервной копии Living Muslim.'); }
+  };
+
+  return (
+    <>
+      <p className="page-sub">Привычки, отметки и заметки хранятся на этом устройстве. Сохраняй резервную копию, чтобы не потерять их при смене телефона.</p>
+      <div className="row2 light">
+        <button type="button" onClick={download}>Скачать копию</button>
+        <button type="button" onClick={() => file.current?.click()}>Загрузить из файла</button>
+      </div>
+      <input ref={file} type="file" accept="application/json,.json" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) load(f); e.target.value = ''; }} />
       {msg && <p className="tiny">{msg}</p>}
-      <textarea className="io" value={io} onChange={(e) => setIo(e.target.value)} rows={3} placeholder="Сюда вставь скопированные данные" />
-      <button
-        type="button"
-        className="danger"
-        onClick={() => { if (io === 'УДАЛИТЬ') { replace(initialState()); setIo(''); setMsg('Всё очищено.'); } else setMsg('Чтобы стереть всё, напиши в поле слово УДАЛИТЬ и нажми ещё раз.'); }}
-      >
-        Стереть все данные
+      <p className="tiny">Синхронизация между устройствами появится в Pro.</p>
+
+      <h2 className="sub-h">Удалить всё</h2>
+      <p className="tiny">Сотрёт все привычки, отметки и заметки на этом устройстве. Отменить нельзя. Чтобы подтвердить, напиши слово УДАЛИТЬ.</p>
+      <div className="row2">
+        <input className="wipe" value={wipe} onChange={(e) => setWipe(e.target.value)} placeholder="УДАЛИТЬ" aria-label="Подтверждение удаления" />
+        <button type="button" className="danger" disabled={wipe.trim().toUpperCase() !== 'УДАЛИТЬ'} onClick={() => { replace(initialState()); setWipe(''); setMsg('Всё очищено.'); }}>Стереть</button>
+      </div>
+    </>
+  );
+}
+
+function HelpPage() {
+  const [shared, setShared] = useState('');
+  const url = typeof location !== 'undefined' && !onClaude ? location.origin + '/' : 'https://living-muslim.vercel.app/';
+  const share = async () => {
+    const text = 'Living Muslim: привычки вокруг пяти намазов, без рекламы и без вины за пропуски.';
+    try {
+      if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url }); return; }
+      await navigator.clipboard.writeText(`${text} ${url}`); setShared('Ссылка скопирована');
+    } catch { /* cancelled */ }
+  };
+  return (
+    <div className="menu">
+      <button type="button" className="menu-row" onClick={share}>
+        <span className="mi" aria-hidden="true">💌</span>
+        <span className="mt"><b>Поделиться приложением</b><small>{shared || 'Садака джария: за каждого, кто начнёт молиться вовремя'}</small></span>
+        <i aria-hidden="true">›</i>
       </button>
-      <LogoLockup />
-      <p className="tiny ver">Версия 0.1<br />«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»</p>
+      {SUPPORT_EMAIL && (
+        <a className="menu-row" href={`mailto:${SUPPORT_EMAIL}?subject=Living%20Muslim`}>
+          <span className="mi" aria-hidden="true">✉️</span>
+          <span className="mt"><b>Написать нам</b><small>Идеи, ошибки, вопросы</small></span>
+          <i aria-hidden="true">›</i>
+        </a>
+      )}
+      <a className="menu-row" href="/privacy.html" target="_blank" rel="noopener">
+        <span className="mi" aria-hidden="true">🔒</span>
+        <span className="mt"><b>Конфиденциальность</b><small>Что мы храним и что нет</small></span>
+        <i aria-hidden="true">›</i>
+      </a>
     </div>
   );
 }

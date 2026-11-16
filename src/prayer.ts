@@ -74,6 +74,8 @@ export function prayerTimes(s: Settings, date: Date): DayTimes {
   params.madhab = s.madhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi;
   // Needed in the Netherlands and Russia in summer, when twilight barely ends.
   params.highLatitudeRule = HighLatitudeRule.recommended(coords);
+  const o = s.offsets ?? {};
+  params.adjustments = { fajr: o.fajr ?? 0, sunrise: 0, dhuhr: o.dhuhr ?? 0, asr: o.asr ?? 0, maghrib: o.maghrib ?? 0, isha: o.isha ?? 0 };
   const t = new PrayerTimes(coords, date, params);
   return { fajr: t.fajr, sunrise: t.sunrise, dhuhr: t.dhuhr, asr: t.asr, maghrib: t.maghrib, isha: t.isha };
 }

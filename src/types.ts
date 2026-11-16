@@ -35,6 +35,11 @@ export interface Settings {
   method: MethodId;
   madhab: 'shafi' | 'hanafi';
   name: string;
+  /** Minutes added to each calculated prayer time, to match the local mosque. */
+  offsets?: Partial<Record<Anchor, number>>;
+  theme?: 'auto' | 'light' | 'dark';
+  /** Text size: 1 normal, 1.1 large, 1.2 larger. */
+  textScale?: number;
 }
 
 export interface AppState {
