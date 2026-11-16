@@ -2,8 +2,8 @@
 // window.claude; everywhere else this module installs a small stand-in with the same db/user
 // surface, backed by Supabase RPC functions. Identity is an anonymous id + secret kept on the device.
 
-const URL_ = 'https://sadwmwxwlfedozrrxptj.supabase.co';
-const KEY = 'sb_publishable_gHPrJFHpOIOCPqhIUQlZLg_6YS69mGX';
+const URL_ = 'https://pbpllsoiesquknuibyyj.supabase.co';
+const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const LS = 'lm.cloud';
 const POLL_MS = 8000;
 

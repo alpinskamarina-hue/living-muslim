@@ -8,6 +8,7 @@ import type { IftarApi } from '../iftar';
 import { IftarSection } from './Iftar';
 import { CloudSetup, CloudInvite } from './CloudCircle';
 import { isCloud } from '../cloud';
+import { useEffect } from 'react';
 
 interface Props {
   circle: CircleApi;
@@ -29,6 +30,11 @@ const REACTIONS = [
 
 export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
+  useEffect(() => {
+    // Just created or joined a circle on the standalone site: share today's total right away.
+    if (status !== 'ready' || joined) return;
+    try { if (sessionStorage.getItem('lm.autojoin')) { sessionStorage.removeItem('lm.autojoin'); onJoin(); } } catch { /* */ }
+  }, [status, joined]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === 'loading')
     return <div className="page"><h1 className="page-h">Круг</h1><p className="page-sub">Подключаюсь…</p></div>;
@@ -131,7 +137,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </div>
       )}
 
-      {joined && (
+      {joined && !isCloud && (
         <button type="button" className="danger" onClick={onLeave}>Выйти из круга</button>
       )}
       <p className="tiny ver">Твой итог сейчас: привычки {summary.done}/{summary.total}, намазы {summary.prayers}/5</p>

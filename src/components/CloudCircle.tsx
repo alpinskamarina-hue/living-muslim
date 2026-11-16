@@ -15,7 +15,7 @@ export function CloudSetup() {
     setBusy(true); setErr('');
     try {
       const r = await fn();
-      if (r) { try { sessionStorage.setItem('lm.tab', 'circle'); } catch { /* */ } location.reload(); return; }
+      if (r) { try { sessionStorage.setItem('lm.tab', 'circle'); sessionStorage.setItem('lm.autojoin', '1'); } catch { /* */ } location.reload(); return; }
       setErr('Круг с таким кодом не найден. Проверь ссылку.');
     } catch {
       setErr('Нет связи с сервером. Проверь интернет и попробуй ещё раз.');
