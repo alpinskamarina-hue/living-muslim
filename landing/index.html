@@ -141,6 +141,48 @@ section { padding: 72px 0; }
 .hadith cite { display: block; margin-top: 16px; font-style: normal; opacity: .75; font-size: 14px; }
 .hadith .ar { font-family: var(--f-ar); color: var(--gold-2); font-size: 24px; margin-bottom: 14px; }
 
+
+/* pro showcase */
+.prox { display: grid; gap: 22px; margin-top: 36px; }
+.px { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 26px; padding: 26px; }
+.px.rev .pt { order: 2; }
+@media (max-width: 760px) { .px { grid-template-columns: 1fr; padding: 20px; } .px.rev .pt { order: 0; } }
+.ptag { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 7px; background: var(--gold); color: #fff; }
+.pt h3 { font-family: var(--f-serif); font-size: clamp(26px, 3.4vw, 34px); line-height: 1.1; margin: 10px 0 8px; }
+.pt p { margin: 0; color: var(--ink-2); font-size: 16px; }
+.mini { background: #fbfaf6; color: #14261c; border-radius: 22px; padding: 16px; box-shadow: 0 18px 40px rgba(15,81,50,.14), inset 0 0 0 1px #e3e8e2; display: grid; gap: 8px; font-size: 13px; max-width: 340px; width: 100%; justify-self: center; }
+.mini .mh { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #b88a2c; }
+.mini .mh small { text-transform: none; letter-spacing: 0; font-weight: 600; color: #4f6357; }
+.mini .mt { font-family: var(--f-serif); font-size: 22px; line-height: 1.1; }
+.mini .mm { color: #4f6357; font-size: 12px; }
+.mini .mx { margin: 0; color: #2f4337; line-height: 1.45; }
+.mini .bar { height: 8px; border-radius: 8px; background: #e6ece7; overflow: hidden; }
+.mini .bar i { display: block; height: 100%; background: linear-gradient(90deg, #1f7a4d, #d9ad55); border-radius: 8px; }
+.mini .ms { border: 1px solid #e3e8e2; background: #fff; border-radius: 12px; padding: 8px 10px 8px 32px; position: relative; }
+.mini .ms::before { content: ''; position: absolute; left: 10px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; border: 2px solid #1f7a4d; box-sizing: border-box; }
+.mini .ms.done { color: #4f6357; text-decoration: line-through; }
+.mini .ms.done::before { background: #1f7a4d; box-shadow: inset 0 0 0 2px #fff; }
+.mini .ms.now { border-color: #d9ad55; background: #fbf4e3; color: #14261c; font-weight: 700; }
+.mini .ms.now::before { border-color: #b88a2c; }
+.mini .ms.srch { padding-left: 10px; }
+.mini .ms.srch::before { display: none; }
+.grid30 { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.grid30 i { font-style: normal; font-size: 10px; font-weight: 700; text-align: center; padding: 5px 0; border-radius: 6px; background: #eef3ef; color: #4f6357; }
+.grid30 i.on { background: #1f7a4d; color: #fff; }
+.grid30 i.mid { background: #f3e1c9; color: #6b4e14; }
+.cols { display: flex; align-items: flex-end; gap: 5px; height: 96px; padding-top: 4px; }
+.cols i { flex: 1; background: linear-gradient(180deg, #1f7a4d, #2f9a64); border-radius: 5px 5px 2px 2px; }
+.cmp-h { font-family: var(--f-serif); font-size: clamp(26px, 3.4vw, 34px); margin: 48px 0 14px; }
+.cmp { border: 1px solid var(--line); border-radius: 20px; overflow: hidden; background: var(--surface); }
+.cr { display: grid; grid-template-columns: 1fr 110px 130px; gap: 8px; align-items: center; padding: 12px 18px; border-top: 1px solid var(--line); font-size: 15px; }
+.cr:first-child { border-top: 0; }
+.cr.hd { background: var(--green-soft); font-size: 14px; }
+.cr.hd b:last-child { color: var(--gold); }
+.cr i, .cr b { font-style: normal; text-align: center; }
+.cr i { color: var(--ink-2); }
+.cr i.p { color: var(--green-2); font-weight: 700; }
+@media (max-width: 520px) { .cr { grid-template-columns: 1fr 64px 84px; padding: 11px 12px; font-size: 14px; } }
+.per { text-align: center; font-size: 17px; margin: 22px 0 6px; }
 /* pricing */
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 36px; }
 @media (max-width: 760px) { .plans { grid-template-columns: 1fr; } }
@@ -310,7 +352,81 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   <div class="wrap">
     <p class="eyebrow"><span lang="ru">Тарифы</span><span lang="en">Pricing</span></p>
     <h2><span lang="ru">Поклонение бесплатно. Навсегда.</span><span lang="en">Worship is free. Forever.</span></h2>
-    <p class="lead"><span lang="ru">Pro для тех, кто растёт дальше: цели, книги, курсы и большой Круг.</span><span lang="en">Pro is for going further: goals, books, courses and a bigger Circle.</span></p>
+    <p class="lead"><span lang="ru">Намазы, Коран, Рамадан и садака бесплатны для всех. Pro для тех, кто хочет расти дальше. Вот что он даёт на деле.</span><span lang="en">Prayers, Quran, Ramadan and sadaqah are free for everyone. Pro is for going further. Here is what it actually gives you.</span></p>
+
+    <div class="prox">
+      <div class="px">
+        <div class="pt">
+          <span class="ptag">PRO</span>
+          <h3><span lang="ru">Цели, а не просто галочки</span><span lang="en">Goals, not just checkboxes</span></h3>
+          <p><span lang="ru">Поставь нийю «Выучить джуз Амма до Рамадана». Приложение разобьёт её на вехи по сурам, само посчитает прогресс по твоим отметкам и в пятницу предложит короткий пересмотр: что получилось, что поправить.</span><span lang="en">Set an intention like “Memorise Juz Amma before Ramadan”. The app splits it into milestones by surah, tracks progress from your check-ins and offers a short review every Friday.</span></p>
+        </div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span lang="ru">Цель</span><span lang="en">Goal</span><small><span lang="ru">до Рамадана · 94 дня</span><span lang="en">before Ramadan · 94 days</span></small></div>
+          <b class="mt"><span lang="ru">Выучить джуз Амма</span><span lang="en">Memorise Juz Amma</span></b>
+          <div class="bar"><i style="width:62%"></i></div><small class="mm"><span lang="ru">62% · 23 из 37 сур</span><span lang="en">62% · 23 of 37 surahs</span></small>
+          <div class="ms done"><span lang="ru">Ан-Наба — Абаса</span><span lang="en">An-Naba — Abasa</span></div>
+          <div class="ms done"><span lang="ru">Ат-Таквир — Аль-Аля</span><span lang="en">At-Takwir — Al-Ala</span></div>
+          <div class="ms now"><span lang="ru">Аль-Гашия — Аш-Шамс</span><span lang="en">Al-Ghashiya — Ash-Shams</span></div>
+          <div class="ms"><span lang="ru">Аль-Ляйль — Ан-Нас</span><span lang="en">Al-Layl — An-Nas</span></div>
+        </div>
+      </div>
+      <div class="px rev">
+        <div class="pt">
+          <span class="ptag">PRO</span>
+          <h3><span lang="ru">Книги и курсы на 10 минут в день</span><span lang="en">Books and courses, 10 minutes a day</span></h3>
+          <p><span lang="ru">Каждый день одна глава полезной книги в подробном пересказе: прочитать после Магриба, отметить, двигаться дальше. Рядом курс английского и языки, тоже маленькими шагами.</span><span lang="en">One chapter of a useful book every day, retold in detail: read it after Maghrib, tick it off, move on. Plus an English course and languages, also in small steps.</span></p>
+        </div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span lang="ru">Книги</span><span lang="en">Books</span><small><span lang="ru">глава 4 из 20</span><span lang="en">chapter 4 of 20</span></small></div>
+          <b class="mt"><span lang="ru">Атомные привычки</span><span lang="en">Atomic Habits</span></b>
+          <p class="mx"><span lang="ru">Привычка закрепляется не от силы воли, а от того, насколько легко её начать. Сделай первый шаг таким маленьким, чтобы отказаться было смешно…</span><span lang="en">A habit sticks not through willpower but through how easy it is to start. Make the first step so small it would be silly to skip…</span></p>
+          <div class="bar"><i style="width:20%"></i></div>
+          <div class="ms now"><span lang="ru">Курс английского · урок 7</span><span lang="en">English course · lesson 7</span></div>
+        </div>
+      </div>
+      <div class="px">
+        <div class="pt">
+          <span class="ptag">PRO</span>
+          <h3><span lang="ru">Большой Круг: семья, друзья, джамаат</span><span lang="en">A bigger Circle: family, friends, community</span></h3>
+          <p><span lang="ru">До 30 человек в одном Круге. Общий хатм, где каждый берёт свои джузы. Ифтары в Рамадан. Совместная умра с общим чек-листом. Близкие видят только итог дня, твои привычки остаются твоими.</span><span lang="en">Up to 30 people in one Circle. A group khatm where everyone takes their juz. Ramadan iftars. A shared Umrah checklist. People only see your daily total, your habits stay yours.</span></p>
+        </div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span lang="ru">Общий хатм</span><span lang="en">Group khatm</span><small><span lang="ru">18 человек</span><span lang="en">18 people</span></small></div>
+          <div class="grid30"><i class="on">1</i><i class="on">2</i><i class="on">3</i><i class="on">4</i><i class="on">5</i><i class="on">6</i><i class="on">7</i><i class="on">8</i><i class="on">9</i><i class="on">10</i><i class="on">11</i><i class="on">12</i><i class="on">13</i><i class="on">14</i><i class="on">15</i><i class="on">16</i><i class="on">17</i><i class="on">18</i><i class="on">19</i><i class="on">20</i><i class="on">21</i><i class="mid">22</i><i class="mid">23</i><i class="mid">24</i><i class="mid">25</i><i class="">26</i><i class="">27</i><i class="">28</i><i class="">29</i><i class="">30</i></div>
+          <small class="mm"><span lang="ru">21 из 30 джузов прочитано</span><span lang="en">21 of 30 juz read</span></small>
+          <div class="ms"><span lang="ru">Ифтар у Амины · пт 17:05</span><span lang="en">Iftar at Amina’s · Fri 17:05</span></div>
+        </div>
+      </div>
+      <div class="px rev">
+        <div class="pt">
+          <span class="ptag">PRO</span>
+          <h3><span lang="ru">Вся твоя история</span><span lang="en">Your whole history</span></h3>
+          <p><span lang="ru">Статистика намазов и привычек за всё время, а не только за 30 дней. Поиск по мухасабе: найди, о чём ты думал в прошлом Рамадане, и посмотри, как ты вырос.</span><span lang="en">Prayer and habit stats for all time, not just 30 days. Search your muhasabah: find what you wrote last Ramadan and see how far you have come.</span></p>
+        </div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span lang="ru">Намазы вовремя</span><span lang="en">Prayers on time</span><small><span lang="ru">за год</span><span lang="en">this year</span></small></div>
+          <div class="cols"><i style="height:48%"></i><i style="height:55%"></i><i style="height:52%"></i><i style="height:61%"></i><i style="height:66%"></i><i style="height:63%"></i><i style="height:72%"></i><i style="height:78%"></i><i style="height:90%"></i><i style="height:84%"></i><i style="height:86%"></i><i style="height:91%"></i></div>
+          <small class="mm"><span lang="ru">янв → дек: с 48% до 91%</span><span lang="en">Jan → Dec: from 48% to 91%</span></small>
+          <div class="ms srch"><span lang="ru">🔍 «терпение»: 14 записей</span><span lang="en">🔍 “patience”: 14 entries</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="cmp-h"><span lang="ru">Бесплатно или Pro</span><span lang="en">Free or Pro</span></h3>
+    <div class="cmp" role="table">
+      <div class="cr hd" role="row"><span></span><b><span lang="ru">Бесплатно</span><span lang="en">Free</span></b><b>Pro</b></div>
+      <div class="cr" role="row"><span><span lang="ru">Намазы, Коран, тасбих, Рамадан, садака</span><span lang="en">Prayers, Quran, tasbih, Ramadan, sadaqah</span></span><i>✓</i><i class="p">✓</i></div>
+      <div class="cr" role="row"><span><span lang="ru">Активные привычки</span><span lang="en">Active habits</span></span><i>3</i><i class="p">5 + <span lang="ru">очередь</span><span lang="en">queue</span></i></div>
+      <div class="cr" role="row"><span><span lang="ru">Статистика</span><span lang="en">Stats</span></span><i><span lang="ru">30 дней</span><span lang="en">30 days</span></i><i class="p"><span lang="ru">всё время</span><span lang="en">all time</span></i></div>
+      <div class="cr" role="row"><span><span lang="ru">Круг</span><span lang="en">Circle</span></span><i><span lang="ru">до 5</span><span lang="en">up to 5</span></i><i class="p"><span lang="ru">до 30</span><span lang="en">up to 30</span></i></div>
+      <div class="cr" role="row"><span><span lang="ru">Цели с вехами и автопрогрессом</span><span lang="en">Goals with milestones</span></span><i>—</i><i class="p">✓</i></div>
+      <div class="cr" role="row"><span><span lang="ru">Книги, курсы, языки</span><span lang="en">Books, courses, languages</span></span><i>—</i><i class="p">✓</i></div>
+      <div class="cr" role="row"><span><span lang="ru">Общий хатм, ифтары, совместная умра</span><span lang="en">Group khatm, iftars, shared Umrah</span></span><i>—</i><i class="p">✓</i></div>
+      <div class="cr" role="row"><span><span lang="ru">Поиск по мухасабе</span><span lang="en">Muhasabah search</span></span><i>—</i><i class="p">✓</i></div>
+      <div class="cr" role="row"><span><span lang="ru">Синхронизация между устройствами</span><span lang="en">Sync across devices</span></span><i>—</i><i class="p"><span lang="ru">скоро</span><span lang="en">soon</span></i></div>
+    </div>
+    <p class="per"><span lang="ru">Pro стоит <b>€2.50 в месяц</b> при оплате за год. Первые 14 дней бесплатно, карта не нужна.</span><span lang="en">Pro is <b>€2.50 a month</b> billed yearly. The first 14 days are free, no card needed.</span></p>
     <div class="plans">
       <div class="plan free">
         <h3><span lang="ru">Бесплатно</span><span lang="en">Free</span></h3>
@@ -336,7 +452,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
           <li><span lang="ru">Вся история и статистика</span><span lang="en">Full history and stats</span></li>
           <li><span lang="ru">Книги, курсы, языки</span><span lang="en">Books, courses, languages</span></li>
           <li><span lang="ru">Общий хатм, умра и ифтары, Круг до 30</span><span lang="en">Group khatm, Umrah and iftars, Circle up to 30</span></li>
-          <li><span lang="ru">Синхронизация между устройствами</span><span lang="en">Sync across devices</span></li>
+          <li><span lang="ru">Синхронизация между устройствами (скоро)</span><span lang="en">Sync across devices (soon)</span></li>
         </ul>
         <a class="btn" href="#join"><span lang="ru">14 дней бесплатно</span><span lang="en">Try 14 days free</span></a>
       </div>
@@ -361,6 +477,9 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       <details><summary><span lang="ru">Нужно ли что-то устанавливать?</span><span lang="en">Do I need to install anything?</span></summary><p lang="ru">Нет, приложение работает в браузере на телефоне и компьютере. На телефоне его можно добавить на главный экран, и оно будет открываться как обычное приложение.</p><p lang="en">No, it works in the browser on phone and desktop. On your phone you can add it to the home screen and it opens like a regular app.</p></details>
       <details><summary><span lang="ru">Кто видит мои данные?</span><span lang="en">Who can see my data?</span></summary><p lang="ru">Только ты. Привычки, заметки и мухасаба хранятся на твоём устройстве. Если вступишь в Круг, близкие увидят только итог дня: сколько отмечено привычек и намазов.</p><p lang="en">Only you. Habits, notes and muhasabah stay on your device. If you join a Circle, your people only see your daily total: how many habits and prayers you checked.</p></details>
       <details><summary><span lang="ru">Это халяль? Почему Pro платный?</span><span lang="en">Is it halal? Why is Pro paid?</span></summary><p lang="ru">Всё, что связано с поклонением, бесплатно навсегда. Pro оплачивает развитие приложения и серверы. Подписка без процентов и скрытых списаний, с возвратом за 14 дней.</p><p lang="en">Everything related to worship is free forever. Pro pays for development and servers. No interest, no hidden charges, refunds within 14 days.</p></details>
+      <details><summary><span lang="ru">Что будет после 14 дней пробного Pro?</span><span lang="en">What happens after the 14-day Pro trial?</span></summary><p lang="ru">Ничего не спишется само: карту мы не просим. Если не оформишь подписку, приложение просто вернётся на бесплатный тариф.</p><p lang="en">Nothing is charged: we never ask for a card. If you don’t subscribe, the app simply goes back to the free plan.</p></details>
+      <details><summary><span lang="ru">Что останется, если я не продлю Pro?</span><span lang="en">What stays if I don’t renew Pro?</span></summary><p lang="ru">Всё твоё остаётся с тобой: история, цели и заметки не удаляются. Закроются только Pro-функции, а намазы, Коран и привычки продолжат работать бесплатно.</p><p lang="en">Everything you made stays: history, goals and notes are never deleted. Only Pro features lock, while prayers, Quran and habits keep working for free.</p></details>
+      <details><summary><span lang="ru">Можно вернуть деньги?</span><span lang="en">Can I get a refund?</span></summary><p lang="ru">Да, в течение 14 дней после оплаты, без вопросов. За 3 дня до продления пришлём напоминание.</p><p lang="en">Yes, within 14 days of payment, no questions asked. We remind you 3 days before renewal.</p></details>
       <details><summary><span lang="ru">Зачем почта при регистрации?</span><span lang="en">Why do you ask for my email?</span></summary><p lang="ru">Чтобы сообщать о новых функциях и, позже, переносить данные между устройствами и оформлять Pro. Никакого спама, отписаться можно в любой момент.</p><p lang="en">To tell you about new features and, later, to sync between devices and manage Pro. No spam, unsubscribe any time.</p></details>
     </div>
   </div>
