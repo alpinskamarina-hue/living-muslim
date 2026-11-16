@@ -1,4 +1,5 @@
 import { LogoLockup } from './Logo';
+import { ProPlans } from './Pro';
 import { useState } from 'react';
 import type { AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
@@ -51,11 +52,19 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
   };
 
   const used = slotsUsed(state);
+  const [pro, setPro] = useState(false);
+  if (pro) return <ProPlans onBack={() => { setPro(false); window.scrollTo(0, 0); }} />;
 
   return (
     <div className="page">
       <h1 className="page-h">Профиль</h1>
       <p className="page-sub">Настройки намазов, твои привычки и данные.</p>
+
+      <button type="button" className="pro-entry" onClick={() => { setPro(true); window.scrollTo(0, 0); }}>
+        <span className="pro-badge">PRO</span>
+        <span><b>Living Muslim Pro</b><small>Цели, книги, курсы, большой Круг. 14 дней бесплатно</small></span>
+        <i aria-hidden="true">›</i>
+      </button>
 
       <label className="field">
         <span>Как к тебе обращаться</span>

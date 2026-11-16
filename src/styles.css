@@ -696,3 +696,43 @@ button:disabled { opacity: .5; cursor: default; }
 .cl-row input { flex: 1 1 auto; min-width: 0; }
 .cl-row .pri-btn { flex: none; padding: 0 16px; }
 .invite .link-btn { padding: 6px 0; }
+
+/* Pro / pricing */
+.pro-entry { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; border-radius: 18px; padding: 14px 16px; margin: 4px 0 18px; background: linear-gradient(135deg, var(--green), var(--green-2)); color: #f6ecd4; font: inherit; cursor: pointer; }
+.pro-entry b { display: block; font-size: 16px; }
+.pro-entry small { display: block; font-size: 12.5px; opacity: .85; margin-top: 2px; }
+.pro-entry > span:nth-child(2) { flex: 1; min-width: 0; }
+.pro-entry i { font-style: normal; font-size: 22px; opacity: .8; }
+.pro-badge { flex: none; display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 4px 8px; border-radius: 8px; background: var(--gold); color: #fff; }
+.pro .pro-back { padding: 8px 0; }
+.pro-hero { border-radius: 22px; padding: 20px 18px; background: linear-gradient(160deg, var(--green), var(--green-2)); color: #f6ecd4; margin: 6px 0 16px; }
+.pro-hero h1 { margin: 10px 0 6px; font-family: var(--f-serif, 'Cormorant Garamond', Georgia, serif); font-size: 30px; line-height: 1.1; }
+.pro-hero p { margin: 0; font-size: 14px; opacity: .9; line-height: 1.45; }
+.pro-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface-2); }
+.pro-seg button { position: relative; min-height: 40px; border: 0; border-radius: 10px; background: none; font: inherit; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.pro-seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.pro-seg i { position: absolute; top: -8px; right: 4px; font-style: normal; font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: var(--gold); color: #fff; }
+.pro-price { text-align: center; margin: 18px 0 14px; }
+.pro-price b { font-size: 36px; color: var(--ink); }
+.pro-price span { color: var(--ink-2); }
+.pro-price small { display: block; color: var(--ink-2); margin-top: 2px; font-size: 13px; }
+.pro .big-btn { width: 100%; }
+.ghost-btn { width: 100%; min-height: 46px; margin-top: 8px; border-radius: 14px; border: 1.5px solid var(--green-2); background: none; color: var(--green-2); font: inherit; font-weight: 700; cursor: pointer; }
+.pro-on { text-align: center; padding: 12px; border-radius: 14px; background: var(--gold-soft); color: var(--ink); font-weight: 700; }
+.pro-note { font-size: 13px; color: var(--ink-2); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; margin: 10px 0 0; }
+.pro-cols { display: grid; gap: 10px; margin: 20px 0 14px; }
+.pro-col { border-radius: 18px; padding: 14px 16px; background: var(--surface-2); }
+.pro-col.is-pro { background: var(--gold-soft); }
+.pro-col h3 { margin: 0 0 6px; font-size: 16px; }
+.pro-col h3 small { font-weight: 500; color: var(--ink-2); font-size: 12.5px; }
+.pro-col ul, .pro-fair { margin: 0; padding: 0; list-style: none; }
+.pro-col li { position: relative; padding: 5px 0 5px 22px; font-size: 13.5px; line-height: 1.4; }
+.pro-col li::before { content: '✓'; position: absolute; left: 0; color: var(--green-2); font-weight: 800; }
+.pro-col.is-pro li::before { color: var(--gold); }
+.pro-card { border-radius: 18px; padding: 14px 16px; margin-top: 10px; border: 1px solid var(--line, #d9e2dc); }
+.pro-card.soft { background: var(--green-soft); border: 0; }
+.pro-card p { margin: 6px 0 4px; font-size: 13.5px; color: var(--ink-2); }
+.pro-card .link-btn { padding: 6px 0; }
+.pro-fair { margin: 16px 0 8px; }
+.pro-fair li { font-size: 12.5px; color: var(--ink-2); padding: 3px 0 3px 18px; position: relative; }
+.pro-fair li::before { content: '•'; position: absolute; left: 4px; color: var(--gold); }
