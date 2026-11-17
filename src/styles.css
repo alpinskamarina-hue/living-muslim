@@ -1503,3 +1503,19 @@ button:disabled { opacity: .5; cursor: default; }
 .mk-card small { color: #d9ad55; font-size: 13px; }
 .mk-card p { margin: 2px 0 4px; font-size: 13px; opacity: .85; }
 .mk-ok { justify-self: start; background: #d9ad55; color: #14261c; border: 0; border-radius: 12px; padding: 8px 14px; font-weight: 800; }
+
+/* After the umrah */
+.af-story { padding: 14px; border-radius: 14px; font-size: 15px; background: #d9ad55; color: #14261c; }
+.af-keep { display: grid; gap: 6px; }
+.af-keep button { text-align: left; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 12px; padding: 10px 12px; font-weight: 600; }
+.af-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.af-grid i { aspect-ratio: 1; border-radius: 4px; background: var(--line); }
+.af-grid i[data-on="true"] { background: var(--gold); }
+.af-grid i[data-today="true"] { outline: 2px solid var(--green-2); }
+.af-text { width: 100%; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: inherit; padding: 10px; font: inherit; resize: vertical; }
+.af-entry { border-top: 1px solid var(--line); padding-top: 6px; }
+.af-entry small { color: var(--ink-2); }
+.af-entry p { margin: 2px 0 0; font-size: 14px; }
+.af-year { background: linear-gradient(150deg, #0f5132, #0b1510); color: #f1f6f0; border-radius: 16px; padding: 14px; margin-bottom: 12px; display: grid; gap: 4px; }
+.af-year p { margin: 0; font-style: italic; }
+.af-year small { opacity: .8; }

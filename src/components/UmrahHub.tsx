@@ -9,6 +9,7 @@ import { UmrahSavings } from './UmrahSavings';
 import { UmrahLive } from './UmrahLive';
 import { TalbiyaLearn, WalkPlan } from './UmrahPrep';
 import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
+import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -92,6 +93,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
       </div>
 
       <UmrahLive />
+      <YearAgo state={state} today={today} />
 
       {u.ihram && (
         <button type="button" className="um-ihram" onClick={() => setMiqat(true)}>
@@ -123,6 +125,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
             <b>Ты в пути. Ляббайк, Аллахумма ляббайк</b>
             <p>Гид работает без интернета. Таваф {u.tawaf}/7, саи {u.saee}/7.</p>
             <LeaveForPrayer state={state} />
+            <Diary state={state} update={update} today={today} />
             <div className="os-row">
               <button type="button" onClick={() => setLost(true)}>🆘 Я потерялся</button>
               <button type="button" onClick={() => setTab('trip')}>📍 {u.site?.meet ? u.site.meet : 'Точка встречи'}</button>
@@ -131,7 +134,15 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
             <button type="button" className="pri-btn" onClick={() => setTab('rites')}>Открыть обряды</button>
           </>
         )}
-        {phase === 'after' && <><b>Умра позади. Да примет Аллах</b><p>Сохрани это состояние: оставь одну привычку из поездки (ночной намаз, Коран после Фаджра, больше дуа) и не возвращайся к тому, от чего покаялся.</p></>}
+        {phase === 'after' && (
+          <>
+            <b>Умра позади. Да примет Аллах</b>
+            <p>Сохрани это состояние: оставь одну привычку из поездки и не возвращайся к тому, от чего покаялся.</p>
+            <StoryButton state={state} from={from} to={to} />
+            <FortyDays state={state} update={update} today={today} />
+            <Diary state={state} update={update} today={today} prompt="Что ты привёз из умры? Что хочешь сохранить?" />
+          </>
+        )}
         {phase === 'done' && <><b>Да примет Аллах твою умру</b><p>Если собираешься снова, укажи новые даты в «Поездке».</p></>}
         {due.length > 0 && phase !== 'there' && phase !== 'after' && (
           <div className="um-due">

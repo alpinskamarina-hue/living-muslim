@@ -190,6 +190,10 @@ export interface UmrahState {
   /** Savings for umrah: mine (no `for`) and gifts for a parent. Sums only, the money stays with the person. */
   /** On the ground: hotel for the lost card, walk to the mosque, group meeting point and leader. */
   site?: { city?: 'makkah' | 'madinah'; hotel?: string; hotelAr?: string; address?: string; walk?: number; meet?: string; amir?: string; amirName?: string };
+  /** One habit kept for 40 days after the trip. */
+  keep?: { what: string; start: string; days: string[] };
+  /** Pilgrim's diary, on this device only. */
+  diary?: { id: string; d: string; text: string }[];
   /** "Made at the Kaaba" notes I have already seen. */
   madeSeen?: string[];
   /** Days I did the walking norm (YYYY-MM-DD). */
