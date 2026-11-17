@@ -17,6 +17,7 @@ import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
 import { UmrahMadeCard } from './components/UmrahMade';
+import { GiftNudge } from './components/GiftPass';
 import { prepPct } from './components/Umrah';
 import { Goals } from './components/Goals';
 import { progress, snapshot } from './goals';
@@ -170,6 +171,7 @@ export function App() {
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
+        {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}

@@ -1,3 +1,4 @@
+import { GiftPassCard } from './GiftPass';
 import { useState } from 'react';
 import type { UmrahApi, URsvp, UTrip, URoom, UPaid } from '../umrahCircle';
 import { uid } from '../store';
@@ -392,6 +393,7 @@ export function PassCard({ isHost, going }: { isHost: boolean; going: number }) 
             <button type="button" className="link-btn" onClick={() => setNote('Когда подключим оплату, такие просьбы будут одобряться из фонда. Пока всё и так открыто.')}>Попросить пропуск в подарок</button>
           </div>
           {note && <p className="pro-note">{note}</p>}
+          <GiftPassCard title="Подари ещё один пропуск" sub="€10 тому, кто едет, но не может оплатить" />
           <p className="tiny">Пропуск отдельно от Pro. Умра-гид и дуа всегда бесплатны.</p>
         </div>
       )}

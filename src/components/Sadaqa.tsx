@@ -1,4 +1,5 @@
 import { Zakat } from './Zakat';
+import { GiftPassCard } from './GiftPass';
 import { useState } from 'react';
 import type { AppState, SadaqaDay, SadaqaState } from '../types';
 import { addDays, fromKey } from '../dates';
@@ -123,6 +124,8 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
               <small className="src">{deed.src}</small>
               <button type="button" className={d.deed ? 'pri-btn' : 'gold-btn'} onClick={() => setDay((x) => ({ ...x, deed: !x.deed }))}>{d.deed ? 'Сделал ✓' : 'Сделал'}</button>
             </div>
+
+            <GiftPassCard />
 
             <div className="h-card">
               <div className="meal-h"><b>Тайная садака</b>

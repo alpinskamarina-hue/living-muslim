@@ -1,6 +1,7 @@
 import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
+import { GiftPass } from './GiftPass';
 import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
 import { authMe, signInUrl, signOut } from '../auth';
@@ -37,6 +38,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
 
   if (page === 'garden') return <Sub title="Мой сад" onBack={back}><Garden state={state} today={dayKey(new Date())} /><WordCard t="garden" state={state} today={dayKey(new Date())} /></Sub>;
   if (page === 'pro') return <ProPlans onBack={back} />;
+  if (page === 'gift') return <Sub title="Садака" onBack={back}><GiftPass /></Sub>;
   if (page === 'prayer') return <Sub title="Намазы" onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
   if (page === 'habits') return <Sub title="Мои привычки" onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
   if (page === 'remind') return <Sub title="Напоминания" onBack={back}><RemindPage s={s} set={set} times={times} /></Sub>;
@@ -82,6 +84,12 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
         <i aria-hidden="true">›</i>
       </button>
 
+      <button type="button" className="pro-entry gp-pentry" onClick={() => go('gift')}>
+        <span className="pro-badge gp-badge">€10</span>
+        <span><b>Подари пропуск на умру</b><small>Садака тому, кто едет к Каабе, но не может оплатить</small></span>
+        <i aria-hidden="true">›</i>
+      </button>
+
       <div className="menu">
         <Row icon="🌳" title="Мой сад" sub={`${gd.leaves} ${plural(gd.leaves, 'лист', 'листа', 'листьев')} · до плода ${gd.toFruit} ${plural(gd.toFruit, 'день', 'дня', 'дней')} · вехи`} onClick={() => go('garden')} />
         {isCloud && nicks && <Row icon="🪪" title="Мой профиль" sub={prof?.nick ? `@${prof.nick} · фото, приватность` : 'Ник, фото, кто может звать в круги'} onClick={() => go('me')} />}
@@ -102,7 +110,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   );
 }
 
-export type Page = 'main' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
