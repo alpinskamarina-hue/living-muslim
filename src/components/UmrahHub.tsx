@@ -7,6 +7,7 @@ import { UmrahTrips } from './UmrahTrips';
 import { MiqatView } from './Miqat';
 import { UmrahSavings } from './UmrahSavings';
 import { UmrahLive } from './UmrahLive';
+import { TalbiyaLearn, WalkPlan } from './UmrahPrep';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -52,7 +53,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
   const deeds = PREP.filter((p) => !HEART.includes(p.id));
   const pct = (l: typeof PREP) => Math.round((l.filter((p) => u.prep.includes(p.id)).length / l.length) * 100);
   // What to do next: undone items whose time has come, earliest deadline first.
-  const due = PREP.filter((p) => !u.prep.includes(p.id) && (left === null || left > 30 ? HEART.includes(p.id) : left <= daysOf(p.when) + 7)).sort((a, b) => daysOf(b.when) - daysOf(a.when)).slice(0, 3);
+  const due = PREP.filter((p) => !u.prep.includes(p.id) && (left === null || left > 30 ? HEART.includes(p.id) : left <= daysOf(p.when) + 7)).sort((a, b) => Number(Boolean(b.must)) - Number(Boolean(a.must)) || daysOf(b.when) - daysOf(a.when)).slice(0, 3);
 
   // Requests for dua from the Circle for the trips I am going on.
   const asks = Object.entries(duas).flatMap(([who, m]) => myTrips.flatMap((h) => (m?.[h] ?? []).map((text, i) => ({ key: `${who}:${h}:${i}`, who, text }))));
@@ -63,7 +64,6 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
   if (miqat) return <MiqatView state={state} update={update} onBack={() => setMiqat(false)} />;
 
-  const talbiya = STEPS.find((s) => s.id === 'talbiya')?.dua?.[0];
 
   return (
     <div className="page umrah-page">
@@ -103,7 +103,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           </>
         )}
         {phase === 'far' && <><b>Время намерения</b><p>До вылета {left} {plural(left!, 'день', 'дня', 'дней')}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.</p>{(u.funds ?? []).some((f) => !f.for) && <UmrahSavings state={state} update={update} today={today} compact />}</>}
-        {phase === 'month' && <><b>Месяц до умры</b><p>Документы, разрешение в Nusuk, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p></>}
+        {phase === 'month' && <><b>Месяц до умры</b><p>Прививка, разрешение в Nusuk, запись в Равду, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p>{left! <= 28 && <WalkPlan state={state} update={update} today={today} left={left} compact />}</>}
         {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте: указать рейс</button></>}
         {phase === 'there' && (
           <>
@@ -141,19 +141,15 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           {heart.map((p) => (
             <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>за {p.when} до поездки</small></span></label>
           ))}
-          {talbiya && (
-            <div className="h-card dua">
-              <small className="um-k">Тальбия, учим наизусть</small>
-              <p className="ar-dua" lang="ar" dir="rtl">{talbiya.ar}</p>
-              <p className="dua-tr">{talbiya.tr}</p>
-              <p className="dua-ru">{talbiya.ru}</p>
-              <small className="src">{talbiya.src}</small>
-            </div>
-          )}
+          <TalbiyaLearn state={state} update={update} />
           <h3>Дела</h3>
           {deeds.map((p) => (
-            <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>за {p.when} до поездки</small></span></label>
+            <div key={p.id} className="pp-deed">
+              <label className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}{p.must && <em className="pp-must">обязательно</em>}</b><small>за {p.when} до поездки</small></span></label>
+              {p.how && <details><summary>Как это сделать</summary><p>{p.how}</p></details>}
+            </div>
           ))}
+          <WalkPlan state={state} update={update} today={today} left={left} />
           <p className="tiny">Готовность видна группе только процентом, сами пункты нет.</p>
         </div>
       )}

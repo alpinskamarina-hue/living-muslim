@@ -188,6 +188,10 @@ export interface UmrahState {
   /** When I entered ihram (ms), until I leave it. */
   ihram?: number;
   /** Savings for umrah: mine (no `for`) and gifts for a parent. Sums only, the money stays with the person. */
+  /** Days I did the walking norm (YYYY-MM-DD). */
+  walk?: string[];
+  /** Talbiya phrases I know by heart (indexes 0..3). */
+  talbiyaKnown?: number[];
   funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];
 }
 

@@ -1456,3 +1456,23 @@ button:disabled { opacity: .5; cursor: default; }
 .ul-days small { color: var(--ink-2); font-size: 11px; }
 .ul-days i { font-style: normal; font-size: 18px; }
 .ul-adv { margin: 0; font-size: 13.5px; }
+
+/* Umrah preparation: walking plan, talbiya by heart, deeds with how-to */
+.pp-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.pp-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pp-top small { color: var(--ink-2); white-space: nowrap; }
+.pp-dots { display: flex; gap: 5px; }
+.pp-dots i { flex: 1; height: 6px; border-radius: 6px; background: var(--line); }
+.pp-dots i[data-on="true"] { background: var(--gold); }
+.pp-tip { color: var(--ink-2); font-size: 12.5px; }
+.pp-btn { border: 1px solid var(--green-2); background: var(--surface); color: var(--green-2); border-radius: 12px; padding: 10px; font-weight: 700; }
+.pp-btn.on { background: var(--green-soft); }
+.pp-line { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 4px; }
+.pp-line .ar-dua { margin: 0; font-size: 22px; }
+.pp-line.known .ar-dua { color: var(--gold); }
+.pp-tr { text-align: left; background: none; border: 0; padding: 0; color: var(--ink); font: inherit; font-style: italic; }
+.pp-know { font-size: 12.5px; color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+.pp-deed details { margin: -2px 0 6px 34px; font-size: 13px; color: var(--ink-2); }
+.pp-deed summary { color: var(--green-2); font-weight: 700; cursor: pointer; }
+.pp-deed details p { margin: 4px 0 0; }
+.pp-must { font-style: normal; font-size: 10.5px; font-weight: 800; background: var(--gold-soft); color: var(--gold); border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
