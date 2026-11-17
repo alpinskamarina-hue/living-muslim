@@ -10,6 +10,7 @@ import { UmrahLive } from './UmrahLive';
 import { TalbiyaLearn, WalkPlan } from './UmrahPrep';
 import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
 import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
+import { Badal, MadinahGuide, WhenToGo } from './UmrahExtra';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -213,6 +214,9 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
               <span className="q-t"><b>{s.title}</b><small>{s.short}{s.counter ? ` · ${u[s.counter]}/7` : ''}</small></span>
             </button>
           ))}
+          <Badal />
+          <h3>Медина</h3>
+          <MadinahGuide />
           <h3>Запреты в ихраме</h3>
           <ul className="rules">{IHRAM_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
           <p className="tiny">Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.</p>
@@ -221,6 +225,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
       {tab === 'trip' && (
         <div className="um-sec">
+          {(phase === 'none' || phase === 'done') && <WhenToGo today={today} />}
           {(phase === 'week' || phase === 'there') && <OnSiteSetup state={state} update={update} />}
           <UmrahSavings state={state} update={update} today={today} />
           {phase !== 'week' && phase !== 'there' && <OnSiteSetup state={state} update={update} />}

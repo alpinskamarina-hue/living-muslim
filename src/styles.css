@@ -1519,3 +1519,24 @@ button:disabled { opacity: .5; cursor: default; }
 .af-year { background: linear-gradient(150deg, #0f5132, #0b1510); color: #f1f6f0; border-radius: 16px; padding: 14px; margin-bottom: 12px; display: grid; gap: 4px; }
 .af-year p { margin: 0; font-style: italic; }
 .af-year small { opacity: .8; }
+
+/* When to go, badal, Madinah */
+.wg-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.wg-m { border: 1px solid transparent; border-radius: 10px; padding: 6px 2px; display: grid; gap: 1px; justify-items: center; color: var(--ink); position: relative; }
+.wg-m b { font-size: 12.5px; }
+.wg-m small { font-size: 11px; color: var(--ink-2); }
+.wg-m em { font-style: normal; font-size: 10px; position: absolute; top: 1px; right: 3px; }
+.wg-m.s2 { background: #cfe8d6; }
+.wg-m.s1 { background: var(--green-soft); }
+.wg-m.s0 { background: var(--gold-soft); }
+.wg-m.s-1 { background: #f3d9cf; }
+.wg-m[aria-pressed="true"] { border-color: var(--green); }
+.wg-note { margin: 0; font-size: 13.5px; }
+.ex-d summary { display: grid; gap: 2px; cursor: pointer; list-style: none; }
+.ex-d summary::-webkit-details-marker { display: none; }
+.ex-d summary small { color: var(--ink-2); font-size: 12.5px; }
+.ex-d summary b:after { content: ' ›'; color: var(--green-2); }
+.ex-d[open] summary b:after { content: ' ⌄'; }
+.ex-d p { margin: 4px 0; font-size: 14px; }
+.ex-md { display: grid; gap: 8px; }
+@media (prefers-color-scheme: dark) { .wg-m.s2 { background: #1f4a30; } .wg-m.s-1 { background: #4a2a20; } }
