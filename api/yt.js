@@ -29,6 +29,14 @@ async function playlist(id) {
       const v = o.playlistVideoRenderer;
       items.push({ id: v.videoId, title: text(v.title), seconds: Number(v.lengthSeconds) || 0 });
     }
+    // 2026 layout: each playlist entry is a lockupViewModel of type video.
+    if (o.lockupViewModel?.contentType === 'LOCKUP_CONTENT_TYPE_VIDEO' && o.lockupViewModel.contentId) {
+      const l = o.lockupViewModel;
+      const badge = [];
+      walk(l.contentImage, (x) => { if (x.thumbnailBadgeViewModel?.text) badge.push(x.thumbnailBadgeViewModel.text); });
+      const seconds = /^\d+(:\d+)+$/.test(badge[0] || '') ? badge[0].split(':').reduce((a, n) => a * 60 + Number(n), 0) : 0;
+      if (!items.some((x) => x.id === l.contentId)) items.push({ id: l.contentId, title: l.metadata?.lockupMetadataViewModel?.title?.content || '', seconds });
+    }
     if (o.playlistMetadataRenderer && !title) title = o.playlistMetadataRenderer.title;
     if (o.playlistHeaderRenderer) { title = title || text(o.playlistHeaderRenderer.title); channel = channel || text(o.playlistHeaderRenderer.ownerText); }
     if (o.pageHeaderViewModel && !title) title = text(o.pageHeaderViewModel.title?.dynamicTextViewModel?.text);
@@ -72,13 +80,6 @@ export default async function handler(req, res) {
     if (list) { res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=86400'); return res.json(await playlist(String(list))); }
     if (v) { res.setHeader('Cache-Control', 's-maxage=86400'); return res.json(await video(String(v))); }
     if (q && k && k === process.env.YT_SEARCH_KEY) return res.json(await search(String(q)));
-    if (req.query.dbg && k && k === process.env.YT_SEARCH_KEY) {
-      const d = await initialData(`https://www.youtube.com/playlist?list=${encodeURIComponent(String(req.query.dbg))}&hl=ru`);
-      const keys = {}; let sample = null;
-      const scan = (o, parent) => { if (!o || typeof o !== 'object') return; for (const kk in o) { const x = o[kk]; if (x && typeof x === 'object' && !Array.isArray(x) && (x.videoId || x.contentId)) { keys[kk] = (keys[kk] || 0) + 1; if (!sample) sample = JSON.stringify(x).slice(0, 3000); } scan(x, kk); } };
-      scan(d);
-      return res.json({ keys, sample });
-    }
     res.status(400).json({ error: 'list, v or q required' });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
