@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { dayLight, journey } from '../gamify';
 import type { Anchor, AppState, Habit, Mark } from '../types';
 import { ANCHORS, ANCHOR_LABEL } from '../types';
@@ -89,8 +89,8 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
           <LogoMark size={18} />{gregorianLabel(now)} · {hijriLabel(now)}
         </div>
         <div className="row">
-          <div>
-            <b>{title}</b>
+          <div className="top-main">
+            {next ? <Countdown to={times[next]} label={ANCHOR_LABEL[next].after.replace('После', 'До')} /> : <b>{title}</b>}
             <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? '🧭 в пути' : '🧭 Сафар'}</button></small>
           </div>
           <button type="button" className="ring light" onClick={onGarden} aria-label={`Свет дня: ${Math.round(light.total * 100)}%. Открыть мой сад`}>
@@ -243,5 +243,34 @@ function Sun() {
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
       <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
     </svg>
+  );
+}
+
+
+/** Live countdown to the next prayer: calm tiles, seconds tick once a second (once a minute with reduced motion). */
+function Countdown({ to, label }: { to: Date; label: string }) {
+  const calm = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [t, setT] = useState(() => Date.now());
+  useEffect(() => {
+    let id: number | undefined;
+    const tick = () => { setT(Date.now()); id = window.setTimeout(tick, calm ? 60_000 - (Date.now() % 60_000) : 1000 - (Date.now() % 1000)); };
+    tick();
+    const vis = () => { if (document.visibilityState === 'visible') { clearTimeout(id); tick(); } };
+    document.addEventListener('visibilitychange', vis);
+    return () => { clearTimeout(id); document.removeEventListener('visibilitychange', vis); };
+  }, [calm]);
+  const left = Math.max(0, Math.floor((to.getTime() - t) / 1000));
+  const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), sec = left % 60;
+  const p2 = (n: number) => String(n).padStart(2, '0');
+  const at = to.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <div className="cd" role="timer" aria-label={`${label}: ${h} ч ${m} мин`}>
+      <span className="cd-l">{label} · {at}</span>
+      <span className="cd-t" aria-hidden="true">
+        <i><b>{p2(h)}</b><small>час</small></i><em>:</em>
+        <i><b>{p2(m)}</b><small>мин</small></i>
+        {!calm && <><em>:</em><i className="s"><b>{p2(sec)}</b><small>сек</small></i></>}
+      </span>
+    </div>
   );
 }

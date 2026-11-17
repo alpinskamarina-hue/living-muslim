@@ -23,15 +23,16 @@ export function gregorianLabel(d: Date) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const HIJRI_MONTHS = ['мухаррама', 'сафара', 'раби-уль-авваля', 'раби-уль-ахира', 'джумада-ль-уля', 'джумада-ль-ахира', 'раджаба', 'шабана', 'рамадана', 'шавваля', 'зуль-каады', 'зуль-хиджжи'];
+
+/** Hijri date with our own month names: some phones print Gregorian month names for the Islamic calendar. */
 export function hijriLabel(d: Date) {
   try {
-    const parts = new Intl.DateTimeFormat('ru-RU-u-ca-islamic-umalqura', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).formatToParts(d);
-    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
-    return `${get('day')} ${get('month')} ${get('year')}`.replace(/\s+/g, ' ').trim();
+    const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(d);
+    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+    const day = get('day'), month = get('month'), year = get('year');
+    if (!day || !month || !year || month > 12) return '';
+    return `${day} ${HIJRI_MONTHS[month - 1]} ${year}`;
   } catch {
     return '';
   }

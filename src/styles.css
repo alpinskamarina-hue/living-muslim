@@ -1171,3 +1171,15 @@ button:disabled { opacity: .5; cursor: default; }
 .g-tp span { flex: 1; min-width: 0; } .g-tp b { display: block; font-size: 14.5px; } .g-tp small { color: var(--ink-2); font-size: 12px; }
 .g-how { display: flex; gap: 6px; }
 .g-how button { flex: 1; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px 4px; font-size: 12.5px; font-weight: 700; color: var(--ink); }
+
+/* live countdown in the Today header */
+.top .top-main { flex: 1; min-width: 0; }
+.cd { display: flex; flex-direction: column; gap: 6px; }
+.cd-l { font-family: var(--f-display); font-size: 21px; font-weight: 700; line-height: 1.1; color: #f6e3b0; }
+.cd-t { display: flex; align-items: flex-start; gap: 4px; }
+.cd-t i { font-style: normal; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,.1); border-radius: 12px; padding: 6px 0 3px; width: 62px; }
+.cd-t b { font-family: var(--f-body, Manrope), sans-serif; font-size: 32px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.cd-t small { font-size: 10px; color: var(--on-dark-2); margin-top: 2px; }
+.cd-t .s b { color: #8fe3b0; }
+.cd-t em { font-style: normal; font-size: 24px; font-weight: 800; opacity: .4; margin-top: 7px; }
+.top .row .cd + small, .top-main > small { display: block; margin-top: 8px; }
