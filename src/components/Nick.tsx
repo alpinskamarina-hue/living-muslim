@@ -2,7 +2,7 @@ import { say } from '../words';
 import { useEffect, useRef, useState } from 'react';
 import { avatarUrl, squarePhoto, EMOJIS, PATTERNS, COLORS, type AvatarPick, type AvatarKind } from '../avatar';
 import {
-  getProfile, saveProfile, nickFree, findNick, sendInvite, inbox, answerInvite, blockUser, myCircles, kindOf, cleanNick, NICK_RE,
+  getProfile, saveProfile, nickFree, findNick, findNicks, circleMates, sendInvite, inbox, answerInvite, blockUser, myCircles, kindOf, cleanNick, NICK_RE,
   type Profile, type Found, type Invite,
 } from '../cloud';
 import { shareInvite } from './CloudCircle';
@@ -172,50 +172,101 @@ const SEND_ERR: Record<string, string> = {
   error: 'Не получилось отправить. Проверь интернет и попробуй ещё раз.',
 };
 
-/** Circle → «+ Пригласить»: find by exact nick, pick a circle, send. Or share the link. */
+/** Circle → «+ Пригласить»: type the first letters of a nick, tap a person, pick a circle, send. Or share the link. */
 export function InviteByNick({ code, onBack }: { code: string; onBack: () => void }) {
   const circles = myCircles();
   const cur = circles.find((c) => c.code === code);
   const [q, setQ] = useState('');
+  const [list, setList] = useState<Found[] | null>(null);
+  const [old, setOld] = useState(false); // server without prefix search: exact nick only
   const [found, setFound] = useState<Found | null | 'none' | 'error'>(null);
+  const [mates, setMates] = useState<Found[]>([]);
   const [busy, setBusy] = useState(false);
+  const [looking, setLooking] = useState(false);
   const [to, setTo] = useState(code);
-  const [sent, setSent] = useState<Record<string, string>>({});
+  const [sent, setSent] = useState<Record<string, Record<string, string>>>({});
   const [mine, setMine] = useState(cachedProfile());
+  const seq = useRef(0);
   useEffect(() => { refreshProfile().then((ch) => ch && setMine(cachedProfile())); }, []);
+  useEffect(() => { circleMates(code).then(setMates); }, [code]);
+
+  const pick = (r: Found) => {
+    setFound(r);
+    setTo(circles.find((c) => c.code === code && !r.shared.includes(c.code))?.code ?? circles.find((c) => !r.shared.includes(c.code))?.code ?? code);
+  };
+
+  // Live search as you type, from 2 letters.
+  useEffect(() => {
+    const n = cleanNick(q);
+    if (old || n.length < 2) { setList(null); setLooking(false); return; }
+    const my = ++seq.current;
+    setLooking(true);
+    const t = setTimeout(async () => {
+      const r = await findNicks(n);
+      if (my !== seq.current) return;
+      setLooking(false);
+      if (r === 'old') { setOld(true); setList(null); return; }
+      setList(r === 'error' ? null : r);
+      if (r === 'error') setFound('error');
+    }, 280);
+    return () => clearTimeout(t);
+  }, [q, old]);
 
   const search = async () => {
     const n = cleanNick(q);
+    const exact = list?.find((x) => x.nick === n);
+    if (exact) { pick(exact); return; }
     if (n.length < 3) return;
-    setBusy(true); setSent({});
+    setBusy(true);
     const r = await findNick(n);
     setBusy(false);
-    setFound(r === 'error' ? 'error' : r ?? 'none');
-    if (r && r !== 'error') setTo(circles.find((c) => c.code === code && !r.shared.includes(c.code))?.code ?? circles.find((c) => !r.shared.includes(c.code))?.code ?? code);
+    if (r && r !== 'error') pick(r); else setFound(r === 'error' ? 'error' : 'none');
   };
   const send = async (f: Found) => {
     setBusy(true);
     const r = await sendInvite(to, f.uid);
     setBusy(false);
-    setSent((s) => ({ ...s, [to]: r }));
+    setSent((s) => ({ ...s, [f.uid]: { ...s[f.uid], [to]: r } }));
   };
 
   const title = (c: string) => circles.find((x) => x.code === c)?.title || 'Круг';
   const f = found && typeof found === 'object' ? found : null;
-  const r = sent[to];
+  const r = f ? sent[f.uid]?.[to] : undefined;
+  const n = cleanNick(q);
+  const sentTo = (x: Found) => Object.entries(sent[x.uid] ?? {}).some(([, v]) => v === 'ok');
+
+  const row = (x: Found) => (
+    <button key={x.uid} type="button" className="nk-hit" onClick={() => pick(x)}>
+      <Ava pick={x.avatar} color={x.color} photo={x.photo} name={x.name} size={42} />
+      <span className="nk-hit-t"><b>{x.name || 'Без имени'}</b><small>@{x.nick}{x.shared.length > 0 ? ` · с тобой в «${title(x.shared[0])}»${x.shared.length > 1 ? ` и ещё ${x.shared.length - 1}` : ''}` : ''}</small></span>
+      {sentTo(x) ? <em className="ok">✓</em> : x.can !== 'ok' ? <em>🔒</em> : <em>Позвать</em>}
+    </button>
+  );
 
   return (
     <div className="page">
-      <button type="button" className="link-btn pro-back" onClick={onBack}>← {cur?.title || 'Круг'}</button>
+      <button type="button" className="link-btn pro-back" onClick={f ? () => setFound(null) : onBack}>← {f ? 'К поиску' : cur?.title || 'Круг'}</button>
       <h1 className="page-h">Позвать в круг</h1>
-      <form className="nk-search" onSubmit={(e) => { e.preventDefault(); search(); }}>
-        <span aria-hidden="true">@</span>
-        <input value={q} autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="ник друга" onChange={(e) => { setQ(e.target.value.replace(/^@/, '').toLowerCase()); setFound(null); }} />
-        <button type="submit" disabled={busy || cleanNick(q).length < 3}>Найти</button>
-      </form>
+      {!f && (
+        <form className="nk-search" onSubmit={(e) => { e.preventDefault(); search(); }}>
+          <span aria-hidden="true">@</span>
+          <input value={q} autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={old ? 'ник друга' : 'начни писать ник'} onChange={(e) => { setQ(e.target.value.replace(/^@/, '').toLowerCase()); setFound(null); }} />
+          {old ? <button type="submit" disabled={busy || n.length < 3}>Найти</button> : looking ? <i className="nk-spin" aria-label="Ищу" /> : null}
+        </form>
+      )}
 
-      {found === 'none' && <div className="nk-none">Никого с ником <b>@{cleanNick(q)}</b>. Проверь написание. Человек мог скрыть себя из поиска, тогда отправь ему ссылку.</div>}
-      {found === 'error' && <div className="nk-none">Не получилось найти. Проверь интернет и попробуй ещё раз.</div>}
+      {!f && found === 'none' && <div className="nk-none">Никого с ником <b>@{n}</b>. Проверь написание. Человек мог скрыть себя из поиска, тогда отправь ему ссылку.</div>}
+      {!f && found === 'error' && <div className="nk-none">Не получилось найти. Проверь интернет и попробуй ещё раз.</div>}
+
+      {!f && list && list.length > 0 && <div className="nk-hits">{list.map(row)}</div>}
+      {!f && list && list.length === 0 && !looking && <div className="nk-none">Пока никого на <b>@{n}</b>. Попробуй другие буквы или отправь ссылку. Скрытые из поиска не показываются.</div>}
+
+      {!f && n.length < 2 && mates.length > 0 && (
+        <>
+          <div className="nk-sec">Из твоих кругов</div>
+          <div className="nk-hits">{mates.slice(0, 12).map(row)}</div>
+        </>
+      )}
 
       {f && (
         <div className="nk-card">
@@ -234,7 +285,7 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
                 })}
               </div>
               {r === 'ok' ? (
-                <div className="nk-done">✓ Приглашение в «{title(to)}» отправлено. {f.name} сам решит, вступать или нет.</div>
+                <div className="nk-done">✓ Приглашение в «{title(to)}» отправлено. {f.name || 'Человек'} увидит его сразу в приложении и сам решит, вступать или нет.</div>
               ) : (
                 <button type="button" className="pri-btn big-btn" disabled={busy || f.shared.includes(to)} onClick={() => send(f)}>{busy ? 'Отправляю…' : 'Отправить приглашение'}</button>
               )}
@@ -244,8 +295,8 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
         </div>
       )}
 
-      {!f && <p className="tiny nk-note">Человек получит запрос и сам решит, вступать или нет. Ищем только по точному нику: списка всех пользователей и поиска по имени нет, чтобы чужие не могли листать профили.</p>}
-      {!mine?.nick && <p className="tiny nk-note">У тебя пока нет ника. Его можно задать в Профиле → Мой профиль.</p>}
+      {!f && <p className="tiny nk-note">Ищем по нику, от двух букв. По имени и почте искать нельзя, а кто скрыл себя из поиска, не показывается. Человек увидит приглашение в приложении и сам решит, вступать или нет.</p>}
+      {!mine?.nick && <p className="tiny nk-note">У тебя пока нет ника. Его можно задать в Профиле → Мой профиль, тогда тебя тоже смогут найти.</p>}
 
       <div className="nk-sec">Или по ссылке</div>
       <button type="button" className="nk-share" onClick={() => shareInvite(to || code)}>Поделиться ссылкой в WhatsApp, Telegram…</button>
@@ -253,18 +304,41 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
   );
 }
 
+// Invites waiting for me, shared by the Circle tab badge, the Today banner and the inbox,
+// so answering one updates every place at once. Checked on open, on return to the app and every 2 minutes.
+let invList: Invite[] = [];
+let invAt = 0;
+const invSubs = new Set<(l: Invite[]) => void>();
+function setInvites(l: Invite[]) {
+  invList = l;
+  invSubs.forEach((f) => f(l));
+  try { const n = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; if (l.length) n.setAppBadge?.(l.length)?.catch(() => {}); else n.clearAppBadge?.()?.catch(() => {}); } catch { /* */ }
+}
+export function refreshInvites(force = false) {
+  if (!force && Date.now() - invAt < 15000) return;
+  invAt = Date.now();
+  inbox().then(setInvites);
+}
+export function useInvites(on = true): Invite[] {
+  const [l, setL] = useState(invList);
+  useEffect(() => {
+    if (!on) return;
+    invSubs.add(setL);
+    refreshInvites();
+    const v = () => { if (document.visibilityState === 'visible') refreshInvites(); };
+    document.addEventListener('visibilitychange', v);
+    const t = setInterval(() => { if (document.visibilityState === 'visible') refreshInvites(true); }, 120000);
+    return () => { invSubs.delete(setL); document.removeEventListener('visibilitychange', v); clearInterval(t); };
+  }, [on]);
+  return l;
+}
+
 /** Invites waiting for me, shown on top of the Circle tab. */
 export function InviteInbox() {
-  const [list, setList] = useState<Invite[]>([]);
+  const list = useInvites();
+  const setList = (f: (l: Invite[]) => Invite[]) => setInvites(f(invList));
   const [busy, setBusy] = useState('');
   const [menu, setMenu] = useState('');
-  useEffect(() => {
-    const load = () => inbox().then(setList);
-    load();
-    const v = () => { if (document.visibilityState === 'visible') load(); };
-    document.addEventListener('visibilitychange', v);
-    return () => document.removeEventListener('visibilitychange', v);
-  }, []);
   if (!list.length) return null;
 
   const answer = async (inv: Invite, yes: boolean) => {

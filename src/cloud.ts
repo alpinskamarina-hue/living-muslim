@@ -216,6 +216,21 @@ export async function findNick(nick: string): Promise<Found | null | 'error'> {
   try { return await rpc<Found | null>('lm_find', { p_uid: me.uid, p_token: me.token, p_nick: cleanNick(nick) }); } catch { return 'error'; }
 }
 
+/** Nicks that start with q (2+ characters), privacy rules applied on the server. 'old' when the server lacks lm_find_many. */
+export async function findNicks(q: string): Promise<Found[] | 'old' | 'error'> {
+  const me = load();
+  if (!me) return 'error';
+  try { return (await rpc<Found[] | null>('lm_find_many', { p_uid: me.uid, p_token: me.token, p_q: cleanNick(q) })) ?? []; }
+  catch (e) { return / 404$/.test(String((e as Error)?.message ?? e)) ? 'old' : 'error'; }
+}
+
+/** People from my other circles who are not yet in this one and accept invites. */
+export async function circleMates(code: string): Promise<Found[]> {
+  const me = load();
+  if (!me) return [];
+  try { return (await rpc<Found[] | null>('lm_circle_mates', { p_uid: me.uid, p_token: me.token, p_code: code })) ?? []; } catch { return []; }
+}
+
 /** 'ok' | 'closed' | 'already_in' | 'wrong_kind' | 'limit' | 'full' | 'not_member' | 'error' */
 export async function sendInvite(code: string, to: string): Promise<string> {
   const me = load();

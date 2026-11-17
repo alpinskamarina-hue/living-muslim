@@ -31,7 +31,7 @@ interface Props {
   onReview: () => void;
   onRamadan: (tab?: 'prep' | 'day' | 'fast' | 'quran' | 'nights' | 'eid') => void;
   onGarden: () => void;
-  support?: { text: string; onOpen: () => void }[];
+  support?: { text: string; onOpen: () => void; cls?: string }[];
 }
 
 export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek }: Props) {
@@ -127,7 +127,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
           </button>
         )}
         {(support ?? []).map((x, i) => (
-          <button key={i} type="button" className="circle-line support" onClick={x.onOpen}>
+          <button key={i} type="button" className={`circle-line support${x.cls ? ` ${x.cls}` : ""}`} onClick={x.onOpen}>
             <span>{x.text}</span><span aria-hidden="true">›</span>
           </button>
         ))}

@@ -1816,3 +1816,18 @@ button:disabled { opacity: .5; cursor: default; }
 .adm-recent span { min-width: 0; }
 .adm-recent span b, .adm-recent span small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adm-recent small { color: var(--ink-2); font-size: 12px; flex: none; }
+
+/* Nick search results and the invite badge */
+.nk-hits { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 6px; }
+.nk-hit { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 8px 10px; color: var(--ink); }
+.nk-hit .nk-hit-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nk-hit b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nk-hit small { color: var(--ink-2); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nk-hit em { font-style: normal; font-size: 12.5px; font-weight: 700; color: var(--green-2); background: var(--green-soft, rgba(46,125,90,.1)); border-radius: 10px; padding: 6px 10px; flex: none; }
+.nk-hit em.ok { color: #fff; background: var(--green-2); }
+.nk-hit:active { transform: scale(.99); }
+.nk-spin { width: 18px; height: 18px; margin-right: 8px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--green-2); animation: nkspin .7s linear infinite; flex: none; }
+@keyframes nkspin { to { transform: rotate(360deg); } }
+.nav .k { position: relative; }
+.nav-badge { position: absolute; top: 2px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: #e5484d; color: #fff; font-size: 11px; font-weight: 800; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--surface); font-style: normal; }
+.circle-line.support.invite { background: var(--gold-soft); font-weight: 600; }

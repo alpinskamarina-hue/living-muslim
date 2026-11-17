@@ -33,6 +33,7 @@ import { weekTotals } from './gamify';
 import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { FirstWeek, Hint } from './components/Guide';
+import { useInvites } from './components/Nick';
 import type { GoTo } from './guide';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
@@ -54,6 +55,7 @@ export function App() {
     return 'today';
   });
   const [now, setNow] = useState(() => new Date());
+  const invites = useInvites(isCloud);
   const [sheet, setSheet] = useState<null | { editing?: Habit; anchor: Anchor }>(null);
 
   useEffect(() => {
@@ -146,7 +148,12 @@ export function App() {
   const circleToday = circle.members.filter((m) => m.id !== circle.me && m.day === today && (m.done > 0 || m.prayers > 0));
 
   // Support from the circle for me today: who made dua and who nudged me.
-  const support: { text: string; onOpen: () => void }[] = [];
+  const support: { text: string; onOpen: () => void; cls?: string }[] = [];
+  if (invites.length) {
+    const f = invites[0];
+    support.push({ cls: 'invite', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); },
+      text: invites.length === 1 ? `🔔 ${f.from.name || 'Кто-то'} зовёт тебя в круг «${f.title || 'Круг'}»` : `🔔 ${invites.length} приглашения в круги ждут ответа` });
+  }
   if (joined && circle.me) {
     const name = (id: string) => circle.names[id]?.name || 'Друг';
     const duaFrom: string[] = [], nudgeFrom: string[] = [];
@@ -214,8 +221,8 @@ export function App() {
 
       <nav className="nav" aria-label="Разделы">
         {(Object.keys(LABELS) as Tab[]).map((t) => (
-          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
-            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg></span>
+          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? `${LABELS[t]}, приглашений: ${invites.length}` : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
+            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}</span>
             <small>{LABELS[t]}</small>
           </button>
         ))}
