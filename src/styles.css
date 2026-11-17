@@ -1351,3 +1351,38 @@ button:disabled { opacity: .5; cursor: default; }
 /* Video must not shrink inside flex columns (the rite screen), or only the sound is left. */
 .um-player { flex: none; height: 0; padding-top: 56.25%; aspect-ratio: auto; min-height: 180px; }
 .um-stepvid { flex: none; display: grid; gap: 6px; } .um-stepvid small { font-size: 12px; color: var(--ink-2); }
+
+/* Umrah counter as a scene: the Kaaba from above, or Safa and Marwa */
+.scene-btn { width: min(88vw, 340px); aspect-ratio: 1; padding: 0; border: 0; background: none; border-radius: 50%; touch-action: manipulation; user-select: none; }
+.scene-btn:active { transform: scale(.99); }
+.scene { width: 100%; height: 100%; display: block; }
+.sc-floor { fill: #f4f1ea; stroke: var(--line); }
+.sc-crowd { fill: #c9c2b4; }
+.sc-lap { fill: none; stroke: rgba(15, 81, 50, .08); stroke-width: 9; stroke-linecap: round; }
+.sc-lap.now { stroke: var(--green-2); stroke-opacity: .35; stroke-dasharray: .012 .02; animation: sc-walk 6s linear infinite; }
+.sc-lap.done { stroke: var(--gold); stroke-opacity: .9; }
+.sc-lap.fresh { stroke-dasharray: 1; stroke-dashoffset: 1; animation: sc-draw 1.4s ease-out forwards; }
+@keyframes sc-draw { to { stroke-dashoffset: 0; } }
+@keyframes sc-walk { to { stroke-dashoffset: -.064; } }
+.sc-start { stroke: #2f9e5f; stroke-width: 2; stroke-dasharray: 3 3; }
+.sc-hijr { fill: rgba(185, 176, 156, .25); stroke: #b9b09c; stroke-width: 4; stroke-linecap: round; }
+.sc-maqam { fill: var(--gold); stroke: #fff; stroke-width: 1.5; }
+.sc-kaaba { fill: #111; }
+.sc-band { fill: none; stroke: #c9a24a; stroke-width: 3; transform: scale(.82); transform-box: fill-box; transform-origin: center; }
+.sc-door { fill: #c9a24a; }
+.sc-stone { fill: #3a2a1a; stroke: #c9a24a; stroke-width: 1.5; }
+.sc-me { fill: var(--green-2); stroke: #fff; stroke-width: 2.5; filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+.sc-lbl { font: 600 9px var(--f-body); fill: #5f5747; paint-order: stroke; stroke: #f4f1ea; stroke-width: 3px; stroke-linejoin: round; }
+.sc-dir { font: 700 18px var(--f-body); fill: var(--green-2); opacity: .7; }
+.sc-green { fill: rgba(47, 158, 95, .16); }
+.sc-hill { fill: #e4dccb; }
+.sc-name { font: 700 13px var(--f-body); fill: #5b5141; }
+.sc-arrow { font-size: 9px; fill: var(--green-2); opacity: .5; }
+.sc-num { font: 700 11px var(--f-body); fill: #5f5747; paint-order: stroke; stroke: #f4f1ea; stroke-width: 3px; }
+.scene-btn.sure .sc-me { fill: var(--late); }
+.scene-count { display: flex; align-items: baseline; gap: 10px; justify-content: center; text-align: left; }
+.scene-count .lap-n { color: var(--green); font-size: 54px; }
+.scene-count.done .lap-n { color: var(--gold); }
+.scene-count .lap-t { color: var(--ink-2); max-width: 190px; }
+.scene-tap { width: min(88vw, 340px); font-size: 17px; padding: 16px; border-radius: 18px; }
+.scene-tap.sure { background: var(--late); }

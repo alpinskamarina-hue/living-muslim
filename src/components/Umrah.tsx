@@ -3,6 +3,7 @@ import type { AppState, UmrahState } from '../types';
 import { IHRAM_RULES, PREP, ROUND_IDEAS, STEPS, type Step } from '../umrah/guide';
 import { uid } from '../store';
 import { UMRAH_VIDEOS, embed } from '../umrah/videos';
+import { SaeeScene, TawafScene } from './LapScene';
 
 interface Props {
   state: AppState;
@@ -152,14 +153,16 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
         {!step.counter && <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />}
         {step.counter && (
           <div className="lap-wrap">
-            <div className="lap-ring" style={{ ['--p' as string]: n / 7 }}>
-              <button type="button" className={`lap${n === 7 ? ' done' : ''}${sure ? ' sure' : ''}`} onClick={tap} aria-label="Отметить круг">
-                <span className="lap-n">{n}<small>/7</small></span>
-                <span className="lap-t">{n === 7 ? 'Готово, машаАллах'
-                  : sure ? 'Так быстро? Нажми ещё раз, если правда закончил'
-                  : step.counter === 'tawaf' ? `Нажми, когда закончишь ${n + 1}-й круг` : `Проход ${n + 1}: ${saeeDir(n + 1)}`}</span>
-              </button>
+            <button type="button" className={`scene-btn${sure ? ' sure' : ''}`} onClick={tap} aria-label="Отметить круг">
+              {step.counter === 'tawaf' ? <TawafScene n={n} /> : <SaeeScene n={n} />}
+            </button>
+            <div className={`scene-count${n === 7 ? ' done' : ''}`}>
+              <span className="lap-n">{n}<small>/7</small></span>
+              <span className="lap-t">{n === 7 ? 'Готово, машаАллах'
+                : sure ? 'Так быстро? Нажми ещё раз, если правда закончил'
+                : step.counter === 'tawaf' ? `Круг ${n + 1}: нажми, когда снова дойдёшь до Чёрного камня` : `Проход ${n + 1}: ${saeeDir(n + 1)}`}</span>
             </div>
+            {n < 7 && <button type="button" className={`pri-btn scene-tap${sure ? ' sure' : ''}`} onClick={tap}>{sure ? 'Да, пройден' : step.counter === 'tawaf' ? 'Круг пройден' : 'Проход пройден'}</button>}
             <div className="row2 light">
               <button type="button" onClick={() => setN(n - 1)} disabled={n === 0}>− Ошибся</button>
               <button type="button" onClick={() => setN(0)} disabled={n === 0}>Сбросить</button>
