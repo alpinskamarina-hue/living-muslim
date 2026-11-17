@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { dayLight, journey } from '../gamify';
 import type { Anchor, AppState, Habit, Mark } from '../types';
@@ -25,6 +26,7 @@ interface Props {
   onAdd: (a: Anchor) => void;
   circleLine?: { names: string[]; onOpen: () => void };
   onSafar: () => void;
+  firstWeek?: React.ReactNode;
   onGoal: (id: string) => void;
   onReview: () => void;
   onRamadan: (tab?: 'prep' | 'day' | 'fast' | 'quran' | 'nights' | 'eid') => void;
@@ -32,7 +34,7 @@ interface Props {
   support?: { text: string; onOpen: () => void }[];
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -146,6 +148,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         )}
         <RamadanToday state={state} update={update} today={today} now={now} times={times} onOpen={onRamadan} />
         <PrayerStrip state={state} update={update} today={today} now={now} times={times} />
+        {firstWeek}
         {circleLine && (
           <button type="button" className="circle-line" onClick={circleLine.onOpen}>
             <span><b>{circleLine.names.slice(0, 2).join(' и ')}</b>{circleLine.names.length > 2 ? ` и ещё ${circleLine.names.length - 2}` : ''} уже {circleLine.names.length > 1 ? 'отметились' : 'отметился'} сегодня</span>

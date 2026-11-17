@@ -32,6 +32,8 @@ import { ramadanHidden } from './rplan';
 import { weekTotals } from './gamify';
 import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
+import { FirstWeek, Hint } from './components/Guide';
+import type { GoTo } from './guide';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
 
@@ -158,6 +160,18 @@ export function App() {
     if (duaFrom.length) support.push({ text: `🤲 ${duaFrom.join(', ')} ${duaFrom.length > 1 ? 'сделали' : 'сделал(а)'} за тебя дуа`, onOpen: open });
   }
 
+  // Guide buttons: open any part of the app.
+  const go = (t: GoTo) => {
+    window.scrollTo(0, 0);
+    if ('tab' in t) { if (t.tab === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); setTab(t.tab); return; }
+    if ('practice' in t) { setPracticeStart((x) => ({ n: x.n + 1, mode: t.practice })); setTab('practice'); return; }
+    if ('profile' in t) { setProfileStart((x) => ({ p: t.profile, n: x.n + 1 })); setTab('profile'); return; }
+    if ('add' in t) { setTab('today'); setSheet({ anchor: current }); return; }
+    if ('ramadan' in t) { setRamadan('auto'); return; }
+    if ('safar' in t) { setSafar(true); return; }
+    if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
+  };
+
   const nextUp = state.habits.find((h) => h.status === 'active' && h.anchor === current && !state.log[today]?.[h.id]);
 
   return (
@@ -167,17 +181,19 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || 'Участник'), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
         {tab === 'today' && <GiftNudge today={today} />}
+        {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (
           <div className="page">
+            {!goalOpen && !reviewOpen && <Hint id="goals" />}
             <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />}
               onDo={(st) => { window.scrollTo(0, 0); if (st.action === 'today') { setTab('today'); return; } setPracticeStart((x) => ({ n: x.n + 1, mode: st.action, ref: st.ref })); setTab('practice'); }}
               onCircle={() => { window.scrollTo(0, 0); setTab('circle'); }} />
@@ -185,7 +201,7 @@ export function App() {
           </div>
         )}
         {tab === 'profile' && (
-          <Profile key={profileStart.n} start={profileStart.p} state={state} update={update} replace={replace} times={times} onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} />
+          <Profile onGo={go} key={profileStart.n} start={profileStart.p} state={state} update={update} replace={replace} times={times} onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} />
         )}
       </main>
 

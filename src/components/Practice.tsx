@@ -1,3 +1,4 @@
+import { Hint } from './Guide';
 import { say, type Trigger } from '../words';
 import { useEffect, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
@@ -125,6 +126,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     <div className="page">
       <h1 className="page-h">Практика</h1>
       <p className="page-sub">Сделай привычку здесь. Когда закончишь, она отметится сама.</p>
+      <Hint id="practice" />
 
       {now && (
         <div className="pnow">

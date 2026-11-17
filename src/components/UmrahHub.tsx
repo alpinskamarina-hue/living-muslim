@@ -1,3 +1,4 @@
+import { Hint } from './Guide';
 import { useEffect, useState } from 'react';
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi } from '../umrahCircle';
@@ -107,6 +108,8 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           <b>Ты в ихраме</b><small>тальбия и запреты ›</small>
         </button>
       )}
+
+      <Hint id="umrah" />
 
       {/* Now: changes by the days left, so the person sees only what matters today. */}
       <div className="um-now">
