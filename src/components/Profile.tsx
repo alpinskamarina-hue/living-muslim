@@ -1,5 +1,7 @@
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
+import { Garden } from './Garden';
+import { garden, journey } from '../gamify';
 import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
@@ -16,15 +18,17 @@ interface Props {
   replace: (s: AppState) => void;
   times: DayTimes;
   onEdit: (h: Habit) => void;
+  start?: Page;
 }
 
-export function Profile({ state, update, replace, times, onEdit }: Props) {
+export function Profile({ state, update, replace, times, onEdit, start }: Props) {
   const s = state.settings;
   const set = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
-  const [page, setPage] = useState<Page>('main');
+  const [page, setPage] = useState<Page>(start ?? 'main');
   const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
   const back = () => go('main');
 
+  if (page === 'garden') return <Sub title="Мой сад" onBack={back}><Garden state={state} today={dayKey(new Date())} /></Sub>;
   if (page === 'pro') return <ProPlans onBack={back} />;
   if (page === 'prayer') return <Sub title="Намазы" onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
   if (page === 'habits') return <Sub title="Мои привычки" onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
@@ -36,6 +40,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
 
   const me = authMe();
   const st = stats(state);
+  const gd = garden(journey(state, dayKey(new Date())).lit);
   const used = slotsUsed(state);
   const name = s.name.trim() || me?.name || 'Друг';
   const methodName = METHODS.find((m) => m.id === s.method)?.ru ?? '';
@@ -66,6 +71,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
       </button>
 
       <div className="menu">
+        <Row icon="🌳" title="Мой сад" sub={`${gd.leaves} ${plural(gd.leaves, 'лист', 'листа', 'листьев')} · до плода ${gd.toFruit} ${plural(gd.toFruit, 'день', 'дня', 'дней')} · вехи`} onClick={() => go('garden')} />
         {!onClaude && <Row icon="👤" title="Аккаунт" sub={me ? `${me.email} · имя «${name}»` : 'Войти по почте, имя'} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
         <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
@@ -82,7 +88,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
   );
 }
 
-type Page = 'main' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'main' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

@@ -13,6 +13,7 @@ export interface Member {
   prayers: number;
   ontime: number;
   goals?: { t: string; p: number }[];
+  week?: { p: number; h: number }; // prayers and habit marks over the last 7 days, for the common counter
   fast?: boolean; // Ramadan fast today; reasons for not fasting are never shared
   updated: string;
 }
@@ -31,6 +32,8 @@ export interface CircleApi {
   leave: () => Promise<void>;
   push: (m: Omit<Member, 'id' | 'updated'>) => Promise<void>;
   react: (to: string, e: string, day: string) => Promise<void>;
+  /** Nudges live in the same map as reactions, under the key "n:<to>". */
+  nudge: (to: string, day: string) => Promise<void>;
 }
 
 async function capability(name: string): Promise<any> {
@@ -128,6 +131,14 @@ export function useCircle(): CircleApi {
     leave: () => serial(async () => {
       if (!db.current || !me) return;
       try { await db.current.doc(`circle/${me}`).delete(); lastPushed.current = ''; } catch { setError('Не удалось выйти из круга.'); }
+    }),
+    nudge: (to, day) => serial(async () => {
+      if (!db.current || !me) return;
+      const mine = { ...(reacts[me] ?? {}) };
+      const k = `n:${to}`;
+      if (mine[k]?.day === day) delete mine[k];
+      else mine[k] = { e: 'nudge', day };
+      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError('Не удалось подтолкнуть.'); }
     }),
     react: (to, e, day) => serial(async () => {
       if (!db.current || !me) return;

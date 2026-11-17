@@ -23,6 +23,8 @@ import { here, tripOn } from './safar';
 import { Safar } from './components/Safar';
 import { Ramadan } from './components/Ramadan';
 import { ramadanHidden } from './rplan';
+import { weekTotals } from './gamify';
+import type { Page as ProfilePage } from './components/Profile';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
 
@@ -72,6 +74,8 @@ export function App() {
   const [ramadan, setRamadan] = useState(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [profileStart, setProfileStart] = useState<{ p: ProfilePage; n: number }>({ p: 'main', n: 0 });
+  const openGarden = () => { setProfileStart((x) => ({ p: 'garden', n: x.n + 1 })); setTab('profile'); window.scrollTo(0, 0); };
   useEffect(() => { update((s) => snapshot(s, today)); }, [today, state.quran, state.books, state.summaryRead, state.course, state.prayers, state.health, state.umrah, state.log, state.goals?.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const current = windowState(times, now).current ?? 'fajr';
 
@@ -99,6 +103,7 @@ export function App() {
     prayers: Object.keys(prayersToday).length,
     ontime: Object.values(prayersToday).filter((m) => m === 'ontime').length,
     ...(inRamadan(today) && state.ramadan?.fasts?.[today] === 'fast' ? { fast: true } : {}),
+    week: weekTotals(state, today),
     goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
@@ -111,6 +116,21 @@ export function App() {
   }, [summaryKey, joined]); // eslint-disable-line react-hooks/exhaustive-deps
   const circleToday = circle.members.filter((m) => m.id !== circle.me && m.day === today && (m.done > 0 || m.prayers > 0));
 
+  // Support from the circle for me today: who made dua and who nudged me.
+  const support: { text: string; onOpen: () => void }[] = [];
+  if (joined && circle.me) {
+    const name = (id: string) => circle.names[id]?.name || 'Друг';
+    const duaFrom: string[] = [], nudgeFrom: string[] = [];
+    for (const [from, map] of Object.entries(circle.reacts)) {
+      if (from === circle.me) continue;
+      if (map?.[circle.me]?.e === '🤲' && map[circle.me].day === today) duaFrom.push(name(from));
+      if (map?.[`n:${circle.me}`]?.day === today) nudgeFrom.push(name(from));
+    }
+    const open = () => setTab('circle');
+    if (nudgeFrom.length && summary.done === 0 && summary.prayers === 0) support.push({ text: `${nudgeFrom.join(', ')} ${nudgeFrom.length > 1 ? 'напоминают' : 'напоминает'}: даже минимум считается`, onOpen: open });
+    if (duaFrom.length) support.push({ text: `🤲 ${duaFrom.join(', ')} ${duaFrom.length > 1 ? 'сделали' : 'сделал(а)'} за тебя дуа`, onOpen: open });
+  }
+
   const nextUp = state.habits.find((h) => h.status === 'active' && h.anchor === current && !state.log[today]?.[h.id]);
 
   return (
@@ -119,7 +139,7 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || 'Участник'), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} onGarden={openGarden} support={support}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'circle' && (
@@ -132,7 +152,7 @@ export function App() {
           </div>
         )}
         {tab === 'profile' && (
-          <Profile state={state} update={update} replace={replace} times={times} onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} />
+          <Profile key={profileStart.n} start={profileStart.p} state={state} update={update} replace={replace} times={times} onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} />
         )}
       </main>
 
@@ -145,7 +165,7 @@ export function App() {
 
       <nav className="nav" aria-label="Разделы">
         {(Object.keys(LABELS) as Tab[]).map((t) => (
-          <button key={t} type="button" className={tab === t ? 'on' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => setTab(t)}>
+          <button key={t} type="button" className={tab === t ? 'on' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); setTab(t); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{ICONS[t]}</svg>
             {LABELS[t]}
           </button>
