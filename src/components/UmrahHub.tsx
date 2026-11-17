@@ -12,6 +12,7 @@ import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
 import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
 import { Badal, MadinahGuide, WhenToGo } from './UmrahExtra';
 import { UmrahBook } from './UmrahBook';
+import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -64,6 +65,9 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
   const asks = Object.entries(duas).flatMap(([who, m]) => myTrips.flatMap((h) => (m?.[h] ?? []).map((text, i) => ({ key: `${who}:${h}:${i}`, who, text }))));
   // While in Makkah, ticked requests are shared back, so the person who asked learns it was made.
   const askedKey = (u.asked ?? []).join(',');
+  const groupHost = myTrips[0];
+  const groupMembers = groupHost ? [...new Set([groupHost, ...Object.entries(rsvp).filter(([, r]) => r[groupHost]?.s === 'go').map(([id]) => id)])] : [];
+  useStopSharingAfter(state, update, api, phase === 'there');
   useEffect(() => {
     if (phase !== 'there' || !me) return;
     for (const h of myTrips) {
@@ -127,6 +131,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
             <b>Ты в пути. Ляббайк, Аллахумма ляббайк</b>
             <p>Гид работает без интернета. Таваф {u.tawaf}/7, саи {u.saee}/7.</p>
             <LeaveForPrayer state={state} />
+            {groupHost && me && <GroupRadar state={state} update={update} api={api} host={groupHost} members={groupMembers} nameOf={nameOf} />}
             <Diary state={state} update={update} today={today} />
             <div className="os-row">
               <button type="button" onClick={() => setLost(true)}>🆘 Я потерялся</button>
@@ -229,7 +234,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           {(phase === 'none' || phase === 'done') && <WhenToGo today={today} />}
           {(phase === 'week' || phase === 'there') && <OnSiteSetup state={state} update={update} />}
           {phase !== 'there' && phase !== 'after' && phase !== 'done' && <UmrahBook state={state} update={update} from={from} to={to} />}
-          <UmrahSavings state={state} update={update} today={today} />
+          <UmrahSavings state={state} update={update} today={today} api={api} nameOf={nameOf} />
           {phase !== 'week' && phase !== 'there' && <OnSiteSetup state={state} update={update} />}
           {api.me ? (
             <UmrahTrips api={api} myReady={prepPct(state)} nameOf={nameOf} embedded />

@@ -32,6 +32,13 @@ export interface URsvp {
   made?: string[]; // dua requests I made in Makkah: `${from}:${host}:${i}`
 }
 
+/** A savings box for someone's umrah that several people fill (a mother, a father). */
+export interface UShared { id: string; for: string; goal: number; cur: string; by?: string }
+/** My doc in umrahFund: boxes I started, and what I put into anyone's box (key `${owner}:${id}`). */
+export interface UFundDoc { own?: UShared[]; gave?: Record<string, { d: string; amt: number }[]> }
+/** Where I am right now, shared with my trip group while I am there. */
+export interface ULoc { host: string; lat: number; lng: number; acc?: number; t: number }
+
 export interface UmrahApi {
   ready: boolean;
   me: string | null;
@@ -39,7 +46,11 @@ export interface UmrahApi {
   rsvp: Record<string, Record<string, URsvp>>; // user -> host -> rsvp
   duas: Record<string, Record<string, string[]>>; // user -> host -> requests
   names: Record<string, string>;
+  funds: Record<string, UFundDoc>; // by user
+  locs: Record<string, ULoc>; // by user
   error: string;
+  saveFund: (doc: UFundDoc) => Promise<void>;
+  saveLoc: (l: ULoc | null) => Promise<void>;
   saveTrip: (t: UTrip) => Promise<void>;
   deleteTrip: () => Promise<void>;
   respond: (host: string, p: Partial<URsvp>) => Promise<void>;
@@ -58,6 +69,8 @@ export function useUmrahCircle(): UmrahApi {
   const [trips, setTrips] = useState<UmrahApi['trips']>({});
   const [rsvp, setRsvp] = useState<UmrahApi['rsvp']>({});
   const [duas, setDuasState] = useState<UmrahApi['duas']>({});
+  const [funds, setFunds] = useState<UmrahApi['funds']>({});
+  const [locs, setLocs] = useState<UmrahApi['locs']>({});
   const [names, setNames] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const writing = useRef<Promise<void>>(Promise.resolve());
@@ -79,11 +92,13 @@ export function useUmrahCircle(): UmrahApi {
       sub('umrahTrip', setTrips);
       sub('umrahRsvp', setRsvp);
       sub('umrahDua', setDuasState);
+      sub('umrahFund', setFunds);
+      sub('umrahLoc', setLocs);
     })();
     return () => { alive = false; unsubs.forEach((f) => f()); };
   }, []);
 
-  const ids = [...new Set([...Object.keys(trips), ...Object.keys(rsvp), ...Object.keys(duas), ...Object.values(trips).flatMap((t) => [t.amir ?? '', ...(t.tasks ?? []).map((x) => x.who ?? '')])])].filter(Boolean).sort();
+  const ids = [...new Set([...Object.keys(trips), ...Object.keys(rsvp), ...Object.keys(duas), ...Object.keys(funds), ...Object.keys(locs), ...Object.values(trips).flatMap((t) => [t.amir ?? '', ...(t.tasks ?? []).map((x) => x.who ?? '')])])].filter(Boolean).sort();
   const idsKey = ids.join(',');
   useEffect(() => {
     if (!user.current || !ids.length) return;
@@ -100,7 +115,12 @@ export function useUmrahCircle(): UmrahApi {
   const fail = (e: any) => setError(e?.code === 'invalid_argument' || e?.code === 'permission_denied' ? 'Нет права писать. Попроси владельца дать доступ «Участник».' : 'Не удалось сохранить, попробуй ещё раз.');
 
   return {
-    ready, me, trips, rsvp, duas, names, error,
+    ready, me, trips, rsvp, duas, names, error, funds, locs,
+    saveFund: (d) => serial(async () => { if (!db.current || !me) return; try { await db.current.doc(`umrahFund/${me}`).set(JSON.parse(JSON.stringify(d))); setError(''); } catch (e) { fail(e); } }),
+    saveLoc: (l) => serial(async () => {
+      if (!db.current || !me) return;
+      try { if (l) await db.current.doc(`umrahLoc/${me}`).set(l); else await db.current.doc(`umrahLoc/${me}`).delete(); } catch { /* quiet: location is best effort */ }
+    }),
     saveTrip: (t) => serial(async () => { if (!db.current || !me) return; try { await db.current.doc(`umrahTrip/${me}`).set(JSON.parse(JSON.stringify(t))); setError(''); } catch (e) { fail(e); } }),
     deleteTrip: () => serial(async () => { if (!db.current || !me) return; try { await db.current.doc(`umrahTrip/${me}`).delete(); } catch (e) { fail(e); } }),
     respond: (host, p) => serial(async () => {
@@ -119,7 +139,7 @@ export function useUmrahCircle(): UmrahApi {
   };
 }
 
-export const UMRAH_RULES = ['umrahTrip', 'umrahRsvp', 'umrahDua'].flatMap((c) => [
+export const UMRAH_RULES = ['umrahTrip', 'umrahRsvp', 'umrahDua', 'umrahFund', 'umrahLoc'].flatMap((c) => [
   { path: c, read: 'view', write: 'owner' },
   { path: `${c}/{self}`, read: 'view', write: 'interact' },
 ]);

@@ -198,6 +198,8 @@ export interface UmrahState {
   madeSeen?: string[];
   /** Days I did the walking norm (YYYY-MM-DD). */
   walk?: string[];
+  /** Share my place with my trip group while there (this device). */
+  shareLoc?: boolean;
   /** Trip pieces ready: visa, flight, hotel, esim, insure. */
   booked?: string[];
   /** Talbiya phrases I know by heart (indexes 0..3). */
