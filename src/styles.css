@@ -7,7 +7,7 @@
   --f-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-ar: "Amiri", "Noto Naskh Arabic", serif;
   --s-faith: #1f7a4d; --s-body: #c0622b; --s-food: #7d9a2e; --s-mind: #6d5bb8; --s-biz: #b88a2c; --s-family: #b8506e;
-  --nav-h: 64px;
+  --nav-h: 84px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -1183,3 +1183,20 @@ button:disabled { opacity: .5; cursor: default; }
 .cd-t .s b { color: #8fe3b0; }
 .cd-t em { font-style: normal; font-size: 24px; font-weight: 800; opacity: .4; margin-top: 7px; }
 .top .row .cd + small, .top-main > small { display: block; margin-top: 8px; }
+
+/* ---- 3D tab keys ---- */
+.nav { background: linear-gradient(var(--surface-2), var(--surface)); padding-top: 10px; gap: 4px; }
+.nav button { gap: 5px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.nav button small { font-size: 11px; font-weight: 600; }
+.nav .k { width: 52px; height: 42px; border-radius: 14px; display: grid; place-items: center; color: var(--ink-2);
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  box-shadow: 0 4px 0 var(--key-edge, #c9d6cb), 0 6px 10px rgba(20, 38, 28, .12), inset 0 1px 0 rgba(255, 255, 255, .7);
+  transform: translateY(-2px); transition: transform .09s ease, box-shadow .09s ease, background .2s; }
+.nav button.on .k { color: #fff; background: linear-gradient(180deg, #2a8f5b, #1a6b43);
+  box-shadow: 0 4px 0 #0f4a2d, 0 6px 12px rgba(15, 81, 50, .35), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.nav button.on small { color: var(--green-2); font-weight: 800; }
+.nav button:active .k { transform: translateY(2px); box-shadow: 0 0 0 var(--key-edge, #c9d6cb), 0 1px 2px rgba(20, 38, 28, .15), inset 0 2px 4px rgba(20, 38, 28, .14); }
+.nav button.on:active .k { box-shadow: 0 0 0 #0f4a2d, 0 1px 2px rgba(15, 81, 50, .3), inset 0 2px 4px rgba(0, 0, 0, .2); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nav { --key-edge: #0b1510; } :root:not([data-theme="light"]) .nav .k { box-shadow: 0 4px 0 #0b1510, 0 6px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); } }
+:root[data-theme="dark"] .nav .k { box-shadow: 0 4px 0 #0b1510, 0 6px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); }
+@media (prefers-reduced-motion: reduce) { .nav .k { transition: none; } }
