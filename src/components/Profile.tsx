@@ -58,15 +58,16 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   return (
     <div className="page">
       <div className="me-card">
-        <div className="me-top">
-          {isCloud && nicks && prof?.avatar ? <button type="button" className="me-avb" onClick={() => go('me')} aria-label="Мой профиль"><Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} /></button>
+        <button type="button" className="me-top me-edit" onClick={() => go(isCloud && nicks ? 'me' : 'account')} aria-label="Изменить профиль">
+          {isCloud && nicks && prof?.avatar ? <Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} />
             : <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
-          <div>
+          <span className="me-txt">
             <b>{name}</b>
             <small>{prof?.nick ? `@${prof.nick}` : me?.email ?? 'Вход по почте не выполнен'}</small>
-            <small>С нами {st.days} {plural(st.days, 'день', 'дня', 'дней')}</small>
-          </div>
-        </div>
+            {prof?.bio ? <small>{prof.bio}</small> : <small>С нами {st.days} {plural(st.days, 'день', 'дня', 'дней')}</small>}
+          </span>
+          <span className="me-pen">✎ Изменить</span>
+        </button>
         <div className="me-stats">
           <div><b>{st.onTime}<i>/35</i></b><small>намазов вовремя за неделю</small></div>
           <div><b>{st.formed}</b><small>{plural(st.formed, 'привычка закреплена', 'привычки закреплены', 'привычек закреплено')}</small></div>
