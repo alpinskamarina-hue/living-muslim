@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AppState, UmrahState } from '../types';
 import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
 import { uid } from '../store';
+import { UMRAH_VIDEOS, embed } from '../umrah/videos';
 
 interface Props {
   state: AppState;
@@ -122,6 +123,7 @@ export function StepView({ step, state, update, onBack, onNext }: { step: Step; 
           </div>
         )}
         <div className="md">{step.body.map((b) => <p key={b}>{b}</p>)}</div>
+        <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />
         {step.dua?.map((d) => (
           <div key={d.ar} className="h-card dua">
             <p className="ar-dua" lang="ar" dir="rtl">{d.ar}</p>
@@ -137,5 +139,18 @@ export function StepView({ step, state, update, onBack, onNext }: { step: Step; 
         )}
       </div>
     </div>
+  );
+}
+
+/** The lesson for this rite, if there is one in the chosen language. */
+function StepVideo({ stepId, lang }: { stepId: string; lang: 'ru' | 'en' }) {
+  const [on, setOn] = useState(false);
+  const c = UMRAH_VIDEOS.find((x) => x.lang === lang);
+  const l = c?.lessons.find((x) => x.step === stepId);
+  if (!c || !l) return null;
+  return on ? (
+    <div className="um-player"><iframe src={embed(l.id)} title={l.t} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen /></div>
+  ) : (
+    <button type="button" className="ghost-btn" onClick={() => setOn(true)}>▶ Видео: {l.t} · {c.by}</button>
   );
 }

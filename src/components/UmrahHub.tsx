@@ -5,6 +5,7 @@ import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
 import { DuaList, StepView, umrahOf, prepPct } from './Umrah';
 import { UmrahTrips } from './UmrahTrips';
 import { plural } from '../dates';
+import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
 // One place for the whole umrah: what matters today, the heart, my duas, the rites and the trip.
 // Both Practice and the Circle open this screen.
@@ -119,6 +120,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
       {tab === 'heart' && (
         <div className="um-sec">
           <p className="tiny">Умра начинается задолго до самолёта. Главная подготовка внутри.</p>
+          <UmrahVideos u={u} update={update} />
           {heart.map((p) => (
             <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>за {p.when} до поездки</small></span></label>
           ))}
@@ -190,6 +192,40 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Video lessons: how to perform umrah, in Russian or English, played right here. */
+function UmrahVideos({ u, update }: { u: UmrahState; update: Props['update'] }) {
+  const [lang, setLang] = useState<'ru' | 'en'>(u.vlang ?? 'ru');
+  const [play, setPlay] = useState<string | null>(null);
+  const c = UMRAH_VIDEOS.find((x) => x.lang === lang)!;
+  const seen = u.watched ?? [];
+  const done = c.lessons.filter((l) => seen.includes(l.id)).length;
+  const mark = (id: string) => update((s) => { const w = umrahOf(s).watched ?? []; return patch(s, { watched: w.includes(id) ? w : [...w, id] }); });
+  const pick = (l: 'ru' | 'en') => { setLang(l); setPlay(null); update((s) => patch(s, { vlang: l })); };
+  return (
+    <div className="um-vid">
+      <div className="um-vid-top">
+        <span><b>▶ Как совершить умру</b><small>{c.by} · {done} из {c.lessons.length}</small></span>
+        <div className="um-lang">{(['ru', 'en'] as const).map((l) => <button key={l} type="button" aria-pressed={lang === l} onClick={() => pick(l)}>{l.toUpperCase()}</button>)}</div>
+      </div>
+      {play && (
+        <div className="um-player">
+          <iframe src={embed(play)} title="Видеоурок" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+        </div>
+      )}
+      <div className="um-lessons">
+        {c.lessons.map((l, i) => (
+          <button key={l.id} type="button" className={`${play === l.id ? 'on' : ''}${seen.includes(l.id) ? ' seen' : ''}`} onClick={() => { setPlay(l.id); mark(l.id); }}>
+            <em>{seen.includes(l.id) ? '✓' : i + 1}</em>
+            <span>{l.t}</span>
+            <small>{mins(l.s)}</small>
+          </button>
+        ))}
+      </div>
+      <small className="um-vid-src">Видео с YouTube, канал автора. Детали различаются по мазхабам, уточняй у своего имама.</small>
     </div>
   );
 }

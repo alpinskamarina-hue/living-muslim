@@ -180,6 +180,9 @@ export interface UmrahState {
   to?: string;
   /** Dua requests from the Circle I have already made: `${from}:${host}:${i}`. */
   asked?: string[];
+  /** Umrah video lessons already watched (video ids). */
+  watched?: string[];
+  vlang?: 'ru' | 'en';
 }
 
 export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz';
