@@ -1,13 +1,16 @@
 // Install as an app (PWA) and prayer reminders by Web Push. Only on the standalone site.
 import { isCloud } from './cloud';
-import type { ReminderPrefs, Settings } from './types';
-export type { ReminderPrefs };
+import type { RamadanPush, ReminderPrefs, Settings } from './types';
+export type { ReminderPrefs, RamadanPush };
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 export const VAPID_PUBLIC = 'BInevmSIw4VHEgjfRCrc-xKV6X0nKv07nM_TOuX9VwJcatbnTqQ73he5q6gRerEzwXnMQuYKFEbDetXklS74W7I';
 
 export const DEFAULT_PREFS: ReminderPrefs = { on: false, prayers: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'], before: 0, muhasaba: '' };
+/** Ramadan reminders are on by default for anyone with reminders on; the server uses the same defaults. */
+export const RPUSH_DEFAULT: RamadanPush = { suhoor: 45, iftar: 15, tarawih: false, nights: true, fitr: true };
+export const rpushOf = (p?: ReminderPrefs): RamadanPush => ({ ...RPUSH_DEFAULT, ...(p?.ramadan ?? {}) });
 
 // ---- install ----
 let deferred: any = null;
@@ -53,6 +56,7 @@ function serverPrefs(s: Settings, p: ReminderPrefs) {
   return {
     lat: s.lat, lng: s.lng, method: s.method, madhab: s.madhab, offsets: s.offsets ?? {},
     tz: Intl.DateTimeFormat().resolvedOptions().timeZone, prayers: p.prayers, before: p.before, muhasaba: p.muhasaba,
+    ramadan: rpushOf(p), lang: s.lang ?? (/^en\b/i.test(navigator.language) ? 'en' : 'ru'),
   };
 }
 

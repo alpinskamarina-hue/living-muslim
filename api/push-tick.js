@@ -30,6 +30,63 @@ function zoned(tz, y, m, d, hh, mm) {
 }
 const hhmm = (ms, tz) => new Intl.DateTimeFormat('ru-RU', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms));
 
+const RPUSH_DEFAULT = { suhoor: 45, iftar: 15, tarawih: false, nights: true, fitr: true };
+const NAMES_EN = { fajr: 'Fajr', dhuhr: 'Dhuhr', asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha' };
+
+/** Day of Ramadan (1..30) for a calendar date, by the Umm al-Qura calendar, or null. */
+export function ramadanDayOf(y, m, d) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { timeZone: 'UTC', day: 'numeric', month: 'numeric' }).formatToParts(new Date(Date.UTC(y, m - 1, d, 12)));
+    const g = (t) => Number(parts.find((p) => p.type === t)?.value);
+    return g('month') === 9 ? g('day') : null;
+  } catch { return null; }
+}
+
+/** Suhoor, iftar, tarawih, odd nights and zakat al-fitr. Texts in the user's language. */
+function ramadanEvents(prefs, day, tz, t, params, coords) {
+  const R = { ...RPUSH_DEFAULT, ...(prefs.ramadan || {}) };
+  const en = prefs.lang === 'en';
+  const rd = ramadanDayOf(day.y, day.m, day.d);
+  const nx = new Date(Date.UTC(day.y, day.m - 1, day.d + 1));
+  const night = ramadanDayOf(nx.getUTCFullYear(), nx.getUTCMonth() + 1, nx.getUTCDate());
+  const out = [];
+  const at = (k, ms, title, body) => out.push({ key: `${day.key}:r-${k}`, at: ms, title, body, tag: `ramadan-${k}` });
+  const fmt = (ms) => hhmm(ms, tz);
+  if (rd && R.suhoor > 0) {
+    at('suhoor', t.fajr.getTime() - R.suhoor * 60000,
+      en ? `Suhoor: ${R.suhoor} min left` : `Сухур: осталось ${R.suhoor} мин`,
+      en ? `Fajr at ${fmt(t.fajr.getTime())}. "Eat suhoor, for in suhoor there is blessing." Day ${rd} of Ramadan.` : `Фаджр в ${fmt(t.fajr.getTime())}. «Ешьте сухур, ведь в сухуре баракат». ${rd}-й день Рамадана.`);
+  }
+  if (rd && R.iftar >= 0) {
+    at('iftar', t.maghrib.getTime() - R.iftar * 60000,
+      R.iftar ? (en ? `Iftar in ${R.iftar} min` : `Ифтар через ${R.iftar} мин`) : (en ? 'Time for iftar' : 'Время ифтара'),
+      en ? `Maghrib at ${fmt(t.maghrib.getTime())}. Now is a time when du‘a is answered. Dhahaba-dh-dhama’u wabtallati-l-‘uruqu wa thabata-l-ajru in sha’ Allah.` : `Магриб в ${fmt(t.maghrib.getTime())}. Время, когда принимается дуа. Захаба-з-зама’у ва-бталляти-ль-‘урук ва сабата-ль-аджру ин ша’а-Ллах.`);
+  }
+  if (night && R.tarawih) {
+    at('tarawih', t.isha.getTime() + 20 * 60000,
+      en ? `Night ${night} of Ramadan` : `${night}-я ночь Рамадана`,
+      en ? 'Tarawih tonight? Mark it in the app once you have prayed.' : 'Таравих сегодня? Отметь в приложении, когда помолишься.');
+  }
+  if (night === 1 && R.nights) {
+    at('first', t.maghrib.getTime() + 20 * 60000,
+      en ? 'Ramadan Mubarak! 🌙' : 'Рамадан мубарак! 🌙',
+      en ? 'Tonight is the first night of Ramadan and tomorrow the first fast. Make your intention.' : 'Сегодня первая ночь Рамадана, завтра первый день поста. Не забудь намерение.');
+  }
+  if (night && night >= 21 && night % 2 && R.nights) {
+    const tf = new PrayerTimes(coords, new Date(nx.getUTCFullYear(), nx.getUTCMonth(), nx.getUTCDate(), 12), params);
+    const third = t.maghrib.getTime() + ((tf.fajr.getTime() - t.maghrib.getTime()) * 2) / 3;
+    at('odd', t.isha.getTime() + 30 * 60000,
+      en ? `Night ${night}: an odd night` : `${night}-я ночь, нечётная`,
+      en ? `It may be Laylat al-Qadr. The last third begins at ${fmt(third)}. Your night plan and du‘a list are in the app.` : `Может быть, это Ляйлят аль-Кадр. Последняя треть ночи с ${fmt(third)}. План ночи и твой список дуа в приложении.`);
+  }
+  if (rd === 27 && R.fitr) {
+    at('fitr', zoned(tz, day.y, day.m, day.d, 12, 0),
+      en ? 'Zakat al-fitr' : 'Закят аль-фитр',
+      en ? 'Eid is two or three days away. Give zakat al-fitr for yourself and your family before the Eid prayer.' : 'До Ида два-три дня. Отдай закят аль-фитр за себя и семью до праздничного намаза.');
+  }
+  return out;
+}
+
 export function events(prefs, now) {
   const tz = prefs.tz || 'Europe/Amsterdam';
   const day = localParts(tz, new Date(now));
@@ -48,14 +105,15 @@ export function events(prefs, now) {
     const at = t[a].getTime() - before * 60000;
     out.push({
       key: `${day.key}:${a}`, at,
-      title: before ? `Через ${before} мин ${NAMES[a]}` : `Время намаза ${NAMES[a]}`,
-      body: `${NAMES[a]} в ${hhmm(t[a].getTime(), tz)}. После ${AFTER[a]} тебя ждут твои маленькие дела.`,
+      title: prefs.lang === 'en' ? (before ? `${NAMES_EN[a]} in ${before} min` : `Time for ${NAMES_EN[a]}`) : before ? `Через ${before} мин ${NAMES[a]}` : `Время намаза ${NAMES[a]}`,
+      body: prefs.lang === 'en' ? `${NAMES_EN[a]} at ${hhmm(t[a].getTime(), tz)}. Your small deeds are waiting after ${NAMES_EN[a]}.` : `${NAMES[a]} в ${hhmm(t[a].getTime(), tz)}. После ${AFTER[a]} тебя ждут твои маленькие дела.`,
       tag: `prayer-${a}`,
     });
   }
+  out.push(...ramadanEvents(prefs, day, tz, t, params, coords));
   if (/^\d\d:\d\d$/.test(prefs.muhasaba || '')) {
     const [hh, mm] = prefs.muhasaba.split(':').map(Number);
-    out.push({ key: `${day.key}:muhasaba`, at: zoned(tz, day.y, day.m, day.d, hh, mm), title: 'Мухасаба', body: 'Пара минут, чтобы оглянуться на день: что получилось и за что ты благодарен.', tag: 'muhasaba', url: '/app/' });
+    out.push({ key: `${day.key}:muhasaba`, at: zoned(tz, day.y, day.m, day.d, hh, mm), title: prefs.lang === 'en' ? 'Muhasabah' : 'Мухасаба', body: prefs.lang === 'en' ? 'A couple of minutes to look back on the day: what went well and what you are grateful for.' : 'Пара минут, чтобы оглянуться на день: что получилось и за что ты благодарен.', tag: 'muhasaba', url: '/app/' });
   }
   return { day: day.key, list: out };
 }

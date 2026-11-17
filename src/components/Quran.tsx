@@ -12,7 +12,7 @@ export const Q_LANGS: { id: QLang; label: string; src: string }[] = [
 ];
 
 const cache: Partial<Record<QLang, Promise<Surah[]>>> = {};
-function loadQuran(lang: QLang) {
+export function loadQuran(lang: QLang) {
   if (!cache[lang]) {
     const p = fetch(`./quran-${lang}.json`).then((r) => {
       if (!r.ok) throw new Error(String(r.status));

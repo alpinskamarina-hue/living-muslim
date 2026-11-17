@@ -66,7 +66,7 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const offKey = JSON.stringify(state.settings.offsets ?? {});
   const times = useMemo(() => prayerTimes({ ...place, offsets: state.settings.offsets }, now), [today, lat, lng, method, madhab, offKey]);
-  const remKey = JSON.stringify(state.settings.reminders ?? null);
+  const remKey = JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '');
   useEffect(() => {
     if (state.settings.reminders?.on) syncPush(state.settings, state.settings.reminders);
   }, [lat, lng, method, madhab, offKey, remKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -77,7 +77,7 @@ export function App() {
     document.body.style.zoom = textScale === 1 ? '' : String(textScale);
   }, [theme, textScale]);
   const [safar, setSafar] = useState(false);
-  const [ramadan, setRamadan] = useState(false);
+  const [ramadan, setRamadan] = useState<false | string>(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
   const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>({ n: 0 });
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -161,14 +161,14 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || 'Участник'), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} onGarden={openGarden} support={support}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan(true); }} />}
+        {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (
           <div className="page">
             <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />}
@@ -199,7 +199,7 @@ export function App() {
       </nav>
 
       <WordsLayer state={state} today={today} />
-      {ramadan && <Ramadan state={state} update={update} today={today} onClose={() => setRamadan(false)} />}
+      {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
 
       {sheet && (
