@@ -36,4 +36,4 @@ export const UMRAH_VIDEOS: UCourse[] = [
 ];
 
 export const mins = (s: number) => `${Math.max(1, Math.round(s / 60))} мин`;
-export const embed = (id: string) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1`;
+export const embed = (id: string, auto = true) => `https://www.youtube-nocookie.com/embed/${id}?${auto ? 'autoplay=1&' : ''}rel=0&playsinline=1`;
