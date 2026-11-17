@@ -56,7 +56,7 @@ section { padding: 72px 0; }
 .btn.green { background: var(--green-2); color: #fff; }
 .btn.line { background: none; border: 1.5px solid currentColor; }
 .top .btn { min-height: 38px; padding: 0 14px; font-size: 14px; border-radius: 11px; }
-@media (max-width: 720px) { .top nav a.lnk { display: none; } }
+@media (max-width: 1000px) { .top nav a.lnk { display: none; } }
 
 /* hero */
 .hero { background: radial-gradient(1200px 600px at 80% 0%, #1f7a4d 0%, transparent 60%), var(--green); color: var(--cream); padding: 56px 0 72px; overflow: hidden; position: relative; }
@@ -223,6 +223,156 @@ details p { margin: 10px 0 0; color: var(--ink-2); }
 footer { padding: 28px 0 40px; color: var(--ink-2); font-size: 13.5px; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; align-items: center; }
 .ok { display: none; border-radius: 14px; padding: 14px 16px; background: rgba(255,255,255,.1); }
+
+/* ── 3D: live sky, phone, tilt, reveal ── */
+.sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; opacity: 0; transition: opacity 1.2s ease; }
+.sky.on { opacity: 1; }
+.hero.has-sky::after { opacity: .5; }
+.hero .wrap { z-index: 2; }
+
+.stage { justify-self: center; perspective: 1200px; width: 320px; max-width: 100%; position: relative; padding: 30px 0 10px; }
+.p3d { position: relative; transform-style: preserve-3d; transform: rotateX(var(--rx, 4deg)) rotateY(var(--ry, -16deg)); will-change: transform; }
+.p3d .slab { position: absolute; inset: 0; border-radius: 44px; background: #04100a; }
+.p3d .slab.s1 { transform: translateZ(-4px); } .p3d .slab.s2 { transform: translateZ(-8px); } .p3d .slab.s3 { transform: translateZ(-12px); background: #020805; box-shadow: 0 50px 90px rgba(0,0,0,.45); }
+.stage .phone { transform: translateZ(0); box-shadow: inset 0 0 0 2px rgba(246,236,212,.14); position: relative; width: 100%; }
+.stage .glare { position: absolute; inset: 0; border-radius: 44px; pointer-events: none; background: linear-gradient(calc(110deg + var(--gl, 0deg)), rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 38%, rgba(255,255,255,0) 70%, rgba(255,255,255,.06) 100%); transform: translateZ(1px); }
+.screens { position: relative; height: 100%; }
+.screens .screen { position: absolute; inset: 0; opacity: 0; transform: translateX(26px) scale(.98); transition: opacity .6s ease, transform .6s ease; }
+.screens .screen.on { opacity: 1; transform: none; }
+.screens .screen.out { transform: translateX(-26px) scale(.98); }
+.fl { position: absolute; z-index: 3; display: flex; align-items: center; gap: 8px; white-space: nowrap; background: rgba(251,250,246,.96); color: #14261c; border-radius: 14px; padding: 9px 12px; font-size: 12.5px; font-weight: 700; box-shadow: 0 16px 34px rgba(0,0,0,.28); }
+.fl small { display: block; font-weight: 600; color: #4f6357; font-size: 11px; }
+.fl.f1 { left: -46px; top: 22%; transform: translateZ(90px); }
+.fl.f2 { right: -40px; top: 52%; transform: translateZ(130px); background: #0f5132; color: #f6ecd4; }
+.fl.f2 small { color: rgba(246,236,212,.75); }
+.fl.f3 { left: -24px; bottom: 9%; transform: translateZ(60px); background: #f6ecd4; }
+@media (max-width: 420px) { .fl.f1 { left: -10px; } .fl.f2 { right: -8px; } .fl.f3 { left: 0; } }
+.sdots { display: flex; justify-content: center; gap: 6px; margin-top: 22px; transform: translateZ(0); }
+.sdots i { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 99px; color: rgba(246,236,212,.7); border: 1px solid rgba(246,236,212,.2); transition: all .4s; }
+.sdots i.on { background: var(--gold-2); color: #1d1606; border-color: transparent; }
+
+/* small app screens inside the phone */
+.sl { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e3e8e2; border-radius: 14px; padding: 9px 11px; }
+.sl .av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 12px; flex: none; }
+.sl b { display: block; font-size: 12.5px; }
+.sl small { display: block; color: #4f6357; font-size: 11px; }
+.sl em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 800; color: #1f7a4d; }
+.sbar { height: 8px; border-radius: 8px; background: #e6ece7; overflow: hidden; }
+.sbar i { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #1f7a4d, #d9ad55); }
+.gbox { border-radius: 16px; background: #0f5132; color: #f6ecd4; padding: 12px 14px; display: grid; gap: 6px; }
+.gbox small { opacity: .8; font-size: 11px; }
+.gbox b { font-size: 15px; }
+.gbox .sbar { background: rgba(255,255,255,.18); }
+.tk { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 8px 10px; border-radius: 12px; background: #fff; border: 1px solid #e3e8e2; }
+.tk i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #1f7a4d; flex: none; }
+.tk.done i { background: #1f7a4d; box-shadow: inset 0 0 0 3px #fff; }
+.tk.done span { color: #4f6357; }
+
+/* day of five prayers: sticky sky */
+.day { position: relative; background: #06120d; color: #fff; padding: 0; }
+.day-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: linear-gradient(#0b1a3a, #b7754f); }
+.day-pin .sky { opacity: 1; }
+.day-head { position: absolute; left: 0; right: 0; top: 78px; z-index: 2; text-align: center; padding: 0 20px; text-shadow: 0 2px 18px rgba(0,0,0,.35); }
+.day-head .eyebrow { color: #f6ecd4; opacity: .85; }
+.day-head h2 { font-size: clamp(28px, 4.4vw, 44px); color: #fff; }
+.tl { display: flex; justify-content: center; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+.tl span { font-family: var(--f-ar); font-size: 17px; padding: 3px 12px 5px; border-radius: 99px; background: rgba(0,0,0,.18); color: rgba(255,255,255,.75); transition: all .35s; }
+.tl span.on { background: #f6ecd4; color: #0f5132; transform: translateY(-2px) scale(1.08); }
+.day-steps { position: relative; z-index: 3; margin-top: -100vh; margin-top: -100svh; }
+.dstep { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 200px 20px 60px; }
+.dstep .wrap { width: 100%; display: flex; }
+.dstep:nth-child(even) .wrap { justify-content: flex-end; }
+.dcard { max-width: 430px; border-radius: 26px; padding: 24px; background: rgba(8,22,16,.52); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); box-shadow: 0 30px 60px rgba(0,0,0,.25); }
+.dcard .pn { display: flex; align-items: baseline; gap: 12px; }
+.dcard .pn i { font-style: normal; font-family: var(--f-ar); font-size: 30px; color: #f2cf86; line-height: 1; }
+.dcard .pn small { font-size: 12.5px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(246,236,212,.8); }
+.dcard h3 { font-family: var(--f-serif); font-size: clamp(26px, 3.4vw, 34px); line-height: 1.08; margin: 10px 0 8px; }
+.dcard p { margin: 0; color: rgba(255,255,255,.86); font-size: 16px; }
+.dcard .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.dcard .tags span { font-size: 12.5px; font-weight: 700; padding: 5px 10px; border-radius: 99px; background: rgba(246,236,212,.14); color: #f6ecd4; }
+@media (max-width: 760px) {
+  .dstep { align-items: flex-end; padding: 220px 16px 9vh; }
+  .dstep:nth-child(even) .wrap { justify-content: flex-start; }
+  .dcard { padding: 20px; }
+  .day-head { top: 72px; }
+}
+
+/* tilt + reveal */
+.tilt { transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2,.7,.2,1), box-shadow .5s; }
+.tilt.hov { transition: transform .08s linear, box-shadow .3s; box-shadow: 0 26px 50px rgba(15,81,50,.16); }
+.rv { opacity: 0; transform: perspective(900px) translateY(36px) rotateX(14deg); transition: opacity .8s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
+.rv.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; transition: none; } .screens .screen { transition: none; } }
+
+/* circle section */
+.ctiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px; }
+@media (max-width: 960px) { .ctiles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .ctiles { grid-template-columns: 1fr; } }
+.ct { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.ct h3 { margin: 0; font-size: 19px; }
+.ct p { margin: 4px 0 0; color: var(--ink-2); font-size: 14.5px; }
+.ct .mini { max-width: none; box-shadow: inset 0 0 0 1px #e3e8e2; transform: translateZ(30px); }
+.srch { display: flex; align-items: center; gap: 8px; border: 1.5px solid #1f7a4d; border-radius: 12px; padding: 7px 10px; background: #fff; font-weight: 700; }
+.srch::before { content: '@'; color: #b88a2c; }
+.srch u { text-decoration: none; border-right: 2px solid #1f7a4d; padding-right: 1px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { border-color: transparent; } }
+.dots7 { display: flex; gap: 4px; margin-left: auto; }
+.dots7 i { width: 11px; height: 11px; border-radius: 50%; background: #e6ece7; }
+.dots7 i.y { background: #1f7a4d; }
+.mbtn { justify-self: start; border-radius: 10px; padding: 6px 12px; font-weight: 800; font-size: 12px; background: #1f7a4d; color: #fff; }
+.mbtn.gd { background: #d9ad55; color: #1d1606; }
+.mbtn.wa { background: #25a35a; }
+.badge-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; border-radius: 9px; background: #d64545; color: #fff; font-size: 11px; font-weight: 800; padding: 0 5px; margin-left: 6px; }
+
+/* umrah section */
+.umrah { background: radial-gradient(900px 500px at 85% 20%, #1f7a4d 0%, transparent 60%), #0b2d1e; color: var(--cream); overflow: hidden; }
+.umrah .eyebrow { color: var(--gold-2); }
+.umrah .lead { color: rgba(246,236,212,.82); }
+.ug { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; margin-top: 30px; }
+@media (max-width: 860px) { .ug { grid-template-columns: 1fr; } }
+.ulist { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.ulist li { display: flex; gap: 14px; align-items: flex-start; }
+.ulist .ic { background: rgba(246,236,212,.1); flex: none; }
+.ulist b { display: block; font-size: 16.5px; }
+.ulist span.d { display: block; color: rgba(246,236,212,.75); font-size: 14.5px; }
+.fan { position: relative; height: 430px; perspective: 1300px; }
+.fan .mini { position: absolute; width: 250px; left: 50%; top: 50%; background: #fbfaf6; box-shadow: 0 30px 60px rgba(0,0,0,.4); transition: transform .9s cubic-bezier(.2,.7,.2,1); }
+.fan .m1 { transform: translate(-108%, -54%) rotateY(28deg) rotateZ(-4deg) translateZ(-60px); }
+.fan .m2 { transform: translate(-50%, -50%) translateZ(40px); z-index: 2; }
+.fan .m3 { transform: translate(8%, -44%) rotateY(-28deg) rotateZ(4deg) translateZ(-60px); }
+@media (max-width: 600px) {
+  .fan { height: 400px; }
+  .fan .mini { width: 210px; }
+  .fan .m1 { transform: translate(-86%, -58%) rotateY(30deg) translateZ(-60px) scale(.8); }
+  .fan .m3 { transform: translate(-14%, -40%) rotateY(-30deg) translateZ(-60px) scale(.8); }
+}
+.fan.flat .m1 { transform: translate(-50%, -50%) translateZ(-120px); }
+.fan.flat .m3 { transform: translate(-50%, -50%) translateZ(-200px); }
+.radar { position: relative; height: 130px; border-radius: 14px; background: radial-gradient(circle, #e1efe5 0 20%, #eef3ef 21% 45%, #f5f8f5 46% 70%, #fbfaf6 71%); overflow: hidden; }
+.radar::after { content: ''; position: absolute; left: 50%; top: 50%; width: 140px; height: 140px; margin: -70px 0 0 -70px; border-radius: 50%; background: conic-gradient(from 0deg, rgba(31,122,77,.35), rgba(31,122,77,0) 25%); animation: sweep 3.2s linear infinite; }
+@keyframes sweep { to { transform: rotate(360deg); } }
+.radar i { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; z-index: 1; }
+.uw { display: flex; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+.uw .btn.line { color: var(--cream); }
+
+/* ramadan section */
+.rmd { position: relative; overflow: hidden; color: #f6ecd4; background: radial-gradient(700px 400px at 20% 10%, rgba(217,173,85,.18), transparent 60%), linear-gradient(#06120d, #0c2a1e); }
+.rmd::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .7; background-image: radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 32% 42%, #fff 50%, transparent 51%), radial-gradient(1.2px 1.2px at 58% 12%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 76% 34%, #fff 50%, transparent 51%), radial-gradient(1.4px 1.4px at 88% 8%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 46% 72%, #fff 50%, transparent 51%), radial-gradient(1.2px 1.2px at 8% 64%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 92% 70%, #fff 50%, transparent 51%); }
+.rmd .wrap { position: relative; }
+.rmd .eyebrow { color: var(--gold-2); }
+.rmd .lead { color: rgba(246,236,212,.8); }
+.moon { position: absolute; right: 4%; top: -10px; width: 150px; height: 150px; border-radius: 50%; box-shadow: -26px 12px 0 0 #e8c46f; transform: rotate(-18deg); filter: drop-shadow(0 0 30px rgba(232,196,111,.45)); animation: bob 7s ease-in-out infinite; opacity: .9; }
+@keyframes bob { 50% { transform: rotate(-12deg) translateY(10px); } }
+@media (max-width: 700px) { .moon { width: 90px; height: 90px; box-shadow: -16px 8px 0 0 #e8c46f; right: 6%; top: -20px; } }
+.cd { display: inline-flex; align-items: baseline; gap: 10px; margin-top: 18px; padding: 10px 16px; border-radius: 14px; background: rgba(246,236,212,.1); font-weight: 700; }
+.cd b { font-size: 28px; color: var(--gold-2); }
+.rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 30px; }
+@media (max-width: 860px) { .rgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .rgrid { grid-template-columns: 1fr; } }
+.rgrid > div { border-radius: 20px; padding: 18px; background: rgba(246,236,212,.06); border: 1px solid rgba(246,236,212,.12); }
+.rgrid .ic { background: rgba(217,173,85,.16); }
+.rgrid h3 { margin: 10px 0 4px; font-size: 17px; }
+.rgrid p { margin: 0; color: rgba(246,236,212,.75); font-size: 14.5px; }
 </style>
 </head>
 <body>
@@ -235,6 +385,8 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
     </a>
     <nav>
       <a class="lnk" href="#how"><span lang="ru">Как работает</span><span lang="en">How it works</span></a>
+      <a class="lnk" href="#circle"><span lang="ru">Круг</span><span lang="en">Circle</span></a>
+      <a class="lnk" href="#umrah"><span lang="ru">Умра</span><span lang="en">Umrah</span></a>
       <a class="lnk" href="#pricing"><span lang="ru">Тарифы</span><span lang="en">Pricing</span></a>
       <a class="lnk" href="#faq"><span lang="ru">Вопросы</span><span lang="en">FAQ</span></a>
       <a class="lnk" href="/guide/"><span lang="ru">Гид</span><span lang="en">Guide</span></a>
@@ -246,6 +398,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 
 <main id="top">
 <section class="hero">
+  <canvas class="sky" id="sky1" aria-hidden="true"></canvas>
   <div class="wrap">
     <div>
       <p class="ayah" lang="ar">أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا</p>
@@ -273,22 +426,51 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       </div>
     </div>
 
-    <div class="phone" aria-hidden="true">
-      <div class="screen">
-        <div class="h"><b lang="ru">Сегодня</b><b lang="en">Today</b><small lang="ru">пн, 16 ноября</small><small lang="en">Mon, Nov 16</small></div>
-        <div class="pr">
-          <div class="on"><i>الفجر</i><b>05:03</b></div>
-          <div class="on"><i>الظهر</i><b>11:26</b></div>
-          <div class="late"><i>العصر</i><b>13:23</b></div>
-          <div><i>المغرب</i><b>15:46</b></div>
-          <div><i>العشاء</i><b>17:40</b></div>
+    <div class="stage" aria-hidden="true">
+      <div class="p3d" id="p3d">
+        <div class="slab s3"></div><div class="slab s2"></div><div class="slab s1"></div>
+        <div class="phone">
+          <div class="screens">
+            <div class="screen on">
+              <div class="h"><b lang="ru">Сегодня</b><b lang="en">Today</b><small lang="ru">вт, 17 ноября</small><small lang="en">Tue, Nov 17</small></div>
+              <div class="pr">
+                <div class="on"><i>الفجر</i><b>06:51</b></div>
+                <div class="on"><i>الظهر</i><b>12:31</b></div>
+                <div class="late"><i>العصر</i><b>14:23</b></div>
+                <div><i>المغرب</i><b>16:41</b></div>
+                <div><i>العشاء</i><b>18:23</b></div>
+              </div>
+              <div class="now"><small lang="ru">После Магриба · через 24 мин</small><small lang="en">After Maghrib · in 24 min</small><b lang="ru">Прочитать 1 страницу Корана</b><b lang="en">Read 1 page of Quran</b></div>
+              <div class="hb done"><i></i><div><span lang="ru">Утренние азкары</span><span lang="en">Morning adhkar</span><small lang="ru">после Фаджра · 12 дней подряд</small><small lang="en">after Fajr · 12-day streak</small></div></div>
+              <div class="hb done"><i></i><div><span lang="ru">Урок из курса, 10 минут</span><span lang="en">One lesson, 10 minutes</span><small lang="ru">после Зухра · видеоурок</small><small lang="en">after Dhuhr · video lesson</small></div></div>
+              <div class="hb"><i></i><div><span lang="ru">Садака, хоть немного</span><span lang="en">A little sadaqah</span><small lang="ru">после Асра · минимум: 1 €</small><small lang="en">after Asr · minimum: €1</small></div></div>
+              <div class="circle"><div class="avs"><span style="background:#1f7a4d"></span><span style="background:#b88a2c"></span><span style="background:#2f6f9f"></span></div><small lang="ru">3 из 4 в Круге сегодня в деле 🤲</small><small lang="en">3 of 4 in your Circle on track 🤲</small></div>
+            </div>
+            <div class="screen">
+              <div class="h"><b lang="ru">Круг</b><b lang="en">Circle</b><small lang="ru">🔥 12 дней подряд</small><small lang="en">🔥 12 days in a row</small></div>
+              <div class="gbox"><small lang="ru">Цель недели · Сб–Пт</small><small lang="en">Weekly goal · Sat–Fri</small><b lang="ru">150 намазов вовремя</b><b lang="en">150 prayers on time</b><div class="sbar"><i style="width:78%"></i></div><small lang="ru">117 из 150 · вместе</small><small lang="en">117 of 150 · together</small></div>
+              <div class="sl"><span class="av" style="background:#1f7a4d">О</span><div><b lang="ru">Омар</b><b lang="en">Omar</b><small lang="ru">5 из 5 намазов</small><small lang="en">5 of 5 prayers</small></div><em>🤲 2</em></div>
+              <div class="sl"><span class="av" style="background:#b88a2c">Ю</span><div><b lang="ru">Юсуф · амир недели</b><b lang="en">Yusuf · amir of the week</b><small lang="ru">«Каждый вечер Аль-Мульк»</small><small lang="en">“Al-Mulk every night”</small></div></div>
+              <div class="sl"><span class="av" style="background:#2f6f9f">Б</span><div><b lang="ru">Билял просит дуа</b><b lang="en">Bilal asks for dua</b><small lang="ru">«Завтра экзамен»</small><small lang="en">“Exam tomorrow”</small></div><em lang="ru">Сделал</em><em lang="en">Done</em></div>
+              <div class="sl"><span class="av" style="background:#7a4fb0">⚔</span><div><b lang="ru">Вызов: Фаджр вовремя</b><b lang="en">Challenge: Fajr on time</b><small lang="ru">ты 5 из 7 · Омар 4 из 7</small><small lang="en">you 5 of 7 · Omar 4 of 7</small></div></div>
+            </div>
+            <div class="screen">
+              <div class="h"><b lang="ru">Умра</b><b lang="en">Umrah</b><small lang="ru">группа из 5</small><small lang="en">group of 5</small></div>
+              <div class="gbox"><small lang="ru">Сейчас</small><small lang="en">Now</small><b lang="ru">До вылета 12 дней</b><b lang="en">12 days to departure</b><div class="sbar"><i style="width:64%"></i></div><small lang="ru">готовность группы 64%</small><small lang="en">group ready 64%</small></div>
+              <div class="tk done"><i></i><span lang="ru">Билеты у всех</span><span lang="en">Everyone has tickets</span></div>
+              <div class="tk done"><i></i><span lang="ru">Жильё в Мекке, 4 ночи</span><span lang="en">Makkah stay, 4 nights</span></div>
+              <div class="tk"><i></i><span lang="ru">Ихрам и документы</span><span lang="en">Ihram and documents</span></div>
+              <div class="sl"><span class="av" style="background:#b88a2c">€</span><div><b lang="ru">Общая касса</b><b lang="en">Shared fund</b><small lang="ru">Омар → Али · €40</small><small lang="en">Omar → Ali · €40</small></div></div>
+              <div class="sl"><span class="av" style="background:#1f7a4d">◎</span><div><b lang="ru">Где моя группа</b><b lang="en">Where's my group</b><small lang="ru">4 из 5 рядом</small><small lang="en">4 of 5 nearby</small></div></div>
+            </div>
+          </div>
+          <div class="glare"></div>
         </div>
-        <div class="now"><small lang="ru">После Магриба · через 24 мин</small><small lang="en">After Maghrib · in 24 min</small><b lang="ru">Прочитать 1 страницу Корана</b><b lang="en">Read 1 page of Quran</b></div>
-        <div class="hb done"><i></i><div><span lang="ru">Утренние азкары</span><span lang="en">Morning adhkar</span><small lang="ru">после Фаджра · 12 дней подряд</small><small lang="en">after Fajr · 12-day streak</small></div></div>
-        <div class="hb done"><i></i><div><span lang="ru">Стакан воды и прогулка</span><span lang="en">Water and a short walk</span><small lang="ru">после Зухра</small><small lang="en">after Dhuhr</small></div></div>
-        <div class="hb"><i></i><div><span lang="ru">Садака, хоть немного</span><span lang="en">A little sadaqah</span><small lang="ru">после Асра · минимум: 1 €</small><small lang="en">after Asr · minimum: €1</small></div></div>
-        <div class="circle"><div class="avs"><span style="background:#1f7a4d"></span><span style="background:#b88a2c"></span><span style="background:#2f6f9f"></span></div><small lang="ru">3 из 4 в Круге сегодня в деле 🤲</small><small lang="en">3 of 4 in your Circle on track 🤲</small></div>
+        <div class="fl f1">🤲 <div><span lang="ru">Омар сделал за тебя дуа</span><span lang="en">Omar made dua for you</span><small lang="ru">Круг · только что</small><small lang="en">Circle · just now</small></div></div>
+        <div class="fl f2">🔥 <div><span lang="ru">Серия Круга</span><span lang="en">Circle streak</span><small lang="ru">12 дней вместе</small><small lang="en">12 days together</small></div></div>
+        <div class="fl f3">✓ <div><span lang="ru">Фаджр вовремя</span><span lang="en">Fajr on time</span><small lang="ru">не пропускай дважды</small><small lang="en">never miss twice</small></div></div>
       </div>
+      <div class="sdots"><i class="on" lang="ru">Сегодня</i><i lang="ru">Круг</i><i lang="ru">Умра</i><i class="on" lang="en">Today</i><i lang="en">Circle</i><i lang="en">Umrah</i></div>
     </div>
   </div>
 </section>
@@ -326,17 +508,181 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   </div>
 </section>
 
+<section class="day" id="day">
+  <div class="day-pin">
+    <canvas class="sky" id="sky2" aria-hidden="true"></canvas>
+    <div class="day-head">
+      <p class="eyebrow"><span lang="ru">Один день с Living Muslim</span><span lang="en">One day with Living Muslim</span></p>
+      <h2><span lang="ru">Пять намазов, пять опор дня</span><span lang="en">Five prayers, five anchors of the day</span></h2>
+      <div class="tl" aria-hidden="true"><span class="on">الفجر</span><span>الظهر</span><span>العصر</span><span>المغرب</span><span>العشاء</span></div>
+    </div>
+  </div>
+  <div class="day-steps">
+    <div class="dstep"><div class="wrap"><div class="dcard">
+      <div class="pn"><i>الفجر</i><small lang="ru">Фаджр · рассвет</small><small lang="en">Fajr · dawn</small></div>
+      <h3><span lang="ru">Начни день спокойно</span><span lang="en">Start the day calmly</span></h3>
+      <p><span lang="ru">Отметь намаз одним касанием и сделай утренние азкары. Утром приложение тихо покажет фразу дня: аят, хадис или дуа. По умолчанию не чаще двух раз в день.</span><span lang="en">Mark the prayer with one tap and do your morning adhkar. In the morning the app quietly shows a word for the day: an ayah, a hadith or a dua. By default no more than twice a day.</span></p>
+      <div class="tags"><span lang="ru">Фраза дня</span><span lang="en">Word of the day</span><span lang="ru">Мягкие напоминания</span><span lang="en">Gentle reminders</span><span lang="ru">Первая неделя с подсказками</span><span lang="en">A guided first week</span></div>
+    </div></div></div>
+    <div class="dstep"><div class="wrap"><div class="dcard">
+      <div class="pn"><i>الظهر</i><small lang="ru">Зухр · полдень</small><small lang="en">Dhuhr · midday</small></div>
+      <h3><span lang="ru">10 минут на рост</span><span lang="en">10 minutes to grow</span></h3>
+      <p><span lang="ru">Видеоуроки: 22 курса в 7 темах, от веры и семьи до бизнеса, здоровья и языков. Продолжаешь с того места, где остановился, и пишешь заметки прямо под видео.</span><span lang="en">Video lessons: 22 courses in 7 topics, from faith and family to business, health and languages. Pick up where you left off and take notes right under the video.</span></p>
+      <div class="tags"><span lang="ru">Вера</span><span lang="en">Faith</span><span lang="ru">Семья</span><span lang="en">Family</span><span lang="ru">Бизнес</span><span lang="en">Business</span><span lang="ru">Здоровье</span><span lang="en">Health</span><span lang="ru">Языки</span><span lang="en">Languages</span></div>
+    </div></div></div>
+    <div class="dstep"><div class="wrap"><div class="dcard">
+      <div class="pn"><i>العصر</i><small lang="ru">Аср · день в деле</small><small lang="en">Asr · getting it done</small></div>
+      <h3><span lang="ru">Рядом твой Круг</span><span lang="en">Your Circle is with you</span></h3>
+      <p><span lang="ru">Братья видят, что ты в деле, а не твои дела. Общая цель на неделю, вызов на 7 дней, серия Круга, которая растёт, пока в деле хотя бы половина.</span><span lang="en">Your brothers see that you're on track, not what you did. A shared weekly goal, a 7-day challenge and a Circle streak that grows while at least half of you keep going.</span></p>
+      <div class="tags"><span lang="ru">Цель недели</span><span lang="en">Weekly goal</span><span lang="ru">Вызов на 7 дней</span><span lang="en">7-day challenge</span><span lang="ru">Серия Круга</span><span lang="en">Circle streak</span></div>
+    </div></div></div>
+    <div class="dstep"><div class="wrap"><div class="dcard">
+      <div class="pn"><i>المغرب</i><small lang="ru">Магриб · закат</small><small lang="en">Maghrib · sunset</small></div>
+      <h3><span lang="ru">Страница Корана</span><span lang="en">A page of Quran</span></h3>
+      <p><span lang="ru">Коран с переводом на русский, английский и турецкий. Свой план хатма или общий хатм с Кругом, где каждый берёт свой джуз.</span><span lang="en">Quran with Russian, English and Turkish translations. Your own khatm plan, or a group khatm with your Circle where everyone takes a juz.</span></p>
+      <div class="tags"><span lang="ru">План хатма</span><span lang="en">Khatm plan</span><span lang="ru">Общий хатм</span><span lang="en">Group khatm</span></div>
+    </div></div></div>
+    <div class="dstep"><div class="wrap"><div class="dcard">
+      <div class="pn"><i>العشاء</i><small lang="ru">Иша · ночь</small><small lang="en">Isha · night</small></div>
+      <h3><span lang="ru">Мухасаба и дуа</span><span lang="en">Muhasabah and dua</span></h3>
+      <p><span lang="ru">Оглянись на день: что получилось, что завтра. Если трудно, попроси Круг о дуа. Просьба держится 3 дня, и ты видишь, кто из братьев сделал за тебя дуа.</span><span lang="en">Look back at the day: what went well, what's next. If it's hard, ask your Circle for dua. The request stays for 3 days and you see which brothers made dua for you.</span></p>
+      <div class="tags"><span lang="ru">Мухасаба</span><span lang="en">Muhasabah</span><span lang="ru">Просьба о дуа</span><span lang="en">Dua request</span></div>
+    </div></div></div>
+  </div>
+</section>
+
 <section style="padding-top:0">
   <div class="wrap">
     <p class="eyebrow"><span lang="ru">Что внутри</span><span lang="en">What's inside</span></p>
     <h2><span lang="ru">Всё для дня мусульманина</span><span lang="en">Everything for a Muslim's day</span></h2>
     <div class="feat">
-      <div class="card"><div class="ic">🕌</div><h3 lang="ru">Намазы</h3><h3 lang="en">Prayers</h3><p lang="ru">Время, отметки, статистика без чувства вины.</p><p lang="en">Times, check-ins and stats without the guilt.</p></div>
-      <div class="card"><div class="ic">📖</div><h3 lang="ru">Коран</h3><h3 lang="en">Quran</h3><p lang="ru">Чтение с переводом, план хатма, общий хатм с друзьями.</p><p lang="en">Read with translation, khatm plans, group khatm with friends.</p></div>
-      <div class="card"><div class="ic">🎯</div><h3 lang="ru">Цели</h3><h3 lang="en">Goals</h3><p lang="ru">Нийя, вехи и прогресс, который считается сам.</p><p lang="en">Niyyah, milestones and progress that tracks itself.</p></div>
-      <div class="card"><div class="ic">🌙</div><h3 lang="ru">Рамадан</h3><h3 lang="en">Ramadan</h3><p lang="ru">Пост, сухур и ифтар, ночи, Ид. Включается сам.</p><p lang="en">Fasts, suhoor and iftar, the last nights, Eid. Turns on by itself.</p></div>
-      <div class="card"><div class="ic">🤲</div><h3 lang="ru">Круг</h3><h3 lang="en">Circle</h3><p lang="ru">Близкие видят итог дня, а не твои дела. Реакции «дуа» и «машаАллах».</p><p lang="en">Loved ones see your daily total, not your private list. “Dua” and “MashaAllah” reactions.</p></div>
-      <div class="card"><div class="ic">🕋</div><h3 lang="ru">Умра и сафар</h3><h3 lang="en">Umrah &amp; travel</h3><p lang="ru">Гид по умре, совместная поездка, намазы в пути.</p><p lang="en">Umrah guide, group trips, prayers while travelling.</p></div>
+      <div class="card tilt rv"><div class="ic">🕌</div><h3 lang="ru">Намазы</h3><h3 lang="en">Prayers</h3><p lang="ru">Время по твоему городу и мазхабу, отметки, статистика без чувства вины.</p><p lang="en">Times for your city and madhhab, check-ins and stats without the guilt.</p></div>
+      <div class="card tilt rv"><div class="ic">📖</div><h3 lang="ru">Коран</h3><h3 lang="en">Quran</h3><p lang="ru">Чтение с переводом, план хатма, общий хатм с друзьями.</p><p lang="en">Read with translation, khatm plans, group khatm with friends.</p></div>
+      <div class="card tilt rv"><div class="ic">🎯</div><h3 lang="ru">Цели</h3><h3 lang="en">Goals</h3><p lang="ru">Нийя, вехи и прогресс, который считается сам.</p><p lang="en">Niyyah, milestones and progress that tracks itself.</p></div>
+      <div class="card tilt rv"><div class="ic">🤲</div><h3 lang="ru">Круг</h3><h3 lang="en">Circle</h3><p lang="ru">Поиск братьев по нику, цель недели, вызовы и просьбы о дуа. Близкие видят только итог дня.</p><p lang="en">Find brothers by nickname, weekly goals, challenges and dua requests. Your people only see your daily total.</p></div>
+      <div class="card tilt rv"><div class="ic">🕋</div><h3 lang="ru">Умра и сафар</h3><h3 lang="en">Umrah &amp; travel</h3><p lang="ru">Поездка группой на одном экране, обряды с видео, намазы в пути.</p><p lang="en">A group trip on one screen, rites with video, prayers while travelling.</p></div>
+      <div class="card tilt rv"><div class="ic">🌙</div><h3 lang="ru">Рамадан</h3><h3 lang="en">Ramadan</h3><p lang="ru">30 дней с аятом и делом дня, ночь Кадр, сухур и ифтар, закят. Включается сам.</p><p lang="en">30 days with an ayah and a deed a day, Laylat al-Qadr, suhoor and iftar, zakat. Turns on by itself.</p></div>
+      <div class="card tilt rv"><div class="ic">🎬</div><h3 lang="ru">Видеоуроки</h3><h3 lang="en">Video lessons</h3><p lang="ru">22 курса в 7 темах: вера, семья, бизнес, развитие, здоровье, питание, языки.</p><p lang="en">22 courses in 7 topics: faith, family, business, growth, health, food, languages.</p></div>
+      <div class="card tilt rv"><div class="ic">💬</div><h3 lang="ru">Фразы и напоминания</h3><h3 lang="en">Words and reminders</h3><p lang="ru">Аят, хадис или дуа в нужный момент. Тихо и по-доброму, частоту выбираешь сам.</p><p lang="en">An ayah, hadith or dua at the right moment. Quiet and kind, you choose how often.</p></div>
+      <div class="card tilt rv"><div class="ic">🪪</div><h3 lang="ru">Профиль и ник</h3><h3 lang="en">Profile and nickname</h3><p lang="ru">Аватар, ник и приватность. Новый телефон? Войди по почте, и профиль с Кругами вернётся.</p><p lang="en">Avatar, nickname and privacy. New phone? Sign in with email and your profile and Circles come back.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="circle">
+  <div class="wrap">
+    <p class="eyebrow"><span lang="ru">Круг</span><span lang="en">Circle</span></p>
+    <h2><span lang="ru">Вместе держаться легче</span><span lang="en">It's easier to keep going together</span></h2>
+    <p class="lead"><span lang="ru">Позови братьев, семью или джамаат. Каждый видит только итог дня, а поддержка приходит тогда, когда она нужна.</span><span lang="en">Invite brothers, family or your community. Everyone sees only the daily total, and support comes exactly when it's needed.</span></p>
+    <div class="ctiles">
+      <div class="ct tilt rv">
+        <div><h3 lang="ru">Найди брата по нику</h3><h3 lang="en">Find a brother by nickname</h3><p lang="ru">Набери первые буквы, и появятся совпадения. Приглашение придёт с красным значком на вкладке Круг.</p><p lang="en">Type the first letters and matches appear. The invite arrives with a red badge on the Circle tab.</p></div>
+        <div class="mini" aria-hidden="true">
+          <div class="srch"><span>om<u></u></span></div>
+          <div class="sl"><span class="av" style="background:#1f7a4d">О</span><div><b>@omar_t</b><small lang="ru">Омар · из твоих кругов</small><small lang="en">Omar · from your circles</small></div><em lang="ru">Позвать</em><em lang="en">Invite</em></div>
+          <div class="sl"><span class="av" style="background:#2f6f9f">О</span><div><b>@omar.k</b><small lang="ru">Омар К.</small><small lang="en">Omar K.</small></div><em lang="ru">Позвать</em><em lang="en">Invite</em></div>
+        </div>
+      </div>
+      <div class="ct tilt rv">
+        <div><h3 lang="ru">Общая цель недели</h3><h3 lang="en">A shared weekly goal</h3><p lang="ru">Например, 150 намазов вовремя на весь Круг. Шкала растёт от каждого, неделя идёт с субботы по пятницу.</p><p lang="en">Say, 150 prayers on time for the whole Circle. Everyone fills the bar, and the week runs Saturday to Friday.</p></div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span lang="ru">Цель недели</span><span lang="en">Weekly goal</span><small lang="ru">Сб–Пт</small><small lang="en">Sat–Fri</small></div>
+          <b class="mt"><span lang="ru">150 намазов вовремя</span><span lang="en">150 prayers on time</span></b>
+          <div class="sbar"><i style="width:78%"></i></div>
+          <small class="mm"><span lang="ru">117 из 150 · ещё 33 до пятницы</span><span lang="en">117 of 150 · 33 to go by Friday</span></small>
+        </div>
+      </div>
+      <div class="ct tilt rv">
+        <div><h3 lang="ru">Итог в пятницу</h3><h3 lang="en">Friday summary</h3><p lang="ru">В пятницу Круг видит, сколько сделали вместе и кто поддерживал других. Без рейтингов в поклонении. Итогом можно поделиться в WhatsApp или Telegram.</p><p lang="en">On Friday the Circle sees what you did together and who supported others. No rankings in worship. Share it to WhatsApp or Telegram.</p></div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span lang="ru">Пятница · итог</span><span lang="en">Friday · summary</span><small>🕌</small></div>
+          <p class="mx"><span lang="ru">Вместе: 142 из 150 намазов вовремя. Поддерживали других: Омар, Юсуф 🤲</span><span lang="en">Together: 142 of 150 prayers on time. Supported others: Omar, Yusuf 🤲</span></p>
+          <span class="mbtn wa"><span lang="ru">Отправить в WhatsApp</span><span lang="en">Send to WhatsApp</span></span>
+        </div>
+      </div>
+      <div class="ct tilt rv">
+        <div><h3 lang="ru">Просьба о дуа</h3><h3 lang="en">Ask for dua</h3><p lang="ru">Трудный день или экзамен? Попроси Круг о дуа. Просьба держится 3 дня, и видно, кто сделал за тебя дуа.</p><p lang="en">A hard day or an exam? Ask your Circle for dua. The request stays for 3 days and you see who made dua for you.</p></div>
+        <div class="mini" aria-hidden="true">
+          <div class="sl"><span class="av" style="background:#2f6f9f">Б</span><div><b lang="ru">Билял просит дуа</b><b lang="en">Bilal asks for dua</b><small lang="ru">«Завтра экзамен»</small><small lang="en">“Exam tomorrow”</small></div></div>
+          <span class="mbtn">🤲 <span lang="ru">Сделал дуа</span><span lang="en">I made dua</span></span>
+          <small class="mm"><span lang="ru">3 брата уже сделали дуа</span><span lang="en">3 brothers already made dua</span></small>
+        </div>
+      </div>
+      <div class="ct tilt rv">
+        <div><h3 lang="ru">Вызов на 7 дней</h3><h3 lang="en">A 7-day challenge</h3><p lang="ru">Предложи брату: Фаджр вовремя, все пять намазов или привычки. По точке за каждый день, соревнуйтесь в благих делах.</p><p lang="en">Challenge a brother: Fajr on time, all five prayers or your habits. One dot per day. Race each other in good deeds.</p></div>
+        <div class="mini" aria-hidden="true">
+          <div class="mh"><span>⚔️ <span lang="ru">Фаджр вовремя</span><span lang="en">Fajr on time</span></span><small lang="ru">день 5 из 7</small><small lang="en">day 5 of 7</small></div>
+          <div class="sl"><span class="av" style="background:#b88a2c">Я</span><b lang="ru">Ты</b><b lang="en">You</b><span class="dots7"><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i class="y"></i><i></i><i></i></span></div>
+          <div class="sl"><span class="av" style="background:#1f7a4d">О</span><b lang="ru">Омар</b><b lang="en">Omar</b><span class="dots7"><i class="y"></i><i class="y"></i><i></i><i class="y"></i><i class="y"></i><i></i><i></i></span></div>
+        </div>
+      </div>
+      <div class="ct tilt rv">
+        <div><h3 lang="ru">Серия и амир недели</h3><h3 lang="en">Streak and amir of the week</h3><p lang="ru">Серия Круга растёт, пока в деле хотя бы половина. Амир недели, доброволец, задаёт одно слово на неделю.</p><p lang="en">The Circle streak grows while at least half of you keep going. The amir of the week, a volunteer, sets one word for the week.</p></div>
+        <div class="mini" aria-hidden="true">
+          <div class="gbox"><small lang="ru">Серия Круга</small><small lang="en">Circle streak</small><b lang="ru">🔥 12 дней подряд</b><b lang="en">🔥 12 days in a row</b></div>
+          <div class="sl"><span class="av" style="background:#b88a2c">Ю</span><div><b lang="ru">Амир недели: Юсуф</b><b lang="en">Amir of the week: Yusuf</b><small lang="ru">«Каждый вечер Аль-Мульк»</small><small lang="en">“Al-Mulk every night”</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="umrah" id="umrah">
+  <div class="wrap">
+    <p class="eyebrow"><span lang="ru">Умра</span><span lang="en">Umrah</span></p>
+    <h2><span lang="ru">Умра своей группой</span><span lang="en">Umrah with your own group</span></h2>
+    <p class="lead"><span lang="ru">Один экран на всю поездку: от сбора группы до возвращения домой. Каждый видит, что сделано и что осталось.</span><span lang="en">One screen for the whole trip, from gathering the group to coming home. Everyone sees what's done and what's left.</span></p>
+    <div class="ug">
+      <ul class="ulist">
+        <li class="rv"><span class="ic">👥</span><div><b lang="ru">Сбор, даты и готовность</b><b lang="en">Group, dates and readiness</b><span class="d" lang="ru">Кто едет, билеты, жильё, документы. Карточка «Сейчас» подсказывает, что делать по дням до вылета.</span><span class="d" lang="en">Who's going, tickets, stay, documents. The “Now” card tells you what to do each day before departure.</span></div></li>
+        <li class="rv"><span class="ic">💶</span><div><b lang="ru">Общая касса</b><b lang="en">Shared fund</b><span class="d" lang="ru">Кто сколько внёс и кто кому должен. Без таблиц и споров.</span><span class="d" lang="en">Who paid what and who owes whom. No spreadsheets, no arguments.</span></div></li>
+        <li class="rv"><span class="ic">📍</span><div><b lang="ru">Где моя группа</b><b lang="en">Where's my group</b><span class="d" lang="ru">Радар на месте: видно, кто рядом, когда толпа и легко потеряться.</span><span class="d" lang="en">A radar on site: see who's nearby when it's crowded and easy to get lost.</span></div></li>
+        <li class="rv"><span class="ic">🕋</span><div><b lang="ru">Обряды шаг за шагом</b><b lang="en">Rites step by step</b><span class="d" lang="ru">Счётчики тавафа и саи, дуа, видеоуроки к каждому шагу и подробный гид из 14 частей.</span><span class="d" lang="en">Tawaf and sa'i counters, duas, a video for every step and a detailed 14-part guide.</span></div></li>
+      </ul>
+      <div class="fan" id="fan" aria-hidden="true">
+        <div class="mini m1">
+          <div class="mh"><span lang="ru">Общая касса</span><span lang="en">Shared fund</span><small>€</small></div>
+          <b class="mt"><span lang="ru">Жильё €1 240</span><span lang="en">Stay €1,240</span></b>
+          <small class="mm"><span lang="ru">5 человек · по €248</span><span lang="en">5 people · €248 each</span></small>
+          <div class="ms"><span lang="ru">Омар → Али · €40</span><span lang="en">Omar → Ali · €40</span></div>
+          <div class="ms done"><span lang="ru">Юсуф → Али · €25</span><span lang="en">Yusuf → Ali · €25</span></div>
+        </div>
+        <div class="mini m2">
+          <div class="mh"><span lang="ru">Сейчас</span><span lang="en">Now</span><small lang="ru">группа из 5</small><small lang="en">group of 5</small></div>
+          <b class="mt"><span lang="ru">До вылета 12 дней</span><span lang="en">12 days to go</span></b>
+          <div class="sbar"><i style="width:64%"></i></div>
+          <div class="ms done"><span lang="ru">Билеты у всех</span><span lang="en">Everyone has tickets</span></div>
+          <div class="ms done"><span lang="ru">Жильё в Мекке</span><span lang="en">Makkah stay</span></div>
+          <div class="ms now"><span lang="ru">Ихрам и документы</span><span lang="en">Ihram and documents</span></div>
+        </div>
+        <div class="mini m3">
+          <div class="mh"><span lang="ru">Где моя группа</span><span lang="en">Where's my group</span><small lang="ru">4 из 5 рядом</small><small lang="en">4 of 5 nearby</small></div>
+          <div class="radar"><i style="left:47%;top:44%;background:#b88a2c"></i><i style="left:30%;top:30%;background:#1f7a4d"></i><i style="left:64%;top:58%;background:#2f6f9f"></i><i style="left:56%;top:24%;background:#7a4fb0"></i><i style="left:86%;top:78%;background:#d64545"></i></div>
+          <small class="mm"><span lang="ru">Билял · 300 м, у ворот Короля Фахда</span><span lang="en">Bilal · 300 m, at King Fahd Gate</span></small>
+        </div>
+      </div>
+    </div>
+    <div class="uw">
+      <a class="btn gold" href="#join"><span lang="ru">Начать бесплатно</span><span lang="en">Start for free</span></a>
+      <a class="btn line" href="/guide/#ru-umrah" data-en-href="/guide/?lang=en#en-umrah"><span lang="ru">Гид по умре</span><span lang="en">Umrah guide</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="rmd" id="ramadan">
+  <div class="moon" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="eyebrow"><span lang="ru">Рамадан · бесплатно</span><span lang="en">Ramadan · free</span></p>
+    <h2><span lang="ru">Рамадан, к которому готов</span><span lang="en">A Ramadan you're ready for</span></h2>
+    <p class="lead"><span lang="ru">Режим Рамадана включается сам и ведёт тебя все 30 дней: от подготовки до Ида.</span><span lang="en">Ramadan mode turns on by itself and walks with you all 30 days, from preparation to Eid.</span></p>
+    <div class="cd" id="rcd" hidden><span lang="ru">До Рамадана примерно</span><span lang="en">Ramadan begins in about</span><b></b><span lang="ru" class="cdw">дней</span><span lang="en">days</span></div>
+    <div class="rgrid">
+      <div class="tilt rv"><div class="ic">📜</div><h3 lang="ru">30 дней</h3><h3 lang="en">30 days</h3><p lang="ru">Каждый день аят, хадис, короткий урок и доброе дело.</p><p lang="en">Every day an ayah, a hadith, a short lesson and a good deed.</p></div>
+      <div class="tilt rv"><div class="ic">✨</div><h3 lang="ru">Ночь Кадр</h3><h3 lang="en">Laylat al-Qadr</h3><p lang="ru">План ночи по последней трети для твоего города и личный список дуа.</p><p lang="en">A night plan by the last third for your city and your own dua list.</p></div>
+      <div class="tilt rv"><div class="ic">🍽️</div><h3 lang="ru">Сухур и ифтар</h3><h3 lang="en">Suhoor and iftar</h3><p lang="ru">Напоминания вовремя, план сна и ифтары с Кругом.</p><p lang="en">Reminders on time, a sleep plan and iftars with your Circle.</p></div>
+      <div class="tilt rv"><div class="ic">🧒</div><h3 lang="ru">Детский Рамадан</h3><h3 lang="en">Kids' Ramadan</h3><p lang="ru">Маленькие посты и добрые дела для детей, с радостью, а не с давлением.</p><p lang="en">Small fasts and good deeds for children, with joy, not pressure.</p></div>
+      <div class="tilt rv"><div class="ic">💰</div><h3 lang="ru">Закят</h3><h3 lang="en">Zakat</h3><p lang="ru">Калькулятор закята и напоминание о закят аль-фитр.</p><p lang="en">A zakat calculator and a reminder for zakat al-fitr.</p></div>
+      <div class="tilt rv"><div class="ic">🕌</div><h3 lang="ru">Итикаф и мечети</h3><h3 lang="en">I'tikaf and mosques</h3><p lang="ru">План итикафа и мечети рядом на карте.</p><p lang="en">An i'tikaf plan and mosques near you on the map.</p></div>
     </div>
   </div>
 </section>
@@ -477,11 +823,14 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       <details><summary><span lang="ru">Как считается время намазов?</span><span lang="en">How are prayer times calculated?</span></summary><p lang="ru">По твоему городу или геолокации. Можно выбрать метод расчёта (Всемирная исламская лига, Умм аль-Кура, ISNA и другие) и мазхаб для Асра. Советуем сверить с мечетью рядом.</p><p lang="en">From your city or location. You can pick the calculation method (Muslim World League, Umm al-Qura, ISNA and others) and the madhhab for Asr. We recommend checking against your local mosque.</p></details>
       <details><summary><span lang="ru">Нужно ли что-то устанавливать?</span><span lang="en">Do I need to install anything?</span></summary><p lang="ru">Нет, приложение работает в браузере на телефоне и компьютере. На телефоне его можно добавить на главный экран, и оно будет открываться как обычное приложение.</p><p lang="en">No, it works in the browser on phone and desktop. On your phone you can add it to the home screen and it opens like a regular app.</p></details>
       <details><summary><span lang="ru">Кто видит мои данные?</span><span lang="en">Who can see my data?</span></summary><p lang="ru">Только ты. Привычки, заметки и мухасаба хранятся на твоём устройстве. Если вступишь в Круг, близкие увидят только итог дня: сколько отмечено привычек и намазов.</p><p lang="en">Only you. Habits, notes and muhasabah stay on your device. If you join a Circle, your people only see your daily total: how many habits and prayers you checked.</p></details>
+      <details><summary><span lang="ru">Как позвать брата в Круг?</span><span lang="en">How do I invite a brother to my Circle?</span></summary><p lang="ru">Открой Круг, нажми «+ Пригласить» и набери первые буквы его ника. Или отправь ссылку-приглашение: по ней можно вступить даже без почты.</p><p lang="en">Open Circle, tap “+ Invite” and type the first letters of his nickname. Or send an invite link: people can join with it even without an email.</p></details>
+      <details><summary><span lang="ru">Кто может найти меня по нику?</span><span lang="en">Who can find me by nickname?</span></summary><p lang="ru">Ты решаешь сам в «Мой профиль»: можно ли тебя найти и кто может звать в Круг: все, люди из твоих Кругов или никто. Сёстры могут включить «только сёстры», а фото видно только людям из твоих Кругов.</p><p lang="en">You decide in “My profile”: whether you can be found and who can invite you: everyone, people from your Circles or no one. Sisters can turn on “sisters only”, and your photo is visible only to people in your Circles.</p></details>
+      <details><summary><span lang="ru">Я сменил телефон. Что перенесётся?</span><span lang="en">I got a new phone. What carries over?</span></summary><p lang="ru">Войди по той же почте, и профиль с ником и все твои Круги сами появятся на новом телефоне. Отметки и привычки пока хранятся на старом телефоне, перенос между устройствами скоро.</p><p lang="en">Sign in with the same email and your profile, nickname and all your Circles appear on the new phone. Check-ins and habits still live on the old phone for now; syncing between devices is coming soon.</p></details>
       <details><summary><span lang="ru">Это халяль? Почему Pro платный?</span><span lang="en">Is it halal? Why is Pro paid?</span></summary><p lang="ru">Всё, что связано с поклонением, бесплатно навсегда. Pro оплачивает развитие приложения и серверы. Подписка без процентов и скрытых списаний, с возвратом за 14 дней.</p><p lang="en">Everything related to worship is free forever. Pro pays for development and servers. No interest, no hidden charges, refunds within 14 days.</p></details>
       <details><summary><span lang="ru">Что будет после 14 дней пробного Pro?</span><span lang="en">What happens after the 14-day Pro trial?</span></summary><p lang="ru">Ничего не спишется само: карту мы не просим. Если не оформишь подписку, приложение просто вернётся на бесплатный тариф.</p><p lang="en">Nothing is charged: we never ask for a card. If you don’t subscribe, the app simply goes back to the free plan.</p></details>
       <details><summary><span lang="ru">Что останется, если я не продлю Pro?</span><span lang="en">What stays if I don’t renew Pro?</span></summary><p lang="ru">Всё твоё остаётся с тобой: история, цели и заметки не удаляются. Закроются только Pro-функции, а намазы, Коран и привычки продолжат работать бесплатно.</p><p lang="en">Everything you made stays: history, goals and notes are never deleted. Only Pro features lock, while prayers, Quran and habits keep working for free.</p></details>
       <details><summary><span lang="ru">Можно вернуть деньги?</span><span lang="en">Can I get a refund?</span></summary><p lang="ru">Да, в течение 14 дней после оплаты, без вопросов. За 3 дня до продления пришлём напоминание.</p><p lang="en">Yes, within 14 days of payment, no questions asked. We remind you 3 days before renewal.</p></details>
-      <details><summary><span lang="ru">Зачем почта при регистрации?</span><span lang="en">Why do you ask for my email?</span></summary><p lang="ru">Чтобы сообщать о новых функциях и, позже, переносить данные между устройствами и оформлять Pro. Никакого спама, отписаться можно в любой момент.</p><p lang="en">To tell you about new features and, later, to sync between devices and manage Pro. No spam, unsubscribe any time.</p></details>
+      <details><summary><span lang="ru">Зачем почта при регистрации?</span><span lang="en">Why do you ask for my email?</span></summary><p lang="ru">Чтобы входить без пароля, возвращать профиль и Круги на новом телефоне и сообщать о новых функциях. Позже по ней же оформляется Pro. Никакого спама, отписаться можно в любой момент.</p><p lang="en">To sign in without a password, bring your profile and Circles back on a new phone and tell you about new features. Later it is also used for Pro. No spam, unsubscribe any time.</p></details>
     </div>
   </div>
 </section>
@@ -653,6 +1002,264 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       rec = { name: name, email: email, lang: l, source: location.search.slice(0, 120), pending: true };
       sendCode(false);
     });
+  });
+})();
+</script>
+<script>
+/* Living Muslim landing: 3D sky of the five prayers (WebGL, no libraries), live phone, tilt and reveal. */
+(function () {
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var hover = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var pointer = { x: 0, y: 0, tx: 0, ty: 0, last: 0 };
+
+  var FS = [
+    'precision highp float;',
+    'uniform vec2 R; uniform float T, P, H; uniform vec2 M; uniform vec3 MOON; uniform vec2 MQ;',
+    'float h11(float x){return fract(sin(x*127.1)*43758.5453);}',
+    'float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
+    'float n1(float x){float i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(h11(i),h11(i+1.),f);}',
+    'float ridge(float x,float s){return n1(x+s)*.62+n1(x*2.3+s*3.1)*.26+n1(x*5.1+s*7.7)*.12;}',
+    'vec3 kT(float i){if(i<.5)return vec3(.04,.08,.21);if(i<1.5)return vec3(.13,.42,.75);if(i<2.5)return vec3(.2,.45,.68);if(i<3.5)return vec3(.16,.12,.34);return vec3(.015,.04,.06);}',
+    'vec3 kH(float i){if(i<.5)return vec3(.9,.56,.44);if(i<1.5)return vec3(.74,.88,.95);if(i<2.5)return vec3(.98,.8,.55);if(i<3.5)return vec3(.99,.48,.22);return vec3(.05,.2,.15);}',
+    'float kS(float i){if(i<.5)return -.12;if(i<1.5)return .8;if(i<2.5)return .34;if(i<3.5)return -.06;return -.5;}',
+    'mat3 RM;',
+    'float cres(vec3 p){p=RM*p;vec3 q=vec3(p.xy,p.z*3.2);float a=(length(q)-1.)/3.2;float b=length(p.xy-vec2(.42,.22))-.84;return max(a,-b);}',
+    'float bx(vec2 p,vec2 b){vec2 d=abs(p)-b;return length(max(d,0.))+min(max(d.x,d.y),0.);}',
+    'float mosque(vec2 p){',
+    ' float d=bx(p-vec2(0.,.11),vec2(.36,.11));',
+    ' d=min(d,length((p-vec2(0.,.22))*vec2(1.,.82))-.2);',
+    ' d=min(d,bx(p-vec2(0.,.5),vec2(.007,.05)));',
+    ' d=min(d,length((p-vec2(.25,.22))*vec2(1.,.9))-.085);',
+    ' d=min(d,length((p-vec2(-.25,.22))*vec2(1.,.9))-.085);',
+    ' d=min(d,bx(p-vec2(.45,.34),vec2(.022,.34)));',
+    ' d=min(d,bx(p-vec2(-.45,.34),vec2(.022,.34)));',
+    ' d=min(d,length((p-vec2(.45,.7))*vec2(1.,.55))-.034);',
+    ' d=min(d,length((p-vec2(-.45,.7))*vec2(1.,.55))-.034);',
+    ' d=min(d,bx(p-vec2(.45,.52),vec2(.042,.01)));',
+    ' d=min(d,bx(p-vec2(-.45,.52),vec2(.042,.01)));',
+    ' return d;}',
+    'float stars(vec2 p,float sc,float th){vec2 g=p*sc;vec2 id=floor(g);vec2 f=fract(g)-.5;float h=h21(id);if(h<th)return 0.;',
+    ' vec2 o=vec2(h21(id+3.1),h21(id+7.7))-.5;float d=length(f-o*.6);float tw=.55+.45*sin(T*(1.+h*3.)+h*40.);',
+    ' return (smoothstep(.09,0.,d)+.18*smoothstep(.3,0.,d))*tw*(h-th)/(1.-th)*2.;}',
+    'void main(){',
+    ' float A=R.x/R.y; vec2 uv=gl_FragCoord.xy/R.y; float ux=gl_FragCoord.x/R.x; float px=1.5/R.y;',
+    ' float s=clamp(P,0.,1.)*4.; float i=floor(min(s,3.999)); float f=smoothstep(0.,1.,s-i);',
+    ' vec3 top=mix(kT(i),kT(i+1.),f), hor=mix(kH(i),kH(i+1.),f); float se=mix(kS(i),kS(i+1.),f);',
+    ' if(H>.5){top=vec3(.012,.05,.04);hor=vec3(.07,.3,.19);se=-.6;}',
+    ' float night=1.-smoothstep(-.32,0.,se); float day=smoothstep(-.05,.3,se);',
+    ' float hz=.24; float g=smoothstep(hz-.05,1.05,uv.y);',
+    ' vec3 col=mix(hor,top,pow(g,.75));',
+    ' vec2 sp=vec2((.1+clamp(P,0.,1.)*.8)*A,hz+se*.62);',
+    ' vec3 sc=mix(vec3(1.,.5,.2),vec3(1.,.95,.82),smoothstep(0.,.4,se));',
+    ' float sd=length(uv-sp);',
+    ' col+=sc*(.5*exp(-sd*5.)+.25*exp(-sd*1.6))*smoothstep(-.25,.05,se)*(1.-H);',
+    ' col=mix(col,sc*1.15,smoothstep(.052,.046,sd)*(1.-H));',
+    ' vec2 sp2=uv+M*.012;',
+    ' col+=vec3(1.,.96,.88)*(stars(sp2,40.,.93)+stars(sp2*1.7+3.,40.,.95)*.5)*night*smoothstep(hz,hz+.25,uv.y);',
+    ' vec2 q=(uv-MOON.xy+M*.02)/MOON.z; float ql=length(q);',
+    ' float mv=max(night,H);',
+    ' if(mv>.01&&ql<4.){',
+    '  col+=vec3(.95,.75,.35)*.16*exp(-1.6*max(ql-.7,0.))*mv;',
+    '  if(ql<1.){',
+    '   float ay=sin(T*.4)*.4+M.x*.35, ax=.12*sin(T*.3)-M.y*.2;',
+    '   float c1=cos(ay),s1=sin(ay),c2=cos(ax),s2=sin(ax);',
+    '   RM=mat3(c1,0.,-s1,0.,1.,0.,s1,0.,c1)*mat3(1.,0.,0.,0.,c2,s2,0.,-s2,c2);',
+    '   vec3 ro=vec3(q,2.), rd=vec3(0.,0.,-1.); float t=2.-sqrt(max(1.-ql*ql,0.)); bool hit=false; vec3 p; float dm=9.; vec3 pm=ro;',
+    '   for(int k=0;k<56;k++){p=ro+rd*t;float d=cres(p);if(d<dm){dm=d;pm=p;}if(d<.0015){hit=true;break;}t+=max(d,.002);if(t>3.2)break;}',
+    '   float pw=1.6/(R.y*MOON.z); float cv=hit?1.:1.-smoothstep(0.,pw,dm); if(!hit)p=pm;',
+    '   if(cv>0.){',
+    '    vec2 e=vec2(.003,0.);',
+    '    vec3 n=normalize(vec3(cres(p+e.xyy)-cres(p-e.xyy),cres(p+e.yxy)-cres(p-e.yxy),cres(p+e.yyx)-cres(p-e.yyx)));',
+    '    vec3 L=normalize(vec3(-.45,.55,.75)); float df=max(dot(n,L),0.);',
+    '    float spc=pow(max(dot(reflect(-L,n),vec3(0.,0.,1.)),0.),28.); float rim=pow(1.-max(n.z,0.),3.);',
+    '    vec3 gold=vec3(.88,.66,.27);',
+    '    float face=smoothstep(.55,.9,abs(n.z));vec3 mc=gold*(.1+.95*df)*mix(.55,1.,face)+vec3(1.,.92,.75)*spc*.8+vec3(1.,.8,.45)*rim*.35;',
+    '    col=mix(col,mc,mv*cv);',
+    '   }',
+    '  }',
+    ' }',
+    ' vec3 dk=mix(vec3(.012,.035,.028),vec3(.42,.3,.2),day*.75);',
+    ' if(H>.5) dk=vec3(.01,.04,.03);',
+    ' float x=ux*A;',
+    ' float y1=hz-.01+ridge(x*1.3+M.x*.02+.5,1.)*.09;',
+    ' col=mix(col,mix(dk,hor,.55),smoothstep(y1+px,y1-px,uv.y));',
+    ' float y2=hz-.08+ridge(x*2.2+M.x*.045,5.)*.08;',
+    ' vec3 c2=mix(dk,hor,.28);',
+    ' vec2 mp=vec2(x-MQ.x*A+M.x*.03,uv.y-(hz-.075))/MQ.y;',
+    ' float md=mosque(mp)*MQ.y;',
+    ' float cov=max(smoothstep(y2+px,y2-px,uv.y),smoothstep(px,-px,md));',
+    ' vec3 mc2=c2*.82;',
+    ' col=mix(col,md<0.?mc2:c2,cov);',
+    ' if(md<0.){',
+    '  vec2 w=mp-vec2(0.,.0); float wx=fract((w.x+.36)/.09)-.5; float wy=w.y;',
+    '  float win=step(abs(wx),.13)*step(.05,wy)*step(wy-.05,.045-wx*wx*1.2)*step(abs(w.x),.33);',
+    '  float lamp=max(night,H)*(.75+.25*sin(T*1.3+floor((w.x+.36)/.09)*2.));',
+    '  col=mix(col,vec3(1.,.78,.4),win*lamp*.7);',
+    ' }',
+    ' float y3=hz-.15+ridge(x*3.1-M.x*.07+9.,9.)*.06;',
+    ' col=mix(col,dk*.75,smoothstep(y3+px,y3-px,uv.y));',
+    ' for(int k=0;k<2;k++){float z=k==0?.6:1.;vec2 gp=(uv+vec2(M.x*.03*z,-T*.012*z))*vec2(9./z);',
+    '  vec2 id=floor(gp);vec2 fp=fract(gp)-.5;float h=h21(id+float(k)*17.);',
+    '  if(h>.9){vec2 o=vec2(h21(id+1.3),h21(id+5.1))-.5;float d=length(fp-o*.6);',
+    '   col+=vec3(1.,.76,.38)*smoothstep(.09,0.,d)*.55*max(night,H)*smoothstep(.95,.9,h)*(.6+.4*sin(T*2.+h*30.));}}',
+    ' col*=1.-.22*pow(length(vec2(ux-.5,gl_FragCoord.y/R.y-.5)),2.);',
+    ' col+=(h21(gl_FragCoord.xy+fract(T))-.5)/255.;',
+    ' gl_FragColor=vec4(col,1.);',
+    '}'
+  ].join('\n');
+
+  function Sky(canvas, opts) {
+    var gl = null;
+    try { gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, powerPreference: 'low-power' }); } catch (e) {}
+    if (!gl) return null;
+    function sh(type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; } return s; }
+    var vs = sh(gl.VERTEX_SHADER, 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}');
+    var fs = sh(gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) return null;
+    var pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) return null;
+    gl.useProgram(pr);
+    var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    var al = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(al); gl.vertexAttribPointer(al, 2, gl.FLOAT, false, 0, 0);
+    var U = {}; ['R', 'T', 'P', 'H', 'M', 'MOON', 'MQ'].forEach(function (n) { U[n] = gl.getUniformLocation(pr, n); });
+    var self = { phase: opts.phase || 0, visible: true, w: 0, h: 0 };
+    function size() {
+      var r = canvas.getBoundingClientRect();
+      var k = Math.min(window.devicePixelRatio || 1, 2) * (r.width < 700 ? .75 : .72);
+      var max = 1300000, w = Math.round(r.width * k), h = Math.round(r.height * k);
+      if (w * h > max) { var s = Math.sqrt(max / (w * h)); w = Math.round(w * s); h = Math.round(h * s); }
+      if (w !== canvas.width || h !== canvas.height) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); }
+      self.w = w; self.h = h;
+    }
+    self.draw = function (t) {
+      size();
+      if (!self.w) return;
+      var A = self.w / self.h, mobile = self.w / self.h < .9;
+      var moon = opts.moon(A, mobile), mq = opts.mosque(A, mobile);
+      gl.uniform2f(U.R, self.w, self.h); gl.uniform1f(U.T, t); gl.uniform1f(U.P, self.phase); gl.uniform1f(U.H, opts.hero ? 1 : 0);
+      gl.uniform2f(U.M, pointer.x, pointer.y); gl.uniform3f(U.MOON, moon[0], moon[1], moon[2]); gl.uniform2f(U.MQ, mq[0], mq[1]);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { self.visible = es[0].isIntersecting; }, { rootMargin: '80px' }).observe(canvas);
+    canvas.classList.add('on');
+    return self;
+  }
+
+  var skies = [];
+  var c1 = document.getElementById('sky1'), c2 = document.getElementById('sky2');
+  if (c1) {
+    var s1 = Sky(c1, { hero: true, moon: function (A, m) { return m ? [A * .84, .965, .026] : [A * .53, .82, .062]; }, mosque: function (A, m) { return m ? [.5, .17] : [.9, .26]; } });
+    if (s1) { skies.push(s1); document.querySelector('.hero').classList.add('has-sky'); }
+  }
+  var day = document.getElementById('day'), s2 = null;
+  var TL = day ? day.querySelectorAll('.tl span') : [];
+  function dayPhase() {
+    if (!day) return 0;
+    var r = day.getBoundingClientRect(), span = r.height - innerHeight;
+    var p = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
+    var on = Math.round(p * 4);
+    for (var i = 0; i < TL.length; i++) TL[i].classList.toggle('on', i === on);
+    return p;
+  }
+  if (c2) {
+    s2 = Sky(c2, { moon: function (A, m) { return m ? [A * .82, .64, .07] : [A * .86, .7, .07]; }, mosque: function (A, m) { return m ? [.5, .32] : [.5, .34]; } });
+    if (s2) skies.push(s2);
+    else {
+      var pin = day.querySelector('.day-pin');
+      var G = [['#0b1a3a', '#e08f70'], ['#216bbf', '#bde0f2'], ['#3373b0', '#f6cf8c'], ['#2a1f57', '#f57a38'], ['#04090f', '#0d3326']];
+      var upd = function () { var g = G[Math.round(dayPhase() * 4)]; pin.style.background = 'linear-gradient(' + g[0] + ',' + g[1] + ')'; };
+      addEventListener('scroll', upd, { passive: true }); upd();
+    }
+  }
+
+  /* pointer and device tilt feed both the sky and the phone */
+  addEventListener('pointermove', function (e) {
+    if (e.pointerType !== 'mouse') return;
+    pointer.tx = e.clientX / innerWidth * 2 - 1; pointer.ty = e.clientY / innerHeight * 2 - 1; pointer.last = performance.now();
+  }, { passive: true });
+  addEventListener('deviceorientation', function (e) {
+    if (e.gamma == null) return;
+    pointer.tx = Math.max(-1, Math.min(1, e.gamma / 30)); pointer.ty = Math.max(-1, Math.min(1, (e.beta - 45) / 30)); pointer.last = performance.now();
+  }, { passive: true });
+
+  var p3d = document.getElementById('p3d');
+  var t0 = performance.now(), hidden = false;
+  document.addEventListener('visibilitychange', function () { hidden = document.hidden; if (!hidden) requestAnimationFrame(loop); });
+  function loop(now) {
+    if (hidden) return;
+    var t = (now - t0) / 1000;
+    var idle = now - pointer.last > 2500;
+    var tx = idle ? Math.sin(t * .5) * .55 : pointer.tx, ty = idle ? Math.sin(t * .37) * .25 : pointer.ty;
+    pointer.x += (tx - pointer.x) * .06; pointer.y += (ty - pointer.y) * .06;
+    if (p3d) {
+      var ry = -14 + pointer.x * 16, rx = 5 - pointer.y * 9;
+      p3d.style.setProperty('--ry', ry.toFixed(2) + 'deg'); p3d.style.setProperty('--rx', rx.toFixed(2) + 'deg'); p3d.style.setProperty('--gl', (pointer.x * 30).toFixed(1) + 'deg');
+    }
+    if (s2) s2.phase = dayPhase();
+    for (var i = 0; i < skies.length; i++) if (skies[i].visible) skies[i].draw(t);
+    requestAnimationFrame(loop);
+  }
+  if (reduce) {
+    var still = function () { if (s2) s2.phase = dayPhase(); skies.forEach(function (s) { s.draw(4); }); };
+    addEventListener('scroll', still, { passive: true }); addEventListener('resize', still); still();
+  } else requestAnimationFrame(loop);
+
+  /* phone screens: Today → Circle → Umrah */
+  var scr = document.querySelectorAll('.screens .screen'), dots = document.querySelectorAll('.sdots i'), cur = 0;
+  if (scr.length > 1 && !reduce) setInterval(function () {
+    if (hidden) return;
+    var prev = cur; cur = (cur + 1) % scr.length;
+    scr[prev].classList.remove('on'); scr[prev].classList.add('out');
+    setTimeout(function () { scr[prev].classList.remove('out'); }, 650);
+    scr[cur].classList.add('on');
+    for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i % scr.length === cur);
+  }, 3800);
+
+  /* cards tilt toward the mouse */
+  if (hover && !reduce) document.querySelectorAll('.tilt').forEach(function (el) {
+    el.addEventListener('pointermove', function (e) {
+      var r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      el.classList.add('hov');
+      el.style.transform = 'perspective(900px) rotateY(' + (x * 12).toFixed(2) + 'deg) rotateX(' + (-y * 10).toFixed(2) + 'deg) translateZ(10px)';
+    });
+    el.addEventListener('pointerleave', function () { el.classList.remove('hov'); el.style.transform = ''; });
+  });
+
+  /* reveal on scroll */
+  var rv = document.querySelectorAll('.rv');
+  if ('IntersectionObserver' in window && !reduce) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { var el = e.target; setTimeout(function () { el.classList.add('in'); }, (el.dataset.d || 0) * 1); io.unobserve(el); } });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    rv.forEach(function (el, i) { el.dataset.d = (i % 3) * 90; io.observe(el); });
+  } else rv.forEach(function (el) { el.classList.add('in'); });
+
+  /* umrah fan opens when seen */
+  var fan = document.getElementById('fan');
+  if (fan && 'IntersectionObserver' in window && !reduce) {
+    fan.classList.add('flat');
+    var fo = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { setTimeout(function () { fan.classList.remove('flat'); }, 150); fo.disconnect(); } }, { threshold: .35 });
+    fo.observe(fan);
+  }
+
+  /* days until Ramadan 1448 (expected around 8 Feb 2027, depends on the moon) */
+  var cd = document.getElementById('rcd');
+  if (cd) {
+    var days = Math.ceil((Date.UTC(2027, 1, 8) - Date.now()) / 864e5);
+    if (days > 0 && days < 400) {
+      cd.querySelector('b').textContent = days;
+      var n = days % 100, w = (n > 10 && n < 20) ? 'дней' : (days % 10 === 1 ? 'день' : (days % 10 >= 2 && days % 10 <= 4 ? 'дня' : 'дней'));
+      cd.querySelector('.cdw').textContent = w;
+      cd.hidden = false;
+    }
+  }
+
+  /* guide link follows the page language */
+  document.querySelectorAll('a[data-en-href]').forEach(function (a) {
+    var ru = a.getAttribute('href');
+    var set = function () { a.setAttribute('href', document.documentElement.getAttribute('data-l') === 'en' ? a.dataset.enHref : ru); };
+    set(); document.getElementById('lang').addEventListener('click', function () { setTimeout(set, 0); });
   });
 })();
 </script>
