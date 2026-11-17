@@ -66,7 +66,7 @@ export function UmrahLive() {
             {id ? <iframe src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&playsinline=1&rel=0`} title="Прямой эфир" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
               : <div className="ul-wait">{id === null ? 'Эфир сейчас недоступен. Попробуй позже.' : 'Подключаемся к эфиру…'}</div>}
           </div>
-          <small className="tiny">Прямая трансляция саудовского телевидения через YouTube. Звук включается в плеере.</small>
+          <small className="tiny">Прямой эфир из Харама с YouTube, канал подбирается сам. Звук включается в плеере.</small>
         </div>
       )}
 
