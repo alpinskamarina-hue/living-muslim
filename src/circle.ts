@@ -17,6 +17,8 @@ export interface Member {
   wk?: import('./cweek').WeekTotals; // this circle week (Sat–Fri)
   pw?: import('./cweek').WeekTotals; // the previous circle week, for the Friday summary
   cgs?: import('./cweek').CGoal[]; // weekly goals I set for the circle
+  ask?: import('./cweek').DuaAsk | null; // my request for dua, shown to the circle for 3 days
+  act?: string[]; // my active days, last 30, for the circle streak
   fast?: boolean;
   // Family circles only:
   fam?: boolean; // set by the owner: this circle is a family

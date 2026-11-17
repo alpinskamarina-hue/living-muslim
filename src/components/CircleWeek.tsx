@@ -2,10 +2,10 @@ import { useState } from 'react';
 import type { Member, Reacts } from '../circle';
 import { plural } from '../dates';
 import {
-  GOAL_KINDS, valOf, weekStart, weekEnd, addWeeks, isFriday, goalFor, circleTotals, supporters, rangeLabel,
+  GOAL_KINDS, valOf, askLive, askAnswers, circleStreak, ASK_DAYS, type DuaAsk, weekStart, weekEnd, addWeeks, isFriday, goalFor, circleTotals, supporters, rangeLabel,
   type CGoal, type GoalKind,
 } from '../cweek';
-import { daysBetween } from '../dates';
+import { daysBetween, addDays } from '../dates';
 
 interface Props {
   members: Member[];
@@ -136,5 +136,72 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
       <p className="ws-line ws-soft">В деле было {t.people} из {members.length}. Общий итог, без рейтинга по поклонению.</p>
       <button type="button" className="pri-btn ws-share" onClick={share}>{sent ? '✓ Отправлено' : 'Отправить итог в WhatsApp или Telegram'}</button>
     </div>
+  );
+}
+
+/** Dua requests: mine (with who answered) and the circle's, each live for 3 days. */
+export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, react }: {
+  members: Member[]; reacts: Reacts; me: string; today: string; nameOf: (id: string) => string;
+  myAsk: DuaAsk | null; onAsk: (a: DuaAsk | null) => void; react: (key: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const others = members.filter((m) => m.id !== me && askLive(m.ask, today));
+  const send = () => { const t = text.trim().slice(0, 90); if (!t) return; onAsk({ t, d: today }); setText(''); setOpen(false); };
+  const got = myAsk ? askAnswers(reacts, me, myAsk) : [];
+
+  return (
+    <div className="da-wrap">
+      {others.map((m) => {
+        const a = m.ask!;
+        const done = (reacts[me]?.[`a:${m.id}`]?.day ?? '') >= a.d;
+        const n = askAnswers(reacts, m.id, a).length;
+        return (
+          <div key={m.id} className="da-card">
+            <p>🤲 <b>{nameOf(m.id)}</b> просит дуа{a.d === today ? '' : ` · ${daysBetween(a.d, today) === 1 ? 'вчера' : '2 дня назад'}`}</p>
+            <q>{a.t}</q>
+            <div className="da-row">
+              <button type="button" className={done ? 'on' : ''} onClick={() => react(`a:${m.id}`)}>{done ? '✓ Ты сделал дуа' : '🤲 Сделал дуа'}</button>
+              {n > 0 && <small>{n} {plural(n, 'человек уже сделал', 'человека уже сделали', 'человек уже сделали')}</small>}
+            </div>
+          </div>
+        );
+      })}
+
+      {myAsk ? (
+        <div className="da-card mine">
+          <p>Твоя просьба о дуа <small>видна кругу {['до конца дня', 'до завтра', 'до послезавтра'][Math.min(2, daysBetween(today, addDays(myAsk.d, ASK_DAYS - 1)))]}</small></p>
+          <q>{myAsk.t}</q>
+          <p className="da-got">{got.length ? <>🤲 Дуа за тебя: <b>{got.map(nameOf).join(', ')}</b>. Аамин.</> : 'Пока никто не ответил. Круг увидит просьбу на «Сегодня».'}</p>
+          <button type="button" className="link-btn" onClick={() => onAsk(null)}>Снять просьбу</button>
+        </div>
+      ) : open ? (
+        <div className="da-card mine">
+          <p><b>О чём попросить дуа?</b></p>
+          <textarea value={text} maxLength={90} rows={2} autoFocus placeholder="Например: экзамен в четверг, здоровье мамы, работа" onChange={(e) => setText(e.target.value)} />
+          <small className="tiny">Коротко, без лишних подробностей. Увидят только люди этого круга, 3 дня.</small>
+          <div className="da-row">
+            <button type="button" className="pri-btn" disabled={!text.trim()} onClick={send}>Попросить дуа</button>
+            <button type="button" className="link-btn" onClick={() => setOpen(false)}>Отмена</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="da-ask" onClick={() => setOpen(true)}>🤲 Попросить круг о дуа</button>
+      )}
+    </div>
+  );
+}
+
+/** «🔥 Серия круга»: a line for the hero card. */
+export function StreakLine({ members, today }: { members: Member[]; today: string }) {
+  if (members.length < 2) return null;
+  const s = circleStreak(members, today);
+  if (s.n < 1 && s.got === 0) return null;
+  return (
+    <p className="cs-line">
+      <span aria-hidden="true">🔥</span>
+      {s.n >= 1 ? <><b>Серия круга: {s.n} {plural(s.n, 'день', 'дня', 'дней')}</b> подряд</> : <b>Начните серию круга сегодня</b>}
+      <small>{s.todayOk ? ' · сегодня засчитано' : ` · сегодня ${s.got} из ${s.need} нужных, чтобы день засчитался`}</small>
+    </p>
   );
 }

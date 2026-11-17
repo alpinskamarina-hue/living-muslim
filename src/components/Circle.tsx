@@ -17,8 +17,8 @@ import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite 
 import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
 import { FamilySection } from './Family';
-import { CircleGoal, WeekSummary } from './CircleWeek';
-import type { CGoal } from '../cweek';
+import { CircleGoal, WeekSummary, DuaAsks, StreakLine } from './CircleWeek';
+import type { CGoal, DuaAsk } from '../cweek';
 import { patchF, famOf } from '../family';
 
 interface Props {
@@ -36,6 +36,8 @@ interface Props {
   update: (fn: (s: AppState) => AppState) => void;
   current: Anchor;
   onCircleGoal: (g: CGoal) => void;
+  myAsk: DuaAsk | null;
+  onAsk: (a: DuaAsk | null) => void;
 }
 
 const REACTIONS = [
@@ -43,7 +45,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -180,6 +182,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           {range === 'today' ? (
             <>
               <b>{activeToday} из {members.length} сегодня в деле</b>
+              <StreakLine members={members} today={today} />
               <small>Вместе сегодня: {tdy.p} {plural(tdy.p, 'намаз', 'намаза', 'намазов')} и {tdy.h} {plural(tdy.h, 'привычка', 'привычки', 'привычек')}{duas ? ` · 🤲 ${duas} дуа друг за друга` : ''}</small>
             </>
           ) : (
@@ -205,6 +208,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </>
       )}
 
+      {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={onAsk} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }} />}
       {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
       {joined && isOwner && !isCloud && !members.some((m) => m.fam) && (

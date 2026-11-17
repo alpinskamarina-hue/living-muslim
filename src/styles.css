@@ -1869,3 +1869,21 @@ button:disabled { opacity: .5; cursor: default; }
 .ws-line { margin: 6px 0 0; font-size: 13.5px; }
 .ws-soft { color: var(--on-dark-2); font-size: 12px; }
 .ws-share { width: 100%; margin-top: 12px; background: #c9a227 !important; color: #1b1b1b !important; }
+
+/* Circle: dua requests and streak */
+.cs-line { margin: 4px 0 2px; font-size: 14px; color: var(--on-dark); }
+.cs-line span { margin-right: 6px; }
+.cs-line small { color: var(--on-dark-2); font-size: 12px; }
+.da-wrap { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+.da-card { border-radius: 18px; padding: 12px 14px; background: var(--gold-soft); color: var(--ink); }
+.da-card.mine { background: var(--surface); border: 1px solid var(--line); }
+.da-card p { margin: 0; font-size: 14px; }
+.da-card p small { color: var(--ink-2); font-size: 12px; margin-left: 4px; }
+.da-card q { display: block; margin: 6px 0 8px; font-family: var(--f-display); font-size: 18px; line-height: 1.25; quotes: '«' '»'; }
+.da-card textarea { width: 100%; box-sizing: border-box; margin: 8px 0 4px; border: 1.5px solid var(--green-2); border-radius: 12px; padding: 10px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); resize: none; }
+.da-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.da-row > button:not(.pri-btn):not(.link-btn) { border: 0; border-radius: 12px; padding: 9px 14px; font-weight: 700; background: var(--green-2); color: #fff; }
+.da-row > button.on { background: var(--surface); color: var(--green-2); border: 1px solid var(--green-2); }
+.da-row small { color: var(--ink-2); font-size: 12.5px; }
+.da-got { color: var(--ink-2); font-size: 13px !important; margin: 0 0 6px !important; }
+.da-ask { border: 1px dashed var(--line); background: none; border-radius: 16px; padding: 11px; color: var(--green-2); font-weight: 700; font-size: 14px; }

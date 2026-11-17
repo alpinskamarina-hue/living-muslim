@@ -92,3 +92,39 @@ export function rangeLabel(w: string) {
   return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${MONTHS[b.getMonth()]}` : `${a.getDate()} ${MONTHS[a.getMonth()]} – ${b.getDate()} ${MONTHS[b.getMonth()]}`;
 }
 export const addWeeks = (w: string, n: number) => addDays(w, n * 7);
+
+// ── Dua requests and the circle streak ──
+export interface DuaAsk { t: string; d: string } // text, day asked; shown for 3 days
+export const ASK_DAYS = 3;
+export const askLive = (a: DuaAsk | null | undefined, today: string): a is DuaAsk => Boolean(a && a.t && a.d <= today && a.d > addDays(today, -ASK_DAYS));
+
+const askKey = () => `lm.ask.${(isCloud && currentCircle()?.code) || 'local'}`;
+export function useMyAsk(): [DuaAsk | null, (a: DuaAsk | null) => void] {
+  const [a, setA] = useState<DuaAsk | null>(() => { try { return JSON.parse(localStorage.getItem(askKey()) || 'null'); } catch { return null; } });
+  const set = (x: DuaAsk | null) => { try { if (x) localStorage.setItem(askKey(), JSON.stringify(x)); else localStorage.removeItem(askKey()); } catch { /* */ } setA(x); };
+  return [a, set];
+}
+/** Who answered a dua request with «сделал дуа» (reaction key a:<asker>, on or after the day it was asked). */
+export function askAnswers(reacts: Reacts, asker: string, a: DuaAsk): string[] {
+  return Object.entries(reacts).filter(([from, map]) => from !== asker && (map?.[`a:${asker}`]?.day ?? '') >= a.d).map(([from]) => from);
+}
+
+/** My active days over the last n days: any prayer or counted habit marked. Shared for the circle streak. */
+export function activeDays(s: AppState, today: string, n = 30): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const d = addDays(today, -i);
+    if (Object.keys(s.prayers[d] ?? {}).length || Object.values(s.log[d] ?? {}).some((m) => isCounted(m))) out.push(d);
+  }
+  return out;
+}
+/** Days in a row when at least half the circle (and at least 2 people) marked something. Today counts once reached; until then the streak stands on yesterday. */
+export function circleStreak(members: Member[], today: string): { n: number; todayOk: boolean; need: number; got: number } {
+  const need = Math.max(2, Math.ceil(members.length / 2));
+  const on = (d: string) => members.filter((m) => (m.act ?? []).includes(d) || (d === today && m.day === today && (m.done > 0 || m.prayers > 0))).length;
+  const got = on(today);
+  const todayOk = got >= need;
+  let n = todayOk ? 1 : 0;
+  for (let i = 1; i < 30; i++) { if (on(addDays(today, -i)) >= need) n++; else break; }
+  return { n, todayOk, need, got };
+}

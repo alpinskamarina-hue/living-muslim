@@ -34,7 +34,7 @@ import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
-import { weekStart, totals, useMyGoals, isFriday, addWeeks } from './cweek';
+import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays } from './cweek';
 import type { GoTo } from './guide';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
@@ -116,6 +116,7 @@ export function App() {
   const active = state.habits.filter((h) => h.status === 'active' && !paused.includes(h.id) && !ramadanHidden(state, h, today));
   const prayersToday = state.prayers?.[today] ?? {};
   const [myGoals, setMyGoal] = useMyGoals();
+  const [myAsk, setMyAsk] = useMyAsk();
   const summary = {
     day: today,
     done: active.filter((h) => isCounted(state.log[today]?.[h.id])).length,
@@ -127,6 +128,8 @@ export function App() {
     wk: totals(state, weekStart(today), today),
     pw: totals(state, addWeeks(weekStart(today), -1), today),
     cgs: myGoals,
+    ask: askLive(myAsk, today) ? myAsk : null,
+    act: activeDays(state, today),
     goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared && (!isCloud || !g.circles?.length || g.circles.includes(currentCircle()?.code ?? ''))).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
@@ -172,6 +175,13 @@ export function App() {
     if (duaFrom.length) support.push({ text: `🤲 ${duaFrom.join(', ')} ${duaFrom.length > 1 ? 'сделали' : 'сделал(а)'} за тебя дуа`, onOpen: open });
   }
 
+  if (joined && circle.me) {
+    for (const m of circle.members) {
+      if (m.id === circle.me || !askLive(m.ask, today)) continue;
+      if ((circle.reacts[circle.me]?.[`a:${m.id}`]?.day ?? '') >= m.ask.d) continue;
+      support.push({ cls: 'invite', text: `🤲 ${circle.names[m.id]?.name || 'Брат из круга'} просит дуа: «${m.ask.t}»`, onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+    }
+  }
   if (joined && circle.members.length > 1 && isFriday(today) && now.getHours() >= 14) {
     support.push({ text: '📊 Итог недели круга готов: посмотри и отправь братьям', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
   }
@@ -204,7 +214,7 @@ export function App() {
         {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (
