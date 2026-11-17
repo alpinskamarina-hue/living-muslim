@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="ru" data-l="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f5132">
+<title>Как пользоваться · Living Muslim</title>
+<meta name="description" content="Гид по Living Muslim: первая неделя, намазы и привычки, Коран, Рамадан, Круг, цели и подробный гид по умре: от намерения до 40 дней после.">
+<meta property="og:title" content="Как пользоваться Living Muslim">
+<meta property="og:description" content="Первая неделя, все разделы и подробный гид по умре в приложении.">
+<meta property="og:type" content="article">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%230f5132%22/%3E%3Cg%20transform%3D%22translate%284%2014%29%20scale%280.34%29%22%3E%3Cpath%20d%3D%22M6%2072%20H44%20A18%2018%200%200%201%2080%2072%20H90%20L97%2016%20L104%2072%20H120%20L126%2062%20L132%2072%20H144%22%20fill%3D%22none%22%20stroke%3D%22%23f6ecd4%22%20stroke-width%3D%2211%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2238%22%20r%3D%228%22%20fill%3D%22%23d9ad55%22/%3E%3Ccircle%20cx%3D%22152%22%20cy%3D%2272%22%20r%3D%2210%22%20fill%3D%22%23d9ad55%22/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --green: #0f5132; --green-2: #1f7a4d; --green-soft: #e1efe5; --gold: #b88a2c; --gold-2: #d9ad55; --gold-soft: #f6ecd4;
+  --ink: #14261c; --ink-2: #4f6357; --bg: #fbfaf6; --surface: #ffffff; --line: #e3e8e2; --cream: #f6ecd4;
+  --f-serif: 'Cormorant Garamond', Georgia, serif; --f-sans: Manrope, system-ui, -apple-system, sans-serif; --f-ar: Amiri, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ink: #ecf1ed; --ink-2: #a9bbb0; --bg: #0c1611; --surface: #13211a; --line: #22362b; --green-soft: #1b3a29; --gold-soft: #3a2f17; --gold: #d9ad55; --green-2: #46b07a; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+html[data-l="ru"] [lang="en"], html[data-l="en"] [lang="ru"] { display: none !important; }
+a { color: inherit; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+
+.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--green) 94%, transparent); backdrop-filter: blur(10px); color: var(--cream); }
+.top .wrap { display: flex; align-items: center; gap: 10px; height: 60px; max-width: 1080px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--f-serif); font-weight: 700; font-size: 22px; }
+.top nav { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.lang { border: 1px solid rgba(246,236,212,.35); background: none; color: inherit; border-radius: 10px; padding: 6px 10px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 14px; border: 0; font: inherit; font-weight: 700; font-size: 16px; text-decoration: none; cursor: pointer; }
+.btn.gold { background: var(--gold-2); color: #1d1606; }
+.btn.line { background: none; border: 1.5px solid currentColor; }
+.top .btn { min-height: 38px; padding: 0 14px; font-size: 14px; border-radius: 11px; }
+@media (max-width: 420px) { .brand span { display: none; } }
+
+.hero { background: var(--green); color: var(--cream); padding: 40px 0 34px; }
+.hero h1 { font-family: var(--f-serif); font-size: clamp(36px, 7vw, 54px); line-height: 1.05; margin: 0 0 10px; }
+.hero p { margin: 0; max-width: 620px; color: var(--cream); opacity: .9; font-size: 17px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.toc a { text-decoration: none; font-size: 14px; font-weight: 700; border: 1px solid rgba(246,236,212,.3); border-radius: 999px; padding: 7px 13px; }
+.toc a.um { background: var(--gold-2); color: #1d1606; border-color: transparent; }
+
+main section { padding: 36px 0 8px; }
+h2 { font-family: var(--f-serif); font-size: clamp(30px, 5vw, 40px); line-height: 1.1; margin: 0 0 6px; }
+h3 { font-size: 19px; margin: 28px 0 8px; line-height: 1.3; }
+h4 { font-size: 16px; margin: 18px 0 4px; }
+.lead { color: var(--ink-2); font-size: 17px; margin: 0 0 16px; }
+p, li { color: var(--ink-2); }
+b, strong { color: var(--ink); }
+ul, ol { padding-left: 22px; margin: 6px 0 12px; }
+li { margin: 4px 0; }
+.path { display: inline-block; font-size: 13px; font-weight: 700; background: var(--green-soft); color: var(--ink); border-radius: 8px; padding: 2px 8px; }
+
+.steps { counter-reset: s; list-style: none; padding: 0; display: grid; gap: 10px; }
+.steps li { counter-increment: s; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px 14px 58px; margin: 0; }
+.steps li::before { content: counter(s); position: absolute; left: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; background: var(--green-2); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 14px; }
+.steps li b { display: block; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 12px; margin: 12px 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; min-width: 0; }
+.card .ic { font-size: 26px; line-height: 1; }
+.card h4 { margin: 8px 0 4px; font-size: 17px; }
+.card p { margin: 4px 0; font-size: 15px; }
+.card ul { font-size: 15px; padding-left: 18px; }
+.tip { border-left: 3px solid var(--gold-2); background: var(--gold-soft); border-radius: 0 12px 12px 0; padding: 10px 14px; margin: 12px 0; color: var(--ink); font-size: 15px; }
+.tip p { color: var(--ink); margin: 0; }
+
+.umrah { padding-top: 0 !important; margin-top: 28px; }
+.um-head { color: var(--cream); padding: 40px 0 28px; margin-bottom: 18px; background: var(--green); box-shadow: 0 0 0 100vmax var(--green); clip-path: inset(0 -100vmax); }
+.um-head h2 { color: var(--cream); font-size: clamp(36px, 7vw, 52px); }
+.um-head p { color: var(--cream); opacity: .9; margin: 0; font-size: 17px; max-width: 640px; }
+.um-head .k { font-size: 44px; line-height: 1; }
+.um-toc { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px 18px; }
+.um-toc ol { margin: 0; columns: 2; column-gap: 28px; }
+@media (max-width: 560px) { .um-toc ol { columns: 1; } }
+.um-toc a { text-decoration: none; font-weight: 600; color: var(--ink); }
+.um-part { border-top: 1px solid var(--line); margin-top: 30px; padding-top: 8px; }
+.um-part > h3 { font-family: var(--f-serif); font-size: 28px; margin-top: 18px; }
+.phase { display: grid; gap: 10px; }
+.phase div { display: grid; grid-template-columns: 112px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.phase em { font-style: normal; font-weight: 800; color: var(--gold); font-size: 14px; }
+.phase p { margin: 0; font-size: 15px; }
+@media (max-width: 520px) { .phase div { grid-template-columns: 1fr; gap: 2px; } }
+.rites { list-style: none; padding: 0; counter-reset: r; display: grid; gap: 8px; }
+.rites li { counter-increment: r; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.rites li::before { content: counter(r); width: 30px; height: 30px; border-radius: 9px; background: var(--gold-soft); color: var(--gold); font-weight: 800; display: grid; place-items: center; }
+.rites p { margin: 2px 0 0; font-size: 15px; }
+.ar { font-family: var(--f-ar); font-size: 24px; direction: rtl; text-align: right; color: var(--ink); margin: 8px 0 2px; line-height: 1.8; }
+.timeline { border-left: 2px solid var(--gold-2); margin: 12px 0 12px 8px; padding-left: 20px; }
+.timeline div { position: relative; margin: 0 0 16px; }
+.timeline div::before { content: ''; position: absolute; left: -27px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--gold-2); border: 2px solid var(--bg); }
+.timeline b { display: block; }
+.timeline p { margin: 2px 0 0; font-size: 15px; }
+
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 16px; margin: 8px 0; }
+summary { cursor: pointer; font-weight: 700; padding: 14px 0; list-style: none; color: var(--ink); }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: '+'; float: right; color: var(--gold); font-weight: 800; }
+details[open] summary::after { content: '–'; }
+details p { margin: 0 0 14px; }
+
+.cta { background: var(--green); color: var(--cream); border-radius: 22px; padding: 28px 22px; text-align: center; margin: 40px 0; }
+.cta h2 { color: var(--cream); }
+.cta p { color: var(--cream); opacity: .9; }
+.cta .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+.note { font-size: 14px; color: var(--ink-2); }
+footer { border-top: 1px solid var(--line); padding: 22px 0 40px; font-size: 14px; color: var(--ink-2); }
+footer .wrap { display: flex; gap: 18px; flex-wrap: wrap; }
+footer a { color: var(--ink-2); }
+.share { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 8px 14px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/?home" aria-label="Living Muslim">
+      <svg viewBox="0 0 160 100" width="42" height="26" aria-hidden="true"><path d="M6 72 H44 A18 18 0 0 1 80 72 H90 L97 16 L104 72 H120 L126 62 L132 72 H144" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M62 54 V48" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><defs><mask id="hm"><rect width="160" height="100" fill="#fff"/><circle cx="62" cy="37.6" r="4.6" fill="#000"/></mask></defs><circle cx="62" cy="40.5" r="7" fill="#d9ad55" mask="url(#hm)"/><circle cx="152" cy="72" r="8" fill="#d9ad55"/></svg>
+      <span>Living Muslim</span>
+    </a>
+    <nav>
+      <button class="lang" type="button" id="lang" aria-label="Switch language">EN</button>
+      <a class="btn gold" href="/app/"><span lang="ru">Открыть</span><span lang="en">Open app</span></a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============================== RUSSIAN ============================== -->
+<div lang="ru">
+<div class="hero">
+  <div class="wrap">
+    <h1>Как пользоваться Living Muslim</h1>
+    <p>Всё приложение на одной странице: с чего начать в первую неделю, что есть в каждом разделе и подробный гид по умре, от намерения до сорока дней после.</p>
+    <div class="toc">
+      <a href="#ru-start">Первая неделя</a>
+      <a href="#ru-day">Каждый день</a>
+      <a href="#ru-practice">Практика</a>
+      <a href="#ru-times">Рамадан и сафар</a>
+      <a href="#ru-together">Круг и цели</a>
+      <a class="um" href="#ru-umrah">🕋 Умра: полный гид</a>
+      <a href="#ru-settings">Настройки</a>
+      <a href="#ru-faq">Вопросы</a>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+<section id="ru-start">
+  <h2>Первая неделя</h2>
+  <p class="lead">Семь маленьких шагов. Они же есть в приложении на экране «Сегодня» под намазами и отмечаются сами, как только ты их сделал.</p>
+  <ol class="steps">
+    <li><b>Отметь намаз</b>Нажми на намаз вверху «Сегодня», когда помолишься.</li>
+    <li><b>Добавь первую привычку</b>Маленькую, после одного из намазов. Например, одна страница Корана после Магриба.</li>
+    <li><b>Открой Коран</b>Практика → Коран. Хотя бы один аят с переводом.</li>
+    <li><b>Напиши мухасабу вечером</b>Две строки: что получилось и что завтра сделать лучше.</li>
+    <li><b>Позови близкого в Круг</b>Вместе держаться легче. Ссылкой или по нику.</li>
+    <li><b>Поставь цель</b>Одно большое намерение на ближайшие месяцы.</li>
+    <li><b>Включи напоминания</b>Установи приложение на телефон, чтобы не пропускать время намаза.</li>
+  </ol>
+  <div class="tip"><p>Главное правило приложения: <b>не пропускать дважды подряд</b>. Пропустил день, просто отметь, что можешь сегодня, хотя бы минимум. Вины не нужно.</p></div>
+</section>
+
+<section id="ru-day">
+  <h2>Каждый день</h2>
+  <p class="lead">Весь день строится вокруг пяти намазов. Всё остальное держится на них.</p>
+  <div class="cards">
+    <div class="card"><div class="ic">🕌</div><h4>Намазы</h4>
+      <p>На «Сегодня» пять намазов. Одно касание значит «вовремя», второе «с опозданием», третье снимает отметку. С опозданием тоже считается.</p>
+      <p>Время считается по твоему городу. Город, метод расчёта и мазхаб для Асра: <span class="path">Профиль → Намазы</span>.</p></div>
+    <div class="card"><div class="ic">🌱</div><h4>Привычки после намаза</h4>
+      <p>Нажми «Добавить» и выбери, после какого намаза её делать. Намаз сам напоминает о привычке.</p>
+      <p>Задай <b>минимальную версию</b> на тяжёлый день: одна страница вместо десяти. Начни с одной–трёх привычек.</p></div>
+    <div class="card"><div class="ic">🌙</div><h4>Вечерняя мухасаба</h4>
+      <p>Поле внизу «Сегодня». Две строки перед сном. Это видишь только ты. Можно включить вечернее напоминание.</p></div>
+    <div class="card"><div class="ic">🌳</div><h4>Мой сад</h4>
+      <p>Каждый день, когда ты в деле, в саду появляется лист. Тихая награда за постоянство, без рейтингов. <span class="path">Профиль → Мой сад</span></p></div>
+  </div>
+</section>
+
+<section id="ru-practice">
+  <h2>Практика</h2>
+  <p class="lead">Всё, что делаешь руками. Если у привычки есть практика, она отметится сама.</p>
+  <div class="cards">
+    <div class="card"><div class="ic">📖</div><h4>Коран</h4><p>Чтение с переводом (RU, EN, TR) с того места, где остановился. Размер текста настраивается. Если привычка про Коран, чтение отметит её само.</p></div>
+    <div class="card"><div class="ic">📿</div><h4>Тасбих и фокус</h4><p>Нажимай по экрану, телефон вибрирует на 33, 66 и 100. Фокус: таймер для чтения или учёбы без отвлечений.</p></div>
+    <div class="card"><div class="ic">🎓</div><h4>Видеоуроки, книги, языки</h4><p>Курсы с YouTube, приложение помнит, где ты остановился. Свои PDF и пересказы глав. Курс английского по дням и карточки слов.</p></div>
+    <div class="card"><div class="ic">💪</div><h4>Здоровье и питание</h4><p>Сон от Фаджра, вода, короткие тренировки с таймером, посты сунны. Питание: мера и сунна, простые отметки без калорий.</p></div>
+    <div class="card"><div class="ic">🤲</div><h4>Садака и закят</h4><p>Отмечай садаку деньгами или делом. Там же калькулятор закята.</p></div>
+    <div class="card"><div class="ic">🕋</div><h4>Умра</h4><p>Целый раздел. Подробно ниже: <a href="#ru-umrah"><b>полный гид по умре</b></a>.</p></div>
+  </div>
+</section>
+
+<section id="ru-times">
+  <h2>Рамадан и сафар</h2>
+  <div class="cards">
+    <div class="card"><div class="ic">🌙</div><h4>Рамадан</h4>
+      <p>Режим включается сам по хиджре. Карточка появится на «Сегодня» перед началом месяца.</p>
+      <ul><li>30 дней: посты, сухур и ифтар, дело дня</li><li>Ночи и ночь Кадр, дуа, хатм</li><li>Итикаф, план сна, мечети рядом</li><li>Привычки можно поставить на паузу или минимум на 30 дней</li></ul></div>
+    <div class="card"><div class="ic">✈️</div><h4>Сафар</h4>
+      <p>Кнопка «🧭 Сафар» в шапке «Сегодня». Намазы по месту, сокращение и объединение по твоему мазхабу, кибла.</p>
+      <p>Привычки на время поездки встают на паузу и не ломают серию.</p></div>
+  </div>
+</section>
+
+<section id="ru-together">
+  <h2>Круг и цели</h2>
+  <div class="cards">
+    <div class="card"><div class="ic">👥</div><h4>Круг</h4>
+      <p>Семья или друзья, которые поддерживают друг друга. Видят только итог дня, без подробностей.</p>
+      <ul><li>Позови кнопкой «+ Пригласить» по ссылке или по нику</li><li>Делай дуа за друзей 🤲, говори машаАллах, мягко подтолкни того, кто ещё не отметился</li><li>Общие дела: хатм Корана по джузам, ифтар, поездка на умру</li></ul>
+      <p>Названия привычек, заметки и мухасаба остаются только у тебя.</p></div>
+    <div class="card"><div class="ic">🎯</div><h4>Цели</h4>
+      <p>Большое намерение, разбитое на привычки и вехи. Прогресс считается сам из Корана, курсов и намазов.</p>
+      <ul><li>Нийя и «я тот, кто…»</li><li>До трёх активных целей, чтобы не распыляться</li><li>В пятницу короткий пересмотр недели</li></ul></div>
+  </div>
+</section>
+</main>
+
+<!-- ------------------------------ UMRAH RU ------------------------------ -->
+<section class="umrah" id="ru-umrah">
+  <div class="wrap">
+    <div class="um-head">
+      <div class="k">🕋</div>
+      <h2>Умра: полный гид</h2>
+      <p>В приложении вся умра собрана в одном экране: подготовка сердца, дуа, обряды со счётчиком, поездка с группой, копилка и всё, что нужно на месте и после возвращения.</p>
+    </div>
+    <div class="um-toc">
+      <ol>
+        <li><a href="#ru-u1">Как открыть умру</a></li>
+        <li><a href="#ru-u2">Карточка «Сейчас»</a></li>
+        <li><a href="#ru-u3">Сердце: видео и подготовка</a></li>
+        <li><a href="#ru-u4">Дела: документы и вещи</a></li>
+        <li><a href="#ru-u5">Дуа и просьбы близких</a></li>
+        <li><a href="#ru-u6">Микат в самолёте</a></li>
+        <li><a href="#ru-u7">Обряды шаг за шагом</a></li>
+        <li><a href="#ru-u8">Медина и умра за другого</a></li>
+        <li><a href="#ru-u9">Поездка, копилка, билеты</a></li>
+        <li><a href="#ru-u10">Поездка группой из Круга</a></li>
+        <li><a href="#ru-u11">На месте в Мекке и Медине</a></li>
+        <li><a href="#ru-u12">После умры</a></li>
+        <li><a href="#ru-u13">План по дням</a></li>
+        <li><a href="#ru-u14">Вопросы про умру</a></li>
+      </ol>
+    </div>
+
+    <div class="um-part" id="ru-u1">
+      <h3>1. Как открыть умру</h3>
+      <p>Есть два входа, и оба ведут в один и тот же экран:</p>
+      <ul>
+        <li><span class="path">Практика → Умра</span>, если готовишься сам.</li>
+        <li><span class="path">Круг → Умра</span>, если едешь с братьями или сёстрами из Круга. Экран сразу откроется на вкладке «Поездка».</li>
+      </ul>
+      <p>Вверху три числа: готовность <b>сердца</b>, готовность <b>дел</b> и сколько <b>дней до вылета</b>. Ниже карточка «Сейчас» и четыре вкладки: <b>Сердце, Дуа, Обряды, Поездка</b>.</p>
+      <p>Ещё выше две кнопки: <b>«Кааба сейчас»</b> (прямой эфир из Харама) и погода в Мекке и Медине на 7 дней с советами по жаре.</p>
+    </div>
+
+    <div class="um-part" id="ru-u2">
+      <h3>2. Карточка «Сейчас»</h3>
+      <p>Это сердце экрана. Укажи даты вылета и возвращения (или они возьмутся из поездки группы), и карточка будет показывать только то, что важно именно сегодня. Под ней до трёх ближайших дел, которые пора отметить.</p>
+      <div class="phase">
+        <div><em>Дат ещё нет</em><p>Копилка на умру и поле для дат. Пока билетов нет, начни с сердца: намерение и покаяние от билетов не зависят.</p></div>
+        <div><em>Больше месяца</em><p>Время намерения. Обнови нийю, попроси прощения, начни учить тальбию.</p></div>
+        <div><em>Месяц до умры</em><p>Прививка, разрешение в Nusuk, запись в Равду, билеты. Тренировка ходьбы на 4 недели. По одному шагу гида в день, чтобы на месте всё было знакомо.</p></div>
+        <div><em>Последняя неделя</em><p>Вещи, список дуа, договорённости с семьёй и работой. Прощание с близкими и садака. Кнопка «Микат в самолёте: указать рейс».</p></div>
+        <div><em>В поездке</em><p>«Ляббайк, Аллахумма ляббайк». Счётчики тавафа и саи, когда выходить на намаз, где твоя группа, дневник, кнопка «🆘 Я потерялся» и точка встречи.</p></div>
+        <div><em>40 дней после</em><p>Картинка «Моя умра» для историй, 40 дней с одной привычкой из поездки, дневник: что ты привёз из умры.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="ru-u3">
+      <h3>3. Сердце: видеоуроки и внутренняя подготовка</h3>
+      <p>Умра начинается задолго до самолёта. Главная подготовка внутри, поэтому вкладка «Сердце» открывается первой.</p>
+      <h4>▶ Видеоуроки «Как совершить умру»</h4>
+      <ul>
+        <li><b>RU:</b> Абу Ясин Руслан Маликов, «Инструкция по Умре», 8 уроков.</li>
+        <li><b>EN:</b> Dr Haifaa Younis, Jannah Institute, 11 уроков.</li>
+      </ul>
+      <p>Видео играет прямо в приложении. Просмотренные уроки отмечаются галочкой, а урок про конкретный обряд ещё и стоит сверху на экране этого обряда.</p>
+      <h4>Семь шагов сердца</h4>
+      <ol>
+        <li>Обновить намерение: ради Аллаха, а не ради фото и рассказов <span class="note">(за 30 дней)</span></li>
+        <li>Покаяться и попросить прощения у тех, кого обидел <span class="note">(за 30 дней)</span></li>
+        <li>Вернуть долги или договориться о них, написать завещание <span class="note">(за 30 дней)</span></li>
+        <li>Пройти гид по обрядам целиком <span class="note">(за 20 дней)</span></li>
+        <li>Выучить тальбию наизусть <span class="note">(за 15 дней)</span></li>
+        <li>Составить свой список дуа и собрать просьбы близких <span class="note">(за 10 дней)</span></li>
+        <li>Попрощаться с близкими, оставить садака <span class="note">(за 1 день)</span></li>
+      </ol>
+      <h4>Тальбия наизусть</h4>
+      <p>Тальбия разбита на четыре фразы. Учишь по одной: текст прячется, ты вспоминаешь и открываешь, чтобы проверить себя.</p>
+      <p class="ar">لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ</p>
+      <p class="note">Ляббайка-Ллахумма ляббайк, ляббайка ля шарика ляка ляббайк, инна-ль-хамда ва-н-ни'мата ляка ва-ль-мульк, ля шарика лях.</p>
+    </div>
+
+    <div class="um-part" id="ru-u4">
+      <h3>4. Дела: документы, вещи, ноги</h3>
+      <p>Там же, во вкладке «Сердце», ниже идут практические дела. У каждого срок, а у сложных есть «Как это сделать».</p>
+      <div class="cards">
+        <div class="card"><h4>🛂 Виза и Nusuk <span class="note">за 30 дней</span></h4><p>Туристическая eVisa на visa.visitsaudi.com (для граждан многих стран, в том числе России). Затем в приложении Nusuk регистрируешься и получаешь разрешение на умру на свои даты. Страховка обычно входит в визу, проверь, что она покрывает лечение.</p></div>
+        <div class="card"><h4>💉 Прививка ACWY <span class="note">обязательно</span></h4><p>Саудовская Аравия требует прививку от менингита ACWY не позже чем за 10 дней до приезда. Сохрани справку с собой и фото в телефоне.</p></div>
+        <div class="card"><h4>🌿 Запись в Равду <span class="note">за 14 дней</span></h4><p>В Равду пускают только по записи в Nusuk. Места разбирают заранее, выбирай время, как только знаешь даты в Медине. У братьев и сестёр время разное.</p></div>
+        <div class="card"><h4>✈️ Билеты и отель <span class="note">за 25 дней</span></h4><p>Кнопки во вкладке «Поездка» открывают обычный поиск с уже подставленными датами.</p></div>
+        <div class="card"><h4>🚶 Тренировка ходьбы <span class="note">4 недели</span></h4><p>Таваф и саи это несколько километров пешком, часто в жару. План на 4 недели: число шагов в день растёт до 9 000, отмечаешь каждый день.</p></div>
+        <div class="card"><h4>🎒 Ихрам и вещи <span class="note">за 7 дней</span></h4><p>Ихрам для братьев, удобная обувь, пояс для денег. Договориться о семье и работе за 5 дней.</p></div>
+      </div>
+      <div class="tip"><p>Если едешь с группой из Круга, группа видит твою готовность <b>только процентом</b>. Сами пункты никто не видит.</p></div>
+    </div>
+
+    <div class="um-part" id="ru-u5">
+      <h3>5. Дуа и просьбы близких</h3>
+      <p>Вкладка «Дуа» нужна, чтобы у Каабы, на Сафе и Марве и у Замзама ничего не забыть.</p>
+      <ul>
+        <li><b>Мои дуа.</b> Запиши, о чём хочешь попросить. Список хранится только у тебя.</li>
+        <li><b>Просят из Круга.</b> Близкие, которые не едут, оставляют просьбы в поездке группы: «Сделайте дуа за…». Ты видишь их отдельным списком и отмечаешь, когда сделал.</li>
+        <li><b>По кругам тавафа.</b> Твои дуа и просьбы близких сами разложатся по семи кругам, чтобы к концу никто не был забыт.</li>
+        <li><b>«Твоё дуа сделано у Каабы».</b> Когда паломник в Мекке отмечает просьбу, человек, который просил, видит это у себя на «Сегодня» и может сказать «Аамин» и сделать дуа в ответ.</li>
+      </ul>
+    </div>
+
+    <div class="um-part" id="ru-u6">
+      <h3>6. Микат в самолёте</h3>
+      <p>Если летишь в Джидду, самолёт пересекает микат в воздухе, часто когда люди спят или стоят в очереди. Поэтому в приложении есть отдельный помощник: <span class="path">Обряды → Микат в самолёте</span>.</p>
+      <ol>
+        <li>Выбери, откуда летишь, и укажи время посадки.</li>
+        <li>Приложение покажет таймер до намерения с запасом примерно в четверть часа: лучше раньше, чем после миката.</li>
+        <li>Нажми «Напомнить за 10 минут», и пока приложение открыто, оно напомнит.</li>
+        <li>Сделал намерение, нажми «Я в ихраме». Дальше экран показывает тальбию и запреты ихрама, пока не выйдешь из ихрама.</li>
+      </ol>
+      <p>Если летишь сначала в Медину, ихрам в самолёте не нужен: приложение так и скажет и подскажет надеть ихрам перед выездом в Мекку.</p>
+    </div>
+
+    <div class="um-part" id="ru-u7">
+      <h3>7. Обряды шаг за шагом</h3>
+      <p>Вкладка «Обряды». Каждый шаг открывается отдельным экраном: сверху видеоурок, ниже объяснение и дуа на арабском, в транскрипции и в переводе. Кнопка «Дальше» ведёт к следующему шагу.</p>
+      <ol class="rites">
+        <li><div><b>Ихрам и намерение</b><p>Гусль, у братьев два белых несшитых полотна, у сестёр обычная закрытая одежда без никаба и перчаток. Намерение до миката.</p></div></li>
+        <li><div><b>Тальбия</b><p>С момента намерения до начала тавафа. Братья вслух, сёстры тихо.</p></div></li>
+        <li><div><b>Вход в Масджид аль-Харам</b><p>С правой ноги, с дуа входа в мечеть. Для тавафа нужно омовение.</p></div></li>
+        <li><div><b>Таваф: 7 кругов</b><p>Против часовой стрелки от Чёрного камня. <b>Счётчик кругов</b>: экран не гаснет, а случайное второе нажатие через пару секунд приложение переспросит. На каждом круге подсказка, о чём попросить, и твои дуа на этот круг.</p></div></li>
+        <li><div><b>Два ракаата у Макама Ибрахима</b><p>Или в любом месте мечети, если тесно.</p></div></li>
+        <li><div><b>Вода Замзам</b><p>Пей и проси о чём хочешь.</p></div></li>
+        <li><div><b>Саи: 7 проходов</b><p>От Сафы к Марве, седьмой заканчивается на Марве. Тоже со счётчиком и зикром для Сафы и Марвы.</p></div></li>
+        <li><div><b>Бритьё или укорачивание</b><p>Выход из ихрама. Умра завершена, альхамдулиллях.</p></div></li>
+      </ol>
+      <div class="tip"><p>Если сомневаешься в числе кругов, бери меньшее и доделай. В сунне нет особого дуа для каждого круга: подсказки на кругах нужны, только если растерялся. Проси своими словами и на своём языке.</p></div>
+      <h4>Запреты в ихраме</h4>
+      <p>Полный список внизу вкладки «Обряды» и на экране «Я в ихраме»: благовония, стрижка волос и ногтей, супружеская близость, охота, для братьев шитая одежда и покрытая голова, для сестёр никаб и перчатки.</p>
+      <p class="note">Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.</p>
+    </div>
+
+    <div class="um-part" id="ru-u8">
+      <h3>8. Медина и умра за другого</h3>
+      <div class="cards">
+        <div class="card"><h4>🕌 Медина</h4><p>Короткий гид по шести местам: Мечеть Пророка ﷺ, Равда (по записи в Nusuk), приветствие Пророку ﷺ, мечеть Куба, кладбище аль-Баки, гора Ухуд. У каждого места что делать и какое дуа читать.</p></div>
+        <div class="card"><h4>🤲 Умра за другого (бадаль)</h4><p>За умершего родственника или того, кто сам уже не сможет поехать. Приложение подскажет, как сделать намерение за конкретного человека. Детали уточни у своего имама.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="ru-u9">
+      <h3>9. Поездка: когда ехать, копилка, билеты</h3>
+      <div class="cards">
+        <div class="card"><h4>📅 Когда лучше ехать</h4><p>Календарь на 12 месяцев вперёд: средняя жара в Мекке по месяцам, Рамадан 🌙 и сезон хаджа ⛔, когда умра для приезжих обычно закрыта.</p></div>
+        <div class="card"><h4>🧳 Собрать поездку</h4><p>Пять шагов с галочками: виза (Nusuk), билеты, отель у Харама, eSIM, страховка. Кнопки открывают обычный поиск с твоими датами. Это просто рекомендации, без партнёрских ссылок.</p></div>
+        <div class="card"><h4>💰 Копилка на умру</h4><p>Поставь сумму и дату, и приложение покажет, сколько откладывать в неделю. Деньги лежат у тебя в банке, приложение только считает.</p></div>
+        <div class="card"><h4>👵 Отправить родителей</h4><p>Отдельная копилка на умру для мамы или отца. Самый большой подарок.</p></div>
+      </div>
+      <p>Если едешь один или с агентством, просто укажи свои даты в конце вкладки «Поездка», и карточка «Сейчас» будет подсказывать по дням.</p>
+    </div>
+
+    <div class="um-part" id="ru-u10">
+      <h3>10. Поездка группой из Круга</h3>
+      <p>Самое сильное, что есть в приложении для умры. Можно собрать поездку с братьями или сёстрами из своего Круга без агентства: даты, билеты, жильё, документы и общая касса в одном месте. Обычно так выходит дешевле.</p>
+      <h4>Как собрать</h4>
+      <ol>
+        <li><span class="path">Круг → Умра → Поездка</span>, кнопка «🕋 Собрать поездку на умру». Название, месяц и город вылета.</li>
+        <li>Остальные в Круге видят поездку и отвечают: <b>Еду</b>, <b>Думаю</b> или <b>Не в этот раз</b>.</li>
+        <li>План поездки идёт по шагам, у каждого видно, что готово.</li>
+      </ol>
+      <ol class="rites">
+        <li><div><b>Сбор</b><p>Кто едет. Шаг готов, когда едут хотя бы двое.</p></div></li>
+        <li><div><b>Даты</b><p>Несколько вариантов дат, каждый отмечает «Мне подходит», собирающий выбирает.</p></div></li>
+        <li><div><b>Билеты</b><p>Каждый отмечает, что купил: «купили 3 из 4».</p></div></li>
+        <li><div><b>Жильё</b><p>Номера в Мекке и Медине и цена с человека.</p></div></li>
+        <li><div><b>Документы</b><p>Загранпаспорт, виза, страховка, Nusuk, Равда, ихрам, копии. Видно, у скольких готово.</p></div></li>
+        <li><div><b>Общая касса</b><p>Кто за что заплатил, и приложение само считает, кто кому сколько должен.</p></div></li>
+        <li><div><b>Дорога</b><p>Джидда → Мекка, поезд Харамейн до Медины, сим-карта, план по дням.</p></div></li>
+        <li><div><b>На месте</b><p>Умра-гид, дуа, точка встречи.</p></div></li>
+        <li><div><b>Итог</b><p>Сколько потратили, а если указать цену пакета агентства, то и сколько сэкономил каждый.</p></div></li>
+      </ol>
+      <h4>Ещё в поездке группы</h4>
+      <ul>
+        <li><b>Кто едет и готовность</b> каждого в процентах.</li>
+        <li><b>Амир.</b> По сунне в поездке от трёх человек выбирают амира, его назначает тот, кто собирает поездку.</li>
+        <li><b>Задачи.</b> «Билеты для всех», «трансфер», «отель»: раздаёшь задачи участникам, каждый отмечает свою.</li>
+        <li><b>Просьбы о дуа.</b> Кто не едет, оставляет просьбу, паломники увидят её у Каабы.</li>
+      </ul>
+      <div class="tip"><p>Сейчас поездка группой открыта всем бесплатно.</p></div>
+    </div>
+
+    <div class="um-part" id="ru-u11">
+      <h3>11. На месте в Мекке и Медине</h3>
+      <p>Когда даты поездки наступили, экран переключается в режим «В пути». Гид по обрядам работает без интернета.</p>
+      <div class="cards">
+        <div class="card"><h4>🕰 Когда выходить на намаз</h4><p>Сколько идти от отеля и во сколько выйти, чтобы быть внутри Харама за 20 минут до азана, пока не стало тесно.</p></div>
+        <div class="card"><h4>🆘 Я потерялся</h4><p>Заранее заполни отель, руководителя группы и точку встречи. В нужный момент кнопка покажет большую карточку на арабском и русском: «Я потерялся, помогите добраться до отеля», с отелем, адресом, руководителем группы и номером экстренной помощи 911. Покажи её полицейскому, сотруднику Харама или таксисту.</p></div>
+        <div class="card"><h4>📍 Где моя группа</h4><p>Радар показывает, кто из группы где: как далеко и в какую сторону. Место видят только участники твоего Круга и только пока открыто приложение. После поездки место перестаёт показываться само.</p></div>
+        <div class="card"><h4>📓 Дневник паломника</h4><p>Короткие записи прямо там. Хранятся только на твоём телефоне, а через год приложение напомнит о них.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="ru-u12">
+      <h3>12. После умры</h3>
+      <ul>
+        <li><b>Картинка «Моя умра»</b> для историй в WhatsApp и Telegram: Кааба с семью золотыми кругами, твои даты и тальбия.</li>
+        <li><b>40 дней после умры.</b> Выбери одну привычку из поездки и сохрани её сорок дней, чтобы состояние не ушло.</li>
+        <li><b>Дневник:</b> «Что ты привёз из умры? Что хочешь сохранить?»</li>
+        <li><b>Через год</b> приложение покажет «Год назад ты был в умре» и предложит сделать дуа, чтобы Аллах позвал тебя снова.</li>
+      </ul>
+    </div>
+
+    <div class="um-part" id="ru-u13">
+      <h3>13. Умра с приложением: план по дням</h3>
+      <div class="timeline">
+        <div><b>Сегодня, ещё без дат</b><p>Открой Практика → Умра. Начни копилку, посмотри первое видео, обнови намерение.</p></div>
+        <div><b>За 2–3 месяца</b><p>«Когда лучше ехать»: выбери месяц. Позови близких в поездку группой. Укажи даты.</p></div>
+        <div><b>За 30 дней</b><p>Покаяние, долги, завещание. Виза и Nusuk. Прививка ACWY. Начни учить тальбию.</p></div>
+        <div><b>За 2–4 недели</b><p>Билеты и отель, запись в Равду. Тренировка ходьбы. По одному обряду в день из гида.</p></div>
+        <div><b>За неделю</b><p>Ихрам и вещи, eSIM. Список дуа и просьбы близких. Заполни «На месте» для карточки «Я потерялся». Укажи рейс для миката.</p></div>
+        <div><b>В самолёте</b><p>Таймер миката, намерение, «Я в ихраме», тальбия.</p></div>
+        <div><b>В Мекке</b><p>Обряды по шагам со счётчиками, дуа по кругам, когда выходить на намаз, где группа, дневник.</p></div>
+        <div><b>40 дней после</b><p>Картинка для близких, одна привычка из поездки, дневник.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="ru-u14">
+      <h3>14. Вопросы про умру</h3>
+      <details><summary>Работает ли гид без интернета?</summary><p>Да. Обряды, дуа, счётчики, тальбия, карточка «Я потерялся» работают без связи. Видео, прямой эфир, погода и «Где моя группа» нужны с интернетом.</p></details>
+      <details><summary>Кто видит мою подготовку?</summary><p>Группа видит только общий процент готовности. Сами пункты, твои дуа и дневник видишь только ты. Просьбы о дуа в поездке видят все в Круге.</p></details>
+      <details><summary>Я по другому мазхабу. Гид подойдёт?</summary><p>Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам, их уточняй у своего имама или руководителя группы.</p></details>
+      <details><summary>Еду с агентством. Есть смысл?</summary><p>Да. Сердце, дуа, обряды, микат, карточка «Я потерялся» и всё после умры работают так же. Просто укажи свои даты во вкладке «Поездка».</p></details>
+      <details><summary>Приложение продаёт туры или билеты?</summary><p>Нет. Кнопки ведут на обычный поиск билетов, отелей и eSIM, без партнёрских программ. Деньги в копилке лежат у тебя.</p></details>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+<section id="ru-settings">
+  <h2>Настройки</h2>
+  <div class="cards">
+    <div class="card"><div class="ic">🔔</div><h4>Напоминания и установка</h4><p>Установи приложение на телефон, тогда придут напоминания о намазах. <span class="path">Профиль → Напоминания</span>. На iPhone: Поделиться → «На экран Домой», потом открыть с иконки.</p></div>
+    <div class="card"><div class="ic">👤</div><h4>Аккаунт и новый телефон</h4><p>Вход по почте сохраняет круги и профиль. <span class="path">Профиль → Аккаунт</span>: введи почту, придёт код. Привычки переносятся через <span class="path">Профиль → Данные</span>.</p></div>
+    <div class="card"><div class="ic">💬</div><h4>Фразы из сунны</h4><p>После отметки появляется короткая фраза, иногда аят или хадис. <span class="path">Профиль → Фразы</span>: брат или сестра, обычно, спокойно или только фразы.</p></div>
+    <div class="card"><div class="ic">📖</div><h4>Гид в приложении</h4><p>Этот же гид с кнопками «Открыть» есть в <span class="path">Профиль → Как пользоваться</span>. Там же можно снова показать подсказки.</p></div>
+  </div>
+</section>
+
+<section id="ru-faq">
+  <h2>Вопросы</h2>
+  <details><summary>Кто видит мои данные?</summary><p>Привычки, заметки и мухасаба остаются у тебя. Круг видит только итог дня: сколько намазов и привычек отмечено. Мы не продаём данные и не показываем рекламу.</p></details>
+  <details><summary>Пропустил день. Всё сломалось?</summary><p>Нет. Отметь, что можешь сегодня, хотя бы минимум. Правило одно: не пропускать дважды подряд.</p></details>
+  <details><summary>Неправильное время намазов</summary><p>Профиль → Намазы: проверь город, метод расчёта и мазхаб для Асра.</p></details>
+  <details><summary>Как открыть всё на новом телефоне?</summary><p>Войди по почте в Профиль → Аккаунт на обоих телефонах. Привычки можно перенести через Профиль → Данные.</p></details>
+  <details><summary>Что бесплатно?</summary><p>Всё, что касается поклонения, бесплатно навсегда: намазы, Коран, тасбих, Рамадан, садака, сафар. Сейчас пока открыто всё приложение.</p></details>
+
+  <div class="cta">
+    <h2>Начни с одного намаза</h2>
+    <p>Работает в браузере, без пароля и без рекламы.</p>
+    <div class="row">
+      <a class="btn gold" href="/app/">Открыть приложение</a>
+      <button class="btn line js-share" type="button">Поделиться гидом</button>
+    </div>
+  </div>
+</section>
+</main>
+</div>
+
+<!-- ============================== ENGLISH ============================== -->
+<div lang="en">
+<div class="hero">
+  <div class="wrap">
+    <h1>How to use Living Muslim</h1>
+    <p>The whole app on one page: how to start in your first week, what is in each section, and a detailed umrah guide, from your intention to forty days after.</p>
+    <div class="toc">
+      <a href="#en-start">First week</a>
+      <a href="#en-day">Every day</a>
+      <a href="#en-practice">Practice</a>
+      <a href="#en-times">Ramadan &amp; travel</a>
+      <a href="#en-together">Circle &amp; goals</a>
+      <a class="um" href="#en-umrah">🕋 Umrah: full guide</a>
+      <a href="#en-settings">Settings</a>
+      <a href="#en-faq">FAQ</a>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+<section id="en-start">
+  <h2>Your first week</h2>
+  <p class="lead">Seven small steps. You will also find them in the app on Today, under the prayers. Each one ticks itself once you have done it.</p>
+  <ol class="steps">
+    <li><b>Check in a prayer</b>Tap a prayer at the top of Today once you have prayed.</li>
+    <li><b>Add your first habit</b>A small one, after one of the prayers. For example, one page of Quran after Maghrib.</li>
+    <li><b>Open the Quran</b>Practice → Quran. Even one ayah with its translation.</li>
+    <li><b>Write a muhasabah in the evening</b>Two lines: what went well, and what to do better tomorrow.</li>
+    <li><b>Invite someone close to your Circle</b>It is easier to keep going together. By link or by username.</li>
+    <li><b>Set a goal</b>One big intention for the coming months.</li>
+    <li><b>Turn on reminders</b>Install the app on your phone so you never miss a prayer time.</li>
+  </ol>
+  <div class="tip"><p>The one rule of the app: <b>never miss twice in a row</b>. Missed a day? Just check in what you can today, even the minimum. No guilt needed.</p></div>
+</section>
+
+<section id="en-day">
+  <h2>Every day</h2>
+  <p class="lead">Your day is built around the five prayers. Everything else rests on them.</p>
+  <div class="cards">
+    <div class="card"><div class="ic">🕌</div><h4>Prayers</h4>
+      <p>Today shows the five prayers. One tap means on time, a second tap means late, a third clears it. Late still counts.</p>
+      <p>Times follow your city. City, calculation method and Asr madhhab: <span class="path">Profile → Prayers</span>.</p></div>
+    <div class="card"><div class="ic">🌱</div><h4>Habits after prayer</h4>
+      <p>Tap Add and choose which prayer it follows. The prayer itself reminds you of the habit.</p>
+      <p>Set a <b>minimum version</b> for hard days: one page instead of ten. Start with one to three habits.</p></div>
+    <div class="card"><div class="ic">🌙</div><h4>Evening muhasabah</h4>
+      <p>The field at the bottom of Today. Two lines before sleep. Only you see it. You can turn on an evening reminder.</p></div>
+    <div class="card"><div class="ic">🌳</div><h4>My garden</h4>
+      <p>Every day you show up, a leaf grows in your garden. A quiet reward for consistency, with no rankings. <span class="path">Profile → My garden</span></p></div>
+  </div>
+</section>
+
+<section id="en-practice">
+  <h2>Practice</h2>
+  <p class="lead">Everything you do with your hands. If a habit has a practice, it checks itself.</p>
+  <div class="cards">
+    <div class="card"><div class="ic">📖</div><h4>Quran</h4><p>Read with a translation (EN, RU, TR) from where you stopped. Adjustable text size. If a habit is about the Quran, reading checks it for you.</p></div>
+    <div class="card"><div class="ic">📿</div><h4>Tasbih and focus</h4><p>Tap anywhere on the screen; the phone vibrates at 33, 66 and 100. Focus is a timer for reading or study without distractions.</p></div>
+    <div class="card"><div class="ic">🎓</div><h4>Video lessons, books, languages</h4><p>Courses from YouTube that remember where you stopped. Your own PDFs and chapter summaries. A daily language course and word cards.</p></div>
+    <div class="card"><div class="ic">💪</div><h4>Health and food</h4><p>Sleep around Fajr, water, short timed workouts, Sunnah fasts. Food: moderation and Sunnah, simple check-ins, no calories.</p></div>
+    <div class="card"><div class="ic">🤲</div><h4>Sadaqah and zakat</h4><p>Log sadaqah as money or a good deed. A zakat calculator is right there.</p></div>
+    <div class="card"><div class="ic">🕋</div><h4>Umrah</h4><p>A whole section of its own. See the <a href="#en-umrah"><b>full umrah guide</b></a> below.</p></div>
+  </div>
+</section>
+
+<section id="en-times">
+  <h2>Ramadan and travel</h2>
+  <div class="cards">
+    <div class="card"><div class="ic">🌙</div><h4>Ramadan</h4>
+      <p>Turns on by itself with the Hijri calendar. A Ramadan card appears on Today before the month begins.</p>
+      <ul><li>30 days: fasts, suhoor and iftar, a deed of the day</li><li>The nights and Laylat al-Qadr, duas, khatm</li><li>I'tikaf, a sleep plan, mosques nearby</li><li>Pause habits or switch them to minimum for 30 days</li></ul></div>
+    <div class="card"><div class="ic">✈️</div><h4>Safar (travel)</h4>
+      <p>The “🧭 Safar” button at the top of Today. Local prayer times, shortening and combining by your madhhab, qibla.</p>
+      <p>Habits pause during the trip and do not break your streak.</p></div>
+  </div>
+</section>
+
+<section id="en-together">
+  <h2>Circle and goals</h2>
+  <div class="cards">
+    <div class="card"><div class="ic">👥</div><h4>Circle</h4>
+      <p>Family or friends who support each other. They only see your daily total, no details.</p>
+      <ul><li>Invite with “+ Invite” by link or by username</li><li>Make dua for friends 🤲, say mashaAllah, gently nudge someone who has not checked in yet</li><li>Shared deeds: a Quran khatm by juz, iftar, an umrah trip</li></ul>
+      <p>Habit names, notes and muhasabah stay with you only.</p></div>
+    <div class="card"><div class="ic">🎯</div><h4>Goals</h4>
+      <p>A big intention broken into habits and milestones. Progress counts itself from the Quran, courses and prayers.</p>
+      <ul><li>Niyyah and “I am someone who…”</li><li>Up to three active goals, so you stay focused</li><li>A short review every Friday</li></ul></div>
+  </div>
+</section>
+</main>
+
+<!-- ------------------------------ UMRAH EN ------------------------------ -->
+<section class="umrah" id="en-umrah">
+  <div class="wrap">
+    <div class="um-head">
+      <div class="k">🕋</div>
+      <h2>Umrah: the full guide</h2>
+      <p>The app keeps the whole umrah on one screen: preparing the heart, duas, the rites with counters, a group trip, savings, and everything you need there and after you return.</p>
+    </div>
+    <div class="um-toc">
+      <ol>
+        <li><a href="#en-u1">Opening the umrah screen</a></li>
+        <li><a href="#en-u2">The “Now” card</a></li>
+        <li><a href="#en-u3">Heart: videos and preparation</a></li>
+        <li><a href="#en-u4">Tasks: documents and packing</a></li>
+        <li><a href="#en-u5">Duas and requests from loved ones</a></li>
+        <li><a href="#en-u6">Miqat on the plane</a></li>
+        <li><a href="#en-u7">The rites step by step</a></li>
+        <li><a href="#en-u8">Madinah and umrah for someone else</a></li>
+        <li><a href="#en-u9">Trip, savings, tickets</a></li>
+        <li><a href="#en-u10">A group trip from your Circle</a></li>
+        <li><a href="#en-u11">On the ground in Makkah and Madinah</a></li>
+        <li><a href="#en-u12">After umrah</a></li>
+        <li><a href="#en-u13">Day-by-day plan</a></li>
+        <li><a href="#en-u14">Umrah FAQ</a></li>
+      </ol>
+    </div>
+
+    <div class="um-part" id="en-u1">
+      <h3>1. Opening the umrah screen</h3>
+      <p>There are two ways in, and both lead to the same screen:</p>
+      <ul>
+        <li><span class="path">Practice → Umrah</span>, if you are preparing on your own.</li>
+        <li><span class="path">Circle → Umrah</span>, if you are going with brothers or sisters from your Circle. It opens straight on the Trip tab.</li>
+      </ul>
+      <p>At the top are three numbers: how ready your <b>heart</b> is, how ready your <b>tasks</b> are, and <b>days until departure</b>. Below them, the “Now” card and four tabs: <b>Heart, Duas, Rites, Trip</b>.</p>
+      <p>Above that, two buttons: <b>“Kaaba now”</b> (a live stream from the Haram) and a 7-day forecast for Makkah and Madinah with advice for the heat.</p>
+    </div>
+
+    <div class="um-part" id="en-u2">
+      <h3>2. The “Now” card</h3>
+      <p>This is the heart of the screen. Enter your departure and return dates (or they come from your group trip), and the card shows only what matters today. Under it, up to three tasks that are due.</p>
+      <div class="phase">
+        <div><em>No dates yet</em><p>Umrah savings and a place for your dates. Before tickets, start with the heart: intention and repentance do not depend on tickets.</p></div>
+        <div><em>Over a month</em><p>Time for intention. Renew your niyyah, ask forgiveness, start learning the talbiyah.</p></div>
+        <div><em>A month before</em><p>Vaccine, Nusuk permit, Rawdah booking, tickets. A 4-week walking plan. One step of the guide a day, so everything feels familiar when you are there.</p></div>
+        <div><em>The last week</em><p>Packing, your dua list, arrangements with family and work. Farewells and sadaqah. A “Miqat on the plane: enter your flight” button.</p></div>
+        <div><em>On the trip</em><p>“Labbayk Allahumma labbayk”. Tawaf and sa'i counters, when to leave for prayer, where your group is, a diary, an “🆘 I am lost” button and your meeting point.</p></div>
+        <div><em>40 days after</em><p>A “My umrah” picture for stories, 40 days with one habit from the trip, and a diary: what did you bring back?</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="en-u3">
+      <h3>3. Heart: video lessons and inner preparation</h3>
+      <p>Umrah begins long before the plane. The main preparation is inside, which is why the Heart tab comes first.</p>
+      <h4>▶ Video lessons: how to perform umrah</h4>
+      <ul>
+        <li><b>EN:</b> Dr Haifaa Younis, Jannah Institute, 11 lessons.</li>
+        <li><b>RU:</b> Abu Yasin Ruslan Malikov, “Umrah instructions”, 8 lessons.</li>
+      </ul>
+      <p>Videos play right inside the app. Watched lessons get a tick, and the lesson for a given rite also sits at the top of that rite's screen.</p>
+      <h4>Seven steps of the heart</h4>
+      <ol>
+        <li>Renew your intention: for Allah, not for photos and stories <span class="note">(30 days before)</span></li>
+        <li>Repent and ask forgiveness of anyone you have wronged <span class="note">(30 days)</span></li>
+        <li>Repay debts or agree on them, write a will <span class="note">(30 days)</span></li>
+        <li>Go through the whole rites guide <span class="note">(20 days)</span></li>
+        <li>Learn the talbiyah by heart <span class="note">(15 days)</span></li>
+        <li>Write your dua list and collect requests from loved ones <span class="note">(10 days)</span></li>
+        <li>Say goodbye to loved ones, give sadaqah <span class="note">(1 day)</span></li>
+      </ol>
+      <h4>The talbiyah by heart</h4>
+      <p>The talbiyah is split into four phrases. You learn them one by one: the text hides, you recall it, then reveal it to check yourself.</p>
+      <p class="ar">لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ</p>
+      <p class="note">Labbayk Allahumma labbayk, labbayka la sharika laka labbayk, innal-hamda wan-ni'mata laka wal-mulk, la sharika lak.</p>
+    </div>
+
+    <div class="um-part" id="en-u4">
+      <h3>4. Tasks: documents, packing, your legs</h3>
+      <p>Further down the Heart tab are the practical tasks. Each has a deadline, and the harder ones have “How to do it”.</p>
+      <div class="cards">
+        <div class="card"><h4>🛂 Visa and Nusuk <span class="note">30 days</span></h4><p>A tourist eVisa at visa.visitsaudi.com (for citizens of many countries). Then register in the Nusuk app and get an umrah permit for your dates. Insurance usually comes with the visa; check that it covers treatment.</p></div>
+        <div class="card"><h4>💉 ACWY vaccine <span class="note">required</span></h4><p>Saudi Arabia requires the ACWY meningitis vaccine at least 10 days before arrival. Keep the certificate with you and a photo on your phone.</p></div>
+        <div class="card"><h4>🌿 Rawdah booking <span class="note">14 days</span></h4><p>The Rawdah is by booking in Nusuk only. Slots go early, so book as soon as you know your Madinah dates. Brothers and sisters have different times.</p></div>
+        <div class="card"><h4>✈️ Tickets and hotel <span class="note">25 days</span></h4><p>Buttons on the Trip tab open a normal search with your dates already filled in.</p></div>
+        <div class="card"><h4>🚶 Walking practice <span class="note">4 weeks</span></h4><p>Tawaf and sa'i are several kilometres on foot, often in the heat. A 4-week plan: daily steps grow up to 9,000, and you tick off each day.</p></div>
+        <div class="card"><h4>🎒 Ihram and packing <span class="note">7 days</span></h4><p>Ihram for brothers, comfortable shoes, a money belt. Sort out family and work 5 days before.</p></div>
+      </div>
+      <div class="tip"><p>If you travel with a group from your Circle, the group sees your readiness <b>as a percentage only</b>. Nobody sees the items themselves.</p></div>
+    </div>
+
+    <div class="um-part" id="en-u5">
+      <h3>5. Duas and requests from loved ones</h3>
+      <p>The Duas tab makes sure you forget nothing at the Kaaba, on Safa and Marwah and at Zamzam.</p>
+      <ul>
+        <li><b>My duas.</b> Write down what you want to ask for. The list stays with you only.</li>
+        <li><b>Requests from the Circle.</b> People who are not going leave requests in the group trip: “Please make dua for…”. You see them as a separate list and tick each one once made.</li>
+        <li><b>Spread over the rounds.</b> Your duas and the requests are spread across the seven rounds of tawaf, so nobody is forgotten by the end.</li>
+        <li><b>“Your dua was made at the Kaaba”.</b> When a pilgrim in Makkah ticks a request, the person who asked sees it on their Today screen and can say “Ameen” and make dua back.</li>
+      </ul>
+    </div>
+
+    <div class="um-part" id="en-u6">
+      <h3>6. Miqat on the plane</h3>
+      <p>Flying into Jeddah, the plane crosses the miqat in the air, often while people sleep or queue. So the app has a helper for it: <span class="path">Rites → Miqat on the plane</span>.</p>
+      <ol>
+        <li>Choose where you fly from and enter your landing time.</li>
+        <li>The app counts down to your intention with about a quarter of an hour to spare: better early than after the miqat.</li>
+        <li>Tap “Remind me 10 minutes before”, and while the app is open it will remind you.</li>
+        <li>Once you have made your intention, tap “I am in ihram”. The screen then shows the talbiyah and the ihram rules until you leave ihram.</li>
+      </ol>
+      <p>If you fly to Madinah first, no ihram is needed on the plane: the app tells you so and reminds you to enter ihram before leaving for Makkah.</p>
+    </div>
+
+    <div class="um-part" id="en-u7">
+      <h3>7. The rites step by step</h3>
+      <p>The Rites tab. Each step opens on its own screen: the video lesson on top, then the explanation and duas in Arabic, transliteration and translation. “Next” takes you to the following step.</p>
+      <ol class="rites">
+        <li><div><b>Ihram and intention</b><p>Ghusl; two white unstitched cloths for brothers; sisters wear normal modest clothing without niqab or gloves. Intention before the miqat.</p></div></li>
+        <li><div><b>Talbiyah</b><p>From the intention until tawaf begins. Brothers aloud, sisters quietly.</p></div></li>
+        <li><div><b>Entering Masjid al-Haram</b><p>Right foot first, with the dua for entering the mosque. You need wudu for tawaf.</p></div></li>
+        <li><div><b>Tawaf: 7 rounds</b><p>Anticlockwise from the Black Stone. A <b>round counter</b>: the screen stays on, and a second tap within seconds is double-checked, since it is almost always a slip in the crowd. Each round has a prompt of what to ask for and your own duas for that round.</p></div></li>
+        <li><div><b>Two rak'ahs at Maqam Ibrahim</b><p>Or anywhere in the mosque if it is crowded.</p></div></li>
+        <li><div><b>Zamzam</b><p>Drink and ask for whatever you wish.</p></div></li>
+        <li><div><b>Sa'i: 7 laps</b><p>From Safa to Marwah; the seventh ends at Marwah. Also with a counter and the dhikr for Safa and Marwah.</p></div></li>
+        <li><div><b>Shaving or shortening</b><p>Leaving ihram. Your umrah is complete, alhamdulillah.</p></div></li>
+      </ol>
+      <div class="tip"><p>If you are unsure how many rounds you did, take the lower number and complete it. The Sunnah has no fixed dua for each round: the prompts are only there if you feel lost. Ask in your own words and your own language.</p></div>
+      <h4>Ihram restrictions</h4>
+      <p>The full list is at the bottom of the Rites tab and on the “I am in ihram” screen: perfume, cutting hair and nails, marital relations, hunting, stitched clothing and covering the head for brothers, niqab and gloves for sisters.</p>
+      <p class="note">The guide describes umrah according to the Sunnah in general terms. Details differ between madhhabs: check with your imam or group leader.</p>
+    </div>
+
+    <div class="um-part" id="en-u8">
+      <h3>8. Madinah and umrah for someone else</h3>
+      <div class="cards">
+        <div class="card"><h4>🕌 Madinah</h4><p>A short guide to six places: the Prophet's Mosque ﷺ, the Rawdah (booked in Nusuk), greeting the Prophet ﷺ, Quba Mosque, al-Baqi cemetery, Mount Uhud. For each, what to do and which dua to say.</p></div>
+        <div class="card"><h4>🤲 Umrah for someone else (badal)</h4><p>For a relative who has died, or someone who can no longer travel. The app shows how to make the intention on behalf of a specific person. Check the details with your imam.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="en-u9">
+      <h3>9. Trip: when to go, savings, tickets</h3>
+      <div class="cards">
+        <div class="card"><h4>📅 When to go</h4><p>A 12-month calendar: average heat in Makkah by month, Ramadan 🌙 and the Hajj season ⛔, when umrah for visitors usually pauses.</p></div>
+        <div class="card"><h4>🧳 Put the trip together</h4><p>Five steps with ticks: visa (Nusuk), tickets, a hotel near the Haram, eSIM, insurance. Buttons open a normal search with your dates. Plain recommendations, no affiliate links.</p></div>
+        <div class="card"><h4>💰 Umrah savings</h4><p>Set an amount and a date, and the app shows how much to put aside each week. The money stays in your bank; the app only counts.</p></div>
+        <div class="card"><h4>👵 Send your parents</h4><p>A separate savings goal for your mother's or father's umrah. The greatest gift.</p></div>
+      </div>
+      <p>Going alone or with an agency? Just enter your dates at the end of the Trip tab, and the “Now” card will guide you day by day.</p>
+    </div>
+
+    <div class="um-part" id="en-u10">
+      <h3>10. A group trip from your Circle</h3>
+      <p>The strongest umrah feature in the app. Put a trip together with brothers or sisters from your Circle, without an agency: dates, tickets, rooms, documents and a shared kitty in one place. Usually it costs less.</p>
+      <h4>How to start one</h4>
+      <ol>
+        <li><span class="path">Circle → Umrah → Trip</span>, the “🕋 Organise an umrah trip” button. A name, the month and the departure city.</li>
+        <li>Others in the Circle see the trip and answer: <b>Going</b>, <b>Thinking</b> or <b>Not this time</b>.</li>
+        <li>The trip plan goes step by step, and you can see what is ready at each one.</li>
+      </ol>
+      <ol class="rites">
+        <li><div><b>Who's in</b><p>Who is going. Done once at least two are going.</p></div></li>
+        <li><div><b>Dates</b><p>A few date options, everyone marks what suits them, the organiser picks.</p></div></li>
+        <li><div><b>Tickets</b><p>Everyone ticks when they have bought: “3 of 4 bought”.</p></div></li>
+        <li><div><b>Rooms</b><p>Rooms in Makkah and Madinah and the cost per person.</p></div></li>
+        <li><div><b>Documents</b><p>Passport, visa, insurance, Nusuk, Rawdah, ihram, copies. You see how many are ready.</p></div></li>
+        <li><div><b>Shared kitty</b><p>Who paid for what, and the app works out who owes whom.</p></div></li>
+        <li><div><b>Getting there</b><p>Jeddah → Makkah, the Haramain train to Madinah, a SIM card, a day-by-day plan.</p></div></li>
+        <li><div><b>On the ground</b><p>The umrah guide, duas, a meeting point.</p></div></li>
+        <li><div><b>Summary</b><p>What you spent, and if you enter an agency package price, how much each person saved.</p></div></li>
+      </ol>
+      <h4>Also in a group trip</h4>
+      <ul>
+        <li><b>Who is going and how ready</b> each person is, as a percentage.</li>
+        <li><b>Amir.</b> By the Sunnah a group of three or more picks an amir; the organiser appoints them.</li>
+        <li><b>Tasks.</b> “Tickets for everyone”, “transfer”, “hotel”: hand tasks to people, each ticks their own.</li>
+        <li><b>Dua requests.</b> Those not going leave a request; the pilgrims will see it at the Kaaba.</li>
+      </ul>
+      <div class="tip"><p>Group trips are currently open to everyone for free.</p></div>
+    </div>
+
+    <div class="um-part" id="en-u11">
+      <h3>11. On the ground in Makkah and Madinah</h3>
+      <p>When your travel dates arrive, the screen switches to “On the way”. The rites guide works offline.</p>
+      <div class="cards">
+        <div class="card"><h4>🕰 When to leave for prayer</h4><p>How long the walk from your hotel takes and when to leave so you are inside the Haram 20 minutes before the adhan, before it fills up.</p></div>
+        <div class="card"><h4>🆘 I am lost</h4><p>Fill in your hotel, group leader and meeting point in advance. When needed, the button shows a large card in Arabic: “I am lost, please help me get to my hotel”, with your hotel, address, group leader and the emergency number 911. Show it to a police officer, Haram staff or a taxi driver.</p></div>
+        <div class="card"><h4>📍 Where is my group</h4><p>A radar shows where each person in your group is: how far and in which direction. Only members of your Circle see it, and only while the app is open. After the trip, your location stops being shared automatically.</p></div>
+        <div class="card"><h4>📓 Pilgrim's diary</h4><p>Short notes, right there. They stay on your phone only, and a year later the app reminds you of them.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="en-u12">
+      <h3>12. After umrah</h3>
+      <ul>
+        <li><b>A “My umrah” picture</b> for WhatsApp and Telegram stories: the Kaaba with seven gold rings, your dates and the talbiyah.</li>
+        <li><b>40 days after umrah.</b> Pick one habit from the trip and keep it for forty days, so the state does not fade.</li>
+        <li><b>Diary:</b> “What did you bring back from umrah? What do you want to keep?”</li>
+        <li><b>A year later</b> the app shows “A year ago you were on umrah” and invites you to make dua that Allah calls you again.</li>
+      </ul>
+    </div>
+
+    <div class="um-part" id="en-u13">
+      <h3>13. Umrah with the app: day by day</h3>
+      <div class="timeline">
+        <div><b>Today, no dates yet</b><p>Open Practice → Umrah. Start your savings, watch the first video, renew your intention.</p></div>
+        <div><b>2–3 months before</b><p>“When to go”: pick a month. Invite loved ones to a group trip. Enter your dates.</p></div>
+        <div><b>30 days before</b><p>Repentance, debts, a will. Visa and Nusuk. ACWY vaccine. Start learning the talbiyah.</p></div>
+        <div><b>2–4 weeks before</b><p>Tickets and hotel, Rawdah booking. Walking practice. One rite a day from the guide.</p></div>
+        <div><b>One week before</b><p>Ihram and packing, eSIM. Dua list and requests. Fill in “On the ground” for the “I am lost” card. Enter your flight for the miqat.</p></div>
+        <div><b>On the plane</b><p>Miqat timer, intention, “I am in ihram”, talbiyah.</p></div>
+        <div><b>In Makkah</b><p>Rites step by step with counters, duas spread over the rounds, when to leave for prayer, where your group is, your diary.</p></div>
+        <div><b>40 days after</b><p>A picture for loved ones, one habit from the trip, your diary.</p></div>
+      </div>
+    </div>
+
+    <div class="um-part" id="en-u14">
+      <h3>14. Umrah FAQ</h3>
+      <details><summary>Does the guide work offline?</summary><p>Yes. Rites, duas, counters, the talbiyah and the “I am lost” card work without a connection. Videos, the live stream, the weather and “Where is my group” need the internet.</p></details>
+      <details><summary>Who sees my preparation?</summary><p>Your group sees only your overall readiness percentage. The items themselves, your duas and your diary are visible to you only. Dua requests in a trip are visible to everyone in the Circle.</p></details>
+      <details><summary>I follow a different madhhab. Will the guide fit?</summary><p>The guide describes umrah according to the Sunnah in general terms. Details differ between madhhabs; check them with your imam or group leader.</p></details>
+      <details><summary>I am going with an agency. Is it still useful?</summary><p>Yes. Heart, duas, rites, the miqat helper, the “I am lost” card and everything after umrah work the same. Just enter your dates on the Trip tab.</p></details>
+      <details><summary>Does the app sell tours or tickets?</summary><p>No. The buttons open ordinary searches for tickets, hotels and eSIMs, with no affiliate programmes. Your savings stay with you.</p></details>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+<section id="en-settings">
+  <h2>Settings</h2>
+  <div class="cards">
+    <div class="card"><div class="ic">🔔</div><h4>Reminders and install</h4><p>Install the app on your phone to get prayer reminders. <span class="path">Profile → Reminders</span>. On iPhone: Share → “Add to Home Screen”, then open it from the icon.</p></div>
+    <div class="card"><div class="ic">👤</div><h4>Account and a new phone</h4><p>Signing in with email keeps your Circles and profile. <span class="path">Profile → Account</span>: enter your email and you get a code. Move habits via <span class="path">Profile → Data</span>.</p></div>
+    <div class="card"><div class="ic">💬</div><h4>Words from the Sunnah</h4><p>After a check-in you see a short phrase, sometimes an ayah or a hadith. <span class="path">Profile → Words</span>: brother or sister, normal, calm, or phrases only.</p></div>
+    <div class="card"><div class="ic">📖</div><h4>The guide in the app</h4><p>This same guide, with “Open” buttons, is in <span class="path">Profile → How to use</span>. You can also bring the hints back there.</p></div>
+  </div>
+</section>
+
+<section id="en-faq">
+  <h2>FAQ</h2>
+  <details><summary>Who sees my data?</summary><p>Habits, notes and muhasabah stay with you. Your Circle only sees the daily total: how many prayers and habits you checked. We do not sell data and show no ads.</p></details>
+  <details><summary>I missed a day. Is everything broken?</summary><p>No. Check in what you can today, even the minimum. There is one rule: never miss twice in a row.</p></details>
+  <details><summary>Prayer times look wrong</summary><p>Profile → Prayers: check your city, calculation method and Asr madhhab.</p></details>
+  <details><summary>How do I open everything on a new phone?</summary><p>Sign in with email in Profile → Account on both phones. Habits can be moved via Profile → Data.</p></details>
+  <details><summary>What is free?</summary><p>Everything about worship is free forever: prayers, Quran, tasbih, Ramadan, sadaqah, travel. For now the whole app is open.</p></details>
+
+  <div class="cta">
+    <h2>Start with one prayer</h2>
+    <p>Works in your browser. No password, no ads.</p>
+    <div class="row">
+      <a class="btn gold" href="/app/">Open the app</a>
+      <button class="btn line js-share" type="button">Share this guide</button>
+    </div>
+  </div>
+</section>
+</main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Living Muslim</span>
+    <a href="/?home"><span lang="ru">Главная</span><span lang="en">Home</span></a>
+    <a href="/privacy.html"><span lang="ru">Конфиденциальность</span><span lang="en">Privacy</span></a>
+    <a href="/app/"><span lang="ru">Открыть приложение</span><span lang="en">Open the app</span></a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('lang');
+  function setLang(l, keep) {
+    root.setAttribute('data-l', l); root.lang = l;
+    btn.textContent = l === 'ru' ? 'EN' : 'RU';
+    document.title = l === 'ru' ? 'Как пользоваться · Living Muslim' : 'How to use · Living Muslim';
+    if (keep) try { localStorage.setItem('lm.lang', l); } catch (e) {}
+    // Keep the reader in the same part of the guide after switching.
+    var h = location.hash.replace(/^#(ru|en)-/, '#' + l + '-');
+    if (h && h !== location.hash && document.querySelector(h)) { history.replaceState(null, '', h); document.querySelector(h).scrollIntoView(); }
+  }
+  var saved = null; try { saved = localStorage.getItem('lm.lang'); } catch (e) {}
+  var q = new URLSearchParams(location.search).get('lang');
+  var hl = (location.hash.match(/^#(ru|en)-/) || [])[1];
+  setLang(q === 'en' || q === 'ru' ? q : hl || saved || (/^ru|^uk|^be|^kk|^uz|^ky|^tg|^az/i.test(navigator.language || '') ? 'ru' : 'en'));
+  btn.addEventListener('click', function () { setLang(root.getAttribute('data-l') === 'ru' ? 'en' : 'ru', true); });
+
+  document.querySelectorAll('.js-share').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var l = root.getAttribute('data-l');
+      var url = location.origin + '/guide/?lang=' + l;
+      var title = l === 'ru' ? 'Как пользоваться Living Muslim' : 'How to use Living Muslim';
+      if (navigator.share) { navigator.share({ title: title, url: url }).catch(function () {}); return; }
+      var done = function () { var t = b.textContent; b.textContent = l === 'ru' ? 'Ссылка скопирована' : 'Link copied'; setTimeout(function () { b.textContent = t; }, 1800); };
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () {});
+    });
+  });
+})();
+</script>
+</body>
+</html>

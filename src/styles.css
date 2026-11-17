@@ -1774,3 +1774,6 @@ button:disabled { opacity: .5; cursor: default; }
 .guide-body ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
 .guide-body p { margin: 0; font-size: 14px; color: var(--ink-2); }
 .guide-tip { padding: 10px 12px; border-radius: 12px; background: var(--gold-soft); color: var(--ink) !important; }
+.guide-web { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.guide-web a, .guide-web button { flex: 1 1 140px; text-align: center; text-decoration: none; font: inherit; font-size: 14px; font-weight: 700; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.guide-web a:first-child { background: var(--green); color: #fff; border-color: transparent; }

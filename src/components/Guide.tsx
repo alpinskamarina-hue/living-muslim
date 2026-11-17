@@ -64,6 +64,13 @@ export function Hint({ id }: { id: keyof typeof HINTS }) {
   );
 }
 
+/** Send the web guide to someone: the system share sheet, or copy the link. */
+function shareGuide() {
+  const url = `${location.origin}/guide/?lang=ru`;
+  if (navigator.share) { navigator.share({ title: 'Как пользоваться Living Muslim', url }).catch(() => {}); return; }
+  navigator.clipboard?.writeText(url).then(() => alert('Ссылка на гид скопирована'), () => {});
+}
+
 /** Profile → «Как пользоваться»: every part of the app in three lines, with a button that opens it. */
 export function GuidePage({ go }: { go: (t: GoTo) => void }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -71,6 +78,11 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
   return (
     <div className="guide">
       <p className="guide-intro">Living Muslim строит день вокруг пяти намазов. Начни с намазов и одной маленькой привычки, остальное подключай, когда будешь готов.</p>
+      <div className="guide-web">
+        <a href="/guide/?lang=ru" target="_blank" rel="noopener">📖 Полный гид на сайте</a>
+        <a href="/guide/?lang=ru#ru-umrah" target="_blank" rel="noopener">🕋 Подробно про умру</a>
+        <button type="button" onClick={shareGuide}>Отправить гид другу</button>
+      </div>
       {GUIDE.map((sec) => (
         <section key={sec.h}>
           <h3 className="ch-h">{sec.h}</h3>
