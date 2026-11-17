@@ -14,9 +14,16 @@ export interface Member {
   ontime: number;
   goals?: { t: string; p: number }[];
   week?: { p: number; h: number }; // prayers and habit marks over the last 7 days, for the common counter
-  fast?: boolean; // Ramadan fast today; reasons for not fasting are never shared
+  fast?: boolean;
+  // Family circles only:
+  fam?: boolean; // set by the owner: this circle is a family
+  lit?: string[]; // my counted days, last 120
+  kids?: KidSummary[];
+  tog?: { day: string; a: string[]; week: number }; // prayers together at home
+  promise?: { text: string; days: number } | null; // Ramadan fast today; reasons for not fasting are never shared
   updated: string;
 }
+export interface KidSummary { id: string; name: string; age: number; color: string; done: number; total: number; lit: string[]; stickers: number }
 export type Reacts = Record<string, Record<string, { e: string; day: string }>>; // from -> to -> reaction
 
 export interface CircleApi {
@@ -34,6 +41,8 @@ export interface CircleApi {
   react: (to: string, e: string, day: string) => Promise<void>;
   /** Nudges live in the same map as reactions, under the key "n:<to>". */
   nudge: (to: string, day: string) => Promise<void>;
+  /** Praise for a child, under the key "p:<kidId>". */
+  praise: (kidId: string, day: string) => Promise<void>;
 }
 
 async function capability(name: string): Promise<any> {
@@ -131,6 +140,14 @@ export function useCircle(): CircleApi {
     leave: () => serial(async () => {
       if (!db.current || !me) return;
       try { await db.current.doc(`circle/${me}`).delete(); lastPushed.current = ''; } catch { setError('Не удалось выйти из круга.'); }
+    }),
+    praise: (kidId, day) => serial(async () => {
+      if (!db.current || !me) return;
+      const mine = { ...(reacts[me] ?? {}) };
+      const k = `p:${kidId}`;
+      if (mine[k]?.day === day) delete mine[k];
+      else mine[k] = { e: 'praise', day };
+      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError('Не удалось отправить похвалу.'); }
     }),
     nudge: (to, day) => serial(async () => {
       if (!db.current || !me) return;
