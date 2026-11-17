@@ -50,7 +50,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'words') return <Sub title="Фразы и напоминания" onBack={back}><WordsSettings s={s} set={set} /></Sub>;
   if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
-  if (page === 'admin') return <Sub title="Аналитика" onBack={back}><AdminPage /></Sub>;
+  if (page === 'admin') return <Sub title="Для владельца" onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title="Как пользоваться" onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
   if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
   if (page === 'me') return <Sub title="Мой профиль" onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} /></Sub>;
@@ -88,7 +88,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
       {admin && (
         <button type="button" className="pro-entry adm-entry" onClick={() => go('admin')}>
           <span className="pro-badge adm-badge">📊</span>
-          <span><b>Аналитика</b><small>Кто заходит, откуда, сколько регистраций. Видно только тебе</small></span>
+          <span><b>Аналитика и видеокурсы</b><small>Кто заходит и откуда, курсы в видеоуроках. Видно только тебе</small></span>
           <i aria-hidden="true">›</i>
         </button>
       )}

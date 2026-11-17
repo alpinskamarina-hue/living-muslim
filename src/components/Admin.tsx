@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { accessToken, authMe } from '../auth';
+import { AdminCourses } from './AdminCourses';
 
 // Owner analytics: who comes, from where, on what, and what they do. Shown only to emails listed in lm_admins.
 // The numbers come from lm_admin_stats, which checks the signed-in email on the server.
@@ -55,6 +56,19 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
+  const [tab, setTab] = useState<'stats' | 'courses'>('stats');
+  return (
+    <div className="adm">
+      <div className="seg adm-tabs">
+        <button type="button" aria-pressed={tab === 'stats'} onClick={() => setTab('stats')}>📊 Аналитика</button>
+        <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Видеокурсы</button>
+      </div>
+      {tab === 'stats' ? <AdminStats /> : <AdminCourses />}
+    </div>
+  );
+}
+
+function AdminStats() {
   const [days, setDays] = useState(7);
   const [st, setSt] = useState<Stats | null>(null);
   const [err, setErr] = useState('');

@@ -41,7 +41,47 @@ export interface VideoState {
 }
 export const emptyVideos = (): VideoState => ({ mine: [], pos: {}, notes: {} });
 
-export const catalog = (): VideoItem[] => CATALOG;
+/** A course the owner added or changed from the app (table lm_courses). */
+export interface CourseRow { kind: 'list' | 'video'; yt: string; cat: VideoCat; title: string; channel?: string | null; lang?: 'ru' | 'en'; note?: string | null; pos?: number; hidden?: boolean }
+
+const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
+const SBKEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
+const RC = 'lm.courses';
+let remote: CourseRow[] = (() => { try { return JSON.parse(localStorage.getItem(RC) || 'null')?.rows ?? []; } catch { return []; } })();
+
+/** Reads the owner's courses (cached for 30 minutes). Resolves true when the list changed. */
+export async function loadCourses(force = false): Promise<boolean> {
+  try {
+    const c = JSON.parse(localStorage.getItem(RC) || 'null');
+    if (!force && c && Date.now() - c.at < 30 * 60000) return false;
+  } catch { /* */ }
+  try {
+    const r = await fetch(`${SB}/rest/v1/lm_courses?select=kind,yt,cat,title,channel,lang,note,pos,hidden&order=pos.asc,created.desc`, { headers: { apikey: SBKEY } });
+    if (!r.ok) return false; // table not created yet: built-in list only
+    const rows = (await r.json()) as CourseRow[];
+    const changed = JSON.stringify(rows) !== JSON.stringify(remote);
+    remote = rows;
+    try { localStorage.setItem(RC, JSON.stringify({ at: Date.now(), rows })); } catch { /* */ }
+    return changed;
+  } catch { return false; }
+}
+export const remoteCourses = () => remote;
+export function setRemoteCourses(rows: CourseRow[]) {
+  remote = rows;
+  try { localStorage.setItem(RC, JSON.stringify({ at: Date.now(), rows })); } catch { /* */ }
+}
+
+const fromRow = (r: CourseRow): VideoItem => ({ kind: r.kind, id: r.yt, cat: r.cat, title: r.title, channel: r.channel ?? undefined, lang: r.lang ?? 'ru', note: r.note ?? undefined });
+
+/** Built-in catalog with the owner's changes: new courses first, edited ones replaced, hidden ones removed. */
+export function catalog(withHidden = false): VideoItem[] {
+  const by = new Map(remote.map((r) => [r.yt, r]));
+  const builtIn = new Set(CATALOG.map((x) => x.id));
+  const added = remote.filter((r) => !builtIn.has(r.yt) && (withHidden || !r.hidden)).map(fromRow);
+  const base = CATALOG.filter((x) => withHidden || !by.get(x.id)?.hidden).map((x) => { const r = by.get(x.id); return r ? { ...x, ...fromRow(r) } : x; });
+  return [...added, ...base];
+}
+export const builtInIds = () => new Set(CATALOG.map((x) => x.id));
 
 /** Playlist or video id from any YouTube link (or a bare id). */
 export function parseYouTube(input: string): { kind: 'list' | 'video'; id: string } | null {

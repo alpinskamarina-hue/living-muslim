@@ -1,3 +1,4 @@
+import { shareCard } from '../share';
 import { useState } from 'react';
 import type { Member, Reacts } from '../circle';
 import { plural } from '../dates';
@@ -98,6 +99,7 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
   const dow = daysBetween(cur, today); // 0 Sat … 6 Fri
   const w = isFriday(today) ? cur : dow <= 1 ? addWeeks(cur, -1) : '';
   const [sent, setSent] = useState(false);
+  const [pic, setPic] = useState('');
   if (!w || members.length < 2) return null;
   const t = circleTotals(members, w);
   if (t.p + t.h === 0) return null;
@@ -118,6 +120,17 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
     'Держимся вместе в Living Muslim: https://living-muslim.vercel.app',
   ].filter((x, i, a) => x !== '' || i === a.length - 2).join('\n');
 
+  // The picture carries only the circle's totals: no names, so it can travel further than the circle.
+  const sharePic = async () => {
+    setPic('Готовлю…');
+    const r = await shareCard({
+      kicker: `Наш круг · ${rangeLabel(w)}`, title: `«${title}»`,
+      stats: [[String(t.p), plural(t.p, 'намаз', 'намаза', 'намазов')], [`${pctOn}%`, 'вовремя'], [String(t.f), 'Фаджр вовремя'], [String(t.h), 'отметок привычек']],
+      note: goal ? (gv >= goal.n ? `🎯 Цель недели выполнена, машаАллах` : `🎯 Цель недели: ${gv} из ${goal.n}`) : `В деле ${t.people} из ${members.length}`,
+      foot: 'Держимся вместе. Общий итог, без рейтинга по поклонению',
+    }, 'nash-krug', text);
+    setPic(r === 'saved' ? '✓ Сохранено, текст скопирован' : r === 'shared' ? '✓ Отправлено' : '');
+  };
   const share = async () => {
     try { if (navigator.share) { await navigator.share({ text }); setSent(true); return; } } catch { return; }
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -136,7 +149,10 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
       {goal && <p className="ws-line">🎯 {gv >= goal.n ? <>Цель «{goal.n} {unit(goal.k as GoalKind, goal.n)}» <b>выполнена</b>, машаАллах</> : <>Цель: {gv} из {goal.n} {unit(goal.k as GoalKind, goal.n)}</>}</p>}
       {sup.length > 0 && <p className="ws-line">🤲 Больше всех поддерживали: <b>{sup.map((x) => nameOf(x.id)).join(', ')}</b></p>}
       <p className="ws-line ws-soft">В деле было {t.people} из {members.length}. Общий итог, без рейтинга по поклонению.</p>
-      <button type="button" className="pri-btn ws-share" onClick={share}>{sent ? '✓ Отправлено' : 'Отправить итог в WhatsApp или Telegram'}</button>
+      <div className="ws-btns">
+        <button type="button" className="pri-btn ws-share" onClick={share}>{sent ? '✓ Отправлено' : 'Отправить итог текстом'}</button>
+        <button type="button" className="ws-pic" onClick={sharePic}>{pic || '🖼 Картинкой'}</button>
+      </div>
     </div>
   );
 }

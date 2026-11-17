@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
 import { cardOfDay, g, pick, type Card, type Mode, type SayDetail, type Sex, type Trigger } from '../words';
+import { shareCard, SITE } from '../share';
 
 export const modeOf = (s: AppState): Mode => s.settings.words ?? 'calm';
 export const sexOf = (s: AppState): Sex => s.settings.me ?? '';
@@ -62,11 +63,19 @@ export function WordCard({ t, state, today, className }: { t: Trigger; state: Ap
   const hide = () => { setHidden(true); try { localStorage.setItem(key, '1'); } catch { /* */ } };
   return (
     <div className={`wc ${className ?? ''}`}>
-      <div className="wc-top"><em>{KIND[c.kind] || 'Напоминание'}</em><button type="button" onClick={hide} aria-label="Скрыть на сегодня">×</button></div>
+      <div className="wc-top"><em>{KIND[c.kind] || 'Напоминание'}</em><span><button type="button" className="wc-share" onClick={() => shareWord(c, sex)} aria-label="Поделиться картинкой">↗</button><button type="button" onClick={hide} aria-label="Скрыть на сегодня">×</button></span></div>
       {c.head && c.kind !== 'phrase' && <b>{g(c.head, sex)}</b>}
       {c.ar && <span className="wd-ar" lang="ar">{c.ar}</span>}
       <p>{c.kind === 'phrase' ? `${g(c.head ?? '', sex)}. ` : ''}{g(c.ru, sex)}</p>
       {c.src && <small className="wd-src">{c.src}</small>}
     </div>
   );
+}
+
+/** The card of the day as a picture: for a family chat or stories. */
+function shareWord(c: Card, sex: Sex) {
+  const body = c.kind === 'phrase' ? `${g(c.head ?? '', sex)}. ${g(c.ru, sex)}` : g(c.ru, sex);
+  const head = c.kind !== 'phrase' && c.head ? g(c.head, sex) : undefined;
+  const text = [head, `«${body}»`, c.src ? `— ${c.src}` : '', '', `Living Muslim: https://${SITE}`].filter((x) => x !== undefined).join('\n');
+  shareCard({ theme: c.kind === 'dua' ? 'night' : c.kind === 'phrase' ? 'sand' : 'green', kicker: KIND[c.kind] || 'Напоминание', title: head, ar: c.ar, body, src: c.src }, `living-muslim-${c.id}`, text);
 }

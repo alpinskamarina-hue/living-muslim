@@ -1,5 +1,6 @@
 import { Hint } from './Guide';
 import { useEffect, useState } from 'react';
+import { shareCard, SITE } from '../share';
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi } from '../umrahCircle';
 import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
@@ -100,6 +101,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
         </div>
       </div>
 
+      {left !== null && left > 0 && <UmrahShareBtn left={left} group={groupMembers.length > 1} />}
       <UmrahLive />
       <YearAgo state={state} today={today} />
 
@@ -294,4 +296,21 @@ function UmrahVideos({ u, update }: { u: UmrahState; update: Props['update'] }) 
       <small className="um-vid-src">Видео с YouTube, канал автора. Детали различаются по мазхабам, уточняй у своего имама.</small>
     </div>
   );
+}
+
+/** «Еду на умру»: a picture for family and friends, inviting them to send what to ask for at the Kaaba. */
+function UmrahShareBtn({ left, group }: { left: number; group: boolean }) {
+  const [st, setSt] = useState('');
+  const days = `${left} ${plural(left, 'день', 'дня', 'дней')}`;
+  const go = async () => {
+    setSt('Готовлю…');
+    const text = `${group ? 'Мы едем' : 'Я еду'} на умру, иншаАллах, через ${days} 🕋\nНапиши, о чём сделать за тебя дуа у Каабы 🤲\n\nГотовимся в Living Muslim: https://${SITE}`;
+    const r = await shareCard({
+      theme: 'night', kicker: 'Умра · иншаАллах', title: group ? 'Мы едем на умру' : 'Я еду на умру',
+      ar: 'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ', stats: [[String(left), plural(left, 'день до вылета', 'дня до вылета', 'дней до вылета')]],
+      note: 'Напиши, о чём сделать за тебя дуа у Каабы\u00a0🤲',
+    }, 'umra', text);
+    setSt(r === 'saved' ? '✓ Картинка сохранена, текст скопирован' : r === 'shared' ? '✓ Отправлено' : '');
+  };
+  return <button type="button" className="um-share" onClick={go}>{st || '🕋 Рассказать близким и собрать просьбы о дуа'}</button>;
 }

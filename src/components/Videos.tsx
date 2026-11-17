@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
 import {
-  catalog, catOf, dur, emptyVideos, lessons, lookup, parseYouTube, thumb, VIDEO_CATS,
+  catalog, catOf, dur, emptyVideos, lessons, loadCourses, lookup, parseYouTube, thumb, VIDEO_CATS,
   type Lesson, type VideoCat, type VideoItem, type VideoState,
 } from '../videos';
 
@@ -28,6 +28,8 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
   });
   const [cat, setCat] = useState<VideoCat | 'all'>('all');
   const [more, setMore] = useState(false);
+  const [, setTick] = useState(0);
+  useEffect(() => { loadCourses().then((ch) => { if (ch) setTick((n) => n + 1); }); }, []);
   const go = (v: View) => { setView(v); window.scrollTo(0, 0); };
 
   const all = [...vs.mine, ...catalog()];
