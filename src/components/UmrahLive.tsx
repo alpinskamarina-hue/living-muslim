@@ -78,7 +78,7 @@ export function UmrahLive() {
             ))}
           </div>
           <p className="ul-adv">{advice(Math.max(...w.days.map((d) => d.max)))}</p>
-          <small className="tiny">Погода на 7 дней, Open-Meteo. Ближе к поездке здесь будет прогноз на твои даты.</small>
+          <small className="tiny">Прогноз на 7 дней, Open-Meteo.</small>
         </div>
       )}
     </div>
