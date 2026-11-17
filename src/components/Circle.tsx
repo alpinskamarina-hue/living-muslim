@@ -17,6 +17,8 @@ import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite 
 import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
 import { FamilySection } from './Family';
+import { CircleGoal, WeekSummary } from './CircleWeek';
+import type { CGoal } from '../cweek';
 import { patchF, famOf } from '../family';
 
 interface Props {
@@ -33,6 +35,7 @@ interface Props {
   state: AppState;
   update: (fn: (s: AppState) => AppState) => void;
   current: Anchor;
+  onCircleGoal: (g: CGoal) => void;
 }
 
 const REACTIONS = [
@@ -40,7 +43,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -186,6 +189,13 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             </>
           )}
         </div>
+      )}
+
+      {joined && !(alone && isCloud) && (
+        <>
+          <WeekSummary members={members} reacts={reacts} me={me} today={today} title={cur?.title || 'Круг'} nameOf={(id) => names[id]?.name || 'Участник'} onSet={onCircleGoal} />
+          <CircleGoal members={members} reacts={reacts} me={me} today={today} title={cur?.title || 'Круг'} nameOf={nm} onSet={onCircleGoal} />
+        </>
       )}
 
       {joined && feed.length > 0 && (

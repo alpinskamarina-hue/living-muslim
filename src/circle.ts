@@ -14,6 +14,9 @@ export interface Member {
   ontime: number;
   goals?: { t: string; p: number }[];
   week?: { p: number; h: number }; // prayers and habit marks over the last 7 days, for the common counter
+  wk?: import('./cweek').WeekTotals; // this circle week (Sat–Fri)
+  pw?: import('./cweek').WeekTotals; // the previous circle week, for the Friday summary
+  cgs?: import('./cweek').CGoal[]; // weekly goals I set for the circle
   fast?: boolean;
   // Family circles only:
   fam?: boolean; // set by the owner: this circle is a family
