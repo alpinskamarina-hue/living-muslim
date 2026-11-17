@@ -1228,3 +1228,64 @@ button:disabled { opacity: .5; cursor: default; }
 .dua-got button { border: 0; border-radius: 12px; padding: 9px 12px; font-weight: 700; background: var(--surface); color: var(--green-2); font-size: 13.5px; }
 .dua-got button.on { background: var(--green-2); color: #fff; }
 .dua-got small { display: block; margin-top: 8px; color: var(--ink-2); font-size: 12px; }
+
+/* Umrah trip plan: savings, pass, nine steps */
+.up { display: grid; gap: 10px; margin: 6px 0 14px; }
+.up-save { padding: 14px; border-radius: 16px; background: var(--green); color: var(--on-dark, #fff); display: grid; gap: 4px; }
+.up-save > small { opacity: .8; font-size: 12px; }
+.up-save > b { font-size: 22px; margin-bottom: 4px; }
+.up-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
+.up-save .up-row span { opacity: .85; }
+.up-in { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.up-in label { display: grid; gap: 4px; font-size: 11.5px; opacity: .9; }
+.up-in input { width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12); color: inherit; padding: 8px 10px; }
+.up-in.light { grid-template-columns: 1fr; margin: 8px 0; }
+.up-in.light label { opacity: 1; color: var(--ink-2); }
+.up-in.light input { border-color: var(--line); background: var(--surface); color: var(--ink); }
+.up-steps { display: grid; gap: 6px; }
+.up-st { border: 1.5px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.up-st > button, .up-pass-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; background: none; text-align: left; color: inherit; }
+.up-st > button em { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); border: 1.5px solid var(--line); font-style: normal; font-weight: 700; font-size: 13px; color: var(--ink-2); }
+.up-st > button span, .up-pass-head span:nth-child(2) { flex: 1; display: grid; }
+.up-st > button small, .up-pass-head small { font-size: 12px; color: var(--ink-2); }
+.up-st > button i, .up-pass-head i { font-style: normal; color: var(--ink-2); }
+.up-st.ok > button em { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+.up-st.now { border-color: var(--gold); }
+.up-st.now > button em { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.up-body { padding: 0 12px 12px; display: grid; gap: 8px; }
+.up-body h3 { margin: 6px 0 0; font-size: 14px; }
+.up-p { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.up-p small { color: var(--ink-2); text-align: right; }
+.up-date { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); }
+.up-date > span { flex: 1 1 160px; display: grid; }
+.up-date small { font-size: 12px; color: var(--ink-2); }
+.up-date.chosen { border-color: var(--green-2); background: var(--green-soft); }
+.up-date button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 6px 10px; font-size: 12.5px; color: inherit; }
+.up-date button[aria-pressed="true"], .up-pick { border-color: var(--green-2) !important; color: var(--green-2) !important; font-weight: 700; }
+.up-add { display: flex; gap: 6px; }
+.up-add input { flex: 1; min-width: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: inherit; padding: 8px 10px; }
+.up-form { display: grid; gap: 6px; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+.up-form > input { border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: inherit; padding: 8px 10px; }
+.up-link { display: block; text-align: center; text-decoration: none; }
+.up-room { padding: 10px; border-radius: 12px; border: 1px solid var(--line); display: grid; gap: 6px; }
+.up-room > div:first-child { display: grid; }
+.up-room small { font-size: 12px; color: var(--ink-2); }
+.up-ppl { display: flex; flex-wrap: wrap; gap: 4px; }
+.up-ppl span { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--green-soft); }
+.up-ppl span.free { background: none; border: 1px dashed var(--line); color: var(--ink-2); }
+.up-cash, .up-debt { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.up-cash span, .up-debt span { flex: 1; }
+.up-debt.me b { color: var(--late); }
+.up-memo { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 13px; }
+.up-plan { white-space: pre-wrap; font-size: 13px; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+.up-pass { border: 1.5px solid var(--gold); border-radius: 14px; background: var(--gold-soft); overflow: hidden; }
+.up-pass-head > span:first-child { font-size: 20px; }
+.up-pass-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.up-pass-price b { font-size: 28px; color: var(--gold); }
+.up-pass-price small { flex-basis: 100%; font-size: 12px; color: var(--ink-2); }
+.up-pass-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+.up, .up-body, .up-form { grid-template-columns: minmax(0, 1fr); }
+.up-body > *, .up-form > * { min-width: 0; }
+.up-add > *, .up-body .h-q > * { min-width: 0; }
+.up-body .field input { width: 100%; }
+.up-body .row2 a { color: var(--green-2); font-weight: 600; text-decoration: none; }

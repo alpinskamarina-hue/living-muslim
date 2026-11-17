@@ -1,9 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 
 export interface UTask { id: string; text: string; who?: string }
-export interface UTrip { title: string; month: string; city: string; amir?: string; tasks: UTask[]; created: string }
+/** A date option the group votes for: departure and return days (YYYY-MM-DD). */
+export interface UDate { id: string; from: string; to: string; note?: string }
+/** A room booked or planned: city, price per night for the whole room, beds, who sleeps there. */
+export interface URoom { id: string; city: 'mecca' | 'medina'; name: string; night: number; beds: number; walk?: number; people: string[] }
+export interface UTrip {
+  title: string; month: string; city: string; amir?: string; tasks: UTask[]; created: string;
+  // Planning (the trip page). All optional so older trips keep working.
+  dates?: UDate[];
+  chosen?: string; // id of the chosen date option
+  nights?: { mecca: number; medina: number };
+  rooms?: URoom[];
+  other?: number; // per person: visa, train, transfers, SIM
+  agency?: number; // package price per person someone was offered, for the comparison
+  cur?: string;
+  plan?: string; // day by day, free text
+}
 export type UStatus = 'go' | 'maybe' | 'no';
-export interface URsvp { s: UStatus; ready: number; done: string[] }
+/** Money one person paid for the whole group (split equally among those going). */
+export interface UPaid { id: string; what: string; amt: number }
+export interface URsvp {
+  s: UStatus; ready: number; done: string[];
+  votes?: string[]; // date option ids I can do
+  from?: string; // my departure city
+  ticket?: number; // my return ticket price
+  bought?: boolean;
+  docs?: string[]; // my documents checklist (ids)
+  paid?: UPaid[];
+  settled?: Record<string, number>; // money I already returned, by person
+}
 
 export interface UmrahApi {
   ready: boolean;

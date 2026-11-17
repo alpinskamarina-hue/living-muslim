@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { UmrahApi, URsvp, UStatus, UTrip } from '../umrahCircle';
 import { uid } from '../store';
+import { UmrahPlan } from './UmrahPlan';
 
 interface Props { api: UmrahApi; myReady: number; nameOf: (id: string) => string }
 
@@ -92,6 +93,8 @@ function TripCard({ host, trip, api, nameOf, myReady, open, onToggle }: { host: 
               <button type="button" key={x.s} aria-pressed={mine?.s === x.s} onClick={() => api.respond(host, { s: x.s, ready: myReady })}>{x.l}</button>
             ))}
           </div>
+
+          <UmrahPlan host={host} trip={trip} api={api} nameOf={nameOf} going={going} />
 
           <h3>Кто едет</h3>
           {going.length === 0 && <p className="tiny">Пока никто не ответил «Еду».</p>}
