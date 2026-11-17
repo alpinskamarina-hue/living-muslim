@@ -15,13 +15,14 @@ interface Stats {
   signups_total: number; signups: number; accounts_total: number; accounts: number; profiles_total: number; profiles: number;
   nicks: number; circles: number; circles_real: number; members: number; active_circle_people: number; push: number;
   recent: { name: string; email: string; lang: string; source: string; created: string }[];
+  errors?: Record<string, string>;
 }
 
 async function call<T>(fn: string, args: Record<string, unknown>): Promise<T | null> {
   const t = await accessToken();
   if (!t) return null;
   const r = await fetch(`${SB}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
-  if (!r.ok) throw new Error(String(r.status));
+  if (!r.ok) { let m = ''; try { const j = await r.json(); m = j.message || j.hint || ''; } catch { /* */ } throw new Error(`${r.status} ${m}`.trim()); }
   return (await r.json()) as T;
 }
 
@@ -61,7 +62,7 @@ export function AdminPage() {
   const load = (d = days) => {
     setBusy(true); setErr('');
     call<Stats>('lm_admin_stats', { p_days: d }).then((x) => { if (x) setSt(x); else setErr('Нет доступа. Войди по почте владельца в Профиль → Аккаунт.'); })
-      .catch(() => setErr('Не получилось загрузить. Проверь интернет и что admin.sql запущен в Supabase.')).finally(() => setBusy(false));
+      .catch((e) => setErr(`Не получилось загрузить (${e instanceof Error ? e.message : e}). Проверь интернет и что admin.sql запущен в Supabase.`)).finally(() => setBusy(false));
   };
   useEffect(() => { load(days); }, [days]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -84,7 +85,7 @@ export function AdminPage() {
           </div>
           <p className="tiny">Сегодня {st.visitors_today} · новых {st.new_visitors} · вернулись снова {st.returning} · всего заходов {st.visits}</p>
 
-          {st.series.length > 1 && (
+          {(st.series ?? []).length > 1 && (
             <section className="adm-box">
               <h3>По дням</h3>
               <Bars series={st.series} />
@@ -92,13 +93,13 @@ export function AdminPage() {
             </section>
           )}
 
-          <List title="Откуда пришли" rows={st.refs.map((r) => ({ k: refName(r.k), n: r.n }))} />
-          {st.utm.length > 0 && <List title="Метки ссылок (utm_source, ref)" rows={st.utm} />}
-          <List title="Страны" rows={st.countries.map((r) => ({ k: country(r.k), n: r.n }))} />
-          {st.cities.length > 0 && <List title="Города" rows={st.cities} />}
-          <List title="Устройства" rows={st.devices.map((r) => ({ k: DEV[r.k] ?? r.k, n: r.n }))} />
-          <List title="Язык браузера" rows={st.langs.map((r) => ({ k: lang(r.k), n: r.n }))} />
-          <List title="Страницы" rows={st.pages.map((r) => ({ k: PAGE[r.k] ?? r.k, n: r.n }))} />
+          <List title="Откуда пришли" rows={(st.refs ?? []).map((r) => ({ k: refName(r.k), n: r.n }))} />
+          {(st.utm ?? []).length > 0 && <List title="Метки ссылок (utm_source, ref)" rows={st.utm} />}
+          <List title="Страны" rows={(st.countries ?? []).map((r) => ({ k: country(r.k), n: r.n }))} />
+          {(st.cities ?? []).length > 0 && <List title="Города" rows={st.cities} />}
+          <List title="Устройства" rows={(st.devices ?? []).map((r) => ({ k: DEV[r.k] ?? r.k, n: r.n }))} />
+          <List title="Язык браузера" rows={(st.langs ?? []).map((r) => ({ k: lang(r.k), n: r.n }))} />
+          <List title="Страницы" rows={(st.pages ?? []).map((r) => ({ k: PAGE[r.k] ?? r.k, n: r.n }))} />
 
           <section className="adm-box">
             <h3>Пользователи за всё время</h3>
@@ -114,7 +115,7 @@ export function AdminPage() {
             </div>
           </section>
 
-          {st.recent.length > 0 && (
+          {(st.recent ?? []).length > 0 && (
             <section className="adm-box">
               <h3>Последние почты с лендинга</h3>
               <div className="adm-recent">
@@ -127,6 +128,7 @@ export function AdminPage() {
               </div>
             </section>
           )}
+          {st.errors && Object.keys(st.errors).length > 0 && <p className="tiny">Часть цифр недоступна: {Object.entries(st.errors).map(([k, v]) => `${k} (${v})`).join('; ')}</p>}
           <button type="button" className="link-btn" onClick={() => load()} disabled={busy}>{busy ? 'Обновляю…' : '↻ Обновить'}</button>
           <p className="tiny">Посещения считаются без cookies и без IP: случайный номер браузера, страна и город по сети, источник перехода. Один человек на одной странице считается раз в день. Данные начали собираться с момента запуска счётчика.</p>
         </div>
@@ -135,11 +137,11 @@ export function AdminPage() {
   );
 }
 
-function Kpi({ n, l }: { n: number; l: string }) { return <div><b>{n.toLocaleString('ru-RU')}</b><small>{l}</small></div>; }
-function Fact({ n, l }: { n: number; l: string }) { return <div><b>{n.toLocaleString('ru-RU')}</b><small>{l}</small></div>; }
+function Kpi({ n, l }: { n: number | null; l: string }) { return <div><b>{n == null ? '—' : n.toLocaleString('ru-RU')}</b><small>{l}</small></div>; }
+function Fact({ n, l }: { n: number | null; l: string }) { return <div><b>{n == null ? '—' : n.toLocaleString('ru-RU')}</b><small>{l}</small></div>; }
 
-function List({ title, rows }: { title: string; rows: KN[] }) {
-  if (rows.length === 0) return null;
+function List({ title, rows }: { title: string; rows: KN[] | null }) {
+  if (!rows || rows.length === 0) return null;
   const max = Math.max(...rows.map((r) => r.n), 1);
   return (
     <section className="adm-box">
