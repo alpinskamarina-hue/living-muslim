@@ -51,9 +51,10 @@ interface Props {
   habitName?: string;
   onExit: () => void;
   onFinish: (m: Mark) => void;
+  onCourse?: () => void;
 }
 
-export function Languages({ state, update, habitName, onExit, onFinish }: Props) {
+export function Languages({ state, update, habitName, onExit, onFinish, onCourse }: Props) {
   const today = dayKey(new Date());
   const ls: LangState = state.langs ?? { current: '', decks: {} };
   const [mode, setMode] = useState<'home' | 'review' | 'words'>('home');
@@ -110,6 +111,13 @@ export function Languages({ state, update, habitName, onExit, onFinish }: Props)
       <div className="q-list">
         {mode === 'home' && (
           <>
+            {onCourse && (
+              <button type="button" className="course-card" onClick={onCourse}>
+                <small>Курс · разговорный A1</small>
+                <b>Английский по дням</b>
+                <span>{state.course ? `День ${state.course.day + 1} · фраз выучено ${state.course.learned.length}` : '30 уроков по 15 минут: фразы с озвучкой, диалоги, разговор вслух'}</span>
+              </button>
+            )}
             <div className="lab" style={{ margin: '0 0 6px' }}>Какой язык учишь</div>
             <div className="langs">
               {LANGS.map((l) => (

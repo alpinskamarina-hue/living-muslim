@@ -63,6 +63,8 @@ export interface AppState {
   prayers: Record<string, Partial<Record<Anchor, PrayerMark>>>;
   settings: Settings;
   videos?: import('./videos').VideoState;
+  /** Practice ids pinned to the top of Practice (up to 4). */
+  practiceFav?: string[];
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number };

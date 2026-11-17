@@ -4,7 +4,7 @@ import { sphereName } from '../types';
 import { isCounted, setMark } from '../store';
 import { Quran } from './Quran';
 import { Books } from './Books';
-import { Languages, LANGS } from './Languages';
+import { Languages } from './Languages';
 import { Course } from './Course';
 import { Health } from './Health';
 import { Umrah, prepPct } from './Umrah';
@@ -15,6 +15,7 @@ import { debt, ramadanDay, ramadanMonth, ramadanOf } from '../ramadan';
 import { A1 } from '../course/a1';
 import { Videos } from './Videos';
 import { isCloud } from '../cloud';
+import { catalog as catalogItems } from '../videos';
 
 interface Props {
   state: AppState;
@@ -25,7 +26,7 @@ interface Props {
   onRamadan: () => void;
 }
 
-type Mode = 'home' | 'focus' | 'tasbih' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos';
+type Mode = 'home' | 'focus' | 'tasbih' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
 
 export function Practice({ state, update, today, suggestedId, onSafar, onRamadan }: Props) {
   const [mode, setMode] = useState<Mode>('home');
@@ -33,90 +34,151 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const [habitId, setHabitId] = useState<string>(suggestedId ?? active[0]?.id ?? '');
   const habit = active.find((h) => h.id === habitId);
   const markHabit = (m: Mark) => habitId && update((s) => setMark(s, today, habitId, m));
+  const [editFav, setEditFav] = useState(false);
+  const [special, setSpecial] = useState(false);
 
   if (mode === 'focus') return <Focus habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'course') return <Course state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
-  if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
+  if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onCourse={() => setMode('course')} />;
   if (mode === 'books') return <Books state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'umrah') return <Umrah state={state} update={update} onExit={() => setMode('home')} />;
   if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
+  if (mode === 'body') return (
+    <div className="page">
+      <button type="button" className="link-btn pro-back" onClick={() => setMode('home')}>← Практика</button>
+      <h1 className="page-h">Тело</h1>
+      <p className="page-sub">Тело — аманат. Немного каждый день.</p>
+      <div className="pgrp">
+        <button type="button" className="prow" onClick={() => setMode('health')}><i className="pic">🌿</i><span><b>Здоровье</b><small>{`Вода ${health(state).water[today] ?? 0}/${health(state).waterGoal} · сон, тренировки, посты`}</small></span><em>›</em></button>
+        <button type="button" className="prow" onClick={() => setMode('food')}><i className="pic">🍽</i><span><b>Питание</b><small>{(() => { const n = Object.keys(foodOf(state).meals[today] ?? {}).length; return n ? `Сегодня отмечено ${n} из 3` : 'Правило трети, сунна, чистые дни'; })()}</small></span><em>›</em></button>
+      </div>
+    </div>
+  );
   if (mode === 'tasbih') return <Tasbih onExit={() => setMode('home')} onFinish={() => markHabit('done')} habitName={habit?.action} />;
+
+  // ---- home: «Сейчас», favourites, groups ----
+  const due = state.langs?.current ? (state.langs.decks[state.langs.current] ?? []).filter((c) => c.due <= today).length : 0;
+  const vs = state.videos;
+  const vidDone = vs ? Object.values(vs.pos).filter((p) => p.done).length : 0;
+  const rDay = ramadanDay(today);
+  const rm = ramadanMonth(today);
+  const rLeft = debt(ramadanOf(state)).left;
+  const sq = sadaqaOf(state); const sqN = sadaqaStreak(sq, today); const sqToday = sq.days[today];
+
+  const P: Record<string, Item> = {
+    quran: { ic: 'قرآن', ar: true, title: 'Коран', sub: state.quran ? `Сура ${state.quran.surah}, аят ${state.quran.ayah}` : 'Текст и перевод смыслов, закладка', pct: state.quran ? state.quran.surah / 114 : undefined, open: () => setMode('quran') },
+    tasbih: { ic: 'سبحان', ar: true, title: 'Тасбих', sub: '33 · 33 · 34 после намаза', open: () => setMode('tasbih') },
+    sadaqa: { ic: 'صدقة', ar: true, title: 'Садака', sub: sqToday?.money || sqToday?.deed ? `Сегодня есть ✓ · серия ${sqN}` : sqN ? `Серия ${sqN} · доброе дело дня ждёт` : 'Каждый день понемногу, в тайне', open: () => setMode('sadaqa') },
+    ...(isCloud ? { videos: { ic: '▶', title: 'Видеоуроки', sub: vidDone ? `Просмотрено уроков: ${vidDone}` : 'Вера, бизнес, развитие и другое', open: () => setMode('videos') } } : {}),
+    books: { ic: '📖', title: 'Книги', sub: state.books?.length ? `На полке: ${state.books.length}` : 'Атомные привычки и свои PDF', open: () => setMode('books') },
+    langs: { ic: 'Aa', title: 'Языки', sub: state.course ? `Английский A1: день ${state.course.day + 1}${due ? ` · ${due} к повторению` : ''}` : due ? `${due} карточек к повторению` : 'Курс английского, карточки слов', pct: state.course ? (state.course.day + 1) / A1.length : undefined, open: () => setMode('langs') },
+    body: { ic: '🌿', title: 'Здоровье и питание', sub: `Вода ${health(state).water[today] ?? 0}/${health(state).waterGoal} · еда ${Object.keys(foodOf(state).meals[today] ?? {}).length} из 3 · сон, посты`, open: () => setMode('body') },
+    focus: { ic: '⏱', title: 'Фокус-таймер', sub: 'Засечь время на любое дело', open: () => setMode('focus') },
+    umrah: { ic: 'عمرة', ar: true, title: 'Умра', sub: state.umrah?.prep?.length ? `Подготовка ${prepPct(state)}%` : 'Обряды со счётчиком, подготовка, дуа', open: () => setMode('umrah') },
+    safar: { ic: '🧭', title: 'Сафар', sub: state.trip ? `Поездка: ${state.trip.place}` : 'Поездка, кибла, дуа путника', open: onSafar },
+  };
+  const favIds = (state.practiceFav ?? ['quran', 'videos', 'tasbih', 'langs']).filter((id) => P[id]).slice(0, 4);
+  const toggleFav = (id: string) => update((s) => {
+    const cur = (s.practiceFav ?? favIds).filter((x) => P[x]);
+    return { ...s, practiceFav: cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= 4 ? cur : [...cur, id] };
+  });
+
+  // «Сейчас»: what fits this time of day.
+  const h = new Date().getHours();
+  const part = h >= 4 && h < 11 ? 'утро' : h < 17 && h >= 11 ? 'день' : h >= 17 ? 'вечер' : 'ночь';
+  type Now = { title: string; sub: string; btn: string; go: () => void; short: string };
+  const cand: Record<string, Now | null> = {
+    ramadan: rDay ? { title: `Рамадан, день ${rDay}`, sub: 'Пост, хатм, ночи', btn: 'Открыть', go: onRamadan, short: 'Рамадан' } : null,
+    video: vs?.last ? { title: 'Продолжить видеоурок', sub: (() => { const it = [...vs.mine, ...catalogItems()].find((x) => x.id === vs.last!.item); return it ? it.title : 'С того места, где остановился'; })(), btn: '▶ Продолжить', go: () => setMode('videos'), short: 'Видеоурок' } : null,
+    quran: { title: state.quran ? `Коран: сура ${state.quran.surah}, аят ${state.quran.ayah}` : 'Коран: несколько аятов', sub: state.quran ? 'С закладки, с переводом смыслов' : 'Начни с суры Аль-Фатиха', btn: 'Читать', go: () => setMode('quran'), short: 'Коран' },
+    tasbih: { title: 'Тасбих после намаза', sub: 'СубханаЛлах 33 · Альхамдулиллях 33 · Аллаху акбар 34', btn: 'Начать', go: () => setMode('tasbih'), short: 'Тасбих 33·33·34' },
+    langs: due ? { title: `Повтори слова: ${due}`, sub: 'Пара минут на карточки', btn: 'Повторить', go: () => setMode('langs'), short: 'Слова' } : null,
+    course: state.course ? { title: `Английский: день ${state.course.day + 1}`, sub: A1[state.course.day]?.t ?? 'Урок на 15 минут', btn: 'Продолжить', go: () => setMode('course'), short: 'Английский' } : null,
+  };
+  const order = part === 'утро' ? ['ramadan', 'quran', 'tasbih', 'langs'] : part === 'день' ? ['ramadan', 'langs', 'course', 'video', 'quran'] : part === 'вечер' ? ['ramadan', 'video', 'quran', 'tasbih'] : ['ramadan', 'tasbih', 'quran'];
+  const picks = order.map((k) => cand[k]).filter(Boolean) as Now[];
+  const now = picks[0], alt = picks[1];
+
+  const season = rDay || (rm.state === 'next' && rm.daysTo <= 30);
+  const row = (id: string) => { const it = P[id]; return it && (
+    <button key={id} type="button" className="prow" onClick={editFav ? () => toggleFav(id) : it.open}>
+      <i className={`pic${it.ar ? ' ar' : ''}`}>{it.ic}</i>
+      <span><b>{it.title}</b><small>{it.sub}</small></span>
+      <em>{editFav ? (favIds.includes(id) ? '★' : '☆') : '›'}</em>
+    </button>
+  ); };
 
   return (
     <div className="page">
       <h1 className="page-h">Практика</h1>
-      <p className="page-sub">Сделай привычку здесь, не выходя из приложения. Когда закончишь, она отметится сама.</p>
+      <p className="page-sub">Сделай привычку здесь. Когда закончишь, она отметится сама.</p>
 
-      {active.length > 0 && (
-        <label className="field">
-          <span>Для привычки</span>
-          <select value={habitId} onChange={(e) => setHabitId(e.target.value)}>
-            <option value="">без привязки</option>
-            {active.map((h) => (
-              <option key={h.id} value={h.id}>
-                {isCounted(state.log[today]?.[h.id]) ? '✓ ' : ''}{h.action} · {sphereName(h.sphere)}
-              </option>
-            ))}
-          </select>
-        </label>
+      {now && (
+        <div className="pnow">
+          <small>Сейчас · {part}</small>
+          <b>{now.title}</b>
+          <p>{now.sub}</p>
+          <div className="pnow-row">
+            <button type="button" className="pnow-go" onClick={now.go}>{now.btn}</button>
+            {alt && <button type="button" className="pnow-alt" onClick={alt.go}>Или: {alt.short}</button>}
+          </div>
+          {active.length > 0 && (
+            <label className="pnow-hab">Отметит привычку:{' '}
+              <select value={habitId} onChange={(e) => setHabitId(e.target.value)}>
+                <option value="">без привязки</option>
+                {active.map((x) => <option key={x.id} value={x.id}>{isCounted(state.log[today]?.[x.id]) ? '✓ ' : ''}{x.action} · {sphereName(x.sphere)}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
       )}
 
-      {isCloud && (
-        <button type="button" className="video-card" onClick={() => setMode('videos')}>
-          <i>▶</i>
-          <span><small>Видеоуроки</small><b>Курсы с YouTube</b><em>Вера, бизнес, развитие, здоровье и языки. Урок в день, с прогрессом и заметками.</em></span>
-        </button>
-      )}
-
-      <button type="button" className="course-card" onClick={() => setMode('course')}>
-        <small>Курс · разговорный A1</small>
-        <b>Английский по дням</b>
-        <span>{state.course ? `День ${state.course.day + 1} из ${A1.length}: ${A1[state.course.day].t} · фраз выучено ${state.course.learned.length}` : `${A1.length} уроков по 15 минут: фразы с озвучкой и транскрипцией, диалоги, разговор вслух`}</span>
-      </button>
-
-      <div className="types">
-        <button type="button" className="type" onClick={() => setMode('focus')}>
-          <span className="ic">⏱</span><b>Фокус</b><small>Таймер без отвлечений: чтение, работа, английский, спорт</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('tasbih')}>
-          <span className="ic ar">سُبْحَانَ</span><b>Тасбих</b><small>33 · 33 · 34 после намаза</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('quran')}>
-          <span className="ic ar">قرآن</span><b>Коран</b><small>{state.quran ? `Закладка: сура ${state.quran.surah}, аят ${state.quran.ayah}` : 'Текст и перевод смыслов, закладка'}</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('langs')}>
-          <span className="ic">Aa</span><b>Языки</b>
-          <small>{state.langs?.current ? `${LANGS.find((l) => l.id === state.langs!.current)?.label ?? state.langs.current.replace('custom:', '')}: ${(state.langs.decks[state.langs.current] ?? []).filter((c) => c.due <= today).length} к повторению` : 'Английский, арабский, турецкий'}</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('health')}>
-          <span className="ic">🌿</span><b>Здоровье</b><small>{`Вода ${health(state).water[today] ?? 0}/${health(state).waterGoal} · сон, тренировки, посты`}</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('food')}>
-          <span className="ic">🍽</span><b>Питание</b><small>{(() => { const d = foodOf(state).meals[today] ?? {}; const n = Object.keys(d).length; return n ? `Сегодня отмечено ${n} из 3` : 'Правило трети, сунна, чистые дни'; })()}</small>
-        </button>
-        <button type="button" className="type" onClick={onRamadan}>
-          <span className="ic">🌙</span><b>Рамадан</b><small>{(() => { const d = ramadanDay(today); const left = debt(ramadanOf(state)).left; if (d) return `День ${d} из ${ramadanMonth(today).days.length}${ramadanOf(state).fasts[today] === 'fast' ? ' · пост ✓' : ''}`; const m = ramadanMonth(today); return `${m.state === 'next' ? `Через ${m.daysTo} дн.` : 'Ид и Шавваль'}${left ? ` · долг ${left} дн.` : ' · пост, хатм, ночи'}`; })()}</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('sadaqa')}>
-          <span className="ic ar">صدقة</span><b>Садака</b><small>{(() => { const q = sadaqaOf(state); const d = q.days[today]; const n = sadaqaStreak(q, today); return d?.money || d?.deed ? `Сегодня есть ✓ · серия ${n}` : n ? `Серия ${n} · доброе дело дня ждёт` : 'Каждый день понемногу, в тайне'; })()}</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('umrah')}>
-          <span className="ic ar">عمرة</span><b>Умра</b><small>{state.umrah?.prep?.length ? `Подготовка ${prepPct(state)}%` : 'Обряды со счётчиком, подготовка, мои дуа'}</small>
-        </button>
-        <button type="button" className="type" onClick={onSafar}>
-          <span className="ic">🧭</span><b>Сафар</b><small>{state.trip ? `Поездка: ${state.trip.place}` : 'Поездка, кибла, дуа путника'}</small>
-        </button>
-        <button type="button" className="type" onClick={() => setMode('books')}>
-          <span className="ic">📖</span><b>Книги</b><small>{state.books?.length ? `На полке: ${state.books.length}` : 'Атомные привычки и свои PDF'}</small>
-        </button>
+      <h3 className="ph">Мои практики <button type="button" className="link-btn" onClick={() => setEditFav(!editFav)}>{editFav ? 'Готово' : 'Изменить'}</button></h3>
+      {editFav && <p className="tiny">Отметь звёздочкой до 4 практик ниже. Они будут стоять здесь первыми.</p>}
+      <div className="pfav">
+        {favIds.map((id) => { const it = P[id]; return (
+          <button key={id} type="button" className="pf" onClick={it.open}>
+            <i className={`pic${it.ar ? ' ar' : ''}`}>{it.ic}</i><b>{it.title}</b><small>{it.sub}</small>
+            {it.pct !== undefined && <span className="pbar"><i style={{ width: `${Math.max(4, it.pct * 100)}%` }} /></span>}
+          </button>
+        ); })}
       </div>
+
+      {season && (
+        <button type="button" className="pseason" onClick={onRamadan}>
+          <i>🌙</i>
+          <span><b>{rDay ? `Рамадан, день ${rDay} из ${rm.days.length}` : `Рамадан через ${rm.daysTo} ${rm.daysTo === 1 ? 'день' : rm.daysTo < 5 ? 'дня' : 'дней'}`}</b>
+          <small>{rDay ? (ramadanOf(state).fasts[today] === 'fast' ? 'Пост сегодня отмечен ✓ · хатм, ночи' : 'Пост, хатм, последние ночи') : `Подготовка: ${rLeft ? `долг ${rLeft} дн., ` : ''}план хатма, привычки на месяц`}</small></span>
+        </button>
+      )}
+
+      <div className="pgl">Поклонение</div>
+      <div className="pgrp">{['quran', 'tasbih', 'sadaqa'].map(row)}</div>
+      <div className="pgl">Знания</div>
+      <div className="pgrp">{['videos', 'books', 'langs'].map(row)}</div>
+      <div className="pgl">Тело и время</div>
+      <div className="pgrp">{['body', 'focus'].map(row)}</div>
+
+      <button type="button" className="pmore" onClick={() => setSpecial(!special)} aria-expanded={special}>
+        <span>Особые случаи: {season ? 'Умра, Сафар' : 'Рамадан, Умра, Сафар'}</span><span>{special ? '▴' : '›'}</span>
+      </button>
+      {special && (
+        <div className="pgrp">
+          {!season && (
+            <button type="button" className="prow" onClick={onRamadan}><i className="pic">🌙</i><span><b>Рамадан</b><small>{rm.state === 'next' ? `Через ${rm.daysTo} дн.` : 'Ид и Шавваль'}{rLeft ? ` · долг ${rLeft} дн.` : ' · пост, хатм, ночи'}</small></span><em>›</em></button>
+          )}
+          {['umrah', 'safar'].map(row)}
+        </div>
+      )}
     </div>
   );
 }
+
+type Item = { ic: string; ar?: boolean; title: string; sub: string; pct?: number; open: () => void };
 
 const PRESETS = [10, 15, 25, 45, 60];
 
