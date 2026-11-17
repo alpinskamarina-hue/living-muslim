@@ -10,6 +10,8 @@ import { uid } from '../store';
 import type { Anchor, Habit, Sphere } from '../types';
 import { EID_SUNNA, IFTAR_DUA, MISSED, QADR_DUA, TAKBIR, debt, hOf, khatmProgress, lastThird, nightOf, patchR, ramadanDay, ramadanMonth, ramadanOf, shawwalCount } from '../ramadan';
 import { RAMADAN_30 } from '../ramadan30';
+import { FAST_FAQ } from '../fiqh';
+import { Zakat } from './Zakat';
 import { type Lang, durL, langOf, nw, tr } from '../i18n';
 import { loadQuran } from './Quran';
 import { rpushOf } from '../push';
@@ -109,6 +111,7 @@ export function RamadanToday({ state, update, today, now, times, onOpen }: { sta
       </div>
       <b className="rm-t">{line}</b>
       <small>{sub}</small>
+      {day && <FastLine l={l} now={now} times={times} />}
       {(iftarSoon || (day && afterMaghrib && now.getTime() - times.maghrib.getTime() < 60 * 60000)) && (
         <div className="rm-dua"><p className="ar-dua light" lang="ar" dir="rtl">{IFTAR_DUA.ar}</p><small>{t(IFTAR_DUA.tr, IFTAR_DUA.trEn)} {t(IFTAR_DUA.src, IFTAR_DUA.srcEn)}</small></div>
       )}
@@ -139,6 +142,20 @@ export function RamadanToday({ state, update, today, now, times, onOpen }: { sta
           {night! % 2 ? t(`${night}-я ночь, нечётная. Ищи Ляйлят аль-Кадр · план ночи ›`, `Night ${night}, an odd night. Seek Laylat al-Qadr · night plan ›`) : t(`${night}-я ночь из последних десяти · план ночи ›`, `Night ${night} of the last ten · night plan ›`)}
         </button>
       )}
+    </div>
+  );
+}
+
+/** The fasting day as a line: suhoor, Dhuhr, Asr, iftar, tarawih. */
+function FastLine({ l, now, times }: { l: Lang; now: Date; times: DayTimes }) {
+  const t = tr(l);
+  const steps: [string, Date][] = [[t('Сухур', 'Suhoor'), times.fajr], [t('Зухр', 'Dhuhr'), times.dhuhr], [t('Аср', 'Asr'), times.asr], [t('Ифтар', 'Iftar'), times.maghrib], [t('Таравих', 'Tarawih'), times.isha]];
+  const next = steps.findIndex(([, d]) => now < d);
+  return (
+    <div className="rm-line" aria-label={t('День поста', 'The fasting day')}>
+      {steps.map(([n, d], i) => (
+        <div key={n} className={next === -1 || i < next ? 'done' : i === next ? 'now' : ''}><i /><b>{n}</b><small>{hhmm(d)}</small></div>
+      ))}
     </div>
   );
 }
@@ -298,7 +315,77 @@ function Fasts({ state, update, today, mon, l }: P) {
         <small>{t('«…а кто из вас болен или в пути, пусть постится столько же дней в другое время». Коран, 2:184. Лучше возместить до следующего Рамадана.', '"…and whoever among you is ill or on a journey, then an equal number of other days." Quran 2:184. Best made up before the next Ramadan.')}</small>
         {dbt.fidya > 0 && <small>{t(`Дней на фидью: ${dbt.fidya}. За каждый день кормят одного бедного. Размер уточни в своей мечети.`, `Days for fidyah: ${dbt.fidya}. For each day, feed one poor person. Ask your mosque for the amount.`)}</small>}
       </div>
+      {dbt.left > 0 && <QadaPlan state={state} update={update} today={today} l={l} left={dbt.left} />}
+      {dbt.fidya > 0 && <Fidya state={state} update={update} l={l} days={dbt.fidya} />}
+      <h2 className="sub-h">{t('Вопросы о посте', 'Questions about fasting')}</h2>
+      <FastFaq l={l} madhab={state.settings.madhab} />
     </>
+  );
+}
+
+/** The first day of the next Ramadan after today. */
+function nextRamadan(today: string): string | null {
+  for (let i = 1; i <= 420; i++) { const d = addDays(today, i); if (ramadanDay(d) === 1) return d; }
+  return null;
+}
+
+function QadaPlan({ state, update, today, l, left }: { state: AppState; update: Update; today: string; l: Lang; left: number }) {
+  const t = tr(l);
+  const plan = ramadanOf(state).qadaPlan;
+  const per = plan?.perWeek ?? 0;
+  const next = nextRamadan(today);
+  const end = per ? addDays(today, Math.ceil(left / per) * 7) : null;
+  const inTime = end && next ? end < next : true;
+  const setPer = (n: number) => update((s) => patchR(s, () => ({ qadaPlan: n ? { perWeek: n, from: today } : null })));
+  const days: Record<number, [string, string]> = { 1: ['по понедельникам', 'on Mondays'], 2: ['по понедельникам и четвергам (сунна)', 'on Mondays and Thursdays (sunnah)'], 3: ['пн, чт и в выходной', 'Mon, Thu and one weekend day'], 7: ['подряд, каждый день', 'every day in a row'] };
+  return (
+    <div className="h-card">
+      <div className="meal-h"><b>{t('План возмещения', 'Make-up plan')}</b>{next && <small>{t('Рамадан', 'Ramadan')} ~{fromKey(next).toLocaleDateString(l === 'en' ? 'en-GB' : 'ru-RU', { month: 'short', year: 'numeric' })}</small>}</div>
+      <small>{t('Сколько дней в неделю возмещать?', 'How many days a week will you make up?')}</small>
+      <div className="choices">
+        {[1, 2, 3, 7].map((n) => <button type="button" key={n} aria-pressed={per === n} onClick={() => setPer(per === n ? 0 : n)}>{t(`${n} в нед.`, `${n}/week`)}</button>)}
+      </div>
+      {per > 0 && end && (
+        <small>{t(`Возмещай ${days[per][0]}. Закончишь примерно ${fmtDay(l, end)}`, `Make them up ${days[per][1]}. You will finish around ${fmtDay(l, end)}`)}{next ? (inTime ? t(', до следующего Рамадана ✓', ', before the next Ramadan ✓') : t('. Это позже следующего Рамадана: возьми больше дней в неделю.', '. That is after the next Ramadan: take more days a week.')) : '.'}</small>
+      )}
+    </div>
+  );
+}
+
+function Fidya({ state, update, l, days }: { state: AppState; update: Update; l: Lang; days: number }) {
+  const t = tr(l);
+  const cur = sadaqaOf(state).cur;
+  const price = ramadanOf(state).fidyaPrice ?? 0;
+  return (
+    <div className="h-card">
+      <div className="meal-h"><b>{t('Фидья', 'Fidyah')}</b><small>{nw(l, days, ['день', 'дня', 'дней'], ['day', 'days'])}</small></div>
+      <label className="field"><span>{t(`Один день, ${cur} (сумму называет мечеть)`, `One day, ${cur} (your mosque gives the amount)`)}</span>
+        <input type="number" inputMode="decimal" min="0" step="0.5" value={price || ''} onChange={(e) => update((s) => patchR(s, () => ({ fidyaPrice: Math.max(0, Number(e.target.value) || 0) })))} placeholder={t('например, 10', 'e.g. 10')} />
+      </label>
+      {price > 0 && <b className="h-big sm">{(Math.round(price * days * 100) / 100).toLocaleString(l === 'en' ? 'en-GB' : 'ru-RU')} {cur}</b>}
+      <small>{t('Можно отдать сразу или по мере пропусков. Фидью отдают бедным едой или деньгами.', 'You can give it at once or as the days come. Fidyah goes to the poor as food or money.')}</small>
+    </div>
+  );
+}
+
+function FastFaq({ l, madhab }: { l: Lang; madhab: 'shafi' | 'hanafi' }) {
+  const t = tr(l);
+  const i = l === 'en' ? 1 : 0;
+  return (
+    <div className="rm-faq">
+      {FAST_FAQ.map((f) => {
+        const m = madhab === 'hanafi' ? f.hanafi : f.shafi;
+        return (
+          <details key={f.q[0]} className="h-card">
+            <summary><b>{f.q[i]}</b></summary>
+            <p>{f.a[i]}</p>
+            {m && <p className="rm-madhab">{m[i]}</p>}
+            {f.src && <small className="src">{f.src[i]}</small>}
+          </details>
+        );
+      })}
+      <p className="q-msg left tiny-note">{t('Мазхаб берётся из настроек намазов в Профиле. Это короткие ответы на частые случаи; со своим случаем лучше подойти к имаму.', 'The school comes from your prayer settings in Profile. These are short answers for common cases; take your own situation to an imam.')}</p>
+    </div>
   );
 }
 
@@ -500,6 +587,7 @@ function Eid({ state, update, today, mon, l }: P) {
         <small>{t('Обязателен за себя и за каждого, кого содержишь. Отдать нужно до праздничного намаза, можно за день-два до Ида. Размер равен са‘ основной еды (около 2,5–3 кг) или его стоимости. Сумму на этот год объявляет мечеть.', 'It is due for yourself and everyone you support. Give it before the Eid prayer; a day or two before Eid is fine. It equals one sa‘ of staple food (about 2.5–3 kg) or its value. Your mosque announces this year’s amount.')}</small>
         <button type="button" className={paid ? 'pri-btn' : 'gold-btn'} onClick={() => update((s) => patchR(s, (x) => ({ fitr: paid ? x.fitr.filter((y) => y !== year) : [...x.fitr, year] })))}>{paid ? t('Отдан ✓', 'Given ✓') : t('Отдал', 'Given')}</button>
       </div>
+      <ZakatCard state={state} update={update} l={l} />
       <div className="h-card third">
         <b>{t('Такбир', 'Takbir')}</b>
         <p className="ar-dua" lang="ar" dir="rtl">{TAKBIR.ar}</p>
@@ -533,6 +621,20 @@ function Eid({ state, update, today, mon, l }: P) {
           <button type="button" className={health(state).fasts[today] ? 'pri-btn' : 'gold-btn'} onClick={() => update(toggleShawwal(today))}>{health(state).fasts[today] ? t('Сегодня пощусь ✓', 'Fasting today ✓') : t('Сегодня пощусь', 'I am fasting today')}</button>
         )}
       </div>
+    </>
+  );
+}
+
+function ZakatCard({ state, update, l }: { state: AppState; update: Update; l: Lang }) {
+  const t = tr(l);
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" className="h-card rm-zk" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="meal-h"><b>{t('Закят аль-маль', 'Zakat al-mal')}</b><small>{open ? t('свернуть', 'close') : t('посчитать ›', 'calculate ›')}</small></span>
+        <small>{t('Закят с имущества. Многие отдают его в Рамадан. Тот же калькулятор есть в Практике → Садака → Закят.', 'Zakat on wealth. Many give it in Ramadan. The same calculator is in Practice → Sadaqah → Zakat.')}</small>
+      </button>
+      {open && <Zakat state={state} update={update} l={l} />}
     </>
   );
 }
@@ -653,6 +755,8 @@ function Prep({ state, update, today, mon, l }: P) {
           )}
         </>
       )}
+
+      <label className="h-card check-row rm-theme"><input type="checkbox" checked={state.settings.ramadanTheme !== false} onChange={(e) => update((s) => ({ ...s, settings: { ...s.settings, ramadanTheme: e.target.checked } }))} />{t('Ночные цвета и звёзды во всём приложении в Рамадан', 'Night colours and stars across the app in Ramadan')}</label>
 
       <h2 className="sub-h">{t('Привычки в Рамадан', 'Habits in Ramadan')}</h2>
       <p className="q-msg left">{t('В пост сил меньше. Реши заранее, что держать как обычно, что на минимуме, а что поставить на паузу. Пауза и минимум не ломают серию.', 'Fasting leaves less energy. Decide ahead what to keep as usual, what to do at minimum and what to pause. Pause and minimum do not break your streak.')}</p>
