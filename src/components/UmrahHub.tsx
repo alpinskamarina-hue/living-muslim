@@ -6,6 +6,7 @@ import { DuaList, StepView, umrahOf, prepPct } from './Umrah';
 import { UmrahTrips } from './UmrahTrips';
 import { MiqatView } from './Miqat';
 import { UmrahSavings } from './UmrahSavings';
+import { UmrahLive } from './UmrahLive';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -76,6 +77,8 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           <span><b>{from ? (left! > 0 ? left : '—') : '—'}</b><small>{from && left! > 0 ? plural(left!, 'день до вылета', 'дня до вылета', 'дней до вылета') : 'дней до вылета'}</small></span>
         </div>
       </div>
+
+      <UmrahLive />
 
       {u.ihram && (
         <button type="button" className="um-ihram" onClick={() => setMiqat(true)}>

@@ -74,9 +74,37 @@ async function search(q) {
   return out;
 }
 
+// The live stream from the Haram right now. The broadcaster's handle first, then a search among live videos.
+const LIVE = {
+  makkah: { handles: ['@SaudiQuranTv', '@saudiqurantv'], q: 'makkah live قناة القرآن الكريم بث مباشر', must: /mak|مك|قرآن|quran|haram|حرم/i },
+  madinah: { handles: ['@SaudiSunnahTv', '@saudisunnahtv'], q: 'madinah live قناة السنة النبوية بث مباشر', must: /mad|med|مدين|سنة|sunnah|nabawi|نبوي/i },
+};
+async function live(place) {
+  const c = LIVE[place] || LIVE.makkah;
+  for (const h of c.handles) {
+    try {
+      const r = await fetch(`https://www.youtube.com/${h}/live`, { headers: HEADERS });
+      const html = await r.text();
+      const id = html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/)?.[1];
+      if (id && /"isLive(Now|Content)":true/.test(html)) return { id, via: h };
+    } catch { /* try the next one */ }
+  }
+  const d = await initialData(`https://www.youtube.com/results?search_query=${encodeURIComponent(c.q)}&sp=EgJAAQ%253D%253D`);
+  let found = null;
+  walk(d, (o) => {
+    const v = o.videoRenderer;
+    if (found || !v?.videoId) return;
+    const t = text(v.title) + ' ' + text(v.ownerText);
+    if (c.must.test(t)) found = { id: v.videoId, title: text(v.title), channel: text(v.ownerText), via: 'search' };
+  });
+  if (!found) throw new Error('no live');
+  return found;
+}
+
 export default async function handler(req, res) {
-  const { list, v, q, k } = req.query;
+  const { list, v, q, k, live: place } = req.query;
   try {
+    if (place) { res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=3600'); return res.json(await live(String(place))); }
     if (list) { res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=86400'); return res.json(await playlist(String(list))); }
     if (v) { res.setHeader('Cache-Control', 's-maxage=86400'); return res.json(await video(String(v))); }
     if (q && k && k === process.env.YT_SEARCH_KEY) return res.json(await search(String(q)));
