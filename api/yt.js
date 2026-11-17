@@ -77,7 +77,7 @@ async function search(q) {
 // The live stream from the Haram right now. The broadcaster's handle first, then a search among live videos.
 const LIVE = {
   makkah: { ids: ['R-EaDtiQTk0'], handles: ['@SaudiQuranTv', '@saudiqurantv'], q: 'makkah live قناة القرآن الكريم بث مباشر', must: /mak|مك|قرآن|quran|haram|حرم/i },
-  madinah: { handles: ['@SaudiSunnahTv', '@saudisunnahtv'], q: 'madinah live قناة السنة النبوية بث مباشر', must: /mad|med|مدين|سنة|sunnah|nabawi|نبوي/i },
+  madinah: { ids: ['BtMUUgApnPs'], handles: ['@SaudiSunnahTv', '@saudisunnahtv'], q: 'madinah live قناة السنة النبوية بث مباشر', must: /mad|med|مدين|سنة|sunnah|nabawi|نبوي/i },
 };
 async function live(place) {
   const c = LIVE[place] || LIVE.makkah;
