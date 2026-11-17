@@ -11,6 +11,7 @@ import { TalbiyaLearn, WalkPlan } from './UmrahPrep';
 import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
 import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
 import { Badal, MadinahGuide, WhenToGo } from './UmrahExtra';
+import { UmrahBook } from './UmrahBook';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -119,8 +120,8 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           </>
         )}
         {phase === 'far' && <><b>Время намерения</b><p>До вылета {left} {plural(left!, 'день', 'дня', 'дней')}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.</p>{(u.funds ?? []).some((f) => !f.for) && <UmrahSavings state={state} update={update} today={today} compact />}</>}
-        {phase === 'month' && <><b>Месяц до умры</b><p>Прививка, разрешение в Nusuk, запись в Равду, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p>{left! <= 28 && <WalkPlan state={state} update={update} today={today} left={left} compact />}</>}
-        {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте: указать рейс</button></>}
+        {phase === 'month' && <><b>Месяц до умры</b><p>Прививка, разрешение в Nusuk, запись в Равду, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p>{left! <= 28 && <WalkPlan state={state} update={update} today={today} left={left} compact />}<UmrahBook state={state} update={update} from={from} to={to} compact /></>}
+        {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте: указать рейс</button><UmrahBook state={state} update={update} from={from} to={to} compact /></>}
         {phase === 'there' && (
           <>
             <b>Ты в пути. Ляббайк, Аллахумма ляббайк</b>
@@ -227,6 +228,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
         <div className="um-sec">
           {(phase === 'none' || phase === 'done') && <WhenToGo today={today} />}
           {(phase === 'week' || phase === 'there') && <OnSiteSetup state={state} update={update} />}
+          {phase !== 'there' && phase !== 'after' && phase !== 'done' && <UmrahBook state={state} update={update} from={from} to={to} />}
           <UmrahSavings state={state} update={update} today={today} />
           {phase !== 'week' && phase !== 'there' && <OnSiteSetup state={state} update={update} />}
           {api.me ? (

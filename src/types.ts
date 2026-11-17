@@ -198,6 +198,8 @@ export interface UmrahState {
   madeSeen?: string[];
   /** Days I did the walking norm (YYYY-MM-DD). */
   walk?: string[];
+  /** Trip pieces ready: visa, flight, hotel, esim, insure. */
+  booked?: string[];
   /** Talbiya phrases I know by heart (indexes 0..3). */
   talbiyaKnown?: number[];
   funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];
