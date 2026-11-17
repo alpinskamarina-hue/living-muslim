@@ -1,11 +1,12 @@
 import { shareCard } from '../share';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Member, Reacts } from '../circle';
 import { plural } from '../dates';
 import {
   GOAL_KINDS, valOf, askLive, askAnswers, circleStreak, ASK_DAYS, type DuaAsk, CH_KINDS, CH_DAYS, chHit, amirOf, type Challenge, type ChKind, type Amir, weekStart, weekEnd, addWeeks, isFriday, goalFor, circleTotals, supporters, rangeLabel,
-  type CGoal, type GoalKind,
+  type CGoal, type GoalKind, goalKindsFor,
 } from '../cweek';
+import { isBizCircle, shuraTotals } from '../biz';
 import { daysBetween, addDays } from '../dates';
 
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
@@ -28,9 +29,12 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
   const goal = goalFor(members, w);
   const [edit, setEdit] = useState(false);
   const people = Math.max(1, members.length);
-  const [k, setK] = useState<GoalKind>(goal?.k as GoalKind ?? 'fajr');
+  const biz = isBizCircle();
+  const first: GoalKind = biz ? 'biz' : 'fajr';
+  const kinds = goalKindsFor(biz);
+  const [k, setK] = useState<GoalKind>(goal?.k as GoalKind ?? first);
   const suggest = (x: GoalKind) => Math.max(GOAL_KINDS[x].step, Math.round((GOAL_KINDS[x].per * people) / GOAL_KINDS[x].step) * GOAL_KINDS[x].step);
-  const [n, setN] = useState(goal?.n ?? suggest('fajr'));
+  const [n, setN] = useState(goal?.n ?? suggest(first));
   const left = daysBetween(today, weekEnd(w));
 
   const save = () => { onSet({ w, k, n, at: new Date().toISOString() }); setEdit(false); };
@@ -39,9 +43,9 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
   if (edit || !goal) {
     if (!edit) {
       return (
-        <button type="button" className="cg-empty" onClick={() => { setK('fajr'); setN(suggest('fajr')); setEdit(true); }}>
+        <button type="button" className="cg-empty" onClick={() => { setK(first); setN(suggest(first)); setEdit(true); }}>
           <span aria-hidden="true">🎯</span>
-          <span><b>Поставьте цель круга на неделю</b><small>Например, {suggest('fajr')} {unit('fajr', suggest('fajr'))} на всех. Общая шкала, без рейтинга.</small></span>
+          <span><b>Поставьте цель круга на неделю</b><small>Например, {suggest(first)} {unit(first, suggest(first))} на всех{biz ? ', а намазы вовремя считаются рядом' : ''}. Общая шкала, без рейтинга.</small></span>
           <i aria-hidden="true">›</i>
         </button>
       );
@@ -50,7 +54,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
       <div className="cg-card cg-edit">
         <b className="cg-h">🎯 Цель круга до пятницы</b>
         <div className="cg-kinds">
-          {(Object.keys(GOAL_KINDS) as GoalKind[]).map((x) => (
+          {kinds.map((x) => (
             <button key={x} type="button" aria-pressed={k === x} onClick={() => { setK(x); setN(suggest(x)); }}>{GOAL_KINDS[x].ic} {GOAL_KINDS[x].label}</button>
           ))}
         </div>
@@ -59,7 +63,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
           <span><b>{n}</b><small>{unit(k, n)}</small></span>
           <button type="button" aria-label="Больше" onClick={() => setN((v) => v + GOAL_KINDS[k].step)}>+</button>
         </div>
-        <p className="tiny">На {people} {plural(people, 'человека', 'человек', 'человек')} это примерно {Math.round((n / people) * 10) / 10} на каждого за неделю. Считается всё, что отмечено с субботы.</p>
+        <p className="tiny">На {people} {plural(people, 'человека', 'человек', 'человек')} это примерно {Math.round((n / people) * 10) / 10} на каждого за неделю. Считается всё, что отмечено с субботы.{k === 'biz' ? ' Деловая отметка: любая привычка из раздела «Бизнес». Без сумм и цифр выручки.' : ''}</p>
         <div className="cg-row">
           <button type="button" className="pri-btn" onClick={save}>{goal ? 'Сохранить' : 'Поставить цель'}</button>
           <button type="button" className="link-btn" onClick={() => setEdit(false)}>Отмена</button>
@@ -70,6 +74,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
   }
 
   const gk = goal.k as GoalKind;
+  if (!GOAL_KINDS[gk]) return null;
   const have = circleTotals(members, w);
   const v = valOf(have, gk);
   const pct = Math.min(100, Math.round((v / goal.n) * 100));
@@ -89,6 +94,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
         {done ? <>✓ Цель достигнута, машаАллах! Уже {v}. Можно поднять планку.</>
           : <><b>{v}</b> из {goal.n} · осталось {goal.n - v} · {left === 0 ? 'сегодня последний день' : `ещё ${left} ${plural(left, 'день', 'дня', 'дней')} до пятницы`}</>}
       </p>
+      {gk === 'biz' && have.p > 0 && <p className="cg-sub">И вместе с этим: намазы вовремя {Math.round((have.o / have.p) * 100)}%. Дело не вместо намаза, а вокруг него.</p>}
     </div>
   );
 }
@@ -108,12 +114,17 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
   const pctOn = t.p ? Math.round((t.o / t.p) * 100) : 0;
   const sup = supporters(reacts, w).slice(0, 3);
   const live = w === cur;
+  const biz = isBizCircle();
+  const sh = biz ? shuraTotals(members, reacts, w) : null;
+  const shLine = sh && sh.shared ? `🧭 Шура: поделились ${sh.shared} из ${members.length}, ${sh.advice} ${plural(sh.advice, 'совет', 'совета', 'советов')}, ${sh.duas} дуа` : '';
 
   const text = [
     `🤝 Наш круг «${title}» ${live ? 'на этой неделе' : 'за неделю'} (${rangeLabel(w)}):`,
     `🕌 ${t.p} ${plural(t.p, 'намаз', 'намаза', 'намазов')}, из них ${pctOn}% вовремя`,
     t.f ? `🌅 ${t.f} ${plural(t.f, 'Фаджр', 'Фаджра', 'Фаджров')} вовремя` : '',
     t.h ? `🌱 ${t.h} ${plural(t.h, 'отметка', 'отметки', 'отметок')} привычек` : '',
+    biz && t.b ? `💼 ${t.b} ${plural(t.b, 'деловая отметка', 'деловые отметки', 'деловых отметок')} у намазов` : '',
+    shLine,
     goal ? `🎯 Цель «${goal.n} ${unit(goal.k as GoalKind, goal.n)}»: ${gv >= goal.n ? 'выполнена ✓' : `${gv} из ${goal.n}`}` : '',
     sup.length ? `🤲 Больше всех поддерживали: ${sup.map((x) => nameOf(x.id)).join(', ')}` : '',
     '',
@@ -147,6 +158,8 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
         <div><b>{t.h}</b><small>привычек</small></div>
       </div>
       {goal && <p className="ws-line">🎯 {gv >= goal.n ? <>Цель «{goal.n} {unit(goal.k as GoalKind, goal.n)}» <b>выполнена</b>, машаАллах</> : <>Цель: {gv} из {goal.n} {unit(goal.k as GoalKind, goal.n)}</>}</p>}
+      {biz && (t.b ?? 0) > 0 && <p className="ws-line">💼 Деловых отметок у намазов: <b>{t.b}</b></p>}
+      {shLine && <p className="ws-line">{shLine}</p>}
       {sup.length > 0 && <p className="ws-line">🤲 Больше всех поддерживали: <b>{sup.map((x) => nameOf(x.id)).join(', ')}</b></p>}
       <p className="ws-line ws-soft">В деле было {t.people} из {members.length}. Общий итог, без рейтинга по поклонению.</p>
       <div className="ws-btns">
@@ -158,9 +171,11 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
 }
 
 /** Dua requests: mine (with who answered) and the circle's, each live for 3 days. */
-export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, react }: {
+export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, react, biz, extra }: {
   members: Member[]; reacts: Reacts; me: string; today: string; nameOf: (id: string) => string;
   myAsk: DuaAsk | null; onAsk: (a: DuaAsk | null) => void; react: (key: string) => void;
+  /** Business circle: dua for a deal, and advice under each request. */
+  biz?: boolean; extra?: (asker: string, a: DuaAsk) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -176,12 +191,13 @@ export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, reac
         const n = askAnswers(reacts, m.id, a).length;
         return (
           <div key={m.id} className="da-card">
-            <p>🤲 <b>{nameOf(m.id)}</b> просит дуа{a.d === today ? '' : ` · ${daysBetween(a.d, today) === 1 ? 'вчера' : '2 дня назад'}`}</p>
+            <p>🤲 <b>{nameOf(m.id)}</b> просит дуа{biz ? ' за дело' : ''}{a.d === today ? '' : ` · ${daysBetween(a.d, today) === 1 ? 'вчера' : '2 дня назад'}`}</p>
             <q>{a.t}</q>
             <div className="da-row">
               <button type="button" className={done ? 'on' : ''} onClick={() => react(`a:${m.id}`)}>{done ? '✓ Ты сделал дуа' : '🤲 Сделал дуа'}</button>
               {n > 0 && <small>{n} {plural(n, 'человек уже сделал', 'человека уже сделали', 'человек уже сделали')}</small>}
             </div>
+            {extra?.(m.id, a)}
           </div>
         );
       })}
@@ -190,21 +206,22 @@ export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, reac
         <div className="da-card mine">
           <p>Твоя просьба о дуа <small>видна кругу {['до конца дня', 'до завтра', 'до послезавтра'][Math.min(2, daysBetween(today, addDays(myAsk.d, ASK_DAYS - 1)))]}</small></p>
           <q>{myAsk.t}</q>
+          {extra?.(me, myAsk)}
           <p className="da-got">{got.length ? <>🤲 Дуа за тебя: <b>{got.map(nameOf).join(', ')}</b>. Аамин.</> : 'Пока никто не ответил. Круг увидит просьбу на «Сегодня».'}</p>
           <button type="button" className="link-btn" onClick={() => onAsk(null)}>Снять просьбу</button>
         </div>
       ) : open ? (
         <div className="da-card mine">
-          <p><b>О чём попросить дуа?</b></p>
-          <textarea value={text} maxLength={90} rows={2} autoFocus placeholder="Например: экзамен в четверг, здоровье мамы, работа" onChange={(e) => setText(e.target.value)} />
-          <small className="tiny">Коротко, без лишних подробностей. Увидят только люди этого круга, 3 дня.</small>
+          <p><b>{biz ? 'Дуа за какое дело?' : 'О чём попросить дуа?'}</b></p>
+          <textarea value={text} maxLength={90} rows={2} autoFocus placeholder={biz ? 'Например: завтра подписываем договор с поставщиком' : 'Например: экзамен в четверг, здоровье мамы, работа'} onChange={(e) => setText(e.target.value)} />
+          <small className="tiny">Коротко, без лишних подробностей{biz ? ' и без сумм' : ''}. Увидят только люди этого круга, 3 дня.</small>
           <div className="da-row">
-            <button type="button" className="pri-btn" disabled={!text.trim()} onClick={send}>Попросить дуа</button>
+            <button type="button" className="pri-btn" disabled={!text.trim()} onClick={send}>{biz ? 'Попросить дуа за дело' : 'Попросить дуа'}</button>
             <button type="button" className="link-btn" onClick={() => setOpen(false)}>Отмена</button>
           </div>
         </div>
       ) : (
-        <button type="button" className="da-ask" onClick={() => setOpen(true)}>🤲 Попросить круг о дуа</button>
+        <button type="button" className="da-ask" onClick={() => setOpen(true)}>{biz ? '🤲 Попросить дуа за сделку или дело' : '🤲 Попросить круг о дуа'}</button>
       )}
     </div>
   );

@@ -1941,3 +1941,44 @@ button:disabled { opacity: .5; cursor: default; }
 .ws-btns .ws-share { flex: 1; width: auto; margin-top: 0; }
 .ws-pic { border: 1.5px solid rgba(255,255,255,.45); background: none; color: var(--on-dark); border-radius: 14px; padding: 10px 14px; font-weight: 700; }
 .um-share { display: block; width: 100%; margin: 10px 0; border: 1.5px dashed color-mix(in srgb, var(--gold) 60%, transparent); background: var(--gold-soft); color: var(--ink); border-radius: 14px; padding: 11px 14px; font-weight: 700; font-size: 14px; }
+
+/* ── Круг бизнес ── */
+:root { --biz: #1d3b5a; --biz-2: #2f6f9f; --biz-soft: #e6eff7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --biz-2: #7fb0d8; --biz-soft: #16283a; } }
+:root[data-theme="dark"] { --biz-2: #7fb0d8; --biz-soft: #16283a; }
+.cl-kinds button { position: relative; }
+.cl-kinds button.biz[aria-pressed="true"] { background: var(--biz-soft); border-color: var(--biz-2); color: var(--biz-2); }
+.cl-new { position: absolute; top: -7px; right: -4px; font-style: normal; font-size: 9px; font-weight: 800; background: #c0392b; color: #fff; border-radius: 8px; padding: 1px 5px; }
+.bz-pick { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 12px; margin: 4px 0 12px; text-align: left; }
+.bz-pick p { margin: 4px 0 8px; font-size: 13px; color: var(--ink-2); }
+.bz-pick label { display: flex; gap: 10px; align-items: center; padding: 5px 0; font-size: 14px; }
+.bz-pick input { width: 20px; height: 20px; accent-color: var(--biz-2); flex: none; }
+.bz-k { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); }
+.bz-card { margin: 12px 0 4px; }
+.bz-card .bz-pick { margin: 0 0 8px; border-color: var(--biz-2); }
+.bz-note { text-align: center; }
+.ch-hero.biz { background: linear-gradient(150deg, var(--biz), #0f2a40); }
+.bz-hl { display: block; margin-top: 4px; color: var(--on-dark-2); font-size: 13px; }
+.bz-shura { margin: 12px 0 4px; border-radius: 18px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--biz-2); display: flex; flex-direction: column; gap: 10px; }
+.bz-sh-h { display: flex; flex-direction: column; }
+.bz-sh-h b { font-size: 16px; }
+.bz-sh-h small, .bz-q { color: var(--ink-2); font-size: 12.5px; margin: 0; }
+.bz-mine, .bz-other { border-radius: 14px; padding: 10px 12px; background: var(--biz-soft); display: flex; flex-direction: column; gap: 4px; }
+.bz-other { background: var(--surface-2); }
+.bz-who { font-size: 14px; }
+.bz-l { display: flex; gap: 8px; margin: 0; font-size: 14px; line-height: 1.35; }
+.bz-l i { font-style: normal; flex: none; }
+.bz-f { display: flex; flex-direction: column; gap: 3px; font-size: 13px; font-weight: 600; }
+.bz-f input { border: 1.5px solid var(--line); border-radius: 12px; padding: 9px 10px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); }
+.bz-f input:focus { border-color: var(--biz-2); outline: none; }
+.bz-write { display: flex; flex-direction: column; gap: 2px; color: var(--biz-2); border-color: var(--biz-2); }
+.bz-write small { color: var(--ink-2); font-weight: 500; font-size: 12px; }
+.bz-write.now { background: var(--biz-soft); border-style: solid; }
+.bz-adv { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.bz-adv p { margin: 0; font-size: 13px; background: var(--surface); border-radius: 10px; padding: 6px 9px; }
+.bz-adv p b { color: var(--biz-2); }
+.bz-adv textarea { width: 100%; box-sizing: border-box; border: 1.5px solid var(--biz-2); border-radius: 12px; padding: 9px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); resize: none; }
+.bz-chip, .bz-acts button { align-self: flex-start; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 600; }
+.bz-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.bz-acts button[aria-pressed="true"] { background: var(--green-soft); border-color: var(--green-2); color: var(--green-2); }
+.bz-sum { margin: 0; font-size: 13px; background: var(--gold-soft); border-radius: 12px; padding: 8px 10px; }

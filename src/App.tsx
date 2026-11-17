@@ -5,7 +5,7 @@ import { say } from './words';
 import { isCloud, currentCircle } from './cloud';
 import type { Anchor, Habit } from './types';
 import { useAppState } from './store';
-import { dayKey, addDays } from './dates';
+import { dayKey, addDays, fromKey } from './dates';
 import { prayerTimes, windowState } from './prayer';
 import { Today } from './components/Today';
 import { HabitSheet } from './components/HabitSheet';
@@ -34,6 +34,8 @@ import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
+import { bizToday, takeBizPick, addBizHabits, useMyShura, useMyAdvice } from './biz';
+import { ACTIVE_LIMIT, slotsUsed } from './store';
 import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays, chDays, useMyChallenges, useMyAmir, CH_KINDS } from './cweek';
 import type { GoTo } from './guide';
 
@@ -119,6 +121,10 @@ export function App() {
   const [myAsk, setMyAsk] = useMyAsk();
   const myCh = useMyChallenges(today);
   const [myAmir, setMyAmir] = useMyAmir();
+  const [myShura, setMyShura] = useMyShura();
+  const [myAdv, giveAdv] = useMyAdvice(today);
+  // Business habits picked while creating or joining a business circle (the page reloaded since).
+  useEffect(() => { const p = takeBizPick(); if (p?.length) update((s) => addBizHabits(s, p, today, ACTIVE_LIMIT, slotsUsed(s))); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const summary = {
     day: today,
     done: active.filter((h) => isCounted(state.log[today]?.[h.id])).length,
@@ -139,6 +145,15 @@ export function App() {
     goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared && (!isCloud || !g.circles?.length || g.circles.includes(currentCircle()?.code ?? ''))).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
+  // Business circles share counts of business habits, my shura lines and the advice I gave.
+  const bizOn = isCloud && currentCircle()?.kind === 'biz';
+  if (bizOn) {
+    Object.assign(summary, {
+      biz: bizToday(state, today, active),
+      shura: myShura && myShura.w === weekStart(today) ? myShura : null,
+      adv: myAdv,
+    });
+  }
   // Family circles share more: counted days, the children kept on this phone, prayers together.
   const fam = famOf(state);
   const ck = isCloud ? currentCircle()?.kind : undefined;
@@ -194,6 +209,9 @@ export function App() {
       support.push({ cls: 'invite', text: `⚔️ ${circle.names[m.id]?.name || 'Брат'} бросает тебе вызов: ${CH_KINDS[c.k].label}`, onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
     }
   }
+  if (joined && bizOn && circle.members.length > 1 && fromKey(today).getDay() === 4 && !(myShura && myShura.w === weekStart(today))) {
+    support.push({ cls: 'invite', text: '🧭 Сегодня шура круга: что сделал, где застрял, о чём спросить братьев', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+  }
   if (joined && circle.members.length > 1 && isFriday(today) && now.getHours() >= 14) {
     support.push({ text: '📊 Итог недели круга готов: посмотри и отправь братьям', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
   }
@@ -226,7 +244,7 @@ export function App() {
         {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (

@@ -20,6 +20,8 @@ import { FamilySection } from './Family';
 import { CircleGoal, WeekSummary, DuaAsks, StreakLine, Challenges, AmirCard } from './CircleWeek';
 import type { CGoal, DuaAsk, Challenge, Amir } from '../cweek';
 import { patchF, famOf } from '../family';
+import type { Shura, Advice } from '../biz';
+import { ShuraCard, BizHabitsOffer, AdviceBox, bizLine } from './BizCircle';
 
 interface Props {
   circle: CircleApi;
@@ -41,6 +43,10 @@ interface Props {
   ch: { chs: Challenge[]; acc: string[]; add: (c: Challenge) => void; remove: (id: string) => void; accept: (id: string) => void };
   amir: Amir | null;
   onAmir: (a: Amir | null) => void;
+  shura: Shura | null;
+  onShura: (s: Shura | null) => void;
+  adv: Advice[];
+  giveAdv: (a: Advice) => void;
 }
 
 const REACTIONS = [
@@ -48,7 +54,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -97,6 +103,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const kind = cur?.kind;
   const kindInfo = kindOf(kind);
   const familyKind = kind === 'family' || (!kind && members.some((m) => m.fam));
+  const biz = kind === 'biz';
   const alone = members.filter((m) => m.id !== me).length === 0;
 
   const wk = members.reduce((acc, m) => ({ p: acc.p + (m.week?.p ?? 0), h: acc.h + (m.week?.h ?? 0) }), { p: 0, h: 0 });
@@ -165,11 +172,11 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <div className="ch-empty">
           <i>🤝</i>
           <b>Позови первого человека</b>
-          <p>{kind === 'family' ? 'Жена, муж, родители, взрослые дети.' : kind === 'sisters' ? 'Подруга, сестра, соседка по мечети.' : kind === 'masjid' ? 'Братья и сёстры с урока или из мечети.' : 'Брат, друг, однокурсник.'} Вместе держаться легче, а дуа друг за друга приходят каждый день.</p>
+          <p>{kind === 'family' ? 'Жена, муж, родители, взрослые дети.' : biz ? 'Партнёр, брат с похожим делом, друг-предприниматель.' : kind === 'sisters' ? 'Подруга, сестра, соседка по мечети.' : kind === 'masjid' ? 'Братья и сёстры с урока или из мечети.' : 'Брат, друг, однокурсник.'} Вместе держаться легче, а дуа друг за друга приходят каждый день.</p>
           <button type="button" className="pri-btn big-btn" onClick={invite}>Пригласить в круг</button>
         </div>
       ) : (
-        <div className="ch-hero">
+        <div className={`ch-hero${biz ? ' biz' : ''}`}>
           <div className="ch-seg">
             <button type="button" aria-pressed={range === 'today'} onClick={() => setRange('today')}>Сегодня</button>
             <button type="button" aria-pressed={range === 'week'} onClick={() => setRange('week')}>Неделя</button>
@@ -186,6 +193,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             <>
               <b>{activeToday} из {members.length} сегодня в деле</b>
               <StreakLine members={members} today={today} />
+              {biz && bizLine(members, today) && <small className="bz-hl">{bizLine(members, today)}</small>}
               <small>Вместе сегодня: {tdy.p} {plural(tdy.p, 'намаз', 'намаза', 'намазов')} и {tdy.h} {plural(tdy.h, 'привычка', 'привычки', 'привычек')}{duas ? ` · 🤲 ${duas} дуа друг за друга` : ''}</small>
             </>
           ) : (
@@ -202,6 +210,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <WeekSummary members={members} reacts={reacts} me={me} today={today} title={cur?.title || 'Круг'} nameOf={(id) => names[id]?.name || 'Участник'} onSet={onCircleGoal} />
           <CircleGoal members={members} reacts={reacts} me={me} today={today} title={cur?.title || 'Круг'} nameOf={nm} onSet={onCircleGoal} />
           {me && <AmirCard members={members} me={me} today={today} nameOf={nm} amir={amir} onAmir={onAmir} />}
+          {biz && me && <ShuraCard members={members} reacts={reacts} me={me} today={today} nameOf={nm} shura={shura} onShura={onShura} adv={adv} give={giveAdv} react={(k, e) => circle.react(k, e, today)} />}
         </>
       )}
 
@@ -212,7 +221,9 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </>
       )}
 
-      {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={onAsk} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }} />}
+      {joined && biz && <BizHabitsOffer state={state} update={update} today={today} />}
+      {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={onAsk} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }}
+        biz={biz} extra={biz ? (asker, a) => <AdviceBox members={members} me={me} to={asker} k="a" w={a.d} nameOf={nm} mine={adv} give={giveAdv} /> : undefined} />}
       {joined && me && !(alone && isCloud) && <Challenges members={members} me={me} today={today} nameOf={nm} ch={ch} />}
       {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
@@ -246,7 +257,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                     {p?.avatarUrl ? <img className="ava" src={p.avatarUrl} alt="" /> : <span className="ava ch-ava" style={{ background: p?.color }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>}
                     <span>
                       <b>{isMe ? `${p?.name || 'Ты'} (ты)` : p?.name || 'Участник'}</b>
-                      <small>{fresh ? `Намазы ${m.prayers}/5 · привычки ${m.done}/${m.total}${m.fast ? ' · постится ✓' : ''}` : 'Сегодня ещё не отмечался'}</small>
+                      <small>{fresh ? `Намазы ${m.prayers}/5 · ${biz && m.biz?.t ? `дела ${m.biz.d}/${m.biz.t} · ` : ''}привычки ${m.done}/${m.total}${m.fast ? ' · постится ✓' : ''}` : 'Сегодня ещё не отмечался'}</small>
                       {(m.goals ?? []).map((g) => <small key={g.t} className="m-goal">🎯 {g.t} · {g.p}%</small>)}
                     </span>
                     {Object.keys(got).length > 0 && <em className="ch-got">{Object.entries(got).map(([e, n]) => `${e} ${n}`).join('  ')}</em>}
@@ -287,7 +298,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </>
       )}
 
-      <p className="ch-priv">🔒 В круге видят только итог дня. Названия привычек, заметки и мухасаба остаются у тебя.</p>
+      <p className="ch-priv">🔒 В круге видят только итог дня{biz ? ' и то, чем ты сам поделился в шуре. Суммы денег не видны никогда' : '. Названия привычек, заметки и мухасаба остаются у тебя'}.</p>
       {isCloud && <CloudInvite isOwner={isOwner} />}
       {!isCloud && isOwner && (
         <div className="invite">

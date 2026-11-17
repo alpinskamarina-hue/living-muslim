@@ -10,18 +10,19 @@ const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const LS = 'lm.cloud';
 const POLL_MS = 8000;
 
-export type CircleKind = 'family' | 'brothers' | 'sisters' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
+export type CircleKind = 'family' | 'brothers' | 'sisters' | 'biz' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
 export interface CircleRef { code: string; title: string; kind?: CircleKind }
 export interface CloudId { uid: string; token: string; name: string; circle?: string; circles?: CircleRef[] }
 
-export const CIRCLE_KINDS: { id: CircleKind; ru: string; ic: string; hint: string }[] = [
+export const CIRCLE_KINDS: { id: CircleKind; ru: string; ic: string; hint: string; old?: boolean; fresh?: boolean }[] = [
   { id: 'family', ru: 'Семья', ic: '🏡', hint: 'Намаз вместе дома, детские профили, семейный сад' },
   { id: 'brothers', ru: 'Братья', ic: '🤝', hint: 'Держать друг друга в намазе и делах' },
   { id: 'sisters', ru: 'Сёстры', ic: '🌸', hint: 'Закрытый круг только для своих' },
+  { id: 'biz', ru: 'Бизнес', ic: '💼', hint: 'Дело рядом с намазом: деловые привычки, шура по четвергам, дуа за сделки. Суммы денег не видны никогда', fresh: true },
   { id: 'friends', ru: 'Друзья', ic: '👥', hint: 'Близкие люди, которые поддержат' },
   { id: 'masjid', ru: 'Мечеть, халака', ic: '🕌', hint: 'Община, уроки, общий хатм' },
   { id: 'study', ru: 'Учёба', ic: '📚', hint: 'Коран, арабский, общий курс' },
-  { id: 'work', ru: 'Работа', ic: '💼', hint: 'Коллеги-мусульмане' },
+  { id: 'work', ru: 'Работа', ic: '💼', hint: 'Коллеги-мусульмане', old: true },
   { id: 'other', ru: 'Своё', ic: '✨', hint: 'Любая другая цель' },
 ];
 export const kindOf = (k?: CircleKind) => CIRCLE_KINDS.find((x) => x.id === k);

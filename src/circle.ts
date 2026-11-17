@@ -25,6 +25,10 @@ export interface Member {
   acc?: string[]; // challenge ids I accepted
   amir?: import('./cweek').Amir | null; // I volunteered as amir of the week
   fast?: boolean;
+  // Business circles only:
+  biz?: { d: number; t: number }; // business habits marked today / active, counts only
+  shura?: import('./biz').Shura | null; // my three lines for this week
+  adv?: import('./biz').Advice[]; // advice I gave to others
   // Family circles only:
   fam?: boolean; // set by the owner: this circle is a family
   lit?: string[]; // my counted days, last 120

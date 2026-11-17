@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { InviteInbox } from './Nick';
+import { BizPick } from './BizCircle';
+import { BIZ_DEFAULT, rememberBizPick } from '../biz';
 import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 
 function InboxIfReady() {
@@ -18,15 +20,18 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const [code, setCode] = useState(inv && !mineCodes.includes(inv) ? inv : '');
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<CircleKind>('brothers');
+  const [pick, setPick] = useState<number[]>(BIZ_DEFAULT);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const ok = name.trim().length >= 2;
   const k = kindOf(kind)!;
+  const invited = Boolean(code && code === inv);
   const run = async (fn: () => Promise<boolean | string>) => {
     if (!ok) { setErr('Напиши имя, хотя бы две буквы.'); return; }
     setBusy(true); setErr('');
     try {
       const r = await fn();
+      if (r && (invited ? meta.kind === 'biz' : kind === 'biz') && pick.length) rememberBizPick(pick);
       if (r) { try { sessionStorage.setItem('lm.tab', 'circle'); sessionStorage.setItem('lm.autojoin', '1'); } catch { /* */ } location.reload(); return; }
       setErr('Круг с таким кодом не найден. Проверь ссылку.');
     } catch {
@@ -34,7 +39,6 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
     }
     setBusy(false);
   };
-  const invited = Boolean(code && code === inv);
 
   return (
     <div className="page">
@@ -53,6 +57,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
               <i>{kindOf(meta.kind)?.ic ?? '👥'}</i>
               <span><b>{meta.title || 'Круг друзей'}</b><small>{kindOf(meta.kind)?.ru ?? 'Круг'} · код {code}</small></span>
             </div>
+            {meta.kind === 'biz' && <BizPick pick={pick} setPick={setPick} />}
             <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => joinCircle(name, code, meta.title, meta.kind))}>Вступить в круг</button>
             <button type="button" className="link-btn" onClick={() => { setCode(''); try { sessionStorage.removeItem('lm.invite'); } catch { /* */ } }}>Нет, создать свой</button>
           </>
@@ -60,16 +65,18 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
           <>
             <div className="cl-f"><span>Какой это круг</span></div>
             <div className="cl-kinds">
-              {CIRCLE_KINDS.map((x) => (
-                <button key={x.id} type="button" aria-pressed={kind === x.id} onClick={() => setKind(x.id)}><i>{x.ic}</i>{x.ru}</button>
+              {CIRCLE_KINDS.filter((x) => !x.old).map((x) => (
+                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : undefined} onClick={() => setKind(x.id)}><i>{x.ic}</i>{x.ru}{x.fresh && <em className="cl-new">новое</em>}</button>
               ))}
             </div>
             <p className="tiny">{k.hint}</p>
             <label className="cl-f">
               <span>Название</span>
-              <input value={title} maxLength={40} placeholder={kind === 'family' ? 'Например: Семья Насима' : kind === 'masjid' ? 'Например: Халака по субботам' : `Например: ${k.ru}`} onChange={(e) => setTitle(e.target.value)} />
+              <input value={title} maxLength={40} placeholder={kind === 'family' ? 'Например: Семья Насима' : kind === 'masjid' ? 'Например: Халака по субботам' : kind === 'biz' ? 'Например: Партнёры' : `Например: ${k.ru}`} onChange={(e) => setTitle(e.target.value)} />
             </label>
+            {kind === 'biz' && <BizPick pick={pick} setPick={setPick} />}
             <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => createCircle(name, title || k.ru, kind))}>Создать круг</button>
+            {kind === 'biz' && <p className="tiny bz-note">Суммы денег в круге не видны никогда.</p>}
             <p>Или вставь код приглашения от друга:</p>
             <div className="cl-row">
               <input aria-label="Код круга" placeholder="например k7m2p9xq" value={code} onChange={(e) => setCode(e.target.value.replace(/.*[?&]c=/, '').replace(/&.*/, '').trim())} />
