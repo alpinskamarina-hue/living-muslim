@@ -1,4 +1,6 @@
-import type { CircleApi, Member } from '../circle';
+import { THANKS, g, say, type Sex, type To } from '../words';
+import { sexOf } from './Words';
+import type { CircleApi, Member, Reacts } from '../circle';
 import { plural } from '../dates';
 import type { UmrahApi } from '../umrahCircle';
 import { UmrahTrips } from './UmrahTrips';
@@ -93,6 +95,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   for (const [from, map] of Object.entries(reacts)) for (const [to, r] of Object.entries(map ?? {})) if (to !== from && !to.startsWith('n:') && r?.e === '🤲' && r.day === today) duas++;
   const lit = (m: Member) => (range === 'week' ? (m.week?.p ?? 0) + (m.week?.h ?? 0) > 0 : m.day === today && (m.done > 0 || m.prayers > 0));
   const nm = (id: string) => (id === me ? 'Ты' : names[id]?.name || 'Участник');
+  // Who is thanked: a brother or a sister. From the profile, else from the kind of circle; unknown = ask with two buttons.
+  const toOf = (id: string): To | '' => { const gd = names[id]?.gender; return gd === 'm' || gd === 'f' ? gd : kind === 'sisters' ? 'f' : kind === 'brothers' ? 'm' : ''; };
 
   // «Что нового»: what happened today that concerns me or the whole circle.
   const feed: { e: string; t: string }[] = [];
@@ -100,7 +104,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     for (const [from, map] of Object.entries(reacts)) {
       if (from === me) continue;
       const r = map?.[me];
-      if (r?.day === today) feed.push({ e: r.e, t: r.e === '🤲' ? `${nm(from)}: дуа за тебя` : `${nm(from)}: машаАллах тебе` });
+      if (r?.day === today && r.e !== '🤲') feed.push({ e: r.e, t: r.e === '💚' ? `${nm(from)}: ${THANKS[sexOf(state) || 'm'].ru.toLowerCase()} тебе. Ответь «${THANKS[toOf(from) || 'm'].reply}»` : `${nm(from)}: машаАллах тебе` });
       if (map?.[`n:${me}`]?.day === today) feed.push({ e: '👋', t: `${nm(from)} мягко напоминает о себе и о тебе` });
     }
   }
@@ -185,6 +189,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </>
       )}
 
+      {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
       {joined && isOwner && !isCloud && !members.some((m) => m.fam) && (
         <div className="fam-on">
@@ -222,9 +227,9 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                     <div className="ch-acts">
                       {REACTIONS.map((r) => {
                         const on = mine?.e === r.e && mine.day === today;
-                        return <button key={r.e} type="button" aria-pressed={on} onClick={() => circle.react(m.id, r.e, today)}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
+                        return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
                       })}
-                      {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => circle.nudge(m.id, today)}>{nudged ? '👋 Отправлено' : '👋 Подтолкнуть'}</button>}
+                      {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? '👋 Отправлено' : '👋 Подтолкнуть'}</button>}
                     </div>
                   )}
                 </div>
@@ -262,5 +267,31 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
       {joined && !isCloud && <button type="button" className="danger" onClick={onLeave}>Выйти из круга</button>}
     </div>
+  );
+}
+
+/** Someone made dua for me today: answer with «Аамин» (a dua back) or with thanks in the right form. */
+function DuaGot({ reacts, me, today, nameOf, toOf, react, sex }: { reacts: Reacts; me: string; today: string; nameOf: (id: string) => string; toOf: (id: string) => To | ''; react: (to: string, e: string) => void; sex: Sex }) {
+  const from = Object.entries(reacts).filter(([f, map]) => f !== me && map?.[me]?.e === '🤲' && map[me].day === today).map(([f]) => f);
+  if (!from.length) return null;
+  return (
+    <>
+      {from.map((f) => {
+        const to = toOf(f);
+        const mine = reacts[me]?.[f];
+        const answered = mine?.day === today && (mine.e === '🤲' || mine.e === '💚');
+        const thanks = (t: To) => <button key={t} type="button" className={mine?.day === today && mine.e === '💚' ? 'on' : ''} onClick={() => { say('dua_got'); react(f, '💚'); }}>{THANKS[t].ru}{to ? '' : t === 'm' ? ' (брату)' : ' (сестре)'}</button>;
+        return (
+          <div className="dua-got" key={f}>
+            <p>🤲 <b>{nameOf(f)}</b> {to === 'f' ? 'сделала' : to === 'm' ? 'сделал' : 'сделал(а)'} за тебя дуа сегодня.</p>
+            <div className="row">
+              <button type="button" className={mine?.day === today && mine.e === '🤲' ? 'on' : ''} onClick={() => { say('dua_sent'); react(f, '🤲'); }}>Аамин, и тебе дуа</button>
+              {to ? thanks(to) : (['m', 'f'] as To[]).map(thanks)}
+            </div>
+            {answered && <small>{mine!.e === '💚' ? `${g('Ты ответил[/а]', sex)}: ${THANKS[to || 'm'].ru.toLowerCase()}.` : 'Ангел говорит и тебе: «И тебе того же».'}</small>}
+          </div>
+        );
+      })}
+    </>
   );
 }

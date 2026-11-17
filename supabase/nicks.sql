@@ -255,7 +255,7 @@ begin
   return json_build_object(
     'owner', (select owner from circles where code = p_code),
     'members', coalesce((select json_agg(json_build_object('uid', u.uid, 'name', u.name, 'color', u.color, 'nick', u.nick, 'avatar', u.avatar,
-        'photo', case when u.show_photo then u.photo else '' end))
+        'gender', u.gender, 'photo', case when u.show_photo then u.photo else '' end))
       from members m join users u on u.uid = m.uid where m.code = p_code and not _lm_blocked(p_uid, u.uid)), '[]'::json),
     'docs', coalesce((select json_agg(json_build_object('coll', d.coll, 'key', d.key, 'data', d.data)) from docs d where d.code = p_code), '[]'::json)
   );

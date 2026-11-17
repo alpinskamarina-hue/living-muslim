@@ -1,3 +1,4 @@
+import { say } from '../words';
 import { useEffect, useRef, useState } from 'react';
 import { avatarUrl, squarePhoto, EMOJIS, PATTERNS, COLORS, type AvatarPick, type AvatarKind } from '../avatar';
 import {
@@ -39,7 +40,7 @@ const DEFAULTS: Profile = {
 const KIND_RU: Record<AvatarKind, string> = { photo: 'Фото', initials: 'Инициалы', emoji: 'Эмодзи', pattern: 'Узор' };
 
 /** Profile → «Мой профиль»: picture, name, nick, about, privacy. */
-export function MyProfile({ name, onName }: { name: string; onName: (n: string) => void }) {
+export function MyProfile({ name, onName, onSex }: { name: string; onName: (n: string) => void; onSex?: (g: 'm' | 'f') => void }) {
   const [p, setP] = useState<Profile>({ ...DEFAULTS, ...cachedProfile(), name });
   const [nick, setNick] = useState(p.nick ?? '');
   const [nickState, setNickState] = useState<'' | 'checking' | 'ok' | 'taken' | 'bad' | 'mine'>('');
@@ -90,7 +91,7 @@ export function MyProfile({ name, onName }: { name: string; onName: (n: string) 
     setBusy(false);
     if (r === 'ok') {
       savedNick.current = n; setNickState(n ? 'mine' : ''); setMsg('Сохранено');
-      cache({ ...p, ...body }); onName(p.name.trim());
+      cache({ ...p, ...body }); onName(p.name.trim()); if (p.gender === 'm' || p.gender === 'f') onSex?.(p.gender); say('profile_saved');
     } else setMsg(r === 'nick_taken' ? 'Этот ник уже занят, попробуй другой.' : r === 'nick_bad' ? 'Ник: от 3 до 20 латинских букв, цифр, «_» или «.».' : r === 'photo_big' ? 'Фото слишком большое.' : 'Не получилось сохранить. Проверь интернет и попробуй ещё раз.');
   };
 

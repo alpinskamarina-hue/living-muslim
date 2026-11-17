@@ -1,3 +1,4 @@
+import { say, type Trigger } from '../words';
 import { useEffect, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
 import { sphereName } from '../types';
@@ -39,6 +40,9 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const [editFav, setEditFav] = useState(false);
   const [special, setSpecial] = useState(false);
 
+  // Opening a section greets once a day with one fitting ayah or hadith (the sections are full-screen sheets).
+  const OPEN: Partial<Record<Mode, Trigger>> = { quran: 'quran_open', langs: 'langs_open', books: 'books_open', health: 'health_open', sadaqa: 'sadaqa_open', food: 'food_open', umrah: 'umrah_open' };
+  useEffect(() => { const t = OPEN[mode]; if (t) say(t); }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
   if (mode === 'focus') return <Focus habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'course') return <Course state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
@@ -316,7 +320,7 @@ function Tasbih({ onExit, onFinish, habitName }: { onExit: () => void; onFinish:
       {all ? (
         <div className="row2">
           <button type="button" onClick={() => setCount(0)}>Заново</button>
-          <button type="button" className="gold-btn" onClick={() => { if (habitName) onFinish(); onExit(); }}>
+          <button type="button" className="gold-btn" onClick={() => { say('tasbih_done'); if (habitName) onFinish(); onExit(); }}>
             {habitName ? 'Отметить привычку' : 'Готово'}
           </button>
         </div>

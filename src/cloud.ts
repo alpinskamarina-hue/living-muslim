@@ -281,7 +281,7 @@ export async function claimByEmail(accessToken: string, authId: string, name: st
 
 // ---- stand-in for window.claude ----
 
-interface State { owner: string; members: { uid: string; name: string; color: string; nick?: string; avatar?: AvatarPick; photo?: string }[]; docs: { coll: string; key: string; data: any }[] }
+interface State { owner: string; members: { uid: string; name: string; color: string; nick?: string; avatar?: AvatarPick; photo?: string; gender?: string }[]; docs: { coll: string; key: string; data: any }[] }
 type Listener = { coll: string; next: (snap: any) => void; err: (e: any) => void };
 
 function makeRuntime(me: CloudId & { circle: string }) {
@@ -351,10 +351,10 @@ function makeRuntime(me: CloudId & { circle: string }) {
     canEdit: async () => false,
     profiles: async (ids: string[]) => {
       await first;
-      const out: Record<string, { name: string; avatarUrl: string; color: string }> = {};
+      const out: Record<string, { name: string; avatarUrl: string; color: string; gender?: string }> = {};
       for (const id of ids) {
         const m = state?.members.find((x) => x.uid === id);
-        out[id] = { name: m?.name || '', avatarUrl: m ? avatarUrl(m.avatar, m.avatar?.c || m.color, m.photo) : '', color: m?.avatar?.c || m?.color || '#1f7a4d' };
+        out[id] = { name: m?.name || '', avatarUrl: m ? avatarUrl(m.avatar, m.avatar?.c || m.color, m.photo) : '', color: m?.avatar?.c || m?.color || '#1f7a4d', gender: m?.gender || '' };
       }
       return out;
     },

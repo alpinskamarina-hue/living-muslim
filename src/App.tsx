@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WordCard, WordsLayer } from './components/Words';
+import { todayTrigger, useWordsWatch } from './wordsWatch';
+import { say } from './words';
 import { isCloud, currentCircle } from './cloud';
 import type { Anchor, Habit } from './types';
 import { useAppState } from './store';
@@ -81,6 +84,7 @@ export function App() {
   const openGarden = () => { setProfileStart((x) => ({ p: 'garden', n: x.n + 1 })); setTab('profile'); window.scrollTo(0, 0); };
   useEffect(() => { update((s) => snapshot(s, today)); }, [today, state.quran, state.books, state.summaryRead, state.course, state.prayers, state.health, state.umrah, state.log, state.goals?.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const current = windowState(times, now).current ?? 'fajr';
+  useWordsWatch(state, today);
 
   const save = (h: Habit, replaceId?: string) => {
     update((s) => {
@@ -158,15 +162,17 @@ export function App() {
             onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} onGarden={openGarden} support={support}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
+        {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} />}
+        {tab === 'practice' && <Practice key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan(true); }} />}
         {tab === 'progress' && (
           <div className="page">
             <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />}
               onDo={(st) => { window.scrollTo(0, 0); if (st.action === 'today') { setTab('today'); return; } setPracticeStart((x) => ({ n: x.n + 1, mode: st.action, ref: st.ref })); setTab('practice'); }}
               onCircle={() => { window.scrollTo(0, 0); setTab('circle'); }} />
+            {!goalOpen && !reviewOpen && <WordCard t="goals_open" state={state} today={today} />}
           </div>
         )}
         {tab === 'profile' && (
@@ -190,6 +196,7 @@ export function App() {
         ))}
       </nav>
 
+      <WordsLayer state={state} today={today} />
       {ramadan && <Ramadan state={state} update={update} today={today} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
 

@@ -41,6 +41,10 @@ export interface Settings {
   /** Text size: 1 normal, 1.1 large, 1.2 larger. */
   textScale?: number;
   reminders?: ReminderPrefs;
+  /** Who I am, for Arabic and Russian word forms: brother or sister. */
+  me?: 'm' | 'f';
+  /** Islamic phrases and reminders: normal, calm (default), or phrases only. */
+  words?: 'normal' | 'calm' | 'phrases';
 }
 
 export interface ReminderPrefs {

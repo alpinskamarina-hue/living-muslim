@@ -32,7 +32,7 @@ export interface CircleApi {
   isOwner: boolean;
   members: Member[];
   reacts: Reacts;
-  names: Record<string, { name: string; avatarUrl: string; color: string }>;
+  names: Record<string, { name: string; avatarUrl: string; color: string; gender?: string }>;
   stale: boolean;
   error: string;
   join: (m: Omit<Member, 'id' | 'updated'>) => Promise<void>;
@@ -109,7 +109,7 @@ export function useCircle(): CircleApi {
     user.current.profiles(ids).then((ps: any) => {
       if (!alive) return;
       const out: CircleApi['names'] = {};
-      for (const id of ids) out[id] = { name: ps[id]?.name || '', avatarUrl: ps[id]?.avatarUrl || '', color: ps[id]?.color || '#1f7a4d' };
+      for (const id of ids) out[id] = { name: ps[id]?.name || '', avatarUrl: ps[id]?.avatarUrl || '', color: ps[id]?.color || '#1f7a4d', gender: ps[id]?.gender || '' };
       setNames(out);
     });
     return () => { alive = false; };

@@ -1,3 +1,4 @@
+import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
 import { Garden } from './Garden';
@@ -33,15 +34,16 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
   const back = () => go('main');
 
-  if (page === 'garden') return <Sub title="Мой сад" onBack={back}><Garden state={state} today={dayKey(new Date())} /></Sub>;
+  if (page === 'garden') return <Sub title="Мой сад" onBack={back}><Garden state={state} today={dayKey(new Date())} /><WordCard t="garden" state={state} today={dayKey(new Date())} /></Sub>;
   if (page === 'pro') return <ProPlans onBack={back} />;
   if (page === 'prayer') return <Sub title="Намазы" onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
   if (page === 'habits') return <Sub title="Мои привычки" onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
   if (page === 'remind') return <Sub title="Напоминания" onBack={back}><RemindPage s={s} set={set} times={times} /></Sub>;
+  if (page === 'words') return <Sub title="Фразы и напоминания" onBack={back}><WordsSettings s={s} set={set} /></Sub>;
   if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
   if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
-  if (page === 'me') return <Sub title="Мой профиль" onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} /></Sub>;
+  if (page === 'me') return <Sub title="Мой профиль" onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} /></Sub>;
   if (page === 'account') return <Sub title="Аккаунт" onBack={back}><AccountPage s={s} set={set} /></Sub>;
 
   const me = authMe();
@@ -86,6 +88,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
         <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
         {isCloud && <Row icon="🔔" title="Напоминания" sub={s.reminders?.on ? `Включены · ${s.reminders.prayers.length} из 5 намазов` : (isStandalone() ? 'Выключены' : 'Установить на телефон, напоминания')} onClick={() => go('remind')} />}
         <Row icon="🌱" title="Мои привычки" sub={`${used} из ${ACTIVE_LIMIT} мест занято`} onClick={() => go('habits')} />
+        <Row icon="🤲" title="Фразы и напоминания" sub={`${s.me === 'f' ? 'Я сестра' : s.me === 'm' ? 'Я брат' : 'Брат или сестра?'} · ${(s.words ?? 'calm') === 'normal' ? 'обычно' : (s.words ?? 'calm') === 'calm' ? 'спокойно' : 'только фразы'}`} onClick={() => go('words')} />
         <Row icon="🎨" title="Внешний вид" sub={`Тема ${theme} · текст ${s.textScale && s.textScale > 1 ? 'крупнее' : 'обычный'}`} onClick={() => go('look')} />
         <Row icon="💾" title="Данные" sub="Резервная копия, перенос, удаление" onClick={() => go('data')} />
         <Row icon="🤝" title="Помощь" sub={SUPPORT_EMAIL ? "Написать нам, поделиться, конфиденциальность" : "Поделиться приложением, конфиденциальность"} onClick={() => go('help')} />
@@ -97,7 +100,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   );
 }
 
-export type Page = 'main' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'main' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -231,6 +234,35 @@ function HabitsSettings({ state, update, onEdit }: { state: AppState; update: Pr
         action={(h) => (used < ACTIVE_LIMIT ? ['Вернуть', () => setStatus(h.id, 'active')] : ['Удалить', () => remove(h.id)])}
       />
       {!state.habits.length && <p className="tiny">Привычек пока нет. Добавь первую на экране «Сегодня».</p>}
+    </>
+  );
+}
+
+function WordsSettings({ s, set }: { s: AppState['settings']; set: SetFn }) {
+  const mode = s.words ?? 'calm';
+  const sex = s.me ?? '';
+  return (
+    <>
+      <p className="page-sub">Исламские фразы на твои дела, аяты и хадисы с источником, ответы братьям и сёстрам в Круге.</p>
+      <h2 className="sub-h">Я</h2>
+      <div className="seg3" role="radiogroup" aria-label="Я">
+        {([['m', 'Брат'], ['f', 'Сестра']] as const).map(([v, l]) => (
+          <button key={v} type="button" role="radio" aria-checked={sex === v} onClick={() => set({ me: v })}>{l}</button>
+        ))}
+      </div>
+      <p className="tiny">От этого зависят формы: «{sex === 'f' ? 'выполнила' : 'выполнил'}», «БаракАллаху {sex === 'f' ? 'фики' : 'фик'}».</p>
+      <h2 className="sub-h">Как часто</h2>
+      <div className="seg3" role="radiogroup" aria-label="Как часто">
+        {([['normal', 'Обычно'], ['calm', 'Спокойно'], ['phrases', 'Только фразы']] as const).map(([v, l]) => (
+          <button key={v} type="button" role="radio" aria-checked={mode === v} onClick={() => set({ words: v })}>{l}</button>
+        ))}
+      </div>
+      <p className="tiny">{mode === 'normal' ? 'Короткая фраза на каждое дело, до 3 аятов или хадисов в день.' : mode === 'calm' ? 'Короткая фраза на дело, аят или хадис изредка, не больше 2 в день.' : 'Только короткие фразы: Альхамдулиллях, МашаАллах. Без аятов и хадисов.'} Коран, Садака и другие разделы встречают одним напоминанием в день. Внизу экранов Сегодня и Цели есть напоминание дня, его можно скрыть. Один и тот же текст не повторяется чаще раза в неделю.</p>
+      <div className="wc" style={{ margin: '14px 0' }}>
+        <div className="wc-top"><em>Хадис</em></div>
+        <p>Самые любимые дела у Аллаха — самые постоянные, даже если их мало.</p>
+        <small className="wd-src">аль-Бухари, 6464; Муслим, 783</small>
+      </div>
     </>
   );
 }
