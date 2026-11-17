@@ -15,7 +15,7 @@
   // Returning users and invite links go straight to the app.
   (function () {
     var q = new URLSearchParams(location.search);
-    if (q.get('c')) { location.replace('/app/?c=' + encodeURIComponent(q.get('c'))); return; }
+    if (q.get('c')) { location.replace('/app/' + location.search); return; }
     if (q.has('home')) return;
     try { if (localStorage.getItem('qadam.v1') || localStorage.getItem('lm.cloud') || localStorage.getItem('lm.signup') || localStorage.getItem('lm.auth')) location.replace('/app/'); } catch (e) {}
   })();

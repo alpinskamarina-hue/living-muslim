@@ -11,7 +11,7 @@ import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { RamadanPushFields } from './Ramadan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
-import { isCloud, nicksReady, forgetIdentity } from '../cloud';
+import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
@@ -61,7 +61,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const st = stats(state);
   const gd = garden(journey(state, dayKey(new Date())).lit);
   const used = slotsUsed(state);
-  const name = s.name.trim() || me?.name || 'Друг';
+  const name = s.name.trim() || me?.name || signupName() || 'Друг';
   const methodName = METHODS.find((m) => m.id === s.method)?.ru ?? '';
   const theme = s.theme === 'light' ? 'светлая' : s.theme === 'dark' ? 'тёмная' : 'как в телефоне';
 
@@ -524,7 +524,7 @@ function AccountCard() {
         const wipe = confirm('Удалить с этого телефона и твои привычки, намазы и заметки? Нажми «Отмена», если телефон только твой и их надо оставить.');
         await signOut(); forgetIdentity();
         if (wipe) { try { Object.keys(localStorage).filter((k) => k.startsWith('lm.') || k === 'qadam.v1' || k === 'istiqama.v1').forEach((k) => localStorage.removeItem(k)); } catch { /* */ } }
-        location.replace('/app/');
+        location.replace(wipe ? '/?home' : '/app/'); // a wiped phone opens the sign-up page for the next person
       }}>Выйти</button>
     </div>
   );

@@ -292,7 +292,15 @@ export async function claimByEmail(accessToken: string, authId: string, name: st
     }
     const next: CloudId = { uid: r.uid, token: r.token, name: r.name || (r.same ? me?.name : '') || name, circles: merged, circle: (r.same && me?.circle) || merged[0]?.code };
     save(next);
-    if (!r.same) { try { localStorage.removeItem('lm.profile'); } catch { /* */ } location.reload(); }
+    if (!r.same) {
+      try {
+        localStorage.removeItem('lm.profile');
+        // A returning person on a new phone: greet them by the name their profile already has.
+        const rec = JSON.parse(localStorage.getItem('lm.signup') || 'null');
+        if (r.name && !rec?.name) localStorage.setItem('lm.signup', JSON.stringify({ ...(rec ?? {}), name: r.name, pending: false }));
+      } catch { /* */ }
+      location.reload();
+    }
   } catch { /* server not updated yet: try again next start */ }
 }
 
