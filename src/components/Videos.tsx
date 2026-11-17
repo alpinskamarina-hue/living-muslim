@@ -11,16 +11,21 @@ interface Props {
   habitName?: string;
   onExit: () => void;
   onFinish: (m: Mark) => void;
+  /** Course id to open right away (from a goal). */
+  open?: string;
 }
 
 type View = { page: 'home' } | { page: 'item'; item: VideoItem } | { page: 'play'; item: VideoItem; idx: number } | { page: 'add' };
 
 const MAIN: VideoCat[] = ['faith', 'biz', 'mind'];
 
-export function Videos({ state, update, habitName, onExit, onFinish }: Props) {
+export function Videos({ state, update, habitName, onExit, onFinish, open }: Props) {
   const vs = state.videos ?? emptyVideos();
   const setVs = (fn: (v: VideoState) => VideoState) => update((s) => ({ ...s, videos: fn(s.videos ?? emptyVideos()) }));
-  const [view, setView] = useState<View>({ page: 'home' });
+  const [view, setView] = useState<View>(() => {
+    const it = open ? [...vs.mine, ...catalog()].find((x) => x.id === open) : undefined;
+    return it ? { page: 'item', item: it } : { page: 'home' };
+  });
   const [cat, setCat] = useState<VideoCat | 'all'>('all');
   const [more, setMore] = useState(false);
   const go = (v: View) => { setView(v); window.scrollTo(0, 0); };
@@ -211,7 +216,7 @@ function Player({ item, idx, vs, setVs, habitName, onBack, onIdx, onWatched }: {
   const markDone = () => {
     if (!vid) return;
     setDone(true);
-    setVs((v) => ({ ...v, pos: { ...v.pos, [vid]: { ...(v.pos[vid] ?? { t: 0 }), done: true } } }));
+    setVs((v) => ({ ...v, pos: { ...v.pos, [vid]: { ...(v.pos[vid] ?? { t: 0 }), done: true } }, byCourse: { ...(v.byCourse ?? {}), [item.id]: [...new Set([...(v.byCourse?.[item.id] ?? []), vid])] } }));
     onWatched();
   };
 

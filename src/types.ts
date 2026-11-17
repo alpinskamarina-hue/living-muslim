@@ -173,7 +173,7 @@ export interface UmrahState {
   saee: number;
 }
 
-export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual';
+export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz';
 export interface Goal {
   id: string;
   title: string;
@@ -190,6 +190,11 @@ export interface Goal {
   createdAt: string;
   snaps?: Record<string, number>; // day -> value, for the weekly review
   shared?: boolean;
+  /** Circles the goal is shown in (standalone site); empty = the open one. */
+  circles?: string[];
+  /** video: course id; hifz: surah number. */
+  ref?: string;
+  doneAt?: string;
 }
 
 export type Meal = 'b' | 'l' | 'd';

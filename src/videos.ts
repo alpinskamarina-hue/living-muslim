@@ -36,6 +36,8 @@ export interface VideoState {
   notes: Record<string, string>;
   /** What to continue: course id (or video id) and the lesson inside it. */
   last?: { item: string; v: string };
+  /** Watched lesson ids per course, for goals. */
+  byCourse?: Record<string, string[]>;
 }
 export const emptyVideos = (): VideoState => ({ mine: [], pos: {}, notes: {} });
 

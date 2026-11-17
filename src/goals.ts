@@ -3,6 +3,8 @@ import { addDays, daysBetween } from './dates';
 import { consistency } from './store';
 import { health } from './health';
 import { prepPct } from './components/Umrah';
+import { isCounted } from './store';
+import { catalog } from './videos';
 
 export const GOAL_LIMIT = 3;
 
@@ -26,11 +28,21 @@ export const SOURCES: SourceDef[] = [
   { id: 'umrah', label: 'Подготовка к умре', hint: 'из раздела Умра', unit: '%', target: 100, counter: false },
   { id: 'habits', label: 'Образ себя по привычкам', hint: 'доля дней за 30 дней', unit: '%', target: 100, counter: false, identity: true },
   { id: 'manual', label: 'Своё число', hint: 'ввожу сам: деньги, вес, шаги', unit: '', target: 100, counter: false },
+  { id: 'video', label: 'Видеокурс', hint: 'просмотренные уроки', unit: 'уроков', target: 20, counter: false },
+  { id: 'hifz', label: 'Выучить суру', hint: 'отмечаю выученные аяты', unit: 'аятов', target: 30, counter: false },
 ];
+
+/** Surahs people most often learn by heart. */
+export const HIFZ: { n: number; ru: string }[] = [
+  { n: 67, ru: 'аль-Мульк' }, { n: 36, ru: 'Йа Син' }, { n: 18, ru: 'аль-Кахф' }, { n: 55, ru: 'ар-Рахман' },
+  { n: 56, ru: 'аль-Вакиа' }, { n: 78, ru: 'ан-Наба' }, { n: 32, ru: 'ас-Саджда' }, { n: 87, ru: 'аль-Аля' }, { n: 2, ru: 'аль-Бакара, последние 2 аята' },
+];
+export const surahAyahs = (n: number) => AYAHS[n - 1] ?? 0;
+export const hifzName = (ref?: string) => HIFZ.find((h) => String(h.n) === ref)?.ru ?? (ref ? `сура ${ref}` : 'сура');
 export const sourceDef = (id: GoalSource) => SOURCES.find((s) => s.id === id)!;
 
 /** Raw value of a source right now. */
-export function rawValue(s: AppState, g: Pick<Goal, 'source' | 'habitIds' | 'manual'>, today: string): number {
+export function rawValue(s: AppState, g: Pick<Goal, 'source' | 'habitIds' | 'manual'> & { ref?: string }, today: string): number {
   switch (g.source) {
     case 'quran': return s.quran ? ayahIndex(s.quran.surah, s.quran.ayah) : 0;
     case 'pages': return (s.books ?? []).reduce((a, b) => a + Math.max(0, b.page - 1), 0);
@@ -56,7 +68,8 @@ export function rawValue(s: AppState, g: Pick<Goal, 'source' | 'habitIds' | 'man
       if (!hs.length) return 0;
       return Math.round((hs.reduce((a, h) => a + consistency(s, h, today, 30).rate, 0) / hs.length) * 100);
     }
-    case 'manual': return g.manual;
+    case 'manual': case 'hifz': return g.manual;
+    case 'video': return (s.videos?.byCourse?.[(g as Goal).ref ?? ''] ?? []).length;
   }
 }
 
@@ -84,6 +97,8 @@ export function progressLabel(s: AppState, g: Goal, today: string) {
     const q = s.quran;
     return q ? `сура ${q.surah}, аят ${q.ayah} · ${juzDone(p.raw)} из 30 джузов` : 'открой Коран, чтобы начать';
   }
+  if (g.source === 'video') return `урок ${p.value} из ${g.target}`;
+  if (g.source === 'hifz') return `${p.value} из ${g.target} аятов · ${hifzName(g.ref)}`;
   const def = sourceDef(g.source);
   if (def.unit === '%') return `${p.value}% из ${g.target}%`;
   return `${p.value} из ${g.target}${g.unit ? ' ' + g.unit : ''}`;
@@ -116,15 +131,121 @@ export function weekDelta(s: AppState, g: Goal, today: string) {
   return now - base;
 }
 
-export interface Template { title: string; source: GoalSource; target?: number; unit?: string; identity: string; habits: { action: string; min: string; anchor: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'; sphere: 'faith' | 'body' | 'food' | 'mind' | 'biz' | 'family' }[] }
+export interface Template { group: TplGroup; ic: string; ar?: boolean; sub: string; title: string; source: GoalSource; target?: number; unit?: string; identity: string; habits: { action: string; min: string; anchor: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'; sphere: 'faith' | 'body' | 'food' | 'mind' | 'biz' | 'family' }[] }
 export const TEMPLATES: Template[] = [
-  { title: 'Хатм Корана', source: 'quran', identity: 'Я тот, кто читает Коран каждый день', habits: [{ action: 'Читать Коран 5 страниц', min: '1 страница', anchor: 'fajr', sphere: 'faith' }, { action: 'Слушать Коран в дороге', min: '10 минут', anchor: 'dhuhr', sphere: 'faith' }] },
-  { title: 'Все намазы вовремя', source: 'prayers', identity: 'Я тот, кто встречает намаз, а не догоняет', habits: [{ action: 'Вуду сразу после азана', min: 'встать после азана', anchor: 'asr', sphere: 'faith' }, { action: 'Лечь спать до 23:00', min: 'телефон убран в 22:30', anchor: 'isha', sphere: 'body' }] },
-  { title: 'Английский A1 за 30 дней', source: 'course', identity: 'Я тот, кто говорит по-английски без страха', habits: [{ action: 'Урок английского', min: '5 фраз вслух', anchor: 'asr', sphere: 'mind' }] },
-  { title: 'Прочитать книгу', source: 'pages', target: 300, identity: 'Я тот, кто читает каждый день', habits: [{ action: 'Чтение, 10 страниц', min: '2 страницы', anchor: 'asr', sphere: 'mind' }] },
-  { title: 'Посты сунны', source: 'fasts', target: 8, identity: 'Я тот, кто держит пост по понедельникам и четвергам', habits: [] },
-  { title: 'Сильное тело', source: 'workouts', target: 20, identity: 'Я тот, кто заботится о теле как об аманате', habits: [{ action: 'Зарядка после Фаджра', min: '10 отжиманий', anchor: 'fajr', sphere: 'body' }] },
-  { title: 'Готов к умре', source: 'umrah', identity: 'Я тот, кто едет к Каабе подготовленным', habits: [] },
-  { title: 'Накопить на умру', source: 'manual', target: 2000, unit: '€', identity: 'Я тот, кто откладывает ради важного', habits: [{ action: 'Отложить в копилку', min: 'хоть 1 €', anchor: 'maghrib', sphere: 'biz' }] },
-  { title: 'Своя цель', source: 'habits', identity: '', habits: [] },
+  { group: 'faith', ic: 'قرآن', ar: true, sub: 'считается по закладке в Коране', title: 'Хатм Корана', source: 'quran', identity: 'Я тот, кто читает Коран каждый день', habits: [{ action: 'Читать Коран 2 страницы', min: '1 аят', anchor: 'fajr', sphere: 'faith' }, { action: 'Слушать Коран в дороге', min: '10 минут', anchor: 'dhuhr', sphere: 'faith' }] },
+  { group: 'faith', ic: '🕌', sub: 'доля намазов вовремя за 30 дней', title: 'Все намазы вовремя', source: 'prayers', identity: 'Я тот, кто встречает намаз, а не догоняет', habits: [{ action: 'Вуду сразу после азана', min: 'встать после азана', anchor: 'asr', sphere: 'faith' }, { action: 'Лечь спать до 23:00', min: 'телефон убран в 22:30', anchor: 'isha', sphere: 'body' }] },
+  { group: 'faith', ic: 'حفظ', ar: true, sub: 'аль-Мульк, Йа Син, аль-Кахф…', title: 'Выучить суру', source: 'hifz', identity: 'Я тот, кто носит Коран в сердце', habits: [{ action: 'Повторить выученные аяты', min: '1 аят', anchor: 'fajr', sphere: 'faith' }] },
+  { group: 'faith', ic: '🌙', sub: 'понедельник и четверг', title: 'Посты сунны', source: 'fasts', target: 8, identity: 'Я тот, кто держит пост по понедельникам и четвергам', habits: [] },
+  { group: 'faith', ic: '🕋', sub: 'по списку подготовки', title: 'Готов к умре', source: 'umrah', identity: 'Я тот, кто едет к Каабе подготовленным', habits: [] },
+  { group: 'mind', ic: '▶', sub: 'Сира, сподвижники, бизнес · по просмотрам', title: 'Пройти видеокурс', source: 'video', identity: 'Я тот, кто учится каждый день', habits: [{ action: 'Один урок', min: '5 минут видео', anchor: 'isha', sphere: 'mind' }] },
+  { group: 'mind', ic: '📖', sub: 'страницы из раздела Книги', title: 'Прочитать книгу', source: 'pages', target: 300, identity: 'Я тот, кто читает каждый день', habits: [{ action: 'Чтение, 10 страниц', min: '2 страницы', anchor: 'asr', sphere: 'mind' }] },
+  { group: 'mind', ic: 'Aa', sub: '30 уроков по дням', title: 'Английский A1 за 30 дней', source: 'course', identity: 'Я тот, кто говорит по-английски без страха', habits: [{ action: 'Урок английского', min: '5 фраз вслух', anchor: 'asr', sphere: 'mind' }] },
+  { group: 'body', ic: '💪', sub: 'из раздела Здоровье', title: 'Сильное тело', source: 'workouts', target: 20, identity: 'Я тот, кто заботится о теле как об аманате', habits: [{ action: 'Зарядка после Фаджра', min: '10 отжиманий', anchor: 'fajr', sphere: 'body' }] },
+  { group: 'body', ic: '⚖️', sub: 'своё число: кг', title: 'Сбросить вес', source: 'manual', target: 5, unit: 'кг', identity: 'Я тот, кто ест треть и двигается каждый день', habits: [{ action: 'Ужин без добавки', min: 'полтарелки', anchor: 'maghrib', sphere: 'food' }] },
+  { group: 'life', ic: '💰', sub: 'своё число: €', title: 'Накопить на умру', source: 'manual', target: 2000, unit: '€', identity: 'Я тот, кто откладывает ради важного', habits: [{ action: 'Отложить в копилку', min: 'хоть 1 €', anchor: 'maghrib', sphere: 'biz' }] },
+  { group: 'life', ic: '🏡', sub: 'по привычкам', title: 'Время с семьёй', source: 'habits', identity: 'Я тот, кто рядом со своими', habits: [{ action: 'Ужин без телефона', min: '15 минут', anchor: 'maghrib', sphere: 'family' }] },
+];
+
+/** Ready-made Ramadan goals, shown in the month before. */
+export const RAMADAN_TPL: Template[] = [
+  { group: 'faith', ic: 'قرآن', ar: true, sub: 'к первому дню Рамадана', title: 'Хатм к Рамадану', source: 'quran', identity: 'Я тот, кто входит в Рамадан с Кораном', habits: [{ action: 'Читать Коран 2 страницы', min: '1 аят', anchor: 'fajr', sphere: 'faith' }] },
+  { group: 'faith', ic: '🌙', sub: 'посты сунны до Рамадана', title: 'Привыкнуть к посту', source: 'fasts', target: 6, identity: 'Я тот, кто готов к посту', habits: [] },
+  { group: 'life', ic: 'صدقة', ar: true, sub: 'каждый день понемногу', title: 'Садака каждый день', source: 'habits', identity: 'Я тот, кто даёт каждый день', habits: [{ action: 'Садака, хоть немного', min: 'улыбка или 1 €', anchor: 'dhuhr', sphere: 'faith' }] },
+];
+
+const PAGE_AYAHS = TOTAL_AYAHS / 604;
+const DAYS = ['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'];
+
+export type StepAction = 'quran' | 'books' | 'course' | 'videos' | 'health' | 'umrah' | 'today' | 'add';
+export interface Step { text: string; sub: string; btn: string; action: StepAction; ref?: string }
+
+/** What to do today for this goal, and where the button leads. */
+export function todayStep(s: AppState, g: Goal, today: string): Step {
+  const p = progress(s, g, today);
+  const left = g.due ? Math.max(1, daysBetween(today, g.due)) : 0;
+  const rest = Math.max(0, g.target - p.value);
+  const perDay = left ? rest / left : 0;
+  switch (g.source) {
+    case 'quran': {
+      const pages = Math.max(1, Math.ceil((left ? (TOTAL_AYAHS - p.raw) / left : PAGE_AYAHS) / PAGE_AYAHS));
+      const q = s.quran;
+      return { text: `${pages} ${pl(pages, 'страница', 'страницы', 'страниц')}`, sub: `≈ ${pages * 5} минут${q ? ` · сура ${q.surah}, аят ${q.ayah}` : ' · с суры аль-Фатиха'}`, btn: '▶ Читать', action: 'quran' };
+    }
+    case 'pages': { const n = Math.max(1, Math.ceil(perDay || 10)); return { text: `${n} ${pl(n, 'страница', 'страницы', 'страниц')}`, sub: `осталось ${rest} стр.`, btn: '▶ Читать', action: 'books' }; }
+    case 'chapters': return { text: '1 глава пересказа', sub: `${p.value} из ${g.target} глав`, btn: '▶ Читать', action: 'books' };
+    case 'course': return { text: `Урок ${Math.min(30, p.value + 1)} английского`, sub: '15 минут · фразы, диалог, карточки', btn: '▶ Начать', action: 'course' };
+    case 'video': {
+      const it = catalog().find((x) => x.id === g.ref) ?? s.videos?.mine.find((x) => x.id === g.ref);
+      return { text: `Урок ${Math.min(g.target, p.value + 1)} из ${g.target}`, sub: it?.title ?? 'видеокурс', btn: '▶ Смотреть', action: 'videos', ref: g.ref };
+    }
+    case 'prayers': {
+      const d = s.prayers[today] ?? {};
+      const on = Object.values(d).filter((m) => m === 'ontime').length;
+      return { text: `Сегодня вовремя ${on} из 5`, sub: 'отмечай намаз сразу после него', btn: 'Отметить', action: 'today' };
+    }
+    case 'habits': {
+      const hs = s.habits.filter((h) => g.habitIds.includes(h.id) && h.status === 'active');
+      const done = hs.filter((h) => isCounted(s.log[today]?.[h.id])).length;
+      return { text: hs.length ? `Привычки сегодня: ${done} из ${hs.length}` : 'Привяжи привычку к цели', sub: hs.map((h) => h.action).slice(0, 2).join(' · '), btn: 'Отметить', action: 'today' };
+    }
+    case 'fasts': {
+      const wd = new Date(today + 'T12:00:00').getDay();
+      const next = wd === 1 || wd === 4 ? 'Сегодня день поста' : `Ближайший пост: ${wd < 4 && wd > 1 ? 'в четверг' : 'в понедельник'}`;
+      return { text: next, sub: `${p.value} из ${g.target} постов${DAYS[wd] ? '' : ''}`, btn: 'Отметить', action: 'health' };
+    }
+    case 'workouts': return { text: 'Тренировка 10–20 минут', sub: `${p.value} из ${g.target} тренировок`, btn: '▶ Начать', action: 'health' };
+    case 'umrah': return { text: `Подготовка: ${p.value}%`, sub: 'следующий пункт из списка умры', btn: 'Открыть', action: 'umrah' };
+    case 'hifz': {
+      const n = Math.max(1, Math.ceil(perDay || 1));
+      return { text: `Выучить ${n} ${pl(n, 'аят', 'аята', 'аятов')}`, sub: `${hifzName(g.ref)} · ${p.value} из ${g.target}`, btn: '+1 аят', action: 'add' };
+    }
+    case 'manual': {
+      const u = g.unit || '';
+      return p.behind && perDay
+        ? { text: `Отстаю на ${p.behind} дн.`, sub: `чтобы успеть: ~${fmtN(perDay)} ${u} в день`, btn: '+ Добавить', action: 'add' }
+        : { text: perDay ? `~${fmtN(perDay)} ${u} в день` : 'Добавь, сколько сделал', sub: `${p.value} из ${g.target} ${u}`, btn: '+ Добавить', action: 'add' };
+    }
+  }
+}
+const fmtN = (n: number) => (n >= 10 ? String(Math.ceil(n)) : n.toFixed(1).replace('.', ',').replace(',0', ''));
+const pl = (n: number, a: string, b: string, c: string) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
+
+/** Four milestones in the goal's own units. */
+export function milestones(s: AppState, g: Goal, today: string) {
+  const p = progress(s, g, today);
+  const fr = g.source === 'quran' ? [1 / 3, 0.5, 2 / 3, 1] : [0.25, 0.5, 0.75, 1];
+  return fr.map((f) => {
+    const when = g.due ? addDays(g.createdAt, Math.round(daysBetween(g.createdAt, g.due) * f)) : null;
+    let label: string, ok: boolean;
+    if (g.source === 'quran') { const j = Math.round(30 * f); label = f === 1 ? 'Хатм' : `${j} джузов`; ok = juzDone(p.raw) >= j; }
+    else {
+      const v = Math.round(g.target * f);
+      ok = p.value >= v;
+      label = f === 1 ? 'Цель' : g.source === 'video' ? `урок ${v}` : g.source === 'hifz' ? `${v} аятов` : `${v}${g.unit ? ' ' + g.unit : ''}`;
+    }
+    return { label, when, ok };
+  });
+}
+
+/** Last 30 days for «who I am» goals: 2 = fully, 1 = partly, 0 = no. */
+export function dayDots(s: AppState, g: Goal, today: string): number[] {
+  const out: number[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = addDays(today, -i);
+    if (g.source === 'prayers') {
+      const n = Object.values(s.prayers[d] ?? {}).filter((m) => m === 'ontime').length;
+      out.push(n >= 5 ? 2 : n > 0 ? 1 : 0);
+    } else {
+      const hs = s.habits.filter((h) => g.habitIds.includes(h.id));
+      const n = hs.filter((h) => isCounted(s.log[d]?.[h.id])).length;
+      out.push(hs.length && n === hs.length ? 2 : n > 0 ? 1 : 0);
+    }
+  }
+  return out;
+}
+
+export type TplGroup = 'faith' | 'mind' | 'body' | 'life';
+export const TPL_GROUPS: { id: TplGroup; ru: string }[] = [
+  { id: 'faith', ru: 'Поклонение' }, { id: 'mind', ru: 'Знания' }, { id: 'body', ru: 'Тело' }, { id: 'life', ru: 'Деньги и семья' },
 ];

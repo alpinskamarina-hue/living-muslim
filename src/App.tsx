@@ -75,6 +75,7 @@ export function App() {
   const [safar, setSafar] = useState(false);
   const [ramadan, setRamadan] = useState(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
+  const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>({ n: 0 });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [profileStart, setProfileStart] = useState<{ p: ProfilePage; n: number }>({ p: 'main', n: 0 });
   const openGarden = () => { setProfileStart((x) => ({ p: 'garden', n: x.n + 1 })); setTab('profile'); window.scrollTo(0, 0); };
@@ -106,7 +107,7 @@ export function App() {
     ontime: Object.values(prayersToday).filter((m) => m === 'ontime').length,
     ...(inRamadan(today) && state.ramadan?.fasts?.[today] === 'fast' ? { fast: true } : {}),
     week: weekTotals(state, today),
-    goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
+    goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared && (!isCloud || !g.circles?.length || g.circles.includes(currentCircle()?.code ?? ''))).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
   // Family circles share more: counted days, the children kept on this phone, prayers together.
@@ -160,10 +161,12 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} />}
+        {tab === 'practice' && <Practice key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} />}
         {tab === 'progress' && (
           <div className="page">
-            <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />} />
+            <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />}
+              onDo={(st) => { window.scrollTo(0, 0); if (st.action === 'today') { setTab('today'); return; } setPracticeStart((x) => ({ n: x.n + 1, mode: st.action, ref: st.ref })); setTab('practice'); }}
+              onCircle={() => { window.scrollTo(0, 0); setTab('circle'); }} />
           </div>
         )}
         {tab === 'profile' && (
@@ -180,7 +183,7 @@ export function App() {
 
       <nav className="nav" aria-label="Разделы">
         {(Object.keys(LABELS) as Tab[]).map((t) => (
-          <button key={t} type="button" className={tab === t ? 'on' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); setTab(t); }}>
+          <button key={t} type="button" className={tab === t ? 'on' : ''} aria-current={tab === t ? 'page' : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{ICONS[t]}</svg>
             {LABELS[t]}
           </button>
