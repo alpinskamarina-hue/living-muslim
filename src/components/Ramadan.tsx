@@ -12,6 +12,7 @@ import { EID_SUNNA, IFTAR_DUA, MISSED, QADR_DUA, TAKBIR, debt, hOf, khatmProgres
 import { RAMADAN_30 } from '../ramadan30';
 import { FAST_FAQ } from '../fiqh';
 import { Zakat } from './Zakat';
+import { Itikaf, Mosques, RamadanStory, SleepPlan } from './RamadanExtra';
 import { type Lang, durL, langOf, nw, tr } from '../i18n';
 import { loadQuran } from './Quran';
 import { rpushOf } from '../push';
@@ -264,6 +265,7 @@ function DayTab({ state, update, today, mon, l, go }: P) {
         )}
       </div>
       {mon.state !== 'next' && <p className="q-msg left tiny-note">{t(`Добрых дел за месяц: ${done.length} из 30.`, `Good deeds this month: ${done.length} of 30.`)}</p>}
+      <SleepPlan state={state} update={update} today={today} l={l} />
     </>
   );
 }
@@ -544,6 +546,8 @@ function Nights({ state, update, today, mon, l }: P) {
       </div>
       {planE && <NightPlan state={state} update={update} today={today} l={l} evening={planE} n={planN} />}
       <DuaList state={state} update={update} l={l} today={today} />
+      <Itikaf state={state} update={update} today={today} mon={mon} l={l} />
+      <Mosques state={state} today={today} l={l} />
       <h2 className="sub-h">{t('Последние 10 ночей', 'The last ten nights')}</h2>
       {evenings.slice(20).map((e, j) => {
         const n = 21 + j;
@@ -605,6 +609,7 @@ function Eid({ state, update, today, mon, l }: P) {
             <div><b>{deeds}</b><small>{t('добрых дел', 'good deeds')}</small></div>
             <div><b>{sq.ramadan ? sq.ramadan.given.length : '—'}</b><small>{t('ночей садаки', 'sadaqah nights')}</small></div>
           </div>
+          <RamadanStory state={state} mon={mon} l={l} />
           <div className="h-card">
             <b>{t('Какую одну привычку оставить после Рамадана?', 'Which one habit will you keep after Ramadan?')}</b>
             <div className="choices">{habits.slice(0, 6).map((x) => <button type="button" key={x.id} aria-pressed={keep === x.action} onClick={() => setKeep(x.action)}>{x.action}</button>)}</div>

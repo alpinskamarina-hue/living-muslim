@@ -292,5 +292,8 @@ export interface RamadanState {
   qadr?: Record<string, string[]>; // day of the evening -> night plan items done
   qadaPlan?: { perWeek: number; from: string } | null; // making up missed fasts: days per week from a date
   fidyaPrice?: number; // price of one meal for fidyah, in the sadaqa currency
+  itikaf?: { year: number; from: string; end?: string } | null;
+  itikafLog?: Record<string, string[]>; // day -> schedule items done
+  wake?: string; // "HH:MM" when I get up for work, for the sleep plan
 }
 export interface RDua { id: string; t: string; at: string; ok?: string }

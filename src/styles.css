@@ -1694,3 +1694,15 @@ button:disabled { opacity: .5; cursor: default; }
 .zk-row input { width: 130px; flex: none; text-align: right; }
 .rm-zk { width: 100%; }
 .rm-zk .meal-h { width: 100%; }
+
+/* Ramadan 9-12: i'tikaf, sleep plan, mosques */
+.rm-itikaf { gap: 6px; }
+.rm-itikaf .rules { margin: 4px 0; padding-left: 18px; font-size: 13.5px; }
+.rm-sleep-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.rm-sleep-row b { width: 24px; height: 24px; border-radius: 50%; background: var(--green-soft); color: var(--green-2); display: grid; place-items: center; font-size: 12px; flex: none; }
+.rm-sleep-row span { flex: 1; min-width: 0; }
+.rm-sleep-row small { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.rm-menu { width: 100%; margin-top: 6px; padding: 10px 12px; border-radius: 12px; background: var(--gold-soft); display: flex; flex-direction: column; gap: 2px; }
+.rm-mosque { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 0; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 14.5px; }
+.rm-mosque b { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rm-mosque small { color: var(--green-2); font-weight: 600; flex: none; }
