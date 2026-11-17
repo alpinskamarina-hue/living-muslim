@@ -15,11 +15,14 @@ interface Props {
 
 type View = { page: 'home' } | { page: 'item'; item: VideoItem } | { page: 'play'; item: VideoItem; idx: number } | { page: 'add' };
 
+const MAIN: VideoCat[] = ['faith', 'biz', 'mind'];
+
 export function Videos({ state, update, habitName, onExit, onFinish }: Props) {
   const vs = state.videos ?? emptyVideos();
   const setVs = (fn: (v: VideoState) => VideoState) => update((s) => ({ ...s, videos: fn(s.videos ?? emptyVideos()) }));
   const [view, setView] = useState<View>({ page: 'home' });
   const [cat, setCat] = useState<VideoCat | 'all'>('all');
+  const [more, setMore] = useState(false);
   const go = (v: View) => { setView(v); window.scrollTo(0, 0); };
 
   const all = [...vs.mine, ...catalog()];
@@ -51,12 +54,22 @@ export function Videos({ state, update, habitName, onExit, onFinish }: Props) {
       <h1 className="page-h">Видеоуроки</h1>
       <p className="page-sub">Только то, что ты выбрал. Без ленты рекомендаций.</p>
 
-      <div className="vtabs" role="tablist">
-        <button type="button" role="tab" aria-selected={cat === 'all'} onClick={() => setCat('all')}>Все</button>
-        {VIDEO_CATS.map((c) => (
-          <button key={c.id} type="button" role="tab" aria-selected={cat === c.id} onClick={() => setCat(c.id)}>{c.ic} {c.ru}</button>
-        ))}
-      </div>
+      {[MAIN, VIDEO_CATS.map((c) => c.id).filter((id) => !MAIN.includes(id))].map((ids, row) => (row === 1 && !more && !ids.includes(cat as VideoCat)) ? null : (
+        <div key={row} className={`vtopics${row ? ' sm' : ''}`}>
+          {VIDEO_CATS.filter((c) => ids.includes(c.id)).map((c) => {
+            const n = all.filter((x) => x.cat === c.id).length;
+            return (
+              <button key={c.id} type="button" className="vtopic" aria-pressed={cat === c.id} onClick={() => setCat(cat === c.id ? 'all' : c.id)}>
+                <i>{c.ic}</i><b>{c.ru}</b><small>{n} {n === 1 ? 'курс' : n < 5 ? 'курса' : 'курсов'}</small>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+      <button type="button" className="vmore" onClick={() => setMore(!more)} aria-expanded={more}>
+        {more ? 'Свернуть темы ▴' : `Ещё темы: ${VIDEO_CATS.filter((c) => !MAIN.includes(c.id)).map((c) => c.ru.toLowerCase()).join(', ')} ▾`}
+      </button>
+      {cat !== 'all' && <button type="button" className="link-btn vall" onClick={() => setCat('all')}>Показать все темы</button>}
 
       {last && vs.last && (
         <button type="button" className="vcont" onClick={() => {
