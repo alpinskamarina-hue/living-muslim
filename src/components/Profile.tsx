@@ -5,7 +5,7 @@ import { garden, journey } from '../gamify';
 import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
-import { isCloud } from '../cloud';
+import { isCloud, nicksReady } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
@@ -27,6 +27,8 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   const set = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
   const [page, setPage] = useState<Page>(start ?? 'main');
   const [, bump] = useState(0);
+  const [nicks, setNicks] = useState(false);
+  useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
   const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
   const back = () => go('main');
@@ -55,7 +57,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
     <div className="page">
       <div className="me-card">
         <div className="me-top">
-          {isCloud && prof?.avatar ? <button type="button" className="me-avb" onClick={() => go('me')} aria-label="Мой профиль"><Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} /></button>
+          {isCloud && nicks && prof?.avatar ? <button type="button" className="me-avb" onClick={() => go('me')} aria-label="Мой профиль"><Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} /></button>
             : <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
           <div>
             <b>{name}</b>
@@ -78,7 +80,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
 
       <div className="menu">
         <Row icon="🌳" title="Мой сад" sub={`${gd.leaves} ${plural(gd.leaves, 'лист', 'листа', 'листьев')} · до плода ${gd.toFruit} ${plural(gd.toFruit, 'день', 'дня', 'дней')} · вехи`} onClick={() => go('garden')} />
-        {isCloud && <Row icon="🪪" title="Мой профиль" sub={prof?.nick ? `@${prof.nick} · фото, приватность` : 'Ник, фото, кто может звать в круги'} onClick={() => go('me')} />}
+        {isCloud && nicks && <Row icon="🪪" title="Мой профиль" sub={prof?.nick ? `@${prof.nick} · фото, приватность` : 'Ник, фото, кто может звать в круги'} onClick={() => go('me')} />}
         {!onClaude && <Row icon="👤" title="Аккаунт" sub={me ? `${me.email} · имя «${name}»` : 'Войти по почте, имя'} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
         <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />

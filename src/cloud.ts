@@ -176,6 +176,15 @@ export interface Invite {
   from: { uid: string; name: string; nick: string | null; color: string; avatar: AvatarPick; photo: string };
 }
 
+/** True once the nick SQL is on the server; until then nick screens stay hidden. Cached per session. */
+let nicksP: Promise<boolean> | null = null;
+export function nicksReady(): Promise<boolean> {
+  if (!isCloud) return Promise.resolve(false);
+  try { if (sessionStorage.getItem('lm.nicks') === '1') return Promise.resolve(true); } catch { /* */ }
+  nicksP ??= rpc<string>('lm_nick_free', { p_uid: null, p_nick: 'zz_probe' }).then(() => { try { sessionStorage.setItem('lm.nicks', '1'); } catch { /* */ } return true; }, () => false);
+  return nicksP;
+}
+
 export const NICK_RE = /^[a-z0-9_.]{3,20}$/;
 export const cleanNick = (s: string) => s.trim().replace(/^@/, '').toLowerCase();
 

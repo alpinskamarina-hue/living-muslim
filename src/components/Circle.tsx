@@ -8,6 +8,8 @@ import type { IftarApi } from '../iftar';
 import { IftarSection } from './Iftar';
 import { CloudSetup, CloudInvite } from './CloudCircle';
 import { InviteByNick, InviteInbox } from './Nick';
+import { nicksReady } from '../cloud';
+import { shareInvite } from './CloudCircle';
 import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite } from '../cloud';
 import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
@@ -41,6 +43,9 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const [jobs, setJobs] = useState(false);
   const [adding, setAdding] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [nicks, setNicks] = useState(false);
+  useEffect(() => { nicksReady().then(setNicks); }, []);
+  const invite = () => { if (!nicks) { if (isCloud && currentCircle()) shareInvite(currentCircle()!.code); return; } setInviting(true); window.scrollTo(0, 0); };
   const famKindOwner = isCloud && currentCircle()?.kind === 'family' && isOwner && !famOf(state).on;
   useEffect(() => { if (famKindOwner) update((s) => patchF(s, () => ({ on: true }))); }, [famKindOwner]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -113,7 +118,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     <div className="page">
       <div className="ch-top">
         <h1 className="page-h">Круг</h1>
-        {isCloud && joined && <button type="button" className="ch-inv" onClick={() => { setInviting(true); window.scrollTo(0, 0); }}>+ Пригласить</button>}
+        {isCloud && joined && <button type="button" className="ch-inv" onClick={invite}>+ Пригласить</button>}
       </div>
 
       {isCloud && (
@@ -128,7 +133,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
       <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && kindInfo.ru !== cur.title ? ` · ${kindInfo.ru}` : ''} · </> : null}{members.length} {plural(members.length, 'человек', 'человека', 'человек')} · видят только итог дня</p>
 
-      {isCloud && <InviteInbox />}
+      {isCloud && nicks && <InviteInbox />}
       {circle.error && <div className="warn">{circle.error}</div>}
       {circle.stale && <p className="tiny">Данные круга пока не загрузились, могут быть устаревшими.</p>}
 
@@ -143,7 +148,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <i>🤝</i>
           <b>Позови первого человека</b>
           <p>{kind === 'family' ? 'Жена, муж, родители, взрослые дети.' : kind === 'sisters' ? 'Подруга, сестра, соседка по мечети.' : kind === 'masjid' ? 'Братья и сёстры с урока или из мечети.' : 'Брат, друг, однокурсник.'} Вместе держаться легче, а дуа друг за друга приходят каждый день.</p>
-          <button type="button" className="pri-btn big-btn" onClick={() => { setInviting(true); window.scrollTo(0, 0); }}>Пригласить в круг</button>
+          <button type="button" className="pri-btn big-btn" onClick={invite}>Пригласить в круг</button>
         </div>
       ) : (
         <div className="ch-hero">
