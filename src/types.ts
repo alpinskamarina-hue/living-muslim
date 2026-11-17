@@ -187,6 +187,8 @@ export interface UmrahState {
   flight?: { dir: 'north' | 'east' | 'south' | 'medina'; land: string };
   /** When I entered ihram (ms), until I leave it. */
   ihram?: number;
+  /** Savings for umrah: mine (no `for`) and gifts for a parent. Sums only, the money stays with the person. */
+  funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];
 }
 
 export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz';

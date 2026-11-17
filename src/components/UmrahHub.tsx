@@ -5,6 +5,7 @@ import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
 import { DuaList, StepView, umrahOf, prepPct } from './Umrah';
 import { UmrahTrips } from './UmrahTrips';
 import { MiqatView } from './Miqat';
+import { UmrahSavings } from './UmrahSavings';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -87,6 +88,8 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
         <em>Сейчас</em>
         {phase === 'none' && (
           <>
+            <b>Копилка на умру</b>
+            <UmrahSavings state={state} update={update} today={today} compact onOpen={() => setTab('trip')} />
             <b>Когда едешь?</b>
             <p>Укажи дни, и экран будет подсказывать, что делать сейчас. Если едешь группой из Круга, даты возьмутся из поездки.</p>
             <div className="up-add">
@@ -96,7 +99,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
             <p className="tiny">Пока дат нет, начни с сердца: намерение и покаяние не зависят от билетов.</p>
           </>
         )}
-        {phase === 'far' && <><b>Время намерения</b><p>До вылета {left} {plural(left!, 'день', 'дня', 'дней')}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.</p></>}
+        {phase === 'far' && <><b>Время намерения</b><p>До вылета {left} {plural(left!, 'день', 'дня', 'дней')}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.</p>{(u.funds ?? []).some((f) => !f.for) && <UmrahSavings state={state} update={update} today={today} compact />}</>}
         {phase === 'month' && <><b>Месяц до умры</b><p>Документы, разрешение в Nusuk, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p></>}
         {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте: указать рейс</button></>}
         {phase === 'there' && (
@@ -190,6 +193,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
       {tab === 'trip' && (
         <div className="um-sec">
+          <UmrahSavings state={state} update={update} today={today} />
           {api.me ? (
             <UmrahTrips api={api} myReady={prepPct(state)} nameOf={nameOf} embedded />
           ) : (

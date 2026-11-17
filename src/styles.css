@@ -1417,3 +1417,25 @@ button:disabled { opacity: .5; cursor: default; }
 .um-ihram b:before { content: '◯'; margin-right: 8px; color: var(--gold); }
 .um-ihram small { color: var(--ink-2); }
 .miqat .icon-btn { background: #13221a; color: var(--on-dark); border: 1px solid #24392d; font-size: 22px; }
+
+/* Umrah savings */
+.sv { display: grid; gap: 8px; }
+.sv h3 { margin: 6px 0 0; }
+.sv-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: grid; gap: 8px; }
+.sv-card.compact { background: var(--surface); }
+.sv-card.full { border-color: var(--gold); }
+.sv-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sv-top span { font-family: var(--f-display); font-size: 22px; font-weight: 700; color: var(--green); white-space: nowrap; }
+.sv-top span small { font-family: var(--f-body); font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.sv-bar { height: 10px; border-radius: 10px; background: var(--green-soft); overflow: hidden; }
+.sv-bar i { display: block; height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--green-2), var(--gold)); transition: width .4s; }
+.sv-sub { color: var(--ink-2); font-size: 12.5px; }
+.sv-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.sv-quick button { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 13px; }
+.sv-quick button[aria-pressed="true"] { border-color: var(--green-2); background: var(--green-soft); color: var(--green); }
+.sv-acts { display: flex; gap: 12px; }
+.sv-start { text-align: left; border: 1.5px dashed var(--gold); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; }
+.sv-start small { color: var(--ink-2); }
+.up-add select { border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: inherit; padding: 8px; }
+.sv, .sv-card { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.sv-sub { overflow-wrap: anywhere; }
