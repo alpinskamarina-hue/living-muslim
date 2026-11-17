@@ -43,6 +43,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
+  const [umra, setUmra] = useState(false);
   const [adding, setAdding] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [nicks, setNicks] = useState(false);
@@ -113,8 +114,12 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     const done = Object.values(khatm.juz).reduce((n, byHost) => n + (byHost?.[host]?.done?.length ?? 0), 0);
     feed.push({ e: '📖', t: `${k.title || 'Хатм'}: прочитано ${Math.min(30, done)} из 30 джузов` });
   }
-  const jobsActive = Object.keys(khatm.list).length > 0 || Object.keys(umrah.trips).length > 0 || Object.keys(iftar.events).length > 0;
+  const jobsActive = Object.keys(khatm.list).length > 0 || Object.keys(iftar.events).length > 0;
+  const umraCount = Object.keys(umrah.trips).length;
+  const umraGoing = Boolean(me && Object.entries(umrah.rsvp[me] ?? {}).some(([h, r]) => r.s === 'go' && umrah.trips[h]));
 
+  const umraName = (id: string) => names[id]?.name || umrah.names[id] || khatm.names[id] || 'Участник';
+  if (umra) return <UmrahTrips api={umrah} myReady={myReady} nameOf={umraName} onBack={() => { setUmra(false); window.scrollTo(0, 0); }} />;
   if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
   if (inviting && cur) return <InviteByNick code={cur.code} onBack={() => { setInviting(false); window.scrollTo(0, 0); }} />;
 
@@ -242,14 +247,18 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       {joined && (
         <>
           <h3 className="ch-h">Общие дела</h3>
+          <button type="button" className="um-entry" onClick={() => { setUmra(true); window.scrollTo(0, 0); }}>
+            <span className="um-ic">🕋</span>
+            <span><b>Умра</b><small>{umraCount ? `${umraCount} ${plural(umraCount, 'поездка', 'поездки', 'поездок')} · ${umraGoing ? 'ты едешь' : 'открой, чтобы присоединиться'}` : 'Собрать группу, сэкономить и поехать вместе'}</small></span>
+            <i aria-hidden="true">›</i>
+          </button>
           {(jobsActive || jobs) ? (
             <>
               <IftarSection api={iftar} today={today} nameOf={(id) => names[id]?.name || iftar.names[id] || 'Участник'} />
               <KhatmSection api={khatm} today={today} nameOf={(id) => names[id]?.name || khatm.names[id] || umrah.names[id] || 'Участник'} />
-              <UmrahTrips api={umrah} myReady={myReady} nameOf={(id) => names[id]?.name || umrah.names[id] || khatm.names[id] || 'Участник'} />
             </>
           ) : (
-            <button type="button" className="ch-new" onClick={() => setJobs(true)}>+ Начать общее дело: хатм, поездка на умру{kind === 'family' || kind === 'masjid' ? ', ифтар' : ''}</button>
+            <button type="button" className="ch-new" onClick={() => setJobs(true)}>+ Начать общее дело: хатм{kind === 'family' || kind === 'masjid' ? ', ифтар' : ''}</button>
           )}
         </>
       )}

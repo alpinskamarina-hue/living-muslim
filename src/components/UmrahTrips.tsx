@@ -3,11 +3,11 @@ import type { UmrahApi, URsvp, UStatus, UTrip } from '../umrahCircle';
 import { uid } from '../store';
 import { UmrahPlan } from './UmrahPlan';
 
-interface Props { api: UmrahApi; myReady: number; nameOf: (id: string) => string }
+interface Props { api: UmrahApi; myReady: number; nameOf: (id: string) => string; onBack: () => void }
 
 const ST: { s: UStatus; l: string }[] = [{ s: 'go', l: 'Еду' }, { s: 'maybe', l: 'Думаю' }, { s: 'no', l: 'Не в этот раз' }];
 
-export function UmrahTrips({ api, myReady, nameOf }: Props) {
+export function UmrahTrips({ api, myReady, nameOf, onBack }: Props) {
   const { me, trips, rsvp } = api;
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -18,21 +18,39 @@ export function UmrahTrips({ api, myReady, nameOf }: Props) {
     for (const [host, r] of Object.entries(rsvp[me] ?? {})) if (r.s === 'go' && r.ready !== myReady && trips[host]) api.respond(host, { ready: myReady });
   }, [myReady, me, JSON.stringify(rsvp[me ?? ''] ?? {})]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!api.ready) return null;
   const hosts = Object.keys(trips).sort((a, b) => (trips[b].created ?? '').localeCompare(trips[a].created ?? ''));
+  const go = (h: string | null) => { setOpen(h); window.scrollTo(0, 0); };
+
+  // One trip on its own screen.
+  if (open && trips[open]) {
+    return (
+      <div className="page umrah-page">
+        <button type="button" className="link-btn um-back" onClick={() => go(null)}>← Все поездки</button>
+        <TripCard host={open} trip={trips[open]} api={api} nameOf={nameOf} myReady={myReady} open onToggle={() => go(null)} />
+      </div>
+    );
+  }
 
   return (
-    <section className="umrah-c">
-      <h2 className="sub-h">Совместная умра</h2>
+    <div className="page umrah-page">
+      <button type="button" className="link-btn um-back" onClick={onBack}>← Круг</button>
+      <div className="um-hero">
+        <span>🕋</span>
+        <h1 className="page-h">Умра</h1>
+        <p>Поездка группой из Круга: даты, билеты, жильё, документы и общая касса в одном месте. Без агентства и обычно дешевле.</p>
+      </div>
+      {!api.ready && <p className="tiny">Загружаю поездки…</p>}
       {api.error && <div className="warn">{api.error}</div>}
-      {hosts.length === 0 && !creating && <p className="tiny">Пока никто не собирает поездку. Предложи первым: братья и сёстры из Круга смогут присоединиться, разделить задачи и готовиться вместе.</p>}
-      {hosts.map((h) => (
-        <TripCard key={h} host={h} trip={trips[h]} api={api} nameOf={nameOf} myReady={myReady} open={open === h} onToggle={() => setOpen(open === h ? null : h)} />
-      ))}
-      {me && !trips[me] && (creating
-        ? <TripForm onCancel={() => setCreating(false)} onSave={(t) => { api.saveTrip(t); api.respond(me, { s: 'go', ready: myReady }); setCreating(false); setOpen(me); }} />
+      {api.ready && hosts.length === 0 && !creating && <p className="tiny">Пока никто не собирает поездку. Предложи первым: братья и сёстры из Круга смогут присоединиться, разделить задачи и готовиться вместе.</p>}
+      <div className="umrah-c">
+        {hosts.map((h) => (
+          <TripCard key={h} host={h} trip={trips[h]} api={api} nameOf={nameOf} myReady={myReady} open={false} onToggle={() => go(h)} />
+        ))}
+      </div>
+      {api.ready && me && !trips[me] && (creating
+        ? <TripForm onCancel={() => setCreating(false)} onSave={(t) => { api.saveTrip(t); api.respond(me, { s: 'go', ready: myReady }); setCreating(false); go(me); }} />
         : <button type="button" className="pri-btn big-btn" onClick={() => setCreating(true)}>🕋 Собрать поездку на умру</button>)}
-    </section>
+    </div>
   );
 }
 
@@ -49,7 +67,7 @@ function TripForm({ initial, onSave, onCancel }: { initial?: UTrip; onSave: (t: 
       </div>
       <div className="row2 light">
         <button type="button" onClick={onCancel}>Отмена</button>
-        <button type="button" className="pri-btn" disabled={!title.trim() || !month.trim()} onClick={() => onSave({ title: title.trim(), month: month.trim(), city: city.trim(), amir: initial?.amir, tasks: initial?.tasks ?? [], created: initial?.created ?? new Date().toISOString() })}>Сохранить</button>
+        <button type="button" className="pri-btn" disabled={!title.trim() || !month.trim()} onClick={() => onSave({ ...initial, title: title.trim(), month: month.trim(), city: city.trim(), amir: initial?.amir, tasks: initial?.tasks ?? [], created: initial?.created ?? new Date().toISOString() })}>Сохранить</button>
       </div>
     </div>
   );
@@ -77,14 +95,14 @@ function TripCard({ host, trip, api, nameOf, myReady, open, onToggle }: { host: 
 
   return (
     <div className="trip">
-      <button type="button" className="trip-head" onClick={onToggle} aria-expanded={open}>
+      <button type="button" className="trip-head" onClick={open ? undefined : onToggle} disabled={open}>
         <span className="trip-ic">🕋</span>
         <span className="q-t">
           <b>{trip.title}</b>
           <small>{trip.month}{trip.city ? ` · из ${trip.city}` : ''} · собирает {isHost ? 'ты' : nameOf(host)}</small>
           <small>Едут: {going.length}{maybe.length ? ` · думают: ${maybe.length}` : ''}{requests.length ? ` · просьб о дуа: ${requests.length}` : ''}</small>
         </span>
-        <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+        {!open && <span aria-hidden="true">›</span>}
       </button>
       {open && (
         <div className="trip-body">
