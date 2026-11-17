@@ -136,7 +136,7 @@ function Course({ item, vs, setVs, onBack, onPlay }: { item: VideoItem; vs: Vide
     <div className="page vids">
       <button type="button" className="link-btn pro-back" onClick={onBack}>← Видеоуроки</button>
       {items[0] && <div className="vth big" style={{ backgroundImage: `url(${thumb(items[0].id)})` }}><i className="vdur">{items.length} уроков{total ? ` · ${dur(total)}` : ''}</i></div>}
-      <h1 className="page-h">{data?.title || item.title}</h1>
+      <h1 className="page-h">{item.mine ? data?.title || item.title : item.title}</h1>
       {items.length > 0 && <div className="vprog"><i style={{ width: `${(done / items.length) * 100}%` }} /></div>}
       <p className="page-sub">{items.length ? `${done} из ${items.length} уроков · ` : ''}{catOf(item.cat).ic} {catOf(item.cat).ru}{data?.channel ? ` · ${data.channel}` : ''}</p>
       {item.note && <p className="tiny">{item.note}</p>}
@@ -241,7 +241,7 @@ function Player({ item, idx, vs, setVs, habitName, onBack, onIdx, onWatched }: {
   return (
     <div className="page vids vplayer">
       <div className="vframe"><div ref={host} />{!lesson && <span className="vload">{err ? 'Не получилось загрузить видео' : 'Загружаю…'}</span>}</div>
-      <button type="button" className="link-btn pro-back" onClick={onBack}>← {item.kind === 'list' ? (data?.title || item.title) : 'Видеоуроки'}</button>
+      <button type="button" className="link-btn pro-back" onClick={onBack}>← {item.kind === 'list' ? item.title : 'Видеоуроки'}</button>
       {lesson && <h1 className="page-h sm">{items.length > 1 ? `Урок ${idx + 1}. ` : ''}{lesson.title}</h1>}
       <div className="vspeed">
         {[1, 1.25, 1.5, 2].map((r) => <button key={r} type="button" aria-pressed={rate === r} onClick={() => setSpeed(r)}>{r}×</button>)}
