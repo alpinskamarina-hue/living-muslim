@@ -6,12 +6,12 @@ import type { KhatmApi } from '../khatm';
 import { KhatmSection } from './Khatm';
 import type { IftarApi } from '../iftar';
 import { IftarSection } from './Iftar';
-import { CloudSetup, CloudInvite } from './CloudCircle';
-import { isCloud } from '../cloud';
-import { useEffect } from 'react';
+import { CloudSetup, CloudInvite, shareInvite } from './CloudCircle';
+import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite } from '../cloud';
+import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
 import { FamilySection } from './Family';
-import { patchF } from '../family';
+import { patchF, famOf } from '../family';
 
 interface Props {
   circle: CircleApi;
@@ -30,12 +30,17 @@ interface Props {
 }
 
 const REACTIONS = [
-  { e: '🤲', label: 'Дуа за тебя' },
-  { e: '✨', label: 'МашаАллах' },
+  { e: '🤲', label: 'Дуа за тебя', short: 'Дуа' },
+  { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
 export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
+  const [range, setRange] = useState<'today' | 'week'>('today');
+  const [jobs, setJobs] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const famKindOwner = isCloud && currentCircle()?.kind === 'family' && isOwner && !famOf(state).on;
+  useEffect(() => { if (famKindOwner) update((s) => patchF(s, () => ({ on: true }))); }, [famKindOwner]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Just created or joined a circle on the standalone site: share today's total right away.
     if (status !== 'ready' || joined) return;
@@ -46,6 +51,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     return <div className="page"><h1 className="page-h">Круг</h1><p className="page-sub">Подключаюсь…</p></div>;
 
   if (status === 'off' && isCloud) return <CloudSetup />;
+  if (isCloud && pendingInvite() && !myCircles().some((c) => c.code === pendingInvite())) return <CloudSetup onCancel={() => { try { sessionStorage.removeItem('lm.invite'); } catch { /* */ } location.reload(); }} />;
 
   if (status === 'off')
     return (
@@ -67,10 +73,57 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     return out;
   };
 
+  // ---- circle meta (standalone site: several circles with a title and a kind) ----
+  const cur = isCloud ? currentCircle() : null;
+  const kind = cur?.kind;
+  const kindInfo = kindOf(kind);
+  const familyKind = kind === 'family' || (!kind && members.some((m) => m.fam));
+  const alone = members.filter((m) => m.id !== me).length === 0;
+
+  const wk = members.reduce((acc, m) => ({ p: acc.p + (m.week?.p ?? 0), h: acc.h + (m.week?.h ?? 0) }), { p: 0, h: 0 });
+  const tdy = members.filter((m) => m.day === today).reduce((acc, m) => ({ p: acc.p + m.prayers, h: acc.h + m.done }), { p: 0, h: 0 });
+  let duas = 0;
+  for (const [from, map] of Object.entries(reacts)) for (const [to, r] of Object.entries(map ?? {})) if (to !== from && !to.startsWith('n:') && r?.e === '🤲' && r.day === today) duas++;
+  const lit = (m: Member) => (range === 'week' ? (m.week?.p ?? 0) + (m.week?.h ?? 0) > 0 : m.day === today && (m.done > 0 || m.prayers > 0));
+  const nm = (id: string) => (id === me ? 'Ты' : names[id]?.name || 'Участник');
+
+  // «Что нового»: what happened today that concerns me or the whole circle.
+  const feed: { e: string; t: string }[] = [];
+  if (me) {
+    for (const [from, map] of Object.entries(reacts)) {
+      if (from === me) continue;
+      const r = map?.[me];
+      if (r?.day === today) feed.push({ e: r.e, t: r.e === '🤲' ? `${nm(from)}: дуа за тебя` : `${nm(from)}: машаАллах тебе` });
+      if (map?.[`n:${me}`]?.day === today) feed.push({ e: '👋', t: `${nm(from)} мягко напоминает о себе и о тебе` });
+    }
+  }
+  for (const m of members) if (m.id !== me && m.day === today && m.prayers >= 5) feed.push({ e: '✅', t: `${nm(m.id)}: все 5 намазов сегодня` });
+  for (const [host, k] of Object.entries(khatm.list)) {
+    const done = Object.values(khatm.juz).reduce((n, byHost) => n + (byHost?.[host]?.done?.length ?? 0), 0);
+    feed.push({ e: '📖', t: `${k.title || 'Хатм'}: прочитано ${Math.min(30, done)} из 30 джузов` });
+  }
+  const jobsActive = Object.keys(khatm.list).length > 0 || Object.keys(umrah.trips).length > 0 || Object.keys(iftar.events).length > 0;
+
+  if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
+
   return (
     <div className="page">
-      <h1 className="page-h">Круг</h1>
-      <p className="page-sub">Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек.</p>
+      <div className="ch-top">
+        <h1 className="page-h">Круг</h1>
+        {isCloud && joined && <button type="button" className="ch-inv" onClick={() => cur && shareInvite(cur.code)}>+ Пригласить</button>}
+      </div>
+
+      {isCloud && (
+        <div className="ch-tabs">
+          {myCircles().map((c) => (
+            <button key={c.code} type="button" aria-pressed={c.code === cur?.code} onClick={() => c.code !== cur?.code && switchCircle(c.code)}>
+              {kindOf(c.kind)?.ic ?? '👥'} {c.title}
+            </button>
+          ))}
+          <button type="button" className="ch-add" onClick={() => setAdding(true)}>+ Новый</button>
+        </div>
+      )}
+      <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && kindInfo.ru !== cur.title ? ` · ${kindInfo.ru}` : ''} · </> : null}{members.length} {plural(members.length, 'человек', 'человека', 'человек')} · видят только итог дня</p>
 
       {circle.error && <div className="warn">{circle.error}</div>}
       {circle.stale && <p className="tiny">Данные круга пока не загрузились, могут быть устаревшими.</p>}
@@ -81,36 +134,50 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <p>Остальные увидят: сколько привычек и намазов ты отметил сегодня. Названия привычек, заметки и мухасаба остаются только у тебя.</p>
           <button type="button" className="pri-btn big-btn" onClick={onJoin}>Присоединиться</button>
         </div>
-      ) : (
-        <>
-        {(() => {
-          const wk = members.reduce((a, m) => ({ p: a.p + (m.week?.p ?? 0), h: a.h + (m.week?.h ?? 0) }), { p: 0, h: 0 });
-          let duas = 0;
-          for (const [from, map] of Object.entries(reacts)) for (const [to, r] of Object.entries(map ?? {})) if (to !== from && !to.startsWith('n:') && r?.e === '🤲' && r.day === today) duas++;
-          return (
-            <div className="week-card">
-              <h3>Вместе за неделю</h3>
-              <div className="wk">
-                <div><b>{wk.p}</b><small>{plural(wk.p, 'намаз отмечен', 'намаза отмечено', 'намазов отмечено')}</small></div>
-                <div><b>{wk.h}</b><small>{plural(wk.h, 'привычка', 'привычки', 'привычек')} сделано</small></div>
-                <div><b>{duas}</b><small>{plural(duas, 'дуа', 'дуа', 'дуа')} друг за друга сегодня</small></div>
-              </div>
-              <p>Общий счёт круга, без рейтинга: каждый добавляет свой свет.</p>
-            </div>
-          );
-        })()}
-        <div className="stat-card">
-          <div className="big">{activeToday}</div>
-          <div>
-            <b>{plural(activeToday, 'человек', 'человека', 'человек')} из {members.length} сегодня в деле</b>
-            <small>твой итог обновляется сам, когда ты отмечаешь</small>
-          </div>
+      ) : alone && isCloud ? (
+        <div className="ch-empty">
+          <i>🤝</i>
+          <b>Позови первого человека</b>
+          <p>{kind === 'family' ? 'Жена, муж, родители, взрослые дети.' : kind === 'sisters' ? 'Подруга, сестра, соседка по мечети.' : kind === 'masjid' ? 'Братья и сёстры с урока или из мечети.' : 'Брат, друг, однокурсник.'} Вместе держаться легче, а дуа друг за друга приходят каждый день.</p>
+          <button type="button" className="pri-btn big-btn" onClick={() => cur && shareInvite(cur.code)}>Пригласить в круг</button>
         </div>
+      ) : (
+        <div className="ch-hero">
+          <div className="ch-seg">
+            <button type="button" aria-pressed={range === 'today'} onClick={() => setRange('today')}>Сегодня</button>
+            <button type="button" aria-pressed={range === 'week'} onClick={() => setRange('week')}>Неделя</button>
+          </div>
+          <div className="ch-avs">
+            {sorted.map((m) => (
+              <span key={m.id} className={`ch-av${lit(m) ? ' on' : ''}`}>
+                {names[m.id]?.avatarUrl ? <img src={names[m.id]!.avatarUrl} alt="" /> : <i style={{ background: names[m.id]?.color || '#1f7a4d' }}>{(names[m.id]?.name || '?').slice(0, 1).toUpperCase()}</i>}
+                <small>{m.id === me ? 'Ты' : (names[m.id]?.name || 'Участник').split(' ')[0]}</small>
+              </span>
+            ))}
+          </div>
+          {range === 'today' ? (
+            <>
+              <b>{activeToday} из {members.length} сегодня в деле</b>
+              <small>Вместе сегодня: {tdy.p} {plural(tdy.p, 'намаз', 'намаза', 'намазов')} и {tdy.h} {plural(tdy.h, 'привычка', 'привычки', 'привычек')}{duas ? ` · 🤲 ${duas} дуа друг за друга` : ''}</small>
+            </>
+          ) : (
+            <>
+              <b>{wk.p} {plural(wk.p, 'намаз', 'намаза', 'намазов')} за неделю</b>
+              <small>И {wk.h} {plural(wk.h, 'привычка', 'привычки', 'привычек')}. Общий счёт, без рейтинга: каждый добавляет свой свет.</small>
+            </>
+          )}
+        </div>
+      )}
+
+      {joined && feed.length > 0 && (
+        <>
+          <h3 className="ch-h">Что нового</h3>
+          <div className="ch-feed">{feed.slice(0, 5).map((f, i) => <div key={i}><em>{f.e}</em><span>{f.t}</span></div>)}</div>
         </>
       )}
 
-      {joined && members.some((m) => m.fam) && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
-      {joined && isOwner && !members.some((m) => m.fam) && (
+      {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
+      {joined && isOwner && !isCloud && !members.some((m) => m.fam) && (
         <div className="fam-on">
           <b>Это ваша семья?</b>
           <p>Включите семейный круг: намаз вместе дома, детские профили с наклейками, общий семейный сад и семейное обещание.</p>
@@ -118,73 +185,73 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </div>
       )}
 
-      <h2 className="sub-h">{members.some((m) => m.fam) ? 'Взрослые' : 'Участники'} <small>{members.length}</small></h2>
-      {members.length === 0 && <p className="tiny">Пока никого. Присоединись первым и пригласи близких.</p>}
-      <div className="members">
-        {sorted.map((m) => {
-          const p = names[m.id];
-          const isMe = m.id === me;
-          const fresh = m.day === today;
-          const got = received(m.id);
-          const mine = me ? reacts[me]?.[m.id] : undefined;
-          const empty = !fresh || (m.done === 0 && m.prayers === 0);
-          const nudged = Boolean(me && reacts[me]?.[`n:${m.id}`]?.day === today);
-          return (
-            <div className="member" key={m.id}>
-              {p?.avatarUrl ? <img className="ava" src={p.avatarUrl} alt="" /> : <span className="ava" style={{ background: p?.color }} />}
-              <div className="m-x">
-                <b>{isMe ? `${p?.name || 'Ты'} (ты)` : p?.name || 'Участник'}</b>
-                <small>
-                  {fresh ? `Привычки ${m.done}/${m.total} · Намазы ${m.prayers}/5${m.fast ? ' · постится ✓' : ''}` : 'Сегодня ещё не отмечался'}
-                </small>
-                {(m.goals ?? []).map((g) => <span key={g.t} className="m-goal">🎯 {g.t} · {g.p}%</span>)}
-                {fresh && m.total > 0 && <span className="m-bar"><i style={{ width: `${(m.done / m.total) * 100}%` }} /></span>}
-                {Object.keys(got).length > 0 && (
-                  <span className="m-got">{Object.entries(got).map(([e, n]) => `${e} ${n}`).join('  ')}</span>
-                )}
-              </div>
-              {!isMe && joined && (
-                <div className="m-react">
-                  {REACTIONS.map((r) => (
-                    <button key={r.e} type="button" aria-label={r.label} title={r.label} aria-pressed={mine?.e === r.e && mine.day === today} onClick={() => circle.react(m.id, r.e, today)}>
-                      {r.e}
-                    </button>
-                  ))}
-                  {empty && (
-                    <button type="button" className="nudge" aria-pressed={nudged} onClick={() => circle.nudge(m.id, today)}>
-                      {nudged ? 'Отправлено' : 'Подтолкнуть'}
-                    </button>
+      {members.length > 0 && !(alone && isCloud) && (
+        <>
+          <h3 className="ch-h">{familyKind ? 'Взрослые' : 'Участники'} <small>{members.length}</small></h3>
+          <div className="ch-mem">
+            {sorted.map((m) => {
+              const p = names[m.id];
+              const isMe = m.id === me;
+              const fresh = m.day === today;
+              const got = received(m.id);
+              const mine = me ? reacts[me]?.[m.id] : undefined;
+              const empty = !fresh || (m.done === 0 && m.prayers === 0);
+              const nudged = Boolean(me && reacts[me]?.[`n:${m.id}`]?.day === today);
+              return (
+                <div className="ch-m" key={m.id}>
+                  <div className="ch-mt">
+                    {p?.avatarUrl ? <img className="ava" src={p.avatarUrl} alt="" /> : <span className="ava ch-ava" style={{ background: p?.color }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>}
+                    <span>
+                      <b>{isMe ? `${p?.name || 'Ты'} (ты)` : p?.name || 'Участник'}</b>
+                      <small>{fresh ? `Намазы ${m.prayers}/5 · привычки ${m.done}/${m.total}${m.fast ? ' · постится ✓' : ''}` : 'Сегодня ещё не отмечался'}</small>
+                      {(m.goals ?? []).map((g) => <small key={g.t} className="m-goal">🎯 {g.t} · {g.p}%</small>)}
+                    </span>
+                    {Object.keys(got).length > 0 && <em className="ch-got">{Object.entries(got).map(([e, n]) => `${e} ${n}`).join('  ')}</em>}
+                  </div>
+                  {fresh && m.total > 0 && <span className="ch-bar"><i style={{ width: `${(m.done / m.total) * 100}%` }} /></span>}
+                  {!isMe && joined && (
+                    <div className="ch-acts">
+                      {REACTIONS.map((r) => {
+                        const on = mine?.e === r.e && mine.day === today;
+                        return <button key={r.e} type="button" aria-pressed={on} onClick={() => circle.react(m.id, r.e, today)}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
+                      })}
+                      {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => circle.nudge(m.id, today)}>{nudged ? '👋 Отправлено' : '👋 Подтолкнуть'}</button>}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-      <IftarSection api={iftar} today={today} nameOf={(id) => names[id]?.name || iftar.names[id] || 'Участник'} />
-      <KhatmSection api={khatm} today={today} nameOf={(id) => names[id]?.name || khatm.names[id] || umrah.names[id] || 'Участник'} />
-      <UmrahTrips api={umrah} myReady={myReady} nameOf={(id) => names[id]?.name || umrah.names[id] || khatm.names[id] || 'Участник'} />
+      {joined && (
+        <>
+          <h3 className="ch-h">Общие дела</h3>
+          {(jobsActive || jobs) ? (
+            <>
+              <IftarSection api={iftar} today={today} nameOf={(id) => names[id]?.name || iftar.names[id] || 'Участник'} />
+              <KhatmSection api={khatm} today={today} nameOf={(id) => names[id]?.name || khatm.names[id] || umrah.names[id] || 'Участник'} />
+              <UmrahTrips api={umrah} myReady={myReady} nameOf={(id) => names[id]?.name || umrah.names[id] || khatm.names[id] || 'Участник'} />
+            </>
+          ) : (
+            <button type="button" className="ch-new" onClick={() => setJobs(true)}>+ Начать общее дело: хатм, поездка на умру{kind === 'family' || kind === 'masjid' ? ', ифтар' : ''}</button>
+          )}
+        </>
+      )}
 
-      <p className="tiny">🤲 — «сделал за тебя дуа», ✨ — «машаАллах», «Подтолкнуть» — мягкое напоминание другу, у которого сегодня пусто. Лайков, рейтингов и сравнения нет: круг для поддержки, не для показа.</p>
-
+      <p className="ch-priv">🔒 В круге видят только итог дня. Названия привычек, заметки и мухасаба остаются у тебя.</p>
       {isCloud && <CloudInvite isOwner={isOwner} />}
-
       {!isCloud && isOwner && (
         <div className="invite">
           <b>Как пригласить</b>
-          <p>Открой меню «Поделиться» у этой страницы на claude.ai и добавь человека с уровнем «Участник» (Contributor). Он откроет ту же ссылку, нажмёт «Присоединиться», и вы увидите друг друга.</p>
+          <p>Открой меню «Поделиться» у этой страницы на claude.ai и добавь человека с уровнем «Участник» (Contributor). Он откроет ту же ссылку и нажмёт «Присоединиться».</p>
         </div>
       )}
-
-      {joined && isOwner && members.some((m) => m.fam) && (
+      {joined && isOwner && members.some((m) => m.fam) && kind !== 'family' && (
         <button type="button" className="link-btn" onClick={() => { if (confirm('Выключить семейный режим? Детские профили останутся на этом телефоне.')) update((s) => patchF(s, () => ({ on: false }))); }}>Выключить семейный режим</button>
       )}
-
-      {joined && !isCloud && (
-        <button type="button" className="danger" onClick={onLeave}>Выйти из круга</button>
-      )}
-      <p className="tiny ver">Твой итог сейчас: привычки {summary.done}/{summary.total}, намазы {summary.prayers}/5</p>
+      {joined && !isCloud && <button type="button" className="danger" onClick={onLeave}>Выйти из круга</button>}
     </div>
   );
 }

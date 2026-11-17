@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isCloud, currentCircle } from './cloud';
 import type { Anchor, Habit } from './types';
 import { useAppState } from './store';
 import { dayKey } from './dates';
@@ -110,7 +111,8 @@ export function App() {
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
   // Family circles share more: counted days, the children kept on this phone, prayers together.
   const fam = famOf(state);
-  const familyOn = Boolean((circle.isOwner && fam.on) || circle.members.some((m) => m.fam && m.id !== circle.me));
+  const ck = isCloud ? currentCircle()?.kind : undefined;
+  const familyOn = (!ck || ck === 'family') && Boolean((circle.isOwner && fam.on) || circle.members.some((m) => m.fam && m.id !== circle.me));
   const litKey = useMemo(() => (familyOn ? myLitDays(state, today) : []), [familyOn, today, state.log, state.prayers, state.habits]); // eslint-disable-line react-hooks/exhaustive-deps
   if (familyOn) {
     Object.assign(summary, {

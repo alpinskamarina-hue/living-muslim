@@ -7,10 +7,30 @@ const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const LS = 'lm.cloud';
 const POLL_MS = 8000;
 
-export interface CloudId { uid: string; token: string; name: string; circle?: string }
+export type CircleKind = 'family' | 'brothers' | 'sisters' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
+export interface CircleRef { code: string; title: string; kind?: CircleKind }
+export interface CloudId { uid: string; token: string; name: string; circle?: string; circles?: CircleRef[] }
+
+export const CIRCLE_KINDS: { id: CircleKind; ru: string; ic: string; hint: string }[] = [
+  { id: 'family', ru: 'Семья', ic: '🏡', hint: 'Намаз вместе дома, детские профили, семейный сад' },
+  { id: 'brothers', ru: 'Братья', ic: '🤝', hint: 'Держать друг друга в намазе и делах' },
+  { id: 'sisters', ru: 'Сёстры', ic: '🌸', hint: 'Закрытый круг только для своих' },
+  { id: 'friends', ru: 'Друзья', ic: '👥', hint: 'Близкие люди, которые поддержат' },
+  { id: 'masjid', ru: 'Мечеть, халака', ic: '🕌', hint: 'Община, уроки, общий хатм' },
+  { id: 'study', ru: 'Учёба', ic: '📚', hint: 'Коран, арабский, общий курс' },
+  { id: 'work', ru: 'Работа', ic: '💼', hint: 'Коллеги-мусульмане' },
+  { id: 'other', ru: 'Своё', ic: '✨', hint: 'Любая другая цель' },
+];
+export const kindOf = (k?: CircleKind) => CIRCLE_KINDS.find((x) => x.id === k);
 
 function load(): CloudId | null {
-  try { const x = JSON.parse(localStorage.getItem(LS) || 'null'); return x?.uid && x?.token ? x : null; } catch { return null; }
+  try {
+    const x: CloudId | null = JSON.parse(localStorage.getItem(LS) || 'null');
+    if (!x?.uid || !x?.token) return null;
+    const list = (x.circles ?? []).filter((c) => c?.code);
+    if (x.circle && !list.some((c) => c.code === x.circle)) list.unshift({ code: x.circle, title: 'Мой круг' });
+    return { ...x, circles: list };
+  } catch { return null; }
 }
 function save(x: CloudId | null) {
   try { if (x) localStorage.setItem(LS, JSON.stringify(x)); else localStorage.removeItem(LS); } catch { /* private mode */ }
@@ -40,7 +60,42 @@ export function pendingInvite(): string {
 
 export function cloudMe(): CloudId | null { return load(); }
 
-export function inviteLink(code: string) { return `${location.origin}/app/?c=${code}`; }
+export function inviteLink(code: string) {
+  const c = load()?.circles?.find((x) => x.code === code);
+  const q = new URLSearchParams({ c: code });
+  if (c?.title) q.set('n', c.title);
+  if (c?.kind) q.set('k', c.kind);
+  return `${location.origin}/app/?${q}`;
+}
+
+/** Title and kind that came with the invite link (?n=…&k=…). */
+export function pendingInviteMeta(): { title: string; kind?: CircleKind } {
+  try {
+    const u = new URLSearchParams(location.search);
+    if (u.get('c')) sessionStorage.setItem('lm.inviteMeta', JSON.stringify({ title: u.get('n') || '', kind: u.get('k') || undefined }));
+    const m = JSON.parse(sessionStorage.getItem('lm.inviteMeta') || 'null');
+    return { title: String(m?.title || '').slice(0, 40), kind: CIRCLE_KINDS.some((k) => k.id === m?.kind) ? m.kind : undefined };
+  } catch { return { title: '' }; }
+}
+
+export function myCircles(): CircleRef[] { return load()?.circles ?? []; }
+export function currentCircle(): CircleRef | null { const me = load(); return me?.circles?.find((c) => c.code === me.circle) ?? null; }
+
+/** Makes another of my circles the open one. The page reloads to reconnect. */
+export function switchCircle(code: string) {
+  const me = load();
+  if (!me || !me.circles?.some((c) => c.code === code)) return;
+  save({ ...me, circle: code });
+  try { sessionStorage.setItem('lm.tab', 'circle'); } catch { /* */ }
+  location.reload();
+}
+
+/** Renames a circle for me (the name travels with new invite links). */
+export function renameCircle(code: string, title: string, kind?: CircleKind) {
+  const me = load();
+  if (!me) return;
+  save({ ...me, circles: (me.circles ?? []).map((c) => (c.code === code ? { ...c, title: title.trim().slice(0, 40) || c.title, kind: kind ?? c.kind } : c)) });
+}
 
 async function ensureId(name: string): Promise<CloudId> {
   let me = load();
@@ -55,17 +110,24 @@ async function ensureId(name: string): Promise<CloudId> {
   return me;
 }
 
-export async function createCircle(name: string): Promise<string> {
+const addCircle = (me: CloudId, ref: CircleRef): CloudId => ({ ...me, circle: ref.code, circles: [...(me.circles ?? []).filter((c) => c.code !== ref.code), ref] });
+
+export async function createCircle(name: string, title = 'Мой круг', kind?: CircleKind): Promise<string> {
   const me = await ensureId(name);
   const code = await rpc<string>('lm_create_circle', { p_uid: me.uid, p_token: me.token });
-  save({ ...me, circle: code });
+  save(addCircle(me, { code, title: title.trim().slice(0, 40) || 'Мой круг', kind }));
   return code;
 }
 
-export async function joinCircle(name: string, code: string): Promise<boolean> {
+export async function joinCircle(name: string, code: string, title = '', kind?: CircleKind): Promise<boolean> {
   const me = await ensureId(name);
-  const ok = await rpc<boolean>('lm_join', { p_uid: me.uid, p_token: me.token, p_code: code.toLowerCase().trim() });
-  if (ok) { save({ ...me, circle: code.toLowerCase().trim() }); try { sessionStorage.removeItem('lm.invite'); } catch { /* */ } }
+  const c = code.toLowerCase().trim();
+  const ok = await rpc<boolean>('lm_join', { p_uid: me.uid, p_token: me.token, p_code: c });
+  if (ok) {
+    const old = me.circles?.find((x) => x.code === c);
+    save(addCircle(me, { code: c, title: title.trim().slice(0, 40) || old?.title || 'Круг друзей', kind: kind ?? old?.kind }));
+    try { sessionStorage.removeItem('lm.invite'); sessionStorage.removeItem('lm.inviteMeta'); } catch { /* */ }
+  }
   return ok;
 }
 
@@ -76,7 +138,8 @@ export async function leaveCircle() {
   const me = load();
   if (!me?.circle) return;
   try { await rpc('lm_leave', { p_uid: me.uid, p_token: me.token, p_code: me.circle }); } catch { /* still forget locally */ }
-  save({ ...me, circle: undefined });
+  const rest = (me.circles ?? []).filter((c) => c.code !== me.circle);
+  save({ ...me, circle: rest[0]?.code, circles: rest });
 }
 
 export async function cloudSummaries(): Promise<any[]> {

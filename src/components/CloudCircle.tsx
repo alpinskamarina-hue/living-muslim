@@ -1,15 +1,20 @@
 import { useState } from 'react';
-import { signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, setName } from '../cloud';
+import { signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 
-/** First visit to Circle on the standalone site: pick a name, then create a circle or join by invite. */
-export function CloudSetup() {
+/** Create a circle (title + kind) or join one by invite. First visit, or «+ Новый круг». */
+export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const me = cloudMe();
+  const meta = pendingInviteMeta();
+  const mineCodes = myCircles().map((c) => c.code);
+  const inv = pendingInvite();
   const [name, setN] = useState(me?.name || signupName());
-  const [code, setCode] = useState(pendingInvite());
+  const [code, setCode] = useState(inv && !mineCodes.includes(inv) ? inv : '');
+  const [title, setTitle] = useState('');
+  const [kind, setKind] = useState<CircleKind>('brothers');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const ok = name.trim().length >= 2;
-
+  const k = kindOf(kind)!;
   const run = async (fn: () => Promise<boolean | string>) => {
     if (!ok) { setErr('Напиши имя, хотя бы две буквы.'); return; }
     setBusy(true); setErr('');
@@ -22,38 +27,65 @@ export function CloudSetup() {
     }
     setBusy(false);
   };
+  const invited = Boolean(code && code === inv);
 
   return (
     <div className="page">
-      <h1 className="page-h">Круг</h1>
-      <p className="page-sub">Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня: сколько отмечено привычек и намазов. Названия привычек, заметки и мухасаба остаются у тебя.</p>
-
+      {onCancel && <button type="button" className="link-btn pro-back" onClick={onCancel}>← Мои круги</button>}
+      <h1 className="page-h">{invited ? 'Приглашение' : onCancel ? 'Новый круг' : 'Круг'}</h1>
+      <p className="page-sub">{invited ? 'Тебя позвали в круг. Друзья увидят только итог твоего дня: сколько намазов и привычек отмечено.' : 'Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек и заметок.'}</p>
       <div className="join cl-setup">
         <label className="cl-f">
-          <span>Как тебя будут видеть друзья</span>
+          <span>Как тебя будут видеть в кругу</span>
           <input value={name} maxLength={40} placeholder="Имя" onChange={(e) => setN(e.target.value)} />
         </label>
-
-        {code ? (
+        {invited ? (
           <>
-            <p>Тебя пригласили в круг <b>{code}</b>.</p>
-            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => joinCircle(name, code))}>Вступить в круг</button>
-            <button type="button" className="link-btn" onClick={() => setCode('')}>Нет, создать свой</button>
+            <div className="cl-inv">
+              <i>{kindOf(meta.kind)?.ic ?? '👥'}</i>
+              <span><b>{meta.title || 'Круг друзей'}</b><small>{kindOf(meta.kind)?.ru ?? 'Круг'} · код {code}</small></span>
+            </div>
+            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => joinCircle(name, code, meta.title, meta.kind))}>Вступить в круг</button>
+            <button type="button" className="link-btn" onClick={() => { setCode(''); try { sessionStorage.removeItem('lm.invite'); } catch { /* */ } }}>Нет, создать свой</button>
           </>
         ) : (
           <>
-            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => createCircle(name))}>Создать свой круг</button>
+            <div className="cl-f"><span>Какой это круг</span></div>
+            <div className="cl-kinds">
+              {CIRCLE_KINDS.map((x) => (
+                <button key={x.id} type="button" aria-pressed={kind === x.id} onClick={() => setKind(x.id)}><i>{x.ic}</i>{x.ru}</button>
+              ))}
+            </div>
+            <p className="tiny">{k.hint}</p>
+            <label className="cl-f">
+              <span>Название</span>
+              <input value={title} maxLength={40} placeholder={kind === 'family' ? 'Например: Семья Насима' : kind === 'masjid' ? 'Например: Халака по субботам' : `Например: ${k.ru}`} onChange={(e) => setTitle(e.target.value)} />
+            </label>
+            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => createCircle(name, title || k.ru, kind))}>Создать круг</button>
             <p>Или вставь код приглашения от друга:</p>
             <div className="cl-row">
-              <input aria-label="Код круга" placeholder="например k7m2p9xq" onChange={(e) => setCode(e.target.value.replace(/.*[?&]c=/, '').trim())} />
+              <input aria-label="Код круга" placeholder="например k7m2p9xq" value={code} onChange={(e) => setCode(e.target.value.replace(/.*[?&]c=/, '').replace(/&.*/, '').trim())} />
+              <button type="button" className="pri-btn" disabled={busy || code.length < 6} onClick={() => run(() => joinCircle(name, code))}>Вступить</button>
             </div>
           </>
         )}
         {err && <div className="warn">{err}</div>}
       </div>
-      <p className="tiny">Регистрация не нужна: приложение запоминает тебя на этом устройстве. Если сменишь телефон, вступи в круг заново по ссылке.</p>
+      <p className="tiny">Регистрация не нужна: приложение запоминает тебя на этом устройстве.</p>
     </div>
   );
+}
+
+/** Opens the share sheet with the invite link (or copies it). */
+export async function shareInvite(code: string) {
+  const link = inviteLink(code);
+  const c = myCircles().find((x) => x.code === code);
+  const text = `Присоединяйся к ${c?.title ? `кругу «${c.title}»` : 'моему кругу'} в Living Muslim: ${link}`;
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url: link }); return true; }
+    await navigator.clipboard.writeText(text); alert('Ссылка скопирована. Отправь её в мессенджер.');
+  } catch { /* cancelled */ }
+  return false;
 }
 
 /** Invite link + name change + leaving the circle, shown under the members list. */
@@ -66,7 +98,8 @@ export function CloudInvite({ isOwner }: { isOwner: boolean }) {
   const link = inviteLink(me.circle);
 
   const share = async () => {
-    const text = `Присоединяйся к моему кругу в Living Muslim: ${link}`;
+    const t = myCircles().find((x) => x.code === me.circle)?.title;
+    const text = `Присоединяйся к ${t ? `кругу «${t}»` : 'моему кругу'} в Living Muslim: ${link}`;
     try {
       if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url: link }); return; }
       await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000);
