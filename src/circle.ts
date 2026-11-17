@@ -19,6 +19,11 @@ export interface Member {
   cgs?: import('./cweek').CGoal[]; // weekly goals I set for the circle
   ask?: import('./cweek').DuaAsk | null; // my request for dua, shown to the circle for 3 days
   act?: string[]; // my active days, last 30, for the circle streak
+  fj?: string[]; // days with Fajr on time, last 14 (challenges)
+  p5?: string[]; // days with all 5 prayers marked, last 14 (challenges)
+  chs?: import('./cweek').Challenge[]; // challenges I sent
+  acc?: string[]; // challenge ids I accepted
+  amir?: import('./cweek').Amir | null; // I volunteered as amir of the week
   fast?: boolean;
   // Family circles only:
   fam?: boolean; // set by the owner: this circle is a family

@@ -1887,3 +1887,27 @@ button:disabled { opacity: .5; cursor: default; }
 .da-row small { color: var(--ink-2); font-size: 12.5px; }
 .da-got { color: var(--ink-2); font-size: 13px !important; margin: 0 0 6px !important; }
 .da-ask { border: 1px dashed var(--line); background: none; border-radius: 16px; padding: 11px; color: var(--green-2); font-weight: 700; font-size: 14px; }
+
+/* Circle: challenges and amir of the week */
+.chl { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+.chl-card { border-radius: 18px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+.chl-card.inv { background: var(--gold-soft); border-color: transparent; }
+.chl-card p { margin: 0 0 6px; font-size: 14px; }
+.chl-card > small { display: block; color: var(--ink-2); font-size: 12.5px; margin-top: 6px; }
+.chl-t { display: block; font-family: var(--f-display); font-size: 19px; margin: 2px 0 4px; }
+.chl-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 13.5px; }
+.chl-row > span:first-child { width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chl-dots { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.chl-dots i { height: 12px; border-radius: 6px; background: var(--line); }
+.chl-dots i.on { background: var(--green-2); }
+.chl-dots i.miss { background: #e7c3c3; }
+.chl-dots i.now { outline: 2px solid var(--green-2); outline-offset: -2px; background: none; }
+.chl-k { grid-template-columns: 1fr; margin-top: 6px; }
+.cg-kinds button:disabled { opacity: .5; }
+.am-ask { display: flex; flex-direction: column; gap: 2px; margin: 12px 0 4px; width: 100%; }
+.am-ask small { font-weight: 400; color: var(--ink-2); font-size: 12px; }
+.am-card { margin: 12px 0 4px; border-radius: 18px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--green-2); }
+.am-card p { margin: 0; font-size: 14px; }
+.am-card p small { color: var(--ink-2); font-size: 12px; margin-left: 4px; }
+.am-card q { display: block; margin: 6px 0 2px; font-family: var(--f-display); font-size: 18px; line-height: 1.25; quotes: '«' '»'; }
+.am-card textarea { width: 100%; box-sizing: border-box; margin: 8px 0 4px; border: 1.5px solid var(--green-2); border-radius: 12px; padding: 10px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); resize: none; }

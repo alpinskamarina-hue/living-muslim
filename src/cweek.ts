@@ -128,3 +128,57 @@ export function circleStreak(members: Member[], today: string): { n: number; tod
   for (let i = 1; i < 30; i++) { if (on(addDays(today, -i)) >= need) n++; else break; }
   return { n, todayOk, need, got };
 }
+
+// ── Challenges between two people and the weekly amir ──
+export type ChKind = 'fajr' | 'five' | 'active';
+export interface Challenge { id: string; to: string; k: ChKind; start: string; at: string }
+export interface Amir { w: string; at: string; note: string }
+export const CH_DAYS = 7;
+export const CH_KINDS: Record<ChKind, { ic: string; label: string; short: string }> = {
+  fajr: { ic: '🌅', label: '7 дней Фаджр вовремя', short: 'Фаджр вовремя' },
+  five: { ic: '🕌', label: '7 дней все 5 намазов', short: 'все 5 намазов' },
+  active: { ic: '🌱', label: '7 дней без пропуска привычек', short: 'хотя бы одна привычка' },
+};
+/** Days (last 14) that count for each kind of challenge, shared in my member doc. */
+export function chDays(s: AppState, today: string): { fj: string[]; p5: string[] } {
+  const fj: string[] = [], p5: string[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = addDays(today, -i);
+    const pr = s.prayers[d] ?? {};
+    if (pr.fajr === 'ontime') fj.push(d);
+    if (Object.keys(pr).length >= 5) p5.push(d);
+  }
+  return { fj, p5 };
+}
+export const chHit = (m: Member | undefined, k: ChKind, d: string) => Boolean(m && (k === 'fajr' ? m.fj : k === 'five' ? m.p5 : m.act)?.includes(d));
+
+function lsList<T>(name: string): [T[], (v: T[]) => void] {
+  const key = `${name}.${(isCloud && currentCircle()?.code) || 'local'}`;
+  const read = (): T[] => { try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; } };
+  const write = (v: T[]) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* */ } };
+  return [read(), write];
+}
+export function useMyChallenges(today: string): { chs: Challenge[]; acc: string[]; add: (c: Challenge) => void; remove: (id: string) => void; accept: (id: string) => void } {
+  const [c0, wc] = lsList<Challenge>('lm.ch');
+  const [a0, wa] = lsList<string>('lm.acc');
+  const [chs, setChs] = useState(c0);
+  const [acc, setAcc] = useState(a0);
+  const fresh = (c: Challenge) => addDays(c.start, CH_DAYS + 2) >= today;
+  return {
+    chs: chs.filter(fresh), acc,
+    add: (c) => { const v = [c, ...chs.filter(fresh)].slice(0, 6); wc(v); setChs(v); },
+    remove: (id) => { const v = chs.filter((x) => x.id !== id); wc(v); setChs(v); },
+    accept: (id) => { const v = [id, ...acc.filter((x) => x !== id)].slice(0, 12); wa(v); setAcc(v); },
+  };
+}
+export function useMyAmir(): [Amir | null, (a: Amir | null) => void] {
+  const key = `lm.amir.${(isCloud && currentCircle()?.code) || 'local'}`;
+  const [a, setA] = useState<Amir | null>(() => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } });
+  return [a, (x) => { try { if (x) localStorage.setItem(key, JSON.stringify(x)); else localStorage.removeItem(key); } catch { /* */ } setA(x); }];
+}
+/** The amir of week w: whoever volunteered first. */
+export function amirOf(members: Member[], w: string): { id: string; a: Amir } | null {
+  let best: { id: string; a: Amir } | null = null;
+  for (const m of members) if (m.amir?.w === w && (!best || m.amir.at < best.a.at)) best = { id: m.id, a: m.amir };
+  return best;
+}

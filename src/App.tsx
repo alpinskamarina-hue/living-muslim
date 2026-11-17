@@ -5,7 +5,7 @@ import { say } from './words';
 import { isCloud, currentCircle } from './cloud';
 import type { Anchor, Habit } from './types';
 import { useAppState } from './store';
-import { dayKey } from './dates';
+import { dayKey, addDays } from './dates';
 import { prayerTimes, windowState } from './prayer';
 import { Today } from './components/Today';
 import { HabitSheet } from './components/HabitSheet';
@@ -34,7 +34,7 @@ import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
-import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays } from './cweek';
+import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays, chDays, useMyChallenges, useMyAmir, CH_KINDS } from './cweek';
 import type { GoTo } from './guide';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
@@ -117,6 +117,8 @@ export function App() {
   const prayersToday = state.prayers?.[today] ?? {};
   const [myGoals, setMyGoal] = useMyGoals();
   const [myAsk, setMyAsk] = useMyAsk();
+  const myCh = useMyChallenges(today);
+  const [myAmir, setMyAmir] = useMyAmir();
   const summary = {
     day: today,
     done: active.filter((h) => isCounted(state.log[today]?.[h.id])).length,
@@ -130,6 +132,10 @@ export function App() {
     cgs: myGoals,
     ask: askLive(myAsk, today) ? myAsk : null,
     act: activeDays(state, today),
+    ...chDays(state, today),
+    chs: myCh.chs,
+    acc: myCh.acc,
+    amir: myAmir && myAmir.w === weekStart(today) ? myAmir : null,
     goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared && (!isCloud || !g.circles?.length || g.circles.includes(currentCircle()?.code ?? ''))).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
@@ -182,6 +188,12 @@ export function App() {
       support.push({ cls: 'invite', text: `🤲 ${circle.names[m.id]?.name || 'Брат из круга'} просит дуа: «${m.ask.t}»`, onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
     }
   }
+  if (joined && circle.me) {
+    for (const m of circle.members) for (const c of m.chs ?? []) {
+      if (c.to !== circle.me || myCh.acc.includes(c.id) || addDays(c.start, 2) < today) continue;
+      support.push({ cls: 'invite', text: `⚔️ ${circle.names[m.id]?.name || 'Брат'} бросает тебе вызов: ${CH_KINDS[c.k].label}`, onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+    }
+  }
   if (joined && circle.members.length > 1 && isFriday(today) && now.getHours() >= 14) {
     support.push({ text: '📊 Итог недели круга готов: посмотри и отправь братьям', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
   }
@@ -214,7 +226,7 @@ export function App() {
         {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (

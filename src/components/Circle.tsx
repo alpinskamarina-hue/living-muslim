@@ -17,8 +17,8 @@ import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite 
 import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
 import { FamilySection } from './Family';
-import { CircleGoal, WeekSummary, DuaAsks, StreakLine } from './CircleWeek';
-import type { CGoal, DuaAsk } from '../cweek';
+import { CircleGoal, WeekSummary, DuaAsks, StreakLine, Challenges, AmirCard } from './CircleWeek';
+import type { CGoal, DuaAsk, Challenge, Amir } from '../cweek';
 import { patchF, famOf } from '../family';
 
 interface Props {
@@ -38,6 +38,9 @@ interface Props {
   onCircleGoal: (g: CGoal) => void;
   myAsk: DuaAsk | null;
   onAsk: (a: DuaAsk | null) => void;
+  ch: { chs: Challenge[]; acc: string[]; add: (c: Challenge) => void; remove: (id: string) => void; accept: (id: string) => void };
+  amir: Amir | null;
+  onAmir: (a: Amir | null) => void;
 }
 
 const REACTIONS = [
@@ -45,7 +48,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -198,6 +201,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <>
           <WeekSummary members={members} reacts={reacts} me={me} today={today} title={cur?.title || 'Круг'} nameOf={(id) => names[id]?.name || 'Участник'} onSet={onCircleGoal} />
           <CircleGoal members={members} reacts={reacts} me={me} today={today} title={cur?.title || 'Круг'} nameOf={nm} onSet={onCircleGoal} />
+          {me && <AmirCard members={members} me={me} today={today} nameOf={nm} amir={amir} onAmir={onAmir} />}
         </>
       )}
 
@@ -209,6 +213,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
 
       {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={onAsk} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }} />}
+      {joined && me && !(alone && isCloud) && <Challenges members={members} me={me} today={today} nameOf={nm} ch={ch} />}
       {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
       {joined && isOwner && !isCloud && !members.some((m) => m.fam) && (
