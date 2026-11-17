@@ -8,6 +8,7 @@ import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
 import { Profile } from './components/Profile';
+import { syncPush } from './push';
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
@@ -57,6 +58,10 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const offKey = JSON.stringify(state.settings.offsets ?? {});
   const times = useMemo(() => prayerTimes({ ...place, offsets: state.settings.offsets }, now), [today, lat, lng, method, madhab, offKey]);
+  const remKey = JSON.stringify(state.settings.reminders ?? null);
+  useEffect(() => {
+    if (state.settings.reminders?.on) syncPush(state.settings, state.settings.reminders);
+  }, [lat, lng, method, madhab, offKey, remKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const { theme = 'auto', textScale = 1 } = state.settings;
   useEffect(() => {
     const r = document.documentElement;

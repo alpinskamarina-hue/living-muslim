@@ -1,7 +1,9 @@
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
 import { authMe, signInUrl, signOut } from '../auth';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
+import { isCloud } from '../cloud';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { METHODS, PLACES, type DayTimes } from '../prayer';
@@ -26,6 +28,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
   if (page === 'pro') return <ProPlans onBack={back} />;
   if (page === 'prayer') return <Sub title="Намазы" onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
   if (page === 'habits') return <Sub title="Мои привычки" onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
+  if (page === 'remind') return <Sub title="Напоминания" onBack={back}><RemindPage s={s} set={set} times={times} /></Sub>;
   if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
   if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
@@ -66,6 +69,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
         {!onClaude && <Row icon="👤" title="Аккаунт" sub={me ? `${me.email} · имя «${name}»` : 'Войти по почте, имя'} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
         <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
+        {isCloud && <Row icon="🔔" title="Напоминания" sub={s.reminders?.on ? `Включены · ${s.reminders.prayers.length} из 5 намазов` : (isStandalone() ? 'Выключены' : 'Установить на телефон, напоминания')} onClick={() => go('remind')} />}
         <Row icon="🌱" title="Мои привычки" sub={`${used} из ${ACTIVE_LIMIT} мест занято`} onClick={() => go('habits')} />
         <Row icon="🎨" title="Внешний вид" sub={`Тема ${theme} · текст ${s.textScale && s.textScale > 1 ? 'крупнее' : 'обычный'}`} onClick={() => go('look')} />
         <Row icon="💾" title="Данные" sub="Резервная копия, перенос, удаление" onClick={() => go('data')} />
@@ -78,7 +82,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
   );
 }
 
-type Page = 'main' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+type Page = 'main' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -234,6 +238,90 @@ function LookSettings({ s, set }: { s: AppState['settings']; set: SetFn }) {
         ))}
       </div>
       <p className="tiny">Настройки сохраняются на этом устройстве.</p>
+    </>
+  );
+}
+
+function RemindPage({ s, set, times }: { s: AppState['settings']; set: SetFn; times: DayTimes }) {
+  const [, tick] = useState(0);
+  useEffect(() => onInstallChange(() => tick((n) => n + 1)), []);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const r = { ...DEFAULT_PREFS, ...s.reminders };
+  const setR = (patch: Partial<typeof r>) => set({ reminders: { ...r, ...patch } });
+  const standalone = isStandalone();
+  const ios = isIOS();
+
+  const turnOn = async () => {
+    setBusy(true); setMsg('');
+    try {
+      const e = await enablePush(s, { ...r, on: true });
+      if (!e) { setR({ on: true }); setMsg('Готово. Первое напоминание придёт к ближайшему намазу.'); }
+      else if (e === 'ios-install') setMsg('На iPhone напоминания работают только после установки на экран «Домой». Сначала установи приложение, как написано выше.');
+      else if (e === 'denied') setMsg('Уведомления запрещены. Разреши их для этого сайта в настройках браузера или телефона и попробуй снова.');
+      else setMsg('Этот браузер не умеет присылать напоминания. Попробуй Chrome на Android или установи приложение на iPhone.');
+    } catch { setMsg('Не получилось связаться с сервером. Проверь интернет и попробуй ещё раз.'); }
+    setBusy(false);
+  };
+  const turnOff = async () => { setBusy(true); await disablePush(); setR({ on: false }); setMsg('Напоминания выключены.'); setBusy(false); };
+  const togglePrayer = (a: Anchor) => setR({ prayers: r.prayers.includes(a) ? r.prayers.filter((x) => x !== a) : ANCHORS.filter((x) => x === a || r.prayers.includes(x)) });
+
+  return (
+    <>
+      <div className="inst">
+        {standalone ? (
+          <p><b>✓ Приложение установлено.</b> Оно открывается с экрана телефона, как обычное приложение.</p>
+        ) : canPrompt() ? (
+          <>
+            <p><b>Установи Living Muslim на телефон.</b> Иконка на экране, открывается без браузера и работает без интернета.</p>
+            <button type="button" className="pri-btn big-btn" onClick={() => promptInstall()}>Установить</button>
+          </>
+        ) : ios ? (
+          <>
+            <p><b>Установи на iPhone в два касания.</b> Без этого iPhone не присылает напоминания.</p>
+            <ol><li>Открой сайт в Safari и нажми <b>Поделиться</b> (квадрат со стрелкой внизу экрана).</li><li>Выбери <b>«На экран „Домой“»</b> и нажми «Добавить».</li><li>Открой Living Muslim с иконки и вернись сюда.</li></ol>
+          </>
+        ) : (
+          <>
+            <p><b>Установи на телефон.</b> В Chrome открой меню <b>⋮</b> и выбери <b>«Установить приложение»</b> или «Добавить на главный экран».</p>
+          </>
+        )}
+      </div>
+
+      <h2 className="sub-h">Напоминания о намазах</h2>
+      <div className="chips5">
+        {ANCHORS.map((a) => (
+          <button key={a} type="button" aria-pressed={r.prayers.includes(a)} onClick={() => togglePrayer(a)}>
+            <span className="ar">{ANCHOR_LABEL[a].ar}</span>{ANCHOR_LABEL[a].ru}<small>{hhmm(times[a])}</small>
+          </button>
+        ))}
+      </div>
+      <label className="field">
+        <span>Когда напоминать</span>
+        <select value={r.before} onChange={(e) => setR({ before: Number(e.target.value) })}>
+          <option value={0}>В момент намаза</option>
+          <option value={5}>За 5 минут</option>
+          <option value={10}>За 10 минут</option>
+          <option value={15}>За 15 минут</option>
+          <option value={30}>За 30 минут</option>
+        </select>
+      </label>
+      <label className="field">
+        <span>Вечерняя мухасаба</span>
+        <select value={r.muhasaba} onChange={(e) => setR({ muhasaba: e.target.value })}>
+          <option value="">Не напоминать</option>
+          {['20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'].map((t) => <option key={t} value={t}>В {t}</option>)}
+        </select>
+      </label>
+
+      {r.on ? (
+        <button type="button" className="ghost-btn" disabled={busy} onClick={turnOff}>Выключить напоминания</button>
+      ) : (
+        <button type="button" className="pri-btn big-btn" disabled={busy || !r.prayers.length && !r.muhasaba} onClick={turnOn}>{busy ? 'Включаю…' : 'Включить напоминания'}</button>
+      )}
+      {msg && <p className="tiny">{msg}</p>}
+      {!pushSupported() && !msg && <p className="tiny">{ios && !standalone ? 'На iPhone сначала установи приложение на экран «Домой».' : 'В этом браузере напоминания могут не работать.'}</p>}
+      <p className="tiny">Сервер знает только твой город и время намазов, чтобы прислать напоминание. Привычки и заметки остаются на телефоне.</p>
     </>
   );
 }

@@ -40,6 +40,16 @@ export interface Settings {
   theme?: 'auto' | 'light' | 'dark';
   /** Text size: 1 normal, 1.1 large, 1.2 larger. */
   textScale?: number;
+  reminders?: ReminderPrefs;
+}
+
+export interface ReminderPrefs {
+  on: boolean;
+  prayers: Anchor[];
+  /** Minutes before the prayer time; 0 = at the time. */
+  before: number;
+  /** Evening muhasabah reminder, "HH:MM" or '' for off. */
+  muhasaba: string;
 }
 
 export interface AppState {

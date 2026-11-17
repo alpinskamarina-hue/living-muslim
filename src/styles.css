@@ -773,3 +773,13 @@ button:disabled { opacity: .5; cursor: default; }
 .seg3 button[aria-checked="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 .wipe { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
 .row2 .danger { width: auto; margin: 0; padding: 10px 18px; }
+.inst { border-radius: 18px; padding: 14px 16px; background: var(--gold-soft); margin-bottom: 8px; }
+.inst p { margin: 0 0 8px; font-size: 14.5px; }
+.inst p:last-child { margin: 0; }
+.inst ol { margin: 0; padding-left: 20px; font-size: 14px; display: grid; gap: 4px; }
+.inst .big-btn { width: 100%; }
+.chips5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+.chips5 button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 2px; display: grid; gap: 1px; font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.chips5 button .ar { font-family: var(--f-ar); font-size: 15px; color: var(--gold); font-weight: 400; }
+.chips5 button small { font-size: 11px; font-weight: 500; }
+.chips5 button[aria-pressed="true"] { border-color: var(--green-2); background: var(--green-soft); color: var(--ink); }
