@@ -9,6 +9,9 @@ import { IftarSection } from './Iftar';
 import { CloudSetup, CloudInvite } from './CloudCircle';
 import { isCloud } from '../cloud';
 import { useEffect } from 'react';
+import type { Anchor, AppState } from '../types';
+import { FamilySection } from './Family';
+import { patchF } from '../family';
 
 interface Props {
   circle: CircleApi;
@@ -21,6 +24,9 @@ interface Props {
   myReady: number;
   khatm: KhatmApi;
   iftar: IftarApi;
+  state: AppState;
+  update: (fn: (s: AppState) => AppState) => void;
+  current: Anchor;
 }
 
 const REACTIONS = [
@@ -28,7 +34,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   useEffect(() => {
     // Just created or joined a circle on the standalone site: share today's total right away.
@@ -103,7 +109,16 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </>
       )}
 
-      <h2 className="sub-h">Участники <small>{members.length}</small></h2>
+      {joined && members.some((m) => m.fam) && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
+      {joined && isOwner && !members.some((m) => m.fam) && (
+        <div className="fam-on">
+          <b>Это ваша семья?</b>
+          <p>Включите семейный круг: намаз вместе дома, детские профили с наклейками, общий семейный сад и семейное обещание.</p>
+          <button type="button" className="pri-btn" onClick={() => update((s) => patchF(s, () => ({ on: true })))}>Сделать круг семейным</button>
+        </div>
+      )}
+
+      <h2 className="sub-h">{members.some((m) => m.fam) ? 'Взрослые' : 'Участники'} <small>{members.length}</small></h2>
       {members.length === 0 && <p className="tiny">Пока никого. Присоединись первым и пригласи близких.</p>}
       <div className="members">
         {sorted.map((m) => {
@@ -160,6 +175,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <b>Как пригласить</b>
           <p>Открой меню «Поделиться» у этой страницы на claude.ai и добавь человека с уровнем «Участник» (Contributor). Он откроет ту же ссылку, нажмёт «Присоединиться», и вы увидите друг друга.</p>
         </div>
+      )}
+
+      {joined && isOwner && members.some((m) => m.fam) && (
+        <button type="button" className="link-btn" onClick={() => { if (confirm('Выключить семейный режим? Детские профили останутся на этом телефоне.')) update((s) => patchF(s, () => ({ on: false }))); }}>Выключить семейный режим</button>
       )}
 
       {joined && !isCloud && (

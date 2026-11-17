@@ -24,6 +24,7 @@ import { Safar } from './components/Safar';
 import { Ramadan } from './components/Ramadan';
 import { ramadanHidden } from './rplan';
 import { weekTotals } from './gamify';
+import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
@@ -107,6 +108,18 @@ export function App() {
     goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
+  // Family circles share more: counted days, the children kept on this phone, prayers together.
+  const fam = famOf(state);
+  const familyOn = Boolean((circle.isOwner && fam.on) || circle.members.some((m) => m.fam && m.id !== circle.me));
+  const litKey = useMemo(() => (familyOn ? myLitDays(state, today) : []), [familyOn, today, state.log, state.prayers, state.habits]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (familyOn) {
+    Object.assign(summary, {
+      lit: litKey,
+      kids: kidSummaries(state, today),
+      tog: { day: today, a: fam.together[today] ?? [], week: togWeek(state, today) },
+      ...(circle.isOwner ? { fam: Boolean(fam.on), promise: fam.promise ?? null } : {}),
+    });
+  }
   const summaryKey = JSON.stringify(summary);
   // Keep my circle total in step with what I mark; push only when it actually changes.
   useEffect(() => {
@@ -143,7 +156,7 @@ export function App() {
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => setRamadan(true)} />}
         {tab === 'progress' && (

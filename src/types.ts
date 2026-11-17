@@ -77,6 +77,24 @@ export interface AppState {
   ramadan?: RamadanState;
   goalReview?: string; // day of the last weekly review
   pastTrips?: { from: string; to: string }[];
+  family?: FamilyState;
+}
+
+export interface KidTask { id: string; t: string; icon: string }
+export interface Kid {
+  id: string;
+  name: string;
+  age: number;
+  color: string;
+  tasks: KidTask[];
+  log: Record<string, string[]>; // day -> task ids done
+  created: string;
+}
+export interface FamilyState {
+  kids: Kid[];
+  together: Record<string, Anchor[]>; // day -> prayers prayed together at home
+  promise?: { text: string; days: number } | null;
+  on?: boolean; // owner turned the circle into a family circle
 }
 
 export interface BookMeta {

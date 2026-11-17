@@ -3,7 +3,7 @@ import type { AppState } from '../types';
 import { garden, journey, milestones } from '../gamify';
 import { plural } from '../dates';
 
-const BRANCHES = [
+export const BRANCHES = [
   'M177 205 C155 192 135 178 116 158',
   'M178 188 C202 175 222 160 238 138',
   'M177 160 C166 140 160 122 156 100',
@@ -13,10 +13,10 @@ const BRANCHES = [
   'M177 135 C174 115 175 95 178 72',
   'M178 172 C150 160 128 140 108 122',
 ];
-const FRUITS: [number, number][] = [[128, 170], [226, 150], [160, 112], [200, 104], [110, 200], [246, 190], [178, 84], [120, 134]];
+export const FRUITS: [number, number][] = [[128, 170], [226, 150], [160, 112], [200, 104], [110, 200], [246, 190], [178, 84], [120, 134]];
 
 // Fixed pseudo-random leaf spots in the crown, the same on every render.
-const LEAVES: [number, number, number][] = (() => {
+export const LEAVES: [number, number, number][] = (() => {
   const out: [number, number, number][] = [];
   let x = 7;
   const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
