@@ -1777,3 +1777,42 @@ button:disabled { opacity: .5; cursor: default; }
 .guide-web { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
 .guide-web a, .guide-web button { flex: 1 1 140px; text-align: center; text-decoration: none; font: inherit; font-size: 14px; font-weight: 700; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
 .guide-web a:first-child { background: var(--green); color: #fff; border-color: transparent; }
+
+/* Owner analytics */
+.adm-entry { background: linear-gradient(135deg, #1d3b5a, #2f6f9f); }
+.adm-badge { background: rgba(255,255,255,.18); font-size: 16px; letter-spacing: 0; padding: 4px 7px; }
+.adm { display: flex; flex-direction: column; gap: 12px; }
+.adm-seg { padding: 0; max-width: none; }
+.adm-seg button { font-size: 13px; padding: 7px 4px; }
+.adm-busy { opacity: .55; transition: opacity .2s; }
+.adm-kpi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.adm-kpi div, .adm-grid div { background: var(--surface); border: 1.5px solid var(--line); border-radius: 16px; padding: 12px 14px; min-width: 0; }
+.adm-kpi b { display: block; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--ink); }
+.adm-kpi small, .adm-grid small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.adm-box { background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; padding: 12px 14px; margin-top: 10px; }
+.adm-box h3 { margin: 0 0 10px; font-size: 15px; }
+.adm-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 34px; gap: 10px; align-items: center; padding: 4px 0; font-size: 13.5px; }
+.adm-k { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.adm-bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.adm-bar i { display: block; height: 100%; border-radius: 99px; background: var(--green-2); }
+.adm-chart { display: flex; align-items: stretch; gap: 3px; height: 150px; }
+.adm-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.adm-stack { position: relative; flex: 1; display: flex; align-items: flex-end; }
+.adm-stack > i.v { display: flex; align-items: flex-end; width: 100%; min-height: 2px; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--green-2) 35%, transparent); }
+.adm-stack i.a { display: block; width: 100%; border-radius: 4px 4px 0 0; background: var(--green-2); }
+.adm-stack em.s { position: absolute; left: 50%; width: 8px; height: 8px; margin: 0 0 -4px -4px; border-radius: 50%; background: var(--gold); border: 2px solid var(--surface); }
+.adm-col small { height: 14px; font-size: 10px; color: var(--ink-2); text-align: center; white-space: nowrap; overflow: visible; }
+.adm-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+.adm-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.adm-legend i.v { background: color-mix(in srgb, var(--green-2) 35%, transparent); }
+.adm-legend i.a { background: var(--green-2); }
+.adm-legend i.s { background: var(--gold); border-radius: 50%; }
+.adm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.adm-grid div { background: var(--surface-2); border: 0; }
+.adm-grid b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.adm-recent div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.adm-recent div:first-child { border-top: 0; }
+.adm-recent span { min-width: 0; }
+.adm-recent span b, .adm-recent span small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-recent small { color: var(--ink-2); font-size: 12px; flex: none; }

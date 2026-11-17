@@ -1,4 +1,5 @@
 import { GuidePage } from './Guide';
+import { AdminPage, useIsAdmin } from './Admin';
 import type { GoTo } from '../guide';
 import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
@@ -34,6 +35,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const [page, setPage] = useState<Page>(start ?? 'main');
   const [, bump] = useState(0);
   const [nicks, setNicks] = useState(false);
+  const admin = useIsAdmin();
   useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
   const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
@@ -48,6 +50,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'words') return <Sub title="Фразы и напоминания" onBack={back}><WordsSettings s={s} set={set} /></Sub>;
   if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
+  if (page === 'admin') return <Sub title="Аналитика" onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title="Как пользоваться" onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
   if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
   if (page === 'me') return <Sub title="Мой профиль" onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} /></Sub>;
@@ -82,6 +85,14 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         </div>
       </div>
 
+      {admin && (
+        <button type="button" className="pro-entry adm-entry" onClick={() => go('admin')}>
+          <span className="pro-badge adm-badge">📊</span>
+          <span><b>Аналитика</b><small>Кто заходит, откуда, сколько регистраций. Видно только тебе</small></span>
+          <i aria-hidden="true">›</i>
+        </button>
+      )}
+
       <button type="button" className="pro-entry" onClick={() => go('pro')}>
         <span className="pro-badge">PRO</span>
         <span><b>Living Muslim Pro</b><small>Цели, книги, курсы, большой Круг. 14 дней бесплатно</small></span>
@@ -115,7 +126,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
