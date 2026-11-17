@@ -350,32 +350,38 @@ export function UmrahPlan({ host, trip, api, nameOf, going, onOpenGuide }: Props
   }
 }
 
-/** The umrah pass: one payment per group. A price screen only for now, nothing is charged and nothing is closed. */
-function PassCard({ isHost, going }: { isHost: boolean; going: number }) {
+/** Umrah pass price: €10 for one person; a group of up to 4 pays €30; each person after 4 adds €7.50. */
+export function passPrice(n: number) { return n <= 1 ? 10 : n <= 3 ? n * 10 : 30 + (n - 4) * 7.5; }
+const eur = (x: number) => `€${Number.isInteger(x) ? x : x.toFixed(2).replace('.', ',')}`;
+
+/** The umrah pass. A price screen only for now, nothing is charged and nothing is closed. */
+export function PassCard({ isHost, going }: { isHost: boolean; going: number }) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
   const n = Math.max(1, going);
+  const price = passPrice(n);
+  const solo = n === 1;
   const soon = (what: string) => setNote(`${what} появится, когда подключим оплату. Сейчас совместная умра открыта всем бесплатно.`);
   return (
     <div className={`up-pass${open ? ' open' : ''}`}>
       <button type="button" className="up-pass-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span>🎟️</span>
-        <span><b>Пропуск на умру</b><small>€30 на всю группу · €{(30 / n).toFixed(2).replace('.', ',')} с человека</small></span>
+        <span><b>Пропуск на умру</b><small>{solo ? '€10 на одного' : `${eur(price)} на группу из ${n} · ${eur(price / n)} с человека`}</small></span>
         <i aria-hidden="true">{open ? '▴' : '▾'}</i>
       </button>
       {open && (
         <div className="up-body">
-          <div className="up-pass-price"><b>€30</b><span>на всю группу, один раз</span><small>€20, если у собирающего есть Pro</small></div>
+          <div className="up-pass-price"><b>{eur(price)}</b><span>{solo ? 'один раз на поездку' : `на всю группу из ${n}, один раз`}</span><small>Один человек €10 · группа до 4 человек €30 · дальше +€7,50 за каждого</small></div>
           <ul className="up-pass-list">
-            <li>Все 9 шагов для всей группы: даты, жильё, документы, общая касса</li>
-            <li>Действует до возвращения и ещё 30 дней, чтобы закрыть расчёты</li>
-            <li>Платит собирающий или группа делит поровну</li>
-            <li><b>€5 с каждого пропуска идут в общий фонд.</b> Из каждых шести оплаченных пропусков один дарим группе, которой сейчас трудно оплатить</li>
+            <li>{solo ? 'Весь путь умры: подготовка, обряды со счётчиком, микат, «Я потерялся», дуа у Каабы, 40 дней после' : 'Все 9 шагов для всей группы: даты, жильё, документы, общая касса, радар группы'}</li>
+            <li>{solo ? 'Действует до возвращения и ещё 40 дней после' : 'Действует до возвращения и ещё 30 дней, чтобы закрыть расчёты'}</li>
+            {!solo && <li>Платит собирающий или группа делит поровну</li>}
+            <li><b>Часть каждого пропуска идёт в общий фонд.</b> Из каждых шести оплаченных пропусков один дарим тому, кому сейчас трудно оплатить</li>
           </ul>
           {isHost ? (
             <>
-              <button type="button" className="pri-btn big-btn" onClick={() => soon('Оплата пропуска')}>Оплатить €30</button>
-              <button type="button" className="ghost-btn" onClick={() => soon('Разделить оплату')}>Разделить на {n}: по €{(30 / n).toFixed(2).replace('.', ',')}</button>
+              <button type="button" className="pri-btn big-btn" onClick={() => soon('Оплата пропуска')}>Оплатить {eur(price)}</button>
+              {!solo && <button type="button" className="ghost-btn" onClick={() => soon('Разделить оплату')}>Разделить на {n}: по {eur(price / n)}</button>}
             </>
           ) : (
             <p className="tiny">Пропуск оформляет тот, кто собирает поездку. Если группа решит делить, каждому придёт его доля.</p>

@@ -12,6 +12,7 @@ import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
 import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
 import { Badal, MadinahGuide, WhenToGo } from './UmrahExtra';
 import { UmrahBook } from './UmrahBook';
+import { PassCard } from './UmrahPlan';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
@@ -241,6 +242,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           ) : (
             <p className="tiny">Чтобы поехать группой, войди в Круг: там собираются поездки, даты, жильё и общая касса.</p>
           )}
+          {myTrips.length === 0 && <PassCard isHost going={1} />}
           {myTrips.length === 0 && (
             <div className="um-solo">
               <b>Едешь один или с агентством?</b>
