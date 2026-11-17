@@ -47,6 +47,8 @@ export interface Settings {
   words?: 'normal' | 'calm' | 'phrases';
   /** Interface language. For now only Ramadan and its reminders speak English. */
   lang?: 'ru' | 'en';
+  /** Night colours in Ramadan; default on. */
+  ramadanTheme?: boolean;
 }
 
 export interface ReminderPrefs {
@@ -112,6 +114,8 @@ export interface Kid {
   tasks: KidTask[];
   log: Record<string, string[]>; // day -> task ids done
   created: string;
+  /** Ramadan for children: day -> fast (full or until midday) and the good deed of the day. */
+  ramadan?: Record<string, { fast?: 'full' | 'half'; deed?: boolean }>;
 }
 export interface FamilyState {
   kids: Kid[];
@@ -263,6 +267,14 @@ export interface SadaqaState {
   cur: string;
   ramadan: { total: number; odd2: boolean; given: number[] } | null; // given = nights (21..30) already sent
   jariya: { id: string; title: string; kind: string; forWhom?: string; date: string }[];
+  zakat?: ZakatState;
+}
+export interface ZakatState {
+  basis: 'gold' | 'silver';
+  gold: number; // price of 1 g of gold
+  silver: number; // price of 1 g of silver
+  items: Record<string, number>; // cash, bank, gold, silver, invest, goods, owed, debts
+  paid: { date: string; amt: number }[];
 }
 
 export type FastMark = 'fast' | 'ill' | 'travel' | 'period' | 'other' | 'chronic';
@@ -278,5 +290,7 @@ export interface RamadanState {
   deeds?: Record<string, number[]>; // hijri year -> days of the 30-day programme whose good deed is done
   duas?: RDua[]; // personal dua list, private
   qadr?: Record<string, string[]>; // day of the evening -> night plan items done
+  qadaPlan?: { perWeek: number; from: string } | null; // making up missed fasts: days per week from a date
+  fidyaPrice?: number; // price of one meal for fidyah, in the sadaqa currency
 }
 export interface RDua { id: string; t: string; at: string; ok?: string }

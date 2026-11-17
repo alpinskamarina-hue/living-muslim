@@ -6,6 +6,7 @@ import { famOf, familyDays, newKid, participants, patchF, STICKERS, tasksFor, to
 import { plural } from '../dates';
 import { uid } from '../store';
 import { BRANCHES, FRUITS, LEAVES } from './Garden';
+import { KidRamadan } from './KidRamadan';
 
 interface Props {
   state: AppState;
@@ -225,6 +226,7 @@ function KidScreen({ kid, update, today, praise, onClose }: { kid: Kid; update: 
           </>
         ) : (
           <>
+            <KidRamadan kid={kid} update={update} today={today} />
             <div className="kid-tiles">
               {kid.tasks.map((t) => {
                 const on = done.includes(t.id);

@@ -1,3 +1,4 @@
+import { inRamadan } from '../rplan';
 import { THANKS, g, say, type Sex, type To } from '../words';
 import { sexOf } from './Words';
 import type { CircleApi, Member, Reacts } from '../circle';
@@ -204,6 +205,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </div>
       )}
 
+      {joined && inRamadan(today) && members.length > 1 && (() => {
+        const fasting = members.filter((m) => m.day === today && m.fast).length;
+        return <div className="rm-together"><span aria-hidden="true">🌙</span><span>Постимся вместе: <b>{fasting}</b> из {members.length} сегодня</span></div>;
+      })()}
       {members.length > 0 && !(alone && isCloud) && (
         <>
           <h3 className="ch-h">{familyKind ? 'Взрослые' : 'Участники'} <small>{members.length}</small></h3>

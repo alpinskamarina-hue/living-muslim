@@ -1,3 +1,4 @@
+import { Zakat } from './Zakat';
 import { useState } from 'react';
 import type { AppState, SadaqaDay, SadaqaState } from '../types';
 import { addDays, fromKey } from '../dates';
@@ -68,7 +69,7 @@ function Money({ v, cur, secret }: { v: number; cur: string; secret: boolean }) 
 }
 
 export function Sadaqa({ state, update, today, onExit }: Props) {
-  const [tab, setTab] = useState<'day' | 'ramadan' | 'jariya'>('day');
+  const [tab, setTab] = useState<'day' | 'ramadan' | 'jariya' | 'zakat'>('day');
   const q = sadaqaOf(state);
   const d = q.days[today] ?? {};
   const [amt, setAmt] = useState(d.amt ? String(d.amt) : '');
@@ -91,7 +92,7 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
         <div><b>Садака</b><small>Понемногу, но постоянно. Об этом знаете ты и Аллах</small></div>
       </div>
       <div className="seg">
-        {([['day', 'День'], ['ramadan', 'Рамадан'], ['jariya', 'Джария']] as const).map(([k, l]) => (
+        {([['day', 'День'], ['ramadan', 'Рамадан'], ['jariya', 'Джария'], ['zakat', 'Закят']] as const).map(([k, l]) => (
           <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
@@ -142,6 +143,7 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
 
         {tab === 'ramadan' && <Ramadan q={q} update={update} today={today} />}
         {tab === 'jariya' && <Jariya q={q} update={update} today={today} />}
+        {tab === 'zakat' && <Zakat state={state} update={update} l={state.settings.lang ?? 'ru'} />}
       </div>
     </div>
   );

@@ -76,6 +76,11 @@ export function App() {
     if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
     document.body.style.zoom = textScale === 1 ? '' : String(textScale);
   }, [theme, textScale]);
+  const season = inRamadan(today) && state.settings.ramadanTheme !== false ? 'ramadan' : '';
+  useEffect(() => {
+    const r = document.documentElement;
+    if (season) r.setAttribute('data-season', season); else r.removeAttribute('data-season');
+  }, [season]);
   const [safar, setSafar] = useState(false);
   const [ramadan, setRamadan] = useState<false | string>(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
