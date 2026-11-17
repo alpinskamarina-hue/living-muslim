@@ -47,7 +47,7 @@ button:disabled { opacity: .5; cursor: default; }
 .top b { font-family: var(--f-display); font-size: 28px; font-weight: 700; line-height: 1.05; display: block; }
 .top .row small { font-size: 12.5px; color: var(--on-dark-2); }
 .ring { position: relative; width: 62px; height: 62px; flex: none; }
-.ring svg { width: 62px; height: 62px; transform: rotate(-90deg); }
+.ring > svg { width: 62px; height: 62px; transform: rotate(-90deg); }
 .ring circle { transition: stroke-dashoffset .4s ease; }
 .ring span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
 
@@ -783,3 +783,40 @@ button:disabled { opacity: .5; cursor: default; }
 .chips5 button .ar { font-family: var(--f-ar); font-size: 15px; color: var(--gold); font-weight: 400; }
 .chips5 button small { font-size: 11px; font-weight: 500; }
 .chips5 button[aria-pressed="true"] { border-color: var(--green-2); background: var(--green-soft); color: var(--ink); }
+
+/* gamification: light of the day, soft streak, garden */
+:root { --gold-light: #e3b964; }
+.ring.light { border: 0; background: none; padding: 0; color: var(--on-dark); cursor: pointer; }
+.ring.light span small { font-size: 10px; font-weight: 600; color: var(--on-dark-2); }
+.ring.light span svg { color: var(--gold-light); }
+.streak-line { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; border-radius: 14px; padding: 10px 14px; margin: 10px 14px 0; width: calc(100% - 28px); background: var(--gold-soft); color: var(--ink); }
+.streak-line > svg { width: 26px; height: 26px; flex: none; color: var(--gold); }
+.streak-line span { flex: 1; min-width: 0; }
+.streak-line b { display: block; font-size: 14.5px; }
+.streak-line small { display: block; font-size: 12px; color: var(--ink-2); }
+.streak-line > i { font-style: normal; font-size: 20px; opacity: .45; }
+
+.garden-box { position: relative; border-radius: 20px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+.garden-box svg { display: block; width: 100%; height: auto; }
+.garden-tag { position: absolute; top: 12px; left: 12px; background: var(--surface); border-radius: 12px; padding: 7px 11px; }
+.garden-tag b { display: block; font-size: 14.5px; }
+.garden-tag small { display: block; font-size: 12px; color: var(--ink-2); }
+.garden-note { font-size: 12.5px; color: var(--ink-2); margin: 10px 2px 4px; }
+.ms { display: flex; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; margin-top: 8px; }
+.ms.off { border-style: dashed; }
+.ms .ms-n { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; box-sizing: border-box; border: 2px solid var(--gold); color: var(--gold); }
+.ms:not(.off) .ms-n { background: var(--gold); color: #fff; }
+.ms .ms-x { flex: 1; min-width: 0; }
+.ms b { display: block; font-size: 14.5px; }
+.ms small { display: block; font-size: 12px; color: var(--ink-2); }
+.ms .bar2 { display: block; height: 5px; border-radius: 5px; background: var(--line); overflow: hidden; margin: 5px 0 2px; }
+.ms .bar2 i { display: block; height: 100%; background: var(--gold); }
+.week-card { border-radius: 18px; padding: 14px; background: var(--green); color: var(--on-dark); margin-bottom: 4px; }
+.week-card h3 { margin: 0 0 10px; font-family: var(--f-display); font-size: 22px; }
+.week-card .wk { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.week-card .wk div { background: rgba(255, 255, 255, .1); border-radius: 12px; padding: 9px 10px; }
+.week-card .wk b { display: block; font-size: 21px; }
+.week-card .wk small { display: block; font-size: 11px; color: var(--on-dark-2); }
+.week-card p { margin: 10px 0 0; font-size: 12.5px; color: var(--on-dark-2); }
+.m-react .nudge { width: auto; border-radius: 20px; padding: 0 12px; font-size: 13px; font-weight: 600; background: var(--green); color: #fff; border-color: var(--green); }
+.m-react .nudge[aria-pressed="true"] { background: var(--surface); color: var(--ink-2); border-color: var(--line); }

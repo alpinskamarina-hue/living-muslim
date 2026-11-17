@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { dayLight, journey } from '../gamify';
 import type { Anchor, AppState, Habit, Mark } from '../types';
 import { ANCHORS, ANCHOR_LABEL } from '../types';
 import { atRisk, isCounted, setMark, streak, toggleHard } from '../store';
-import { durationLabel, gregorianLabel, hhmm, hijriLabel } from '../dates';
+import { durationLabel, gregorianLabel, hhmm, hijriLabel, plural } from '../dates';
 import { type DayTimes, windowState, windowStatus } from '../prayer';
 import { HabitCard, Ticks } from './HabitCard';
 import { Ornament } from './Ornament';
@@ -27,17 +28,21 @@ interface Props {
   onGoal: (id: string) => void;
   onReview: () => void;
   onRamadan: () => void;
+  onGarden: () => void;
+  support?: { text: string; onOpen: () => void }[];
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
   const paused = onTrip ? state.trip?.paused ?? [] : [];
   const active = state.habits.filter((h) => h.status === 'active' && !paused.includes(h.id) && !ramadanHidden(state, h, today));
   const log = state.log[today] ?? {};
-  const doneCount = active.filter((h) => isCounted(log[h.id])).length;
   const C = 163.4;
+  const SEG = C / 5;
+  const light = dayLight(state, today);
+  const j = useMemo(() => journey(state, today), [state.log, state.prayers, state.hard, state.habits, state.trip, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mark = (id: string) => (m: Mark | null) => update((s) => setMark(s, today, id, m));
 
@@ -88,18 +93,42 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
             <b>{title}</b>
             <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? '🧭 в пути' : '🧭 Сафар'}</button></small>
           </div>
-          <div className="ring" aria-label={`Сделано ${doneCount} из ${active.length}`}>
-            <svg viewBox="0 0 62 62">
-              <circle cx="31" cy="31" r="26" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="6" />
-              <circle cx="31" cy="31" r="26" fill="none" stroke="var(--gold)" strokeWidth="6" strokeLinecap="round"
-                strokeDasharray={C} strokeDashoffset={active.length ? C - (C * doneCount) / active.length : C} />
+          <button type="button" className="ring light" onClick={onGarden} aria-label={`Свет дня: ${Math.round(light.total * 100)}%. Открыть мой сад`}>
+            <svg viewBox="0 0 62 62" aria-hidden="true">
+              {light.windows.map((f, i) => (
+                <g key={i}>
+                  <circle cx="31" cy="31" r="26" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="6" strokeLinecap="round"
+                    strokeDasharray={`${SEG - 11} ${C}`} strokeDashoffset={-i * SEG - 5.5} />
+                  {f > 0 && (
+                    <circle cx="31" cy="31" r="26" fill="none" stroke="var(--gold-light)" strokeWidth="6" strokeLinecap="round"
+                      strokeDasharray={`${Math.max(0.5, (SEG - 11) * f)} ${C}`} strokeDashoffset={-i * SEG - 5.5} />
+                  )}
+                </g>
+              ))}
             </svg>
-            <span>{doneCount}/{active.length}</span>
-          </div>
+            <span>{light.lit ? <Sun /> : <small>свет</small>}</span>
+          </button>
         </div>
       </header>
 
       <div className="scroll">
+        {(j.streak > 0 || j.lit > 0) && (
+          <button type="button" className="streak-line" onClick={onGarden}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21V11M12 11C12 7 9 5 5 5c0 4 3 6 7 6zM12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z" /></svg>
+            <span>
+              <b>{j.streak > 0 ? `Серия ${j.streak} ${plural(j.streak, 'день', 'дня', 'дней')}` : 'Начни серию сегодня'}</b>
+              <small>
+                {j.pausedToday ? 'Сегодня пауза: серия не сгорит' : j.litToday ? 'Сегодня засчитан, машаАллах' : j.repairLeft ? 'Один пропуск в неделю простится' : 'Пропуск на этой неделе уже был: сегодня важно'}
+              </small>
+            </span>
+            <i aria-hidden="true">›</i>
+          </button>
+        )}
+        {(support ?? []).map((x, i) => (
+          <button key={i} type="button" className="circle-line support" onClick={x.onOpen}>
+            <span>{x.text}</span><span aria-hidden="true">›</span>
+          </button>
+        ))}
         {(() => {
           const g = (state.goals ?? []).find((x) => x.status === 'active');
           if (!g) return null;
@@ -206,5 +235,13 @@ function Muhasaba({ value, onChange }: { value: string; onChange: (v: string) =>
       <p>Что сегодня получилось и что завтра сделать лучше? Одной-двумя фразами.</p>
       <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} placeholder="Сегодня я…" />
     </div>
+  );
+}
+
+function Sun() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
   );
 }

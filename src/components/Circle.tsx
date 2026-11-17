@@ -76,6 +76,23 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <button type="button" className="pri-btn big-btn" onClick={onJoin}>Присоединиться</button>
         </div>
       ) : (
+        <>
+        {(() => {
+          const wk = members.reduce((a, m) => ({ p: a.p + (m.week?.p ?? 0), h: a.h + (m.week?.h ?? 0) }), { p: 0, h: 0 });
+          let duas = 0;
+          for (const [from, map] of Object.entries(reacts)) for (const [to, r] of Object.entries(map ?? {})) if (to !== from && !to.startsWith('n:') && r?.e === '🤲' && r.day === today) duas++;
+          return (
+            <div className="week-card">
+              <h3>Вместе за неделю</h3>
+              <div className="wk">
+                <div><b>{wk.p}</b><small>{plural(wk.p, 'намаз отмечен', 'намаза отмечено', 'намазов отмечено')}</small></div>
+                <div><b>{wk.h}</b><small>{plural(wk.h, 'привычка', 'привычки', 'привычек')} сделано</small></div>
+                <div><b>{duas}</b><small>{plural(duas, 'дуа', 'дуа', 'дуа')} друг за друга сегодня</small></div>
+              </div>
+              <p>Общий счёт круга, без рейтинга: каждый добавляет свой свет.</p>
+            </div>
+          );
+        })()}
         <div className="stat-card">
           <div className="big">{activeToday}</div>
           <div>
@@ -83,6 +100,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             <small>твой итог обновляется сам, когда ты отмечаешь</small>
           </div>
         </div>
+        </>
       )}
 
       <h2 className="sub-h">Участники <small>{members.length}</small></h2>
@@ -94,6 +112,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           const fresh = m.day === today;
           const got = received(m.id);
           const mine = me ? reacts[me]?.[m.id] : undefined;
+          const empty = !fresh || (m.done === 0 && m.prayers === 0);
+          const nudged = Boolean(me && reacts[me]?.[`n:${m.id}`]?.day === today);
           return (
             <div className="member" key={m.id}>
               {p?.avatarUrl ? <img className="ava" src={p.avatarUrl} alt="" /> : <span className="ava" style={{ background: p?.color }} />}
@@ -115,6 +135,11 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                       {r.e}
                     </button>
                   ))}
+                  {empty && (
+                    <button type="button" className="nudge" aria-pressed={nudged} onClick={() => circle.nudge(m.id, today)}>
+                      {nudged ? 'Отправлено' : 'Подтолкнуть'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -126,7 +151,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       <KhatmSection api={khatm} today={today} nameOf={(id) => names[id]?.name || khatm.names[id] || umrah.names[id] || 'Участник'} />
       <UmrahTrips api={umrah} myReady={myReady} nameOf={(id) => names[id]?.name || umrah.names[id] || khatm.names[id] || 'Участник'} />
 
-      <p className="tiny">🤲 — «сделал за тебя дуа», ✨ — «машаАллах». Лайков и счётчиков подписчиков нет: круг для поддержки, не для показа.</p>
+      <p className="tiny">🤲 — «сделал за тебя дуа», ✨ — «машаАллах», «Подтолкнуть» — мягкое напоминание другу, у которого сегодня пусто. Лайков, рейтингов и сравнения нет: круг для поддержки, не для показа.</p>
 
       {isCloud && <CloudInvite isOwner={isOwner} />}
 
