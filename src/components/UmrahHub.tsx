@@ -8,6 +8,7 @@ import { MiqatView } from './Miqat';
 import { UmrahSavings } from './UmrahSavings';
 import { UmrahLive } from './UmrahLive';
 import { TalbiyaLearn, WalkPlan } from './UmrahPrep';
+import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -37,6 +38,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
   const [tab, setTab] = useState<HubTab>(start ?? 'heart');
   const [step, setStep] = useState<Step | null>(null);
   const [miqat, setMiqat] = useState(false);
+  const [lost, setLost] = useState(false);
   const u = umrahOf(state);
   const { me, trips, rsvp, duas } = api;
 
@@ -62,6 +64,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
   if (step) return <StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} />;
 
+  if (lost) return <LostCard state={state} onClose={() => setLost(false)} />;
   if (miqat) return <MiqatView state={state} update={update} onBack={() => setMiqat(false)} />;
 
 
@@ -109,6 +112,11 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           <>
             <b>Ты в пути. Ляббайк, Аллахумма ляббайк</b>
             <p>Гид работает без интернета. Таваф {u.tawaf}/7, саи {u.saee}/7.</p>
+            <LeaveForPrayer state={state} />
+            <div className="os-row">
+              <button type="button" onClick={() => setLost(true)}>🆘 Я потерялся</button>
+              <button type="button" onClick={() => setTab('trip')}>📍 {u.site?.meet ? u.site.meet : 'Точка встречи'}</button>
+            </div>
             {!u.ihram && <button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте</button>}
             <button type="button" className="pri-btn" onClick={() => setTab('rites')}>Открыть обряды</button>
           </>
@@ -192,7 +200,9 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
       {tab === 'trip' && (
         <div className="um-sec">
+          {(phase === 'week' || phase === 'there') && <OnSiteSetup state={state} update={update} />}
           <UmrahSavings state={state} update={update} today={today} />
+          {phase !== 'week' && phase !== 'there' && <OnSiteSetup state={state} update={update} />}
           {api.me ? (
             <UmrahTrips api={api} myReady={prepPct(state)} nameOf={nameOf} embedded />
           ) : (
