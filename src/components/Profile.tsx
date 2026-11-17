@@ -11,7 +11,7 @@ import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { RamadanPushFields } from './Ramadan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
-import { isCloud, nicksReady } from '../cloud';
+import { isCloud, nicksReady, forgetIdentity } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
@@ -519,7 +519,13 @@ function AccountCard() {
   return (
     <div className="acct">
       <span><b>{me.email}</b><small>Ты вошёл по почте</small></span>
-      <button type="button" className="link-btn" onClick={async () => { if (confirm('Выйти из аккаунта на этом устройстве? Привычки и отметки останутся здесь.')) { await signOut(); location.reload(); } }}>Выйти</button>
+      <button type="button" className="link-btn" onClick={async () => {
+        if (!confirm('Выйти из аккаунта на этом устройстве? Круги и профиль вернутся, когда снова войдёшь по этой почте.')) return;
+        const wipe = confirm('Удалить с этого телефона и твои привычки, намазы и заметки? Нажми «Отмена», если телефон только твой и их надо оставить.');
+        await signOut(); forgetIdentity();
+        if (wipe) { try { Object.keys(localStorage).filter((k) => k.startsWith('lm.') || k === 'qadam.v1' || k === 'istiqama.v1').forEach((k) => localStorage.removeItem(k)); } catch { /* */ } }
+        location.replace('/app/');
+      }}>Выйти</button>
     </div>
   );
 }

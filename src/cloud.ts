@@ -272,13 +272,15 @@ export async function blockUser(uid: string): Promise<boolean> {
  * Signed in by email: ties this device's profile to the email, or, on a new phone, takes over the profile
  * already tied to it (with its circles). Runs once per sign-in; reloads if the identity changed.
  */
+// v2: re-run once everywhere after the fix that stopped a second email from taking over a profile tied to another email.
+export const CLAIMED = 'lm.claimed2';
 export async function claimByEmail(accessToken: string, authId: string, name: string) {
   try {
-    if (localStorage.getItem('lm.claimed') === authId) return;
+    if (localStorage.getItem(CLAIMED) === authId) return;
     const me = load();
     const r = await rpc<{ uid: string; token: string; name?: string; same: boolean } | null>('lm_claim', { p_uid: me?.uid ?? null, p_token: me?.token ?? null, p_name: name }, accessToken);
     if (!r?.uid) return;
-    localStorage.setItem('lm.claimed', authId);
+    localStorage.setItem(CLAIMED, authId);
     const list = await rpc<{ code: string; title: string; kind: string }[]>('lm_circles', { p_uid: r.uid, p_token: r.token }).catch(() => []);
     const local = r.same ? me?.circles ?? [] : [];
     const merged: CircleRef[] = [...local];
@@ -288,9 +290,9 @@ export async function claimByEmail(accessToken: string, authId: string, name: st
       if (i < 0) merged.push({ code: c.code, title: c.title || 'Круг', kind });
       else if (!c.title) pushMeta({ uid: r.uid, token: r.token, name }, merged[i]);
     }
-    const next: CloudId = { uid: r.uid, token: r.token, name: r.name || me?.name || name, circles: merged, circle: (r.same && me?.circle) || merged[0]?.code };
+    const next: CloudId = { uid: r.uid, token: r.token, name: r.name || (r.same ? me?.name : '') || name, circles: merged, circle: (r.same && me?.circle) || merged[0]?.code };
     save(next);
-    if (!r.same) location.reload();
+    if (!r.same) { try { localStorage.removeItem('lm.profile'); } catch { /* */ } location.reload(); }
   } catch { /* server not updated yet: try again next start */ }
 }
 
@@ -396,10 +398,23 @@ export function signupName(): string {
 if (isCloud) {
   flushSignup();
   const a = authMe();
-  if (a && localStorage.getItem('lm.claimed') !== a.id) accessToken().then((t) => { if (t) void claimByEmail(t, a.id, signupName() || a.name || ''); });
+  if (a && localStorage.getItem(CLAIMED) !== a.id) accessToken().then((t) => { if (t) void claimByEmail(t, a.id, signupName() || a.name || ''); });
   const me = load();
   const rt = me?.circle ? makeRuntime(me as CloudId & { circle: string }) : null;
   window.claude = {
     use: async (name: string) => (name === 'db' ? rt?.db ?? null : name === 'user' ? rt?.user ?? null : null),
   };
+}
+
+/** Sign-out: forget this device's circle identity so the next email does not inherit it. Signing in again brings it back. */
+export function forgetIdentity() {
+  try {
+    const drop: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      if (k === LS || k === 'lm.claimed' || k === CLAIMED || k === 'lm.profile' || k === 'lm.signup' || /^lm\.(cg|ask|ch|acc|amir)\./.test(k)) drop.push(k);
+    }
+    drop.forEach((k) => localStorage.removeItem(k));
+    sessionStorage.removeItem('lm.admin');
+  } catch { /* */ }
 }

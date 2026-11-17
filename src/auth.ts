@@ -36,7 +36,7 @@ function fromTokens(access_token: string, refresh_token: string, expires_in?: nu
 function rememberName(s: AuthSession) {
   try {
     const rec = JSON.parse(localStorage.getItem('lm.signup') || 'null');
-    if (!rec?.name && s.user.name) localStorage.setItem('lm.signup', JSON.stringify({ name: s.user.name, email: s.user.email, pending: false }));
+    if ((!rec?.name || (rec.email && s.user.email && rec.email.toLowerCase() !== s.user.email.toLowerCase())) && (s.user.name || rec?.email)) localStorage.setItem('lm.signup', JSON.stringify({ name: s.user.name, email: s.user.email, pending: false }));
   } catch { /* */ }
 }
 
