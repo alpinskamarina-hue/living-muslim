@@ -324,6 +324,31 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 .mbtn.wa { background: #25a35a; }
 .badge-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; border-radius: 9px; background: #d64545; color: #fff; font-size: 11px; font-weight: 800; padding: 0 5px; margin-left: 6px; }
 
+
+/* circle orbit */
+.chead { display: grid; grid-template-columns: 1.05fr .95fr; gap: 30px; align-items: center; }
+@media (max-width: 860px) { .chead { grid-template-columns: 1fr; gap: 6px; } }
+.orbit { position: relative; height: 340px; perspective: 900px; }
+@media (max-width: 600px) { .orbit { height: 300px; } .ob-av { transform: scale(.85); } .ob-me { width: 70px; height: 70px; margin: -35px 0 0 -35px; font-size: 15px; } }
+.ob-ring { position: absolute; left: 50%; top: 52%; width: 86%; aspect-ratio: 1; transform: translate(-50%, -50%) rotateX(62deg); border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--gold) 55%, transparent); }
+.ob-ring.r2 { width: 54%; border-style: solid; border-color: color-mix(in srgb, var(--green-2) 30%, transparent); }
+.ob-me { position: absolute; left: 50%; top: 52%; width: 82px; height: 82px; margin: -41px 0 0 -41px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, #2f9a64, #0f5132 70%); color: #f6ecd4; font-weight: 800; font-size: 17px; box-shadow: 0 0 0 8px color-mix(in srgb, var(--green-2) 14%, transparent), 0 0 60px rgba(217,173,85,.35), 0 20px 40px rgba(15,81,50,.3); z-index: 50; }
+.ob-me::after { content: ''; position: absolute; inset: -16px; border-radius: 50%; border: 2px solid rgba(217,173,85,.5); animation: pulse 2.6s ease-out infinite; }
+@keyframes pulse { from { transform: scale(.8); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+.ob-sat { position: absolute; left: 50%; top: 52%; width: 0; height: 0; will-change: transform; }
+.ob-av { position: absolute; left: -27px; top: -27px; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 18px; border: 3px solid var(--bg); box-shadow: 0 10px 22px rgba(0,0,0,.18); }
+.ob-av small { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11.5px; font-weight: 700; color: var(--ink-2); }
+.ob-av b { position: absolute; right: -10px; top: -8px; font-size: 11px; background: var(--surface); color: var(--ink); border-radius: 99px; padding: 1px 6px; box-shadow: 0 3px 8px rgba(0,0,0,.15); }
+.ob-dua { position: absolute; left: 50%; top: 52%; font-size: 20px; z-index: 60; pointer-events: none; }
+
+/* umrah globe */
+.uhead { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+@media (max-width: 860px) { .uhead { grid-template-columns: 1fr; gap: 0; } }
+.globe { position: relative; justify-self: center; width: 100%; max-width: 400px; }
+.globe canvas { display: block; width: 100%; aspect-ratio: 1; }
+.globe .gl-l { text-align: center; margin-top: -6px; font-size: 14px; font-weight: 700; color: rgba(246,236,212,.85); }
+.globe .gl-l b { color: var(--gold-2); }
+@media (max-width: 860px) { .globe { max-width: 320px; margin-top: 10px; } }
 /* umrah section */
 .umrah { background: radial-gradient(900px 500px at 85% 20%, #1f7a4d 0%, transparent 60%), #0b2d1e; color: var(--cream); overflow: hidden; }
 .umrah .eyebrow { color: var(--gold-2); }
@@ -571,9 +596,17 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 
 <section id="circle">
   <div class="wrap">
+    <div class="chead">
+      <div>
     <p class="eyebrow"><span lang="ru">Круг</span><span lang="en">Circle</span></p>
     <h2><span lang="ru">Вместе держаться легче</span><span lang="en">It's easier to keep going together</span></h2>
     <p class="lead"><span lang="ru">Позови братьев, семью или джамаат. Каждый видит только итог дня, а поддержка приходит тогда, когда она нужна.</span><span lang="en">Invite brothers, family or your community. Everyone sees only the daily total, and support comes exactly when it's needed.</span></p>
+      </div>
+      <div class="orbit" id="orbit" aria-hidden="true">
+        <div class="ob-ring"></div><div class="ob-ring r2"></div>
+        <div class="ob-me"><span lang="ru">Ты</span><span lang="en">You</span></div>
+      </div>
+    </div>
     <div class="ctiles">
       <div class="ct tilt rv">
         <div><h3 lang="ru">Найди брата по нику</h3><h3 lang="en">Find a brother by nickname</h3><p lang="ru">Набери первые буквы, и появятся совпадения. Приглашение придёт с красным значком на вкладке Круг.</p><p lang="en">Type the first letters and matches appear. The invite arrives with a red badge on the Circle tab.</p></div>
@@ -629,9 +662,14 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 
 <section class="umrah" id="umrah">
   <div class="wrap">
+    <div class="uhead">
+      <div>
     <p class="eyebrow"><span lang="ru">Умра</span><span lang="en">Umrah</span></p>
     <h2><span lang="ru">Умра своей группой</span><span lang="en">Umrah with your own group</span></h2>
     <p class="lead"><span lang="ru">Один экран на всю поездку: от сбора группы до возвращения домой. Каждый видит, что сделано и что осталось.</span><span lang="en">One screen for the whole trip, from gathering the group to coming home. Everyone sees what's done and what's left.</span></p>
+      </div>
+      <div class="globe" aria-hidden="true"><canvas id="globe"></canvas><div class="gl-l" id="gl-l"></div></div>
+    </div>
     <div class="ug">
       <ul class="ulist">
         <li class="rv"><span class="ic">👥</span><div><b lang="ru">Сбор, даты и готовность</b><b lang="en">Group, dates and readiness</b><span class="d" lang="ru">Кто едет, билеты, жильё, документы. Карточка «Сейчас» подсказывает, что делать по дням до вылета.</span><span class="d" lang="en">Who's going, tickets, stay, documents. The “Now” card tells you what to do each day before departure.</span></div></li>
@@ -1261,6 +1299,116 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
     var set = function () { a.setAttribute('href', document.documentElement.getAttribute('data-l') === 'en' ? a.dataset.enHref : ru); };
     set(); document.getElementById('lang').addEventListener('click', function () { setTimeout(set, 0); });
   });
+})();
+</script>
+<script>
+/* Circle orbit and Umrah globe */
+(function () {
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var en = function () { return document.documentElement.getAttribute('data-l') === 'en'; };
+  var seen = function (el, cb) { if (!('IntersectionObserver' in window)) return cb(true); new IntersectionObserver(function (es) { cb(es[0].isIntersecting); }, { rootMargin: '60px' }).observe(el); };
+
+  /* ── orbit ── */
+  var ob = document.getElementById('orbit');
+  if (ob) {
+    var P = [['О', 'Омар', 'Omar', '#1f7a4d', '5/5'], ['Ю', 'Юсуф', 'Yusuf', '#b88a2c', '🔥'], ['Б', 'Билял', 'Bilal', '#2f6f9f', ''], ['А', 'Али', 'Ali', '#7a4fb0', '✓'], ['И', 'Ибрагим', 'Ibrahim', '#c0623d', ''], ['Х', 'Хасан', 'Hasan', '#2c8a8a', '4/5']];
+    var sats = P.map(function (p, i) {
+      var s = document.createElement('div'); s.className = 'ob-sat';
+      s.innerHTML = '<div class="ob-av" style="background:' + p[3] + '">' + p[0] + '<small lang="ru">' + p[1] + '</small><small lang="en">' + p[2] + '</small>' + (p[4] ? '<b>' + p[4] + '</b>' : '') + '</div>';
+      ob.appendChild(s); return { el: s, a: i / P.length * Math.PI * 2 };
+    });
+    var on = false, t0 = performance.now(), last = 0;
+    seen(ob, function (v) { on = v; if (v) requestAnimationFrame(spin); });
+    var tilt = 62 * Math.PI / 180;
+    function place(t) {
+      var w = ob.clientWidth, R = Math.min(w * .43, 230), cy = ob.clientHeight * .52 - ob.clientHeight * .52;
+      sats.forEach(function (s) {
+        var a = s.a + t * .22, x = Math.cos(a) * R, y = Math.sin(a) * R * Math.cos(tilt), z = Math.sin(a) * R * Math.sin(tilt);
+        var k = 1 + z / 700;
+        s.el.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + (y + cy).toFixed(1) + 'px,0) scale(' + k.toFixed(3) + ')';
+        s.el.style.zIndex = z > 0 ? 70 : 20; s.el.style.opacity = (0.55 + 0.45 * (z / R + 1) / 2).toFixed(2);
+        s.x = x; s.y = y; s.z = z;
+      });
+    }
+    function spin(now) { if (!on) return; var t = (now - t0) / 1000; place(t); if (!reduce && now - last > 1700) { last = now; dua(); } if (!reduce) requestAnimationFrame(spin); }
+    function dua() {
+      var s = sats[Math.floor(Math.random() * sats.length)];
+      var d = document.createElement('span'); d.className = 'ob-dua'; d.textContent = Math.random() < .7 ? '🤲' : '💚';
+      ob.appendChild(d);
+      if (!d.animate) return d.remove();
+      d.animate([{ transform: 'translate(' + (s.x - 12) + 'px,' + (s.y - 40) + 'px) scale(.6)', opacity: 0 }, { offset: .2, opacity: 1 }, { transform: 'translate(-12px,-56px) scale(1.15)', opacity: 1, offset: .85 }, { transform: 'translate(-12px,-70px) scale(.8)', opacity: 0 }], { duration: 1500, easing: 'cubic-bezier(.3,.6,.3,1)' }).onfinish = function () { d.remove(); };
+    }
+    place(0);
+  }
+
+  /* ── globe ── */
+  var cv = document.getElementById('globe');
+  if (cv && cv.getContext) {
+    var raw = atob('rEmrV6pAqqGqZaqKqTepXKhFqGunVKc9pmKmrKZwpTSlWaVCpWekyaReo8CjR6Nto86iZKLFoiih06GXoVuhvKHioUShaaDLoPCgFqDZoGGgwqAkn+efSp+rnw2fM59YnxyffZ9BnqKeBZ5mniqeT54TnnSeOJ5dnSGdgp1GnQqda50vnVSdGJ16nT2dn5xjnCaciJxMnA+ccZw1nFqcHpx/m0ObB5tomyybUZsVm9ibOpv9m1+bwZsjmuaaSJqqms+aMZqTmvSauJoamt2aoZrGmSiZipnrmU6Zr5kRmdSZN5mYmfmZXJm9mSCZ4plFmaaYy5gumI+Y8Zi0mBeY2pg8mJ6YYZjDmCWYh5jomEqYrJgOmNGXM5eVl/aXupccl9+Xo5fIlyuXjJftl7GXFJfWlzmWmpa/liKW5Zaols6WMJbzlreW3JaglcWVJ5WJlUyVrpUQldOVNZWXlbyVHpXhlaWVypQtlFKUs5TYlDuUnJTBlCSUSZSqlNCUMpSTk7mTfJPek6KTx5Mpk4uTTpOwkxKT1ZM3k5mTvpKnksySL5KQkvGSVJK1ktqSPZKeksSSJpKHkkuSrZHSkTSRlpG7kUKRpJHJkSuR7pFRkbKR15E6kZuQwJBIkKmQzpAxkJKQVpC3kN2QP5CgkMaQKJCJj02Pr4/UjzaPmI+9j+KPRI+mj8uPLY+Pj1OPtI/ZjzyPnY7CjoaOSo6rjtCOM46UjrmOfY7fjkGOoo7IjiqOi45PjbGN1o04jZqNv42DjUaNqI3NjS+NkY1VjbaN240+jZ+MxIwnjIiMTIytjNOMNYyWjLyM4YxDjKWMyowsjI6Ms4vYizqLnIvBi4WLSYuqi8+LMouTi1eLuIvdi0CLoYvGiymLiopOiq+K1Yo3ipiKvoqBikWKp4rMii6KkIq1itqKPIqeicOJh4lLiayJ0Yk0iZWJuol+id+JQomjiciJK4mMiVCJsYnXiDmImojAiIOIR4ipiM6IMIiSiLeI3Ig+iKCIxYhNiK6H04c2h5eHvIeAh0SHpYfLhy2HjodSh7SH2Yc7h52HwoeGh0mGq4bQhjKGlIa5ht6GQYbHhiqGi4awhtWGOIa+hoKFRoWnhc2FL4WQhbaFeYXbhT2Fn4XEhYiFS4WthdKFNIW7hX+EQ4TJhCyEjYSyhNeEOoTAhEiEqYTPhDGEkoS4hHuDP4Ohg8aDKIOKg6+D1IM2g5iDvYNFg6aDy4Mug4+DtILagjyCnYLDgoaCSoKsgtGCM4KVgrqCfoJBgsiCKoKxgtaBOYGagb+BR4Gogc2BMIG2gXqBPoGfgcWBroHTgTWAl4C8gEOAyoAsgLOA2IA7gJyAwYBJgKqAz4AygJN/uH98f0B/oX/Hfyl/sH/Vfzd/mX++f+N/RX+nf8x/Ln+1ftp+PX6efsN+rH7SfjR+u35CfqR+yX4rfrJ9OX2bfcB9hH1Ifal9zn0xfZJ9t30/faB9xX2ufdR9Nny9fIB8RHymfMt8LXy0fDt8nXzCfIZ8q3zQfDN8uXt9e957QXuie8d7sHs4e5l7v3uCe0Z7qHvNey97tnt6ez57n3rEeoh6rXrSejV6u3p/ekN6pHrKerN6OnqcesF6hXmqec95MXmTebh5fHlAeaF5xnmKea951Hk3eZh5vXmBeUV5pnjMeC54j3i1eDx4nnjDeId4rHjReDN4lXi6eH54yHiMd7F3OXead793g3eod853MHeRd7d3enegd8V3iXeud9N3Nna8doB2pXbKdo52s3Z3dpx2wnaFdqt20HYydpR2uXZ9daJ1x3WLdbB1OHWZdb51gnVGdcx1kHW1dXl1nnXEdId0rXTSdDR0lnS7dH90pHTJdI10snR2dDp0m3TAdIR0qXTOc5Jzt3N7c6BzxnOJczZzmHO9c4Fzy3OPc7RzeHKdcsJyhnLRcpRyunJ9cqNyyHKMcrFydXI4cr9xg3Gocc1xkXG2cXpxn3HEcYhxNXGWcbxxf3GlccpwjnCzcHdwnHDBcIVwz3CTcLhwfHChcMZwinA3b5hvgm+nb5BvtW95b55vw2+Hb5Vvum9+b6NuyW6MbnVuOW6Ebs5ukm63bntuoG7FboluTW02bZdtgG2lbY5ttG13bTttnW2GbZRtuWx9bEFsomzHbItsT2x0bNVsOGyZbIJskWy2bHpsPWyfbMRsiGuWa39rpGvJa41rdms6a4Rrk2q4anxqP2qhasZqimqYaoFqy2qParRqeGmGaZVpfmlBaaNpyGmMaXVpmmmDaZFot2h6aKBoiWiXaIBoRGjKaI5od2icZ4Vnk2d8Z4tnmWeCZ8xmkGa1Znlmh2aVZn5mQmakZslmjWZ2ZptlhGWSZbdle2XGZYllTWWYZYFlRGXLZI9kU2R4ZJ1khmSUZH1komSLZE9kmmODY5FjtmN6Y59jiGNMY5Zjf2ONYlFidmLYYpxihWJIYpNiuGJ8YqFixmKKYk5imGGBYZBhU2F5YZ5hh2FLYZVhfmGMYFBgmmCDYJJgVWB7YKBgiWBNYNNgl1+OX1JfnF+FX0lflF9XX8dfi19PXplekF5UXp9eiF5LXtJell5aXY1dUV2bXZJdVl3GXYpdTVyYXI9cU1ydXIZcSlzRXJRcWFvIW4xbT1uaW81bkVtVW4hbTFrTWpdaWlqOWlJanFpJWs9ak1pXWcdZillOWZlZXFmQWVRZh1lLWdFYlVhZWMlYjFhQWJtYXlhHWM5YklhWV4lXTVeXV1tX4lePV1JXYVdKV9BXlFZYVt5Wi1ZPVtZWmVZdVuRWRlaRVlRWY1WIVUxVllVaVeBVyVWNVVFVX1XmVUhVk1VWVGVUilROVJhUXFTjVMxUj1RTVGFT6FNKU5VTWVNnU4xTUFOaU15T5VPOU5FTVVJjUkxSl1JbUuFSjlJSUmBRSVGTUVdRZVGLUU9RmVFdUZBRVFBiUOlQS1CWUFlQjVBRUNdQm1BfT5JPVk9kT4lPTU+YT1tPj09TTmFOSk6UTlhOi05PTppOXk7kTZFNVU1jTUxNlk1aTY5NUUycTGBMk0xXTN1MikxOTJhMXEuQS1NL2ktiS0tLlUtZS99LjEtQSppKXkrlSpJKVkrcSqBKAkpkSihKiUpNShFKckrTSjZKl0r5SltKvEofSYBJ4klESaVJaUnLSY5J8ElSSdlJYEmUSVhJ3kmiSYtIT0iZSF1I5EiQSFRI20hiSJZIWkfgR41HUUfXR19H5keTR1ZH3UehRopGmEZcRuJGj0ZTRtpGYUboRZVFWEXfRYxFUEXWRV5F5EWRRVVF3ESfRNNEl0RaROFEjkRSRNhEYETmQ5NDV0PeQ4tDTkPVQ11D40OQQ1RC2kLpQtJClUJZQuBCjUJQQtdB5UGSQVZB3EGgQetB1EFbQeJAj0BSQNlA50DQQJRAWEDeQItATz/WP+Q/kT9VP9s/6T/SP5Y+Wj7hPo0+UT7YPuY+kz5XPt096z1OPdQ9XD3jPY89Uz3aPOg80TyVPFk83zyMPFA81zzlO5I7VTvcO+o70ztbO+E7jjpSOtk65zqUOlc63jpPOtU54zmQOVQ56TnSOVk44DiNOFE45jdNN+I3UzboNk82+zXkNVU16jVMNFE0/TTmM04yUDL8MU0w5y9PLvctUSxOK0orUClMKE4mSyRN'), L = [];
+    for (var i = 0; i < raw.length; i += 2) L.push([raw.charCodeAt(i) - 90, raw.charCodeAt(i + 1) / 255 * 360 - 180]);
+    var CITIES = {
+      'Europe/Amsterdam': [52.37, 4.9, 'Амстердам', 'Amsterdam'], 'Europe/Moscow': [55.75, 37.62, 'Москва', 'Moscow'], 'Europe/London': [51.5, -0.13, 'Лондон', 'London'],
+      'Europe/Berlin': [52.52, 13.4, 'Берлин', 'Berlin'], 'Europe/Paris': [48.86, 2.35, 'Париж', 'Paris'], 'Europe/Brussels': [50.85, 4.35, 'Брюссель', 'Brussels'],
+      'Europe/Vienna': [48.21, 16.37, 'Вена', 'Vienna'], 'Europe/Stockholm': [59.33, 18.07, 'Стокгольм', 'Stockholm'], 'Europe/Istanbul': [41.01, 28.98, 'Стамбул', 'Istanbul'],
+      'Europe/Kyiv': [50.45, 30.52, 'Киев', 'Kyiv'], 'Europe/Kiev': [50.45, 30.52, 'Киев', 'Kyiv'], 'Europe/Samara': [53.2, 50.15, 'Самара', 'Samara'], 'Europe/Volgograd': [48.71, 44.51, 'Волгоград', 'Volgograd'],
+      'Asia/Yekaterinburg': [56.84, 60.6, 'Екатеринбург', 'Yekaterinburg'], 'Asia/Novosibirsk': [55.03, 82.92, 'Новосибирск', 'Novosibirsk'], 'Asia/Tashkent': [41.3, 69.24, 'Ташкент', 'Tashkent'],
+      'Asia/Samarkand': [39.65, 66.96, 'Самарканд', 'Samarkand'], 'Asia/Almaty': [43.24, 76.89, 'Алматы', 'Almaty'], 'Asia/Bishkek': [42.87, 74.6, 'Бишкек', 'Bishkek'],
+      'Asia/Dushanbe': [38.56, 68.79, 'Душанбе', 'Dushanbe'], 'Asia/Baku': [40.41, 49.87, 'Баку', 'Baku'], 'Asia/Dubai': [25.2, 55.27, 'Дубай', 'Dubai'],
+      'America/New_York': [40.71, -74.0, 'Нью-Йорк', 'New York'], 'America/Toronto': [43.65, -79.38, 'Торонто', 'Toronto'], 'America/Chicago': [41.88, -87.63, 'Чикаго', 'Chicago']
+    };
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    var me = CITIES[tz] || CITIES['Europe/Amsterdam'], MK = [21.42, 39.83];
+    var others = ['Europe/Moscow', 'Asia/Tashkent', 'Europe/London', 'Europe/Istanbul', 'Asia/Almaty'].filter(function (k) { return CITIES[k] !== me; }).slice(0, 3).map(function (k) { return CITIES[k]; });
+    var rad = Math.PI / 180;
+    function v3(lat, lon) { lat *= rad; lon *= rad; return [Math.cos(lat) * Math.sin(lon), Math.sin(lat), Math.cos(lat) * Math.cos(lon)]; }
+    function slerp(a, b, t) { var d = Math.acos(Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])), s = Math.sin(d); if (s < 1e-6) return a; var k1 = Math.sin((1 - t) * d) / s, k2 = Math.sin(t * d) / s; return [a[0] * k1 + b[0] * k2, a[1] * k1 + b[1] * k2, a[2] * k1 + b[2] * k2]; }
+    var km = Math.round(Math.acos(Math.min(1, (function (a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; })(v3(me[0], me[1]), v3(MK[0], MK[1])))) * 6371 / 10) * 10;
+    var lab = document.getElementById('gl-l');
+    function label() { if (lab) lab.innerHTML = (en() ? me[3] + ' → Makkah · <b>' + km.toLocaleString('en') + ' km</b>' : me[2] + ' → Мекка · <b>' + km.toLocaleString('ru') + ' км</b>'); }
+    label(); document.getElementById('lang').addEventListener('click', function () { setTimeout(label, 0); });
+    var ctx = cv.getContext('2d'), gon = false, g0 = performance.now(), mx = 0;
+    var lon0 = (me[1] + MK[1]) / 2, lat0 = (me[0] + MK[0]) / 2 - 8;
+    cv.addEventListener('pointermove', function (e) { var r = cv.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width - .5; });
+    cv.addEventListener('pointerleave', function () { mx = 0; });
+    seen(cv, function (v) { gon = v; if (v) requestAnimationFrame(draw); });
+    function draw(now) {
+      if (!gon) return;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2), S = cv.clientWidth * dpr;
+      if (cv.width !== Math.round(S)) { cv.width = cv.height = Math.round(S); }
+      var t = (now - g0) / 1000, W = cv.width, c = W / 2, R = W * .4;
+      var lo = (lon0 + Math.sin(t * .18) * 28 + mx * 50) * rad, la = lat0 * rad;
+      var cl = Math.cos(lo), sl = Math.sin(lo), ca = Math.cos(la), sa = Math.sin(la);
+      function pj(p) { var x = p[0] * cl - p[2] * sl, z = p[0] * sl + p[2] * cl, y = p[1] * ca - z * sa, z2 = p[1] * sa + z * ca; return [c + x * R, c - y * R, z2]; }
+      ctx.clearRect(0, 0, W, W);
+      var gr = ctx.createRadialGradient(c - R * .35, c - R * .4, R * .1, c, c, R * 1.05);
+      gr.addColorStop(0, '#1f7a4d'); gr.addColorStop(.7, '#0d3a26'); gr.addColorStop(1, '#06180f');
+      ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.fillStyle = gr; ctx.fill();
+      var at = ctx.createRadialGradient(c, c, R * .95, c, c, R * 1.18); at.addColorStop(0, 'rgba(217,173,85,.28)'); at.addColorStop(1, 'rgba(217,173,85,0)');
+      ctx.beginPath(); ctx.arc(c, c, R * 1.18, 0, Math.PI * 2); ctx.fillStyle = at; ctx.fill();
+      var ds = R / 95;
+      for (var i = 0; i < L.length; i++) { var q = pj(v3(L[i][0], L[i][1])); if (q[2] <= 0) continue; ctx.globalAlpha = .25 + .75 * q[2]; ctx.fillStyle = '#e8d29a'; ctx.fillRect(q[0] - ds, q[1] - ds, ds * 2, ds * 2); }
+      ctx.globalAlpha = 1;
+      function arc(from, alpha, width, moving) {
+        var A = v3(from[0], from[1]), B = v3(MK[0], MK[1]), pts = [];
+        for (var k = 0; k <= 48; k++) { var u = k / 48, p = slerp(A, B, u), h = 1 + Math.sin(Math.PI * u) * .22; pts.push(pj([p[0] * h, p[1] * h, p[2] * h])); }
+        ctx.lineWidth = width; ctx.strokeStyle = 'rgba(242,207,134,' + alpha + ')'; ctx.beginPath();
+        var pen = false; for (k = 0; k < pts.length; k++) { var vis = pts[k][2] > -.15; if (vis && !pen) { ctx.moveTo(pts[k][0], pts[k][1]); pen = true; } else if (vis) ctx.lineTo(pts[k][0], pts[k][1]); else pen = false; }
+        ctx.stroke();
+        var s0 = pj(A); if (s0[2] > 0) { ctx.beginPath(); ctx.arc(s0[0], s0[1], width * 1.6, 0, 7); ctx.fillStyle = 'rgba(246,236,212,' + alpha + ')'; ctx.fill(); }
+        if (moving) { var u2 = (t * .16) % 1, m = pts[Math.round(u2 * 48)]; if (m[2] > -.15) { ctx.beginPath(); ctx.arc(m[0], m[1], width * 2.4, 0, 7); ctx.fillStyle = '#fff'; ctx.shadowColor = '#f2cf86'; ctx.shadowBlur = 14 * dpr; ctx.fill(); ctx.shadowBlur = 0; } }
+      }
+      others.forEach(function (o) { arc(o, .28, 1.2 * dpr, false); });
+      arc(me, .95, 2.2 * dpr, true);
+      var mk = pj(v3(MK[0], MK[1]));
+      if (mk[2] > 0) {
+        var pu = (t % 2) / 2;
+        ctx.beginPath(); ctx.arc(mk[0], mk[1], (6 + pu * 22) * dpr, 0, 7); ctx.strokeStyle = 'rgba(242,207,134,' + (1 - pu) + ')'; ctx.lineWidth = 2 * dpr; ctx.stroke();
+        var b = 5 * dpr; ctx.fillStyle = '#0b0b0b'; ctx.fillRect(mk[0] - b, mk[1] - b, b * 2, b * 2); ctx.fillStyle = '#d9ad55'; ctx.fillRect(mk[0] - b, mk[1] - b * .45, b * 2, b * .35);
+        ctx.font = '700 ' + 13 * dpr + 'px Manrope, system-ui, sans-serif'; ctx.fillStyle = '#f6ecd4'; ctx.textAlign = 'left'; ctx.fillText(en() ? 'Makkah' : 'Мекка', mk[0] + 10 * dpr, mk[1] + 4 * dpr);
+      }
+      if (!reduce) requestAnimationFrame(draw);
+    }
+  }
 })();
 </script>
 <script src="/hit.js" data-page="landing" defer></script>
