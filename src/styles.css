@@ -499,6 +499,13 @@ button:disabled { opacity: .5; cursor: default; }
 .lap { width: min(70vw, 260px); aspect-ratio: 1; border-radius: 50%; border: 0; background: var(--green-2); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 20px; touch-action: manipulation; user-select: none; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
 .lap:active { transform: scale(.98); }
 .lap.done { background: var(--gold); }
+.lap.sure { background: var(--late); }
+.lap-ring { --p: 0; padding: 9px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--p) * 1turn), var(--line) 0); transition: background .3s; }
+.lap-now { display: flex; flex-direction: column; gap: 6px; }
+.lap-theme { font-size: 15px; }
+.lap-hint { margin: 0; font-size: 13px; color: var(--ink-2); }
+.lap-mine { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; }
+.lap-mine > b { font-size: 13px; color: var(--green-2); }
 .lap-n { font-family: var(--f-display); font-size: 72px; font-weight: 700; line-height: 1; }
 .lap-n small { font-size: 28px; opacity: .7; }
 .lap-t { font-size: 14px; font-weight: 600; text-align: center; }

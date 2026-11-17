@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AppState, UmrahState } from '../types';
-import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
+import { IHRAM_RULES, PREP, ROUND_IDEAS, STEPS, type Step } from '../umrah/guide';
 import { uid } from '../store';
 import { UMRAH_VIDEOS, embed } from '../umrah/videos';
 
@@ -93,13 +93,54 @@ export function DuaList({ state, update }: { state: AppState; update: Props['upd
   );
 }
 
-export function StepView({ step, state, update, onBack, onNext }: { step: Step; state: AppState; update: Props['update']; onBack: () => void; onNext: () => void }) {
+/** A dua request from the Circle, already resolved to a name. */
+export interface Ask { key: string; who: string; text: string }
+
+export function StepView({ step, state, update, onBack, onNext, asks = [] }: { step: Step; state: AppState; update: Props['update']; onBack: () => void; onNext: () => void; asks?: Ask[] }) {
   const u = umrahOf(state);
   const idx = STEPS.findIndex((x) => x.id === step.id);
   const n = step.counter ? u[step.counter] : 0;
   const setN = (v: number) => step.counter && update((s) => patch(s, { [step.counter!]: Math.max(0, Math.min(7, v)) }));
-  const tap = () => { if (n < 7) { setN(n + 1); try { navigator.vibrate?.(n + 1 === 7 ? [150, 80, 150] : 60); } catch { /* ignore */ } } };
   const saeeDir = (k: number) => (k % 2 === 1 ? 'Сафа → Марва' : 'Марва → Сафа');
+
+  // A round takes minutes, so a second tap within seconds is almost always a slip in the crowd: ask once more.
+  const last = useRef(0);
+  const [sure, setSure] = useState(false);
+  const tap = () => {
+    if (n >= 7) return;
+    const now = Date.now();
+    if (n > 0 && now - last.current < 40000 && !sure) { setSure(true); setTimeout(() => setSure(false), 5000); return; }
+    last.current = now; setSure(false); setN(n + 1);
+    try { navigator.vibrate?.(n + 1 === 7 ? [150, 80, 150] : 60); } catch { /* ignore */ }
+  };
+
+  // Keep the screen awake while counting, so the phone does not lock in the middle of a round.
+  const [awake, setAwake] = useState(false);
+  useEffect(() => {
+    if (!step.counter || n >= 7) return;
+    type Lock = { release: () => Promise<void> };
+    let lock: Lock | null = null;
+    let off = false;
+    const nav = navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<Lock> } };
+    nav.wakeLock?.request('screen').then((l) => { if (off) l.release(); else { lock = l; setAwake(true); } }).catch(() => {});
+    return () => { off = true; lock?.release().catch(() => {}); setAwake(false); };
+  }, [step.counter, n >= 7]);
+
+  // My duas and the Circle's requests, spread over the 7 rounds so that by the end nobody is forgotten.
+  const items = [
+    ...u.duas.map((d) => ({ key: `me:${d.id}`, text: d.text, who: d.who, done: Boolean(d.done) })),
+    ...asks.map((a) => ({ key: `ask:${a.key}`, text: a.text, who: a.who, done: Boolean(u.asked?.includes(a.key)) })),
+  ];
+  const round = Math.min(n, 6);
+  const mine = items.filter((_, i) => i % 7 === round);
+  const madeAll = items.filter((x) => x.done).length;
+  const toggle = (key: string) => update((s) => {
+    const cur = umrahOf(s);
+    if (key.startsWith('me:')) { const id = key.slice(3); return patch(s, { duas: cur.duas.map((d) => (d.id === id ? { ...d, done: !d.done } : d)) }); }
+    const k = key.slice(4); const a = cur.asked ?? [];
+    return patch(s, { asked: a.includes(k) ? a.filter((x) => x !== k) : [...a, k] });
+  });
+  const idea = step.counter === 'tawaf' ? ROUND_IDEAS[round] : null;
 
   return (
     <div className="sess light-sess">
@@ -108,21 +149,59 @@ export function StepView({ step, state, update, onBack, onNext }: { step: Step; 
         <div><b>{idx + 1}. {step.title}</b><small>{step.short}</small></div>
       </div>
       <div className="h-wrap">
-        <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />
+        {!step.counter && <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />}
         {step.counter && (
           <div className="lap-wrap">
-            <button type="button" className={`lap${n === 7 ? ' done' : ''}`} onClick={tap} aria-label="Отметить круг">
-              <span className="lap-n">{n}<small>/7</small></span>
-              <span className="lap-t">{n === 7 ? 'Готово, машаАллах' : step.counter === 'tawaf' ? `Нажми, когда закончишь ${n + 1}-й круг` : `Проход ${n + 1}: ${saeeDir(n + 1)}`}</span>
-            </button>
-            <div className="lap-dots">{Array.from({ length: 7 }, (_, i) => <i key={i} data-on={i < n} />)}</div>
+            <div className="lap-ring" style={{ ['--p' as string]: n / 7 }}>
+              <button type="button" className={`lap${n === 7 ? ' done' : ''}${sure ? ' sure' : ''}`} onClick={tap} aria-label="Отметить круг">
+                <span className="lap-n">{n}<small>/7</small></span>
+                <span className="lap-t">{n === 7 ? 'Готово, машаАллах'
+                  : sure ? 'Так быстро? Нажми ещё раз, если правда закончил'
+                  : step.counter === 'tawaf' ? `Нажми, когда закончишь ${n + 1}-й круг` : `Проход ${n + 1}: ${saeeDir(n + 1)}`}</span>
+              </button>
+            </div>
             <div className="row2 light">
               <button type="button" onClick={() => setN(n - 1)} disabled={n === 0}>− Ошибся</button>
               <button type="button" onClick={() => setN(0)} disabled={n === 0}>Сбросить</button>
             </div>
-            <p className="q-msg tiny-note">Если сомневаешься в числе кругов, бери меньшее и доделай.</p>
+            <p className="q-msg tiny-note">Если сомневаешься в числе кругов, бери меньшее и доделай.{awake ? ' Экран не погаснет, пока считаешь.' : ''}</p>
           </div>
         )}
+
+        {step.counter && n < 7 && (
+          <div className="h-card lap-now">
+            <small className="um-k">{step.counter === 'tawaf' ? `Круг ${n + 1}` : `Проход ${n + 1} · ${saeeDir(n + 1)}`}</small>
+            {step.counter === 'saee' && <p className="lap-hint">{n % 2 === 0 ? 'На Сафе' : 'На Марве'}: повернись к Каабе, подними руки, повтори зикр трижды и делай дуа между повторениями.{n === 0 ? ' В самом начале скажи «Инна-с-Сафа ва-ль-Марвата…».' : ''}</p>}
+            {idea && (
+              <>
+                <b className="lap-theme">О чём можно попросить: {idea.theme.toLowerCase()}</b>
+                <p className="ar-dua" lang="ar" dir="rtl">{idea.ar}</p>
+                <p className="dua-tr">{idea.tr}</p>
+                <p className="dua-ru">{idea.ru}</p>
+                <small className="src">{idea.src}</small>
+              </>
+            )}
+            {mine.length > 0 && (
+              <div className="lap-mine">
+                <b>Из твоего списка на этот {step.counter === 'tawaf' ? 'круг' : 'проход'}</b>
+                {mine.map((d) => (
+                  <label key={d.key} className="chk">
+                    <input type="checkbox" checked={d.done} onChange={() => toggle(d.key)} />
+                    <span><b style={d.done ? { textDecoration: 'line-through', opacity: 0.6 } : undefined}>{d.text}</b>{d.who && <small>{d.who}</small>}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+            {items.length === 0 && <p className="tiny">Запиши свои дуа и просьбы близких во вкладке «Дуа», и они разложатся по кругам, чтобы никого не забыть.</p>}
+            {step.counter === 'tawaf' && <p className="lap-hint">Между Йеменским углом и Чёрным камнем: «Раббана атина фи-д-дунья хасанатан…» (дуа ниже).</p>}
+            {idea && <p className="tiny">В сунне нет особого дуа для каждого круга. Это подсказка, если растерялся: проси своими словами и на своём языке.</p>}
+          </div>
+        )}
+        {step.counter && n === 7 && items.length > 0 && (
+          <div className="h-card lap-now"><b>Ты сделал {madeAll} из {items.length} дуа из списка</b>{madeAll < items.length && <p className="tiny">Остальные можно сделать на Сафе и Марве, у Замзама или в любой момент в Хараме.</p>}</div>
+        )}
+
+        {step.counter && <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />}
         <div className="md">{step.body.map((b) => <p key={b}>{b}</p>)}</div>
         {step.dua?.map((d) => (
           <div key={d.ar} className="h-card dua">

@@ -54,7 +54,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
   const asks = Object.entries(duas).flatMap(([who, m]) => myTrips.flatMap((h) => (m?.[h] ?? []).map((text, i) => ({ key: `${who}:${h}:${i}`, who, text }))));
   const toggleAsk = (k: string) => update((s) => { const a = umrahOf(s).asked ?? []; return patch(s, { asked: a.includes(k) ? a.filter((x) => x !== k) : [...a, k] }); });
 
-  if (step) return <StepView step={step} state={state} update={update} onBack={() => setStep(null)}
+  if (step) return <StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} />;
 
   const talbiya = STEPS.find((s) => s.id === 'talbiya')?.dua?.[0];
