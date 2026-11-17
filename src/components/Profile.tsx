@@ -5,6 +5,7 @@ import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
 import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
+import { RamadanPushFields } from './Ramadan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
 import { isCloud, nicksReady } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
@@ -362,10 +363,14 @@ function RemindPage({ s, set, times }: { s: AppState['settings']; set: SetFn; ti
         </select>
       </label>
 
+      <h2 className="sub-h">Рамадан</h2>
+      <p className="tiny">Приходят только в Рамадан. Язык этих напоминаний можно сменить на экране Рамадана (RU/EN).</p>
+      <RamadanPushFields l={s.lang ?? 'ru'} prefs={r} onChange={(x) => setR({ ramadan: x })} />
+
       {r.on ? (
         <button type="button" className="ghost-btn" disabled={busy} onClick={turnOff}>Выключить напоминания</button>
       ) : (
-        <button type="button" className="pri-btn big-btn" disabled={busy || !r.prayers.length && !r.muhasaba} onClick={turnOn}>{busy ? 'Включаю…' : 'Включить напоминания'}</button>
+        <button type="button" className="pri-btn big-btn" disabled={busy} onClick={turnOn}>{busy ? 'Включаю…' : 'Включить напоминания'}</button>
       )}
       {msg && <p className="tiny">{msg}</p>}
       {!pushSupported() && !msg && <p className="tiny">{ios && !standalone ? 'На iPhone сначала установи приложение на экран «Домой».' : 'В этом браузере напоминания могут не работать.'}</p>}

@@ -45,6 +45,8 @@ export interface Settings {
   me?: 'm' | 'f';
   /** Islamic phrases and reminders: normal, calm (default), or phrases only. */
   words?: 'normal' | 'calm' | 'phrases';
+  /** Interface language. For now only Ramadan and its reminders speak English. */
+  lang?: 'ru' | 'en';
 }
 
 export interface ReminderPrefs {
@@ -54,6 +56,20 @@ export interface ReminderPrefs {
   before: number;
   /** Evening muhasabah reminder, "HH:MM" or '' for off. */
   muhasaba: string;
+  /** Ramadan reminders; missing means the defaults (RPUSH_DEFAULT). */
+  ramadan?: RamadanPush;
+}
+
+export interface RamadanPush {
+  /** Minutes before Fajr to wake for suhoor; 0 = off. */
+  suhoor: number;
+  /** Minutes before Maghrib; -1 = off, 0 = at the time. */
+  iftar: number;
+  tarawih: boolean;
+  /** Odd nights of the last ten and the first night of Ramadan. */
+  nights: boolean;
+  /** Zakat al-fitr a few days before Eid. */
+  fitr: boolean;
 }
 
 export interface AppState {
@@ -259,4 +275,8 @@ export interface RamadanState {
   keep: Record<string, string>; // hijri year -> the one habit to keep
   plan?: Record<string, 'min' | 'pause'>; // habit id -> how it runs during Ramadan
   prep?: Record<string, string[]>; // hijri year -> preparation items done
+  deeds?: Record<string, number[]>; // hijri year -> days of the 30-day programme whose good deed is done
+  duas?: RDua[]; // personal dua list, private
+  qadr?: Record<string, string[]>; // day of the evening -> night plan items done
 }
+export interface RDua { id: string; t: string; at: string; ok?: string }

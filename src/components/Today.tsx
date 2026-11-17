@@ -27,7 +27,7 @@ interface Props {
   onSafar: () => void;
   onGoal: (id: string) => void;
   onReview: () => void;
-  onRamadan: () => void;
+  onRamadan: (tab?: 'prep' | 'day' | 'fast' | 'quran' | 'nights' | 'eid') => void;
   onGarden: () => void;
   support?: { text: string; onOpen: () => void }[];
 }
