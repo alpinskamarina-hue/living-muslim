@@ -62,6 +62,7 @@ export interface AppState {
   /** prayers[date][anchor] = whether the prayer was prayed on time or late */
   prayers: Record<string, Partial<Record<Anchor, PrayerMark>>>;
   settings: Settings;
+  videos?: import('./videos').VideoState;
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number };

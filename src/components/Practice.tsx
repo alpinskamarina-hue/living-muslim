@@ -13,6 +13,8 @@ import { Sadaqa, sadaqaOf, sadaqaStreak } from './Sadaqa';
 import { health } from '../health';
 import { debt, ramadanDay, ramadanMonth, ramadanOf } from '../ramadan';
 import { A1 } from '../course/a1';
+import { Videos } from './Videos';
+import { isCloud } from '../cloud';
 
 interface Props {
   state: AppState;
@@ -23,7 +25,7 @@ interface Props {
   onRamadan: () => void;
 }
 
-type Mode = 'home' | 'focus' | 'tasbih' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa';
+type Mode = 'home' | 'focus' | 'tasbih' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos';
 
 export function Practice({ state, update, today, suggestedId, onSafar, onRamadan }: Props) {
   const [mode, setMode] = useState<Mode>('home');
@@ -41,6 +43,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'umrah') return <Umrah state={state} update={update} onExit={() => setMode('home')} />;
+  if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'tasbih') return <Tasbih onExit={() => setMode('home')} onFinish={() => markHabit('done')} habitName={habit?.action} />;
 
   return (
@@ -60,6 +63,13 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
             ))}
           </select>
         </label>
+      )}
+
+      {isCloud && (
+        <button type="button" className="video-card" onClick={() => setMode('videos')}>
+          <i>▶</i>
+          <span><small>Видеоуроки</small><b>Курсы с YouTube</b><em>Вера, бизнес, развитие, здоровье и языки. Урок в день, с прогрессом и заметками.</em></span>
+        </button>
       )}
 
       <button type="button" className="course-card" onClick={() => setMode('course')}>

@@ -875,3 +875,56 @@ button:disabled { opacity: .5; cursor: default; }
 .kid-pick button { display: flex; align-items: center; gap: 10px; min-height: 48px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 600; padding: 0 12px; text-align: left; }
 .kid-pick button span { font-size: 22px; }
 .kid-pick button[aria-pressed="true"] { border-color: var(--tick); background: var(--green-soft); }
+
+/* ---- video lessons ---- */
+.video-card { width: 100%; border: 0; border-radius: 20px; background: linear-gradient(135deg, #1a1a1a, #3a2a10); color: #fff; text-align: left; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; }
+.video-card > i { flex: none; width: 52px; height: 52px; border-radius: 50%; background: var(--gold); display: grid; place-items: center; font-style: normal; font-size: 20px; padding-left: 3px; }
+.video-card span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.video-card small { color: var(--gold); font-weight: 700; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
+.video-card b { font-family: var(--f-display); font-size: 22px; }
+.video-card em { font-style: normal; color: rgba(255,255,255,.75); font-size: 13px; }
+.vids .page-h.sm { font-size: 22px; margin-top: 4px; }
+.vtabs { display: flex; gap: 8px; overflow-x: auto; margin: 14px -16px 14px; padding: 0 16px 4px; scrollbar-width: none; }
+.vtabs::-webkit-scrollbar { display: none; }
+.vtabs button, .vchips button, .vspeed button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 14px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.vtabs button[aria-selected="true"], .vchips button[aria-pressed="true"], .vspeed button[aria-pressed="true"] { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+.vchips { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+.vth { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 12px; background: var(--surface-2) center / cover no-repeat; overflow: hidden; }
+.vth.big { border-radius: 16px; margin: 8px 0 12px; }
+.vth i { font-style: normal; }
+.vplay { position: absolute; inset: 0; margin: auto; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; display: grid; place-items: center; font-size: 15px; padding-left: 2px; }
+.vdur { position: absolute; right: 6px; bottom: 8px; background: rgba(0,0,0,.75); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
+.vbar { position: absolute; left: 0; bottom: 0; height: 4px; background: #e53935; }
+.vcont { width: 100%; display: grid; grid-template-columns: 132px 1fr; gap: 12px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 16px; padding: 10px; text-align: left; margin-bottom: 8px; }
+.vcont.static { margin: 6px 0 14px; }
+.vci { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vci small { color: var(--green-2); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+.vci b { font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vci em { font-style: normal; color: var(--ink-2); font-size: 12.5px; }
+.vh { display: flex; justify-content: space-between; align-items: center; font-size: 17px; margin: 18px 0 10px; }
+.vh .link-btn { font-size: 14px; }
+.vgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.vcard { border: 0; background: none; padding: 0; text-align: left; color: var(--ink); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.vcard b { font-size: 13.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+.vcard small { color: var(--ink-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pro-badge.sm { font-size: 9px; padding: 2px 5px; margin-left: 6px; vertical-align: 2px; letter-spacing: 1px; }
+.vempty { width: 100%; border: 1.5px dashed var(--line); background: none; color: var(--ink-2); border-radius: 16px; padding: 16px; text-align: left; font-size: 13.5px; }
+.vprog { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin: 10px 0 6px; }
+.vprog i { display: block; height: 100%; background: var(--green-2); }
+.vls { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.vl { display: flex; gap: 12px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px 12px; text-align: left; }
+.vl > i { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 13px; color: var(--ink-2); }
+.vl span { display: flex; flex-direction: column; min-width: 0; }
+.vl b { font-size: 14px; font-weight: 600; line-height: 1.25; }
+.vl small { color: var(--ink-2); font-size: 12px; }
+.vl.d > i { background: var(--green-2); color: #fff; }
+.vl.d b { color: var(--ink-2); }
+.vl.n { border-color: var(--green-2); box-shadow: 0 0 0 1px var(--green-2); }
+.vplayer { padding-top: 0; }
+.vframe { position: relative; aspect-ratio: 16 / 9; background: #000; margin: 0 -16px 12px; }
+.vframe > div, .vframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vload { position: absolute; inset: 0; display: grid; place-items: center; color: #ccc; font-size: 14px; }
+.vspeed { display: flex; gap: 8px; margin: 10px 0 14px; }
+.vspeed button { padding: 6px 12px; font-size: 13px; }
+.vdone { background: var(--green-soft); color: var(--green-2); font-weight: 700; border-radius: 14px; padding: 12px; margin: 0 0 12px; }
+.vids .ghost-btn { width: 100%; margin-top: 4px; }

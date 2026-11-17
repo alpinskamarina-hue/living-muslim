@@ -71,7 +71,7 @@ export default async function handler(req, res) {
   try {
     if (list) { res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=86400'); return res.json(await playlist(String(list))); }
     if (v) { res.setHeader('Cache-Control', 's-maxage=86400'); return res.json(await video(String(v))); }
-    if (q && k && k === process.env.PUSH_SECRET) return res.json(await search(String(q)));
+    if (q && k && k === process.env.YT_SEARCH_KEY) return res.json(await search(String(q)));
     res.status(400).json({ error: 'list, v or q required' });
   } catch (e) {
     res.status(502).json({ error: String(e.message || e) });
