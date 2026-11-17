@@ -21,6 +21,7 @@ import { CircleGoal, WeekSummary, DuaAsks, StreakLine, Challenges, AmirCard } fr
 import type { CGoal, DuaAsk, Challenge, Amir } from '../cweek';
 import { patchF, famOf } from '../family';
 import type { Shura, Advice } from '../biz';
+import { NikahInCircle } from './Nikah';
 import { ShuraCard, BizHabitsOffer, AdviceBox, bizLine } from './BizCircle';
 
 interface Props {
@@ -47,6 +48,7 @@ interface Props {
   onShura: (s: Shura | null) => void;
   adv: Advice[];
   giveAdv: (a: Advice) => void;
+  onNikah?: () => void;
 }
 
 const REACTIONS = [
@@ -54,7 +56,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -224,6 +226,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       {joined && biz && <BizHabitsOffer state={state} update={update} today={today} />}
       {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={onAsk} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }}
         biz={biz} extra={biz ? (asker, a) => <AdviceBox members={members} me={me} to={asker} k="a" w={a.d} nameOf={nm} mine={adv} give={giveAdv} /> : undefined} />}
+      {joined && me && isCloud && cur && !alone && <NikahInCircle code={cur.code} me={me} reacts={reacts} today={today} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }} onOpenMine={() => onNikah?.()} />}
       {joined && me && !(alone && isCloud) && <Challenges members={members} me={me} today={today} nameOf={nm} ch={ch} />}
       {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}

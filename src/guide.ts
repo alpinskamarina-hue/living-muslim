@@ -4,7 +4,7 @@ import type { AppState } from './types';
 export type GoTo =
   | { tab: 'today' | 'circle' | 'progress' | 'profile' }
   | { practice: 'quran' | 'tasbih' | 'focus' | 'books' | 'videos' | 'langs' | 'health' | 'food' | 'sadaqa' | 'umrah' }
-  | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' }
+  | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' | 'nikah' }
   | { add: true }
   | { ramadan: true }
   | { safar: true }

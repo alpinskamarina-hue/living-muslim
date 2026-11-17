@@ -1982,3 +1982,53 @@ button:disabled { opacity: .5; cursor: default; }
 .bz-acts { display: flex; gap: 6px; flex-wrap: wrap; }
 .bz-acts button[aria-pressed="true"] { background: var(--green-soft); border-color: var(--green-2); color: var(--green-2); }
 .bz-sum { margin: 0; font-size: 13px; background: var(--gold-soft); border-radius: 12px; padding: 8px 10px; }
+
+/* ── Никах ── */
+:root { --nk: #6b3a5a; --nk-soft: #f5e9f0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --nk: #d59bbf; --nk-soft: #2c1d27; } }
+:root[data-theme="dark"] { --nk: #d59bbf; --nk-soft: #2c1d27; }
+.nk { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.nk .da-row { justify-content: flex-start; }
+.nk .k, .nk-seek .k { display: block; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); }
+.nk-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.nk-card p { margin: 0; font-size: 14px; line-height: 1.45; }
+.nk-ask { background: var(--nk-soft); border-color: transparent; }
+.nk-fields { display: flex; flex-direction: column; gap: 8px; }
+.nk-f { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.nk-f input, .nk-f textarea, .nk select { border: 1.5px solid var(--line); border-radius: 12px; padding: 9px 10px; font: inherit; font-size: 16px; font-weight: 500; background: var(--surface); color: var(--ink); resize: none; }
+.nk-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.nk-opts button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 11px; font-size: 13px; font-weight: 600; }
+.nk-opts button[aria-pressed="true"] { background: var(--nk-soft); border-color: var(--nk); color: var(--nk); }
+.nk-opts button:disabled { opacity: .45; }
+.nk-tg { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; padding: 4px 0; }
+.nk-tg input { width: 20px; height: 20px; accent-color: var(--nk); flex: none; }
+.nk-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.nk-facts div { background: var(--surface-2); border-radius: 10px; padding: 6px 9px; display: flex; flex-direction: column; }
+.nk-facts small { color: var(--ink-2); font-size: 10.5px; font-weight: 700; }
+.nk-facts b { font-size: 13px; }
+.nk-about { display: block; font-family: var(--f-display); font-size: 17px; line-height: 1.3; quotes: '«' '»'; }
+.nk-line { font-size: 13px !important; color: var(--ink-2); }
+.nk-contact { background: var(--green-soft); border-radius: 12px; padding: 8px 10px; }
+.nk-who { font-size: 16px; }
+.nk-steps { display: flex; flex-direction: column; gap: 8px; margin: 4px 0; }
+.nk-step { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.nk-step i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 800; background: var(--surface-2); color: var(--ink-2); }
+.nk-step.d i { background: var(--green-2); color: #fff; }
+.nk-step.c i { background: var(--nk); color: #fff; }
+.nk-step span { display: flex; flex-direction: column; }
+.nk-step small { color: var(--ink-2); font-size: 11.5px; }
+.nk-qs summary { font-weight: 700; font-size: 13px; color: var(--nk); }
+.nk-qs ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+.nk-sent { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.nk-priv { text-align: center; }
+.nk-circle { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+.nk-seek { background: var(--nk-soft); border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.nk-seek .k { color: var(--nk); }
+.nk-seek .tiny { color: var(--ink-2); }
+.nk-who-row { display: flex; gap: 10px; align-items: center; }
+.nk-who-row .av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; flex: none; }
+.nk-who-row span:last-child { display: flex; flex-direction: column; }
+.nk-who-row small { color: var(--ink-2); font-size: 12px; }
+.nk-seek .nk-facts div { background: var(--surface); }
+.nk-btn { background: var(--nk) !important; color: #fff !important; border-color: var(--nk) !important; }
+.nk-prop-f { display: flex; flex-direction: column; gap: 8px; background: var(--surface); border-radius: 14px; padding: 10px; }

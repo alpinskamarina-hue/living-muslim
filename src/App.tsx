@@ -34,6 +34,7 @@ import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
+import { useNikahReady, useNikahMe, nikahTodo } from './nikah';
 import { bizToday, takeBizPick, addBizHabits, useMyShura, useMyAdvice } from './biz';
 import { ACTIVE_LIMIT, slotsUsed } from './store';
 import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays, chDays, useMyChallenges, useMyAmir, CH_KINDS } from './cweek';
@@ -122,6 +123,8 @@ export function App() {
   const myCh = useMyChallenges(today);
   const [myAmir, setMyAmir] = useMyAmir();
   const [myShura, setMyShura] = useMyShura();
+  const nikahOn = useNikahReady();
+  const nk = useNikahMe(nikahOn);
   const [myAdv, giveAdv] = useMyAdvice(today);
   // Business habits picked while creating or joining a business circle (the page reloaded since).
   useEffect(() => { const p = takeBizPick(); if (p?.length) update((s) => addBizHabits(s, p, today, ACTIVE_LIMIT, slotsUsed(s))); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -178,6 +181,9 @@ export function App() {
 
   // Support from the circle for me today: who made dua and who nudged me.
   const support: { text: string; onOpen: () => void; cls?: string }[] = [];
+  const nkTodo = nikahTodo(nk);
+  if (nkTodo.wali.length) support.push({ cls: 'invite', text: `💍 ${nkTodo.wali[0].name} просит тебя быть вали в поиске пары`, onOpen: () => go({ profile: 'nikah' }) });
+  if (nkTodo.props) support.push({ cls: 'invite', text: `💍 ${nkTodo.props === 1 ? 'Новое предложение' : `${nkTodo.props} новых предложения`} для никаха`, onOpen: () => go({ profile: 'nikah' }) });
   if (invites.length) {
     const f = invites[0];
     support.push({ cls: 'invite', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); },
@@ -244,7 +250,7 @@ export function App() {
         {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (

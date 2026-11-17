@@ -13,6 +13,8 @@ import { RamadanPushFields } from './Ramadan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
 import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
+import { NikahPage } from './Nikah';
+import { useNikahReady, useNikahMe, nikahTodo } from '../nikah';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { METHODS, PLACES, type DayTimes } from '../prayer';
@@ -35,6 +37,9 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const [page, setPage] = useState<Page>(start ?? 'main');
   const [, bump] = useState(0);
   const [nicks, setNicks] = useState(false);
+  const nikahOn = useNikahReady();
+  const nk = useNikahMe(nikahOn);
+  const nkTodo = nikahTodo(nk);
   const admin = useIsAdmin();
   useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
@@ -50,6 +55,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'words') return <Sub title="Фразы и напоминания" onBack={back}><WordsSettings s={s} set={set} /></Sub>;
   if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
+  if (page === 'nikah') return <Sub title="Никах" onBack={back}><NikahPage /></Sub>;
   if (page === 'admin') return <Sub title="Для владельца" onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title="Как пользоваться" onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
   if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
@@ -108,6 +114,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
       <div className="menu">
         <Row icon="📖" title="Как пользоваться" sub="Гид по всем разделам и частые вопросы" onClick={() => go('guide')} />
         <Row icon="🌳" title="Мой сад" sub={`${gd.leaves} ${plural(gd.leaves, 'лист', 'листа', 'листьев')} · до плода ${gd.toFruit} ${plural(gd.toFruit, 'день', 'дня', 'дней')} · вехи`} onClick={() => go('garden')} />
+        {isCloud && nikahOn && <Row icon="💍" title="Никах" sub={nkTodo.props || nkTodo.wali.length ? `Новое: ${[nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, 'предложение', 'предложения', 'предложений')}`, nkTodo.wali.length && 'просьба быть вали'].filter(Boolean).join(', ')}` : nk?.mine ? 'Моя анкета, предложения, шаги' : 'Ищу пару через свои круги, с вали'} onClick={() => go('nikah')} />}
         {isCloud && nicks && <Row icon="🪪" title="Мой профиль" sub={prof?.nick ? `@${prof.nick} · фото, приватность` : 'Ник, фото, кто может звать в круги'} onClick={() => go('me')} />}
         {!onClaude && <Row icon="👤" title="Аккаунт" sub={me ? `${me.email} · имя «${name}»` : 'Войти по почте, имя'} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
@@ -126,7 +133,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

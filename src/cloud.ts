@@ -427,3 +427,14 @@ export function forgetIdentity() {
     sessionStorage.removeItem('lm.admin');
   } catch { /* */ }
 }
+
+/** Calls an RPC as me (uid + token added). Throws when there is no identity or the call fails. */
+export async function meRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
+  const me = load();
+  if (!me) throw new Error('no identity');
+  return rpc<T>(fn, { p_uid: me.uid, p_token: me.token, ...args });
+}
+/** Probes for a server function without an identity: true when it exists. */
+export async function serverHas(fn: string, args: Record<string, unknown>): Promise<boolean> {
+  try { await rpc(fn, args); return true; } catch { return false; }
+}
