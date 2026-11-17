@@ -1037,3 +1037,67 @@ button:disabled { opacity: .5; cursor: default; }
 .cl-inv span { display: flex; flex-direction: column; }
 .cl-inv small { color: var(--ink-2); font-size: 12px; }
 .ch-mt .ava { flex: none; width: 38px; height: 38px; min-width: 38px; border-radius: 50%; margin: 0; }
+
+/* ---- nicks, profile picture, invites by nick ---- */
+.nk-ava { flex: none; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; object-fit: cover; background: var(--green-2); }
+.me-avb { flex: none; border: 0; padding: 0; background: none; border-radius: 50%; }
+.nk-pic { display: flex; justify-content: center; margin: 4px 0 10px; }
+.nk-big { position: relative; border: 0; padding: 0; background: none; border-radius: 50%; }
+.nk-big .nk-ava { font-size: 36px !important; }
+.nk-big i { position: absolute; right: -2px; bottom: -2px; width: 32px; height: 32px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; font-style: normal; font-size: 15px; }
+.nk-kinds { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+.nk-kinds button, .nk-pick button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+.nk-kinds button[aria-pressed="true"] { background: var(--green-soft); border-color: var(--green-2); color: var(--green-2); }
+.nk-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 10px; }
+.nk-grid button { aspect-ratio: 1; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; font-size: 22px; padding: 0; display: grid; place-items: center; }
+.nk-grid.pat { grid-template-columns: repeat(4, 1fr); }
+.nk-grid button[aria-pressed="true"] { border-color: var(--green-2); box-shadow: 0 0 0 2px var(--green-soft); }
+.nk-colors { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.nk-colors button { width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0; }
+.nk-colors button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink-2); }
+.nk-in { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--surface-2); border-radius: 12px; padding: 0 12px; }
+.nk-in b { color: var(--ink-2); font-size: 15px; }
+.field .nk-in input { border: 0; background: none; padding: 10px 0; flex: 1; min-width: 0; outline: none; }
+.nk-st { flex: none; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.nk-st.ok { color: var(--green-2); }
+.nk-st.bad { color: #b04f5a; }
+.nk-sec { font-size: 11.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); margin: 18px 2px 8px; }
+.nk-grp { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); }
+.nk-r { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 12px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+.nk-r:first-child { border-top: 0; }
+.nk-r > span:first-child { flex: 1; min-width: 0; }
+.nk-r small { display: block; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.nk-r select { flex: none; border: 0; background: none; color: var(--green-2); font-weight: 700; font-size: 13.5px; text-align: right; max-width: 48%; }
+.nk-save { margin-top: 16px; }
+.nk-msg { font-size: 13px; color: #b04f5a; margin: 8px 0 0; text-align: center; }
+.nk-msg.ok { color: var(--green-2); }
+.nk-note { text-align: center; margin-top: 12px; }
+.nk-search { display: flex; align-items: center; gap: 6px; border: 1.5px solid var(--green-2); border-radius: 14px; padding: 4px 4px 4px 12px; margin: 6px 0 14px; background: var(--surface); }
+.nk-search span { color: var(--ink-2); font-weight: 700; }
+.nk-search input { flex: 1; min-width: 0; border: 0; background: none; font-size: 16px; padding: 8px 0; color: var(--ink); outline: none; }
+.nk-search button { border: 0; background: var(--green-2); color: #fff; border-radius: 10px; padding: 9px 14px; font-weight: 700; }
+.nk-search button:disabled { opacity: .45; }
+.nk-card { border: 1px solid var(--line); border-radius: 20px; padding: 16px; text-align: center; background: var(--surface); display: flex; flex-direction: column; align-items: center; }
+.nk-card > b { font-size: 17px; margin-top: 8px; }
+.nk-at { color: var(--ink-2); font-size: 14px; }
+.nk-card p { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+.nk-card .big-btn { width: 100%; }
+.nk-pick { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+.nk-pick button[aria-pressed="true"] { background: var(--green-2); color: #fff; border-color: var(--green-2); }
+.nk-pick button:disabled { opacity: .5; }
+.nk-done { background: var(--green-soft); color: var(--green-2); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; font-weight: 600; width: 100%; }
+.nk-none { border: 1px dashed var(--line); border-radius: 14px; padding: 12px; color: var(--ink-2); font-size: 13px; margin-top: 12px; text-align: left; width: 100%; box-sizing: border-box; }
+.nk-share { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 14px; padding: 12px; font-weight: 700; font-size: 14px; }
+.nk-inbox { margin: 10px 0 14px; }
+.nk-bell { display: flex; gap: 10px; align-items: center; background: var(--gold-soft); color: var(--ink); border-radius: 16px; padding: 10px 12px; margin-bottom: 10px; font-size: 13.5px; }
+.nk-req { border: 1px solid var(--line); border-radius: 18px; padding: 12px; margin-bottom: 10px; background: var(--surface); }
+.nk-req-top { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; font-size: 14px; }
+.nk-req-top > span { flex: 1; min-width: 0; }
+.nk-req-top small { display: block; color: var(--ink-2); font-size: 12px; }
+.nk-more { border: 0; background: none; font-size: 20px; color: var(--ink-2); padding: 0 4px; }
+.nk-block { display: block; color: #b04f5a; margin: -4px 0 8px; }
+.nk-ci { background: var(--surface-2); border-radius: 12px; padding: 8px 10px; font-size: 13.5px; margin-bottom: 10px; }
+.nk-ci small { display: block; color: var(--ink-2); font-size: 12px; }
+.nk-row { display: flex; gap: 8px; }
+.nk-row button { flex: 1; padding: 11px; border-radius: 12px; font-weight: 700; font-size: 14px; }
+.nk-no { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); }

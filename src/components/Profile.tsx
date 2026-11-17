@@ -6,6 +6,7 @@ import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
 import { isCloud } from '../cloud';
+import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { METHODS, PLACES, type DayTimes } from '../prayer';
@@ -25,6 +26,8 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   const s = state.settings;
   const set = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
   const [page, setPage] = useState<Page>(start ?? 'main');
+  const [, bump] = useState(0);
+  useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
   const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
   const back = () => go('main');
 
@@ -36,9 +39,11 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   if (page === 'look') return <Sub title="Внешний вид" onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title="Данные" onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
   if (page === 'help') return <Sub title="Помощь" onBack={back}><HelpPage /></Sub>;
+  if (page === 'me') return <Sub title="Мой профиль" onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} /></Sub>;
   if (page === 'account') return <Sub title="Аккаунт" onBack={back}><AccountPage s={s} set={set} /></Sub>;
 
   const me = authMe();
+  const prof = isCloud ? cachedProfile() : null;
   const st = stats(state);
   const gd = garden(journey(state, dayKey(new Date())).lit);
   const used = slotsUsed(state);
@@ -50,10 +55,11 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
     <div className="page">
       <div className="me-card">
         <div className="me-top">
-          <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>
+          {isCloud && prof?.avatar ? <button type="button" className="me-avb" onClick={() => go('me')} aria-label="Мой профиль"><Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} /></button>
+            : <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
           <div>
             <b>{name}</b>
-            <small>{me?.email ?? 'Вход по почте не выполнен'}</small>
+            <small>{prof?.nick ? `@${prof.nick}` : me?.email ?? 'Вход по почте не выполнен'}</small>
             <small>С нами {st.days} {plural(st.days, 'день', 'дня', 'дней')}</small>
           </div>
         </div>
@@ -72,6 +78,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
 
       <div className="menu">
         <Row icon="🌳" title="Мой сад" sub={`${gd.leaves} ${plural(gd.leaves, 'лист', 'листа', 'листьев')} · до плода ${gd.toFruit} ${plural(gd.toFruit, 'день', 'дня', 'дней')} · вехи`} onClick={() => go('garden')} />
+        {isCloud && <Row icon="🪪" title="Мой профиль" sub={prof?.nick ? `@${prof.nick} · фото, приватность` : 'Ник, фото, кто может звать в круги'} onClick={() => go('me')} />}
         {!onClaude && <Row icon="👤" title="Аккаунт" sub={me ? `${me.email} · имя «${name}»` : 'Войти по почте, имя'} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
         <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
@@ -88,7 +95,7 @@ export function Profile({ state, update, replace, times, onEdit, start }: Props)
   );
 }
 
-export type Page = 'main' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'main' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

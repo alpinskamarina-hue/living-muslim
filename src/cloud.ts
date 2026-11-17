@@ -2,6 +2,9 @@
 // window.claude; everywhere else this module installs a small stand-in with the same db/user
 // surface, backed by Supabase RPC functions. Identity is an anonymous id + secret kept on the device.
 
+import { avatarUrl, type AvatarPick } from './avatar';
+import { authMe, accessToken } from './auth';
+
 const URL_ = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const LS = 'lm.cloud';
@@ -36,10 +39,10 @@ function save(x: CloudId | null) {
   try { if (x) localStorage.setItem(LS, JSON.stringify(x)); else localStorage.removeItem(LS); } catch { /* private mode */ }
 }
 
-async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+async function rpc<T>(fn: string, args: Record<string, unknown>, bearer?: string): Promise<T> {
   const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
     method: 'POST',
-    headers: { apikey: KEY, 'Content-Type': 'application/json' },
+    headers: { apikey: KEY, 'Content-Type': 'application/json', ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
     body: JSON.stringify(args),
   });
   if (!r.ok) throw new Error(`rpc ${fn} ${r.status}`);
@@ -94,7 +97,15 @@ export function switchCircle(code: string) {
 export function renameCircle(code: string, title: string, kind?: CircleKind) {
   const me = load();
   if (!me) return;
-  save({ ...me, circles: (me.circles ?? []).map((c) => (c.code === code ? { ...c, title: title.trim().slice(0, 40) || c.title, kind: kind ?? c.kind } : c)) });
+  const circles = (me.circles ?? []).map((c) => (c.code === code ? { ...c, title: title.trim().slice(0, 40) || c.title, kind: kind ?? c.kind } : c));
+  save({ ...me, circles });
+  const c = circles.find((x) => x.code === code);
+  if (c) pushMeta(me, c);
+}
+
+/** Keeps my title and kind of a circle on the server, so another phone gets the same list. Best effort. */
+function pushMeta(me: CloudId, c: CircleRef) {
+  rpc('lm_circle_meta', { p_uid: me.uid, p_token: me.token, p_code: c.code, p_title: c.title, p_kind: c.kind ?? '' }).catch(() => { /* older server */ });
 }
 
 async function ensureId(name: string): Promise<CloudId> {
@@ -115,7 +126,9 @@ const addCircle = (me: CloudId, ref: CircleRef): CloudId => ({ ...me, circle: re
 export async function createCircle(name: string, title = 'Мой круг', kind?: CircleKind): Promise<string> {
   const me = await ensureId(name);
   const code = await rpc<string>('lm_create_circle', { p_uid: me.uid, p_token: me.token });
-  save(addCircle(me, { code, title: title.trim().slice(0, 40) || 'Мой круг', kind }));
+  const ref = { code, title: title.trim().slice(0, 40) || 'Мой круг', kind };
+  save(addCircle(me, ref));
+  pushMeta(me, ref);
   return code;
 }
 
@@ -125,7 +138,9 @@ export async function joinCircle(name: string, code: string, title = '', kind?: 
   const ok = await rpc<boolean>('lm_join', { p_uid: me.uid, p_token: me.token, p_code: c });
   if (ok) {
     const old = me.circles?.find((x) => x.code === c);
-    save(addCircle(me, { code: c, title: title.trim().slice(0, 40) || old?.title || 'Круг друзей', kind: kind ?? old?.kind }));
+    const ref = { code: c, title: title.trim().slice(0, 40) || old?.title || 'Круг друзей', kind: kind ?? old?.kind };
+    save(addCircle(me, ref));
+    pushMeta(me, ref);
     try { sessionStorage.removeItem('lm.invite'); sessionStorage.removeItem('lm.inviteMeta'); } catch { /* */ }
   }
   return ok;
@@ -146,9 +161,118 @@ export async function cloudSummaries(): Promise<any[]> {
   try { return await rpc<any[]>('lm_summaries', {}); } catch { return []; }
 }
 
+// ---- profile: nick, picture, privacy; invites by nick ----
+
+export interface Profile {
+  name: string; nick: string | null; bio: string; avatar: AvatarPick; photo: string; color: string;
+  findable: boolean; invite_from: 'all' | 'circles' | 'none'; gender: '' | 'm' | 'f'; sisters_only: boolean; show_photo: boolean; email: boolean;
+}
+export interface Found {
+  uid: string; name: string; nick: string; bio: string; avatar: AvatarPick; color: string; gender: string; photo: string;
+  shared: string[]; can: 'ok' | 'closed' | 'circles_only';
+}
+export interface Invite {
+  id: string; code: string; title: string; kind: string; count: number; created: string;
+  from: { uid: string; name: string; nick: string | null; color: string; avatar: AvatarPick; photo: string };
+}
+
+export const NICK_RE = /^[a-z0-9_.]{3,20}$/;
+export const cleanNick = (s: string) => s.trim().replace(/^@/, '').toLowerCase();
+
+/** My profile from the server; null when I have no circle identity yet or the server is older. */
+export async function getProfile(): Promise<Profile | null> {
+  const me = load();
+  if (!me) return null;
+  try { return await rpc<Profile | null>('lm_profile', { p_uid: me.uid, p_token: me.token }); } catch { return null; }
+}
+
+/** 'ok' | 'bad' | 'taken' | 'error' */
+export async function nickFree(nick: string): Promise<string> {
+  try { return await rpc<string>('lm_nick_free', { p_uid: load()?.uid ?? null, p_nick: cleanNick(nick) }); } catch { return 'error'; }
+}
+
+/** Saves profile fields; creates my identity on first use. Returns 'ok' or a reason (nick_taken, nick_bad, photo_big, error). */
+export async function saveProfile(p: Partial<Profile>, name: string): Promise<string> {
+  try {
+    const me = await ensureId(p.name ?? name);
+    const r = await rpc<string>('lm_profile_set', { p_uid: me.uid, p_token: me.token, p });
+    if (r === 'ok' && p.name) save({ ...me, name: p.name });
+    return r;
+  } catch { return 'error'; }
+}
+
+export async function findNick(nick: string): Promise<Found | null | 'error'> {
+  const me = load();
+  if (!me) return 'error';
+  try { return await rpc<Found | null>('lm_find', { p_uid: me.uid, p_token: me.token, p_nick: cleanNick(nick) }); } catch { return 'error'; }
+}
+
+/** 'ok' | 'closed' | 'already_in' | 'wrong_kind' | 'limit' | 'full' | 'not_member' | 'error' */
+export async function sendInvite(code: string, to: string): Promise<string> {
+  const me = load();
+  const c = me?.circles?.find((x) => x.code === code);
+  if (!me || !c) return 'error';
+  try { return await rpc<string>('lm_invite', { p_uid: me.uid, p_token: me.token, p_code: code, p_to: to, p_title: c.title, p_kind: c.kind ?? '' }); } catch { return 'error'; }
+}
+
+export async function inbox(): Promise<Invite[]> {
+  const me = load();
+  if (!me) return [];
+  try { return (await rpc<Invite[]>('lm_inbox', { p_uid: me.uid, p_token: me.token })) ?? []; } catch { return []; }
+}
+
+/** Accepting adds the circle here and opens it (the page reloads). */
+export async function answerInvite(inv: Invite, accept: boolean): Promise<boolean> {
+  const me = load();
+  if (!me) return false;
+  try {
+    const r = await rpc<{ ok: boolean; code?: string; title?: string; kind?: string } | null>('lm_answer', { p_uid: me.uid, p_token: me.token, p_id: inv.id, p_accept: accept });
+    if (!r?.ok) return false;
+    if (accept && r.code) {
+      const kind = CIRCLE_KINDS.some((k) => k.id === r.kind) ? (r.kind as CircleKind) : undefined;
+      save(addCircle(me, { code: r.code, title: r.title || 'Круг', kind }));
+      try { sessionStorage.setItem('lm.tab', 'circle'); sessionStorage.setItem('lm.autojoin', '1'); } catch { /* */ }
+      location.reload();
+    }
+    return true;
+  } catch { return false; }
+}
+
+export async function blockUser(uid: string): Promise<boolean> {
+  const me = load();
+  if (!me) return false;
+  try { return await rpc<boolean>('lm_block', { p_uid: me.uid, p_token: me.token, p_other: uid }); } catch { return false; }
+}
+
+/**
+ * Signed in by email: ties this device's profile to the email, or, on a new phone, takes over the profile
+ * already tied to it (with its circles). Runs once per sign-in; reloads if the identity changed.
+ */
+export async function claimByEmail(accessToken: string, authId: string, name: string) {
+  try {
+    if (localStorage.getItem('lm.claimed') === authId) return;
+    const me = load();
+    const r = await rpc<{ uid: string; token: string; name?: string; same: boolean } | null>('lm_claim', { p_uid: me?.uid ?? null, p_token: me?.token ?? null, p_name: name }, accessToken);
+    if (!r?.uid) return;
+    localStorage.setItem('lm.claimed', authId);
+    const list = await rpc<{ code: string; title: string; kind: string }[]>('lm_circles', { p_uid: r.uid, p_token: r.token }).catch(() => []);
+    const local = r.same ? me?.circles ?? [] : [];
+    const merged: CircleRef[] = [...local];
+    for (const c of list ?? []) {
+      const kind = CIRCLE_KINDS.some((k) => k.id === c.kind) ? (c.kind as CircleKind) : undefined;
+      const i = merged.findIndex((x) => x.code === c.code);
+      if (i < 0) merged.push({ code: c.code, title: c.title || 'Круг', kind });
+      else if (!c.title) pushMeta({ uid: r.uid, token: r.token, name }, merged[i]);
+    }
+    const next: CloudId = { uid: r.uid, token: r.token, name: r.name || me?.name || name, circles: merged, circle: (r.same && me?.circle) || merged[0]?.code };
+    save(next);
+    if (!r.same) location.reload();
+  } catch { /* server not updated yet: try again next start */ }
+}
+
 // ---- stand-in for window.claude ----
 
-interface State { owner: string; members: { uid: string; name: string; color: string }[]; docs: { coll: string; key: string; data: any }[] }
+interface State { owner: string; members: { uid: string; name: string; color: string; nick?: string; avatar?: AvatarPick; photo?: string }[]; docs: { coll: string; key: string; data: any }[] }
 type Listener = { coll: string; next: (snap: any) => void; err: (e: any) => void };
 
 function makeRuntime(me: CloudId & { circle: string }) {
@@ -221,7 +345,7 @@ function makeRuntime(me: CloudId & { circle: string }) {
       const out: Record<string, { name: string; avatarUrl: string; color: string }> = {};
       for (const id of ids) {
         const m = state?.members.find((x) => x.uid === id);
-        out[id] = { name: m?.name || '', avatarUrl: '', color: m?.color || '#1f7a4d' };
+        out[id] = { name: m?.name || '', avatarUrl: m ? avatarUrl(m.avatar, m.avatar?.c || m.color, m.photo) : '', color: m?.avatar?.c || m?.color || '#1f7a4d' };
       }
       return out;
     },
@@ -247,6 +371,8 @@ export function signupName(): string {
 
 if (isCloud) {
   flushSignup();
+  const a = authMe();
+  if (a && localStorage.getItem('lm.claimed') !== a.id) accessToken().then((t) => { if (t) void claimByEmail(t, a.id, signupName() || a.name || ''); });
   const me = load();
   const rt = me?.circle ? makeRuntime(me as CloudId & { circle: string }) : null;
   window.claude = {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { InviteInbox } from './Nick';
 import { signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 
 /** Create a circle (title + kind) or join one by invite. First visit, or «+ Новый круг». */
@@ -33,6 +34,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
     <div className="page">
       {onCancel && <button type="button" className="link-btn pro-back" onClick={onCancel}>← Мои круги</button>}
       <h1 className="page-h">{invited ? 'Приглашение' : onCancel ? 'Новый круг' : 'Круг'}</h1>
+      {!onCancel && !invited && <InviteInbox />}
       <p className="page-sub">{invited ? 'Тебя позвали в круг. Друзья увидят только итог твоего дня: сколько намазов и привычек отмечено.' : 'Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек и заметок.'}</p>
       <div className="join cl-setup">
         <label className="cl-f">
