@@ -217,7 +217,7 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
         {idx < STEPS.length - 1 ? (
           <button type="button" className="pri-btn" onClick={onNext}>Дальше: {STEPS[idx + 1].title}</button>
         ) : (
-          <button type="button" className="pri-btn" onClick={() => { update((s) => patch(s, { tawaf: 0, saee: 0 })); onBack(); }}>Умра завершена, сбросить счётчики</button>
+          <button type="button" className="pri-btn" onClick={() => { update((s) => patch(s, { tawaf: 0, saee: 0, ihram: undefined })); onBack(); }}>Умра завершена, выйти из ихрама</button>
         )}
       </div>
     </div>

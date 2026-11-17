@@ -183,6 +183,10 @@ export interface UmrahState {
   /** Umrah video lessons already watched (video ids). */
   watched?: string[];
   vlang?: 'ru' | 'en';
+  /** The flight for the miqat countdown: where from and landing time (datetime-local). */
+  flight?: { dir: 'north' | 'east' | 'south' | 'medina'; land: string };
+  /** When I entered ihram (ms), until I leave it. */
+  ihram?: number;
 }
 
 export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz';

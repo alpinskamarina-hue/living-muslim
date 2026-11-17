@@ -4,6 +4,7 @@ import type { UmrahApi } from '../umrahCircle';
 import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
 import { DuaList, StepView, umrahOf, prepPct } from './Umrah';
 import { UmrahTrips } from './UmrahTrips';
+import { MiqatView } from './Miqat';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 
@@ -32,6 +33,7 @@ const dLabel = (d: string) => { const [, m, day] = d.split('-').map(Number); ret
 export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel, start }: Props) {
   const [tab, setTab] = useState<HubTab>(start ?? 'heart');
   const [step, setStep] = useState<Step | null>(null);
+  const [miqat, setMiqat] = useState(false);
   const u = umrahOf(state);
   const { me, trips, rsvp, duas } = api;
 
@@ -57,6 +59,8 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
   if (step) return <StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} />;
 
+  if (miqat) return <MiqatView state={state} update={update} onBack={() => setMiqat(false)} />;
+
   const talbiya = STEPS.find((s) => s.id === 'talbiya')?.dua?.[0];
 
   return (
@@ -71,6 +75,12 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           <span><b>{from ? (left! > 0 ? left : '—') : '—'}</b><small>{from && left! > 0 ? plural(left!, 'день до вылета', 'дня до вылета', 'дней до вылета') : 'дней до вылета'}</small></span>
         </div>
       </div>
+
+      {u.ihram && (
+        <button type="button" className="um-ihram" onClick={() => setMiqat(true)}>
+          <b>Ты в ихраме</b><small>тальбия и запреты ›</small>
+        </button>
+      )}
 
       {/* Now: changes by the days left, so the person sees only what matters today. */}
       <div className="um-now">
@@ -88,11 +98,12 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
         )}
         {phase === 'far' && <><b>Время намерения</b><p>До вылета {left} {plural(left!, 'день', 'дня', 'дней')}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.</p></>}
         {phase === 'month' && <><b>Месяц до умры</b><p>Документы, разрешение в Nusuk, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p></>}
-        {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p></>}
+        {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте: указать рейс</button></>}
         {phase === 'there' && (
           <>
             <b>Ты в пути. Ляббайк, Аллахумма ляббайк</b>
             <p>Гид работает без интернета. Таваф {u.tawaf}/7, саи {u.saee}/7.</p>
+            {!u.ihram && <button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте</button>}
             <button type="button" className="pri-btn" onClick={() => setTab('rites')}>Открыть обряды</button>
           </>
         )}
@@ -161,6 +172,10 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
       {tab === 'rites' && (
         <div className="um-sec">
+          <button type="button" className="q-row" onClick={() => setMiqat(true)}>
+            <span className="q-n">✈</span>
+            <span className="q-t"><b>{u.ihram ? 'Я в ихраме' : 'Микат в самолёте'}</b><small>{u.ihram ? 'Тальбия и запреты' : 'Таймер до намерения по времени посадки'}</small></span>
+          </button>
           {STEPS.map((s, i) => (
             <button type="button" key={s.id} className="q-row" onClick={() => setStep(s)}>
               <span className="q-n">{i + 1}</span>

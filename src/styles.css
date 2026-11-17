@@ -1386,3 +1386,34 @@ button:disabled { opacity: .5; cursor: default; }
 .scene-count .lap-t { color: var(--ink-2); max-width: 190px; }
 .scene-tap { width: min(88vw, 340px); font-size: 17px; padding: 16px; border-radius: 18px; }
 .scene-tap.sure { background: var(--late); }
+
+/* Miqat on the plane and ihram mode */
+.sess.miqat { background: #0b1510; align-items: stretch; gap: 16px; }
+.miqat > * { max-width: 480px; width: 100%; margin-left: auto; margin-right: auto; }
+.mq-form > b { display: block; margin-bottom: 8px; }
+.mq-dirs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mq-dirs button { text-align: left; background: #13221a; border: 1px solid #24392d; color: var(--on-dark); border-radius: 14px; padding: 10px; }
+.mq-dirs button[aria-pressed="true"] { border-color: #d9ad55; background: #1f2a17; }
+.mq-dirs b { display: block; font-size: 14px; }
+.mq-dirs small { color: var(--on-dark-2); font-size: 11.5px; }
+.mq-land { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--on-dark-2); }
+.mq-land input { background: #13221a; color: var(--on-dark); border: 1px solid #24392d; border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; color-scheme: dark; }
+.mq-count { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mq-count > small { color: var(--on-dark-2); }
+.mq-count .big-t { font-family: var(--f-display); font-size: 64px; font-weight: 700; color: #d9ad55; line-height: 1.05; }
+.mq-count p { margin: 4px 0; color: var(--on-dark-2); font-size: 14px; }
+.mq-dua { text-align: center; padding: 6px 0; }
+.mq-dua .ar-dua { color: #d9ad55; font-size: 24px; margin: 0 0 4px; }
+.mq-dua p { margin: 2px 0; }
+.mq-dua small { color: var(--on-dark-2); }
+.mq-card { background: #13221a; border: 1px solid #24392d; border-radius: 16px; padding: 12px 14px; }
+.mq-card p, .mq-card ul { margin: 6px 0 0; color: var(--on-dark-2); font-size: 13.5px; padding-left: 18px; }
+.mq-card p { padding-left: 0; }
+.mq-go { align-self: center; width: auto !important; padding: 16px 28px; border-radius: 18px; font-size: 16px; }
+.mq-link { background: none; border: 0; color: #d9ad55; font: inherit; font-weight: 700; text-decoration: underline; padding: 6px; align-self: center; width: auto !important; }
+.mq-note { color: var(--on-dark-2); font-size: 12px; text-align: center; }
+.mq-lead { text-align: center; color: var(--on-dark-2); }
+.um-ihram { display: flex; justify-content: space-between; align-items: center; width: 100%; background: #f6f3ea; border: 1px solid #e3dccb; border-radius: 14px; padding: 10px 14px; margin-bottom: 10px; color: var(--ink); }
+.um-ihram b:before { content: '◯'; margin-right: 8px; color: var(--gold); }
+.um-ihram small { color: var(--ink-2); }
+.miqat .icon-btn { background: #13221a; color: var(--on-dark); border: 1px solid #24392d; font-size: 22px; }
