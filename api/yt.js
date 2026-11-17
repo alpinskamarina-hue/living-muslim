@@ -76,11 +76,24 @@ async function search(q) {
 
 // The live stream from the Haram right now. The broadcaster's handle first, then a search among live videos.
 const LIVE = {
-  makkah: { handles: ['@SaudiQuranTv', '@saudiqurantv'], q: 'makkah live قناة القرآن الكريم بث مباشر', must: /mak|مك|قرآن|quran|haram|حرم/i },
+  makkah: { ids: ['R-EaDtiQTk0'], handles: ['@SaudiQuranTv', '@saudiqurantv'], q: 'makkah live قناة القرآن الكريم بث مباشر', must: /mak|مك|قرآن|quran|haram|حرم/i },
   madinah: { handles: ['@SaudiSunnahTv', '@saudisunnahtv'], q: 'madinah live قناة السنة النبوية بث مباشر', must: /mad|med|مدين|سنة|sunnah|nabawi|نبوي/i },
 };
 async function live(place) {
   const c = LIVE[place] || LIVE.makkah;
+  // The stream Nasim chose first; if it ended, the same channel's current live.
+  for (const v of c.ids || []) {
+    try {
+      const html = await (await fetch(`https://www.youtube.com/watch?v=${v}`, { headers: HEADERS })).text();
+      if (/"isLiveNow":true/.test(html)) return { id: v, via: 'chosen' };
+      const ch = html.match(/"channelId":"(UC[\w-]{22})"/)?.[1];
+      if (ch) {
+        const live = await (await fetch(`https://www.youtube.com/channel/${ch}/live`, { headers: HEADERS })).text();
+        const id = live.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/)?.[1];
+        if (id && /"isLiveNow":true/.test(live)) return { id, via: 'chosen-channel' };
+      }
+    } catch { /* fall through */ }
+  }
   for (const h of c.handles) {
     try {
       const r = await fetch(`https://www.youtube.com/${h}/live`, { headers: HEADERS });
