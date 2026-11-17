@@ -83,16 +83,19 @@ async function live(place) {
   const c = LIVE[place] || LIVE.makkah;
   // The stream Nasim chose first; if it ended, the same channel's current live.
   for (const v of c.ids || []) {
-    try {
-      const html = await (await fetch(`https://www.youtube.com/watch?v=${v}`, { headers: HEADERS })).text();
-      if (/"isLiveNow":true/.test(html)) return { id: v, via: 'chosen' };
-      const ch = html.match(/"channelId":"(UC[\w-]{22})"/)?.[1];
-      if (ch) {
+    let html = '';
+    try { html = await (await fetch(`https://www.youtube.com/watch?v=${v}`, { headers: HEADERS })).text(); } catch { return { id: v, via: 'chosen' }; }
+    // Keep the chosen stream unless YouTube clearly says it has ended.
+    const ended = /"isLiveNow":false/.test(html) && !/"isLiveNow":true/.test(html);
+    if (!ended) return { id: v, via: 'chosen' };
+    const ch = html.match(/"channelId":"(UC[\w-]{22})"/)?.[1];
+    if (ch) {
+      try {
         const live = await (await fetch(`https://www.youtube.com/channel/${ch}/live`, { headers: HEADERS })).text();
         const id = live.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]{11})"/)?.[1];
         if (id && /"isLiveNow":true/.test(live)) return { id, via: 'chosen-channel' };
-      }
-    } catch { /* fall through */ }
+      } catch { /* fall through */ }
+    }
   }
   for (const h of c.handles) {
     try {
