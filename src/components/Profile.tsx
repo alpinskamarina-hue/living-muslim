@@ -80,7 +80,7 @@ export function Profile({ state, update, replace, times, onEdit }: Props) {
 
 type Page = 'main' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
-const SUPPORT_EMAIL = '';
+const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
 function stats(state: AppState) {
