@@ -166,7 +166,7 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan(true); }} />}
+        {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan(true); }} />}
         {tab === 'progress' && (
           <div className="page">
             <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />}

@@ -8,7 +8,9 @@ import { Books } from './Books';
 import { Languages } from './Languages';
 import { Course } from './Course';
 import { Health } from './Health';
-import { Umrah, prepPct } from './Umrah';
+import { prepPct } from './Umrah';
+import { UmrahHub } from './UmrahHub';
+import type { UmrahApi } from '../umrahCircle';
 import { Food, foodOf } from './Food';
 import { Sadaqa, sadaqaOf, sadaqaStreak } from './Sadaqa';
 import { health } from '../health';
@@ -27,11 +29,12 @@ interface Props {
   onRamadan: () => void;
   /** Opened from a goal: which practice, and for videos which course. */
   start?: { mode: string; ref?: string };
+  umrah: UmrahApi;
 }
 
 type Mode = 'home' | 'focus' | 'tasbih' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
 
-export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start }: Props) {
+export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
   const active = state.habits.filter((h) => h.status === 'active');
   const [habitId, setHabitId] = useState<string>(suggestedId ?? active[0]?.id ?? '');
@@ -51,7 +54,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} />;
-  if (mode === 'umrah') return <Umrah state={state} update={update} onExit={() => setMode('home')} />;
+  if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || 'Участник'} backLabel="Практика" onExit={() => setMode('home')} />;
   if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={start?.mode === 'videos' ? start.ref : undefined} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'body') return (
     <div className="page">

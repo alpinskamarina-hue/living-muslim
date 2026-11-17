@@ -3,7 +3,7 @@ import { sexOf } from './Words';
 import type { CircleApi, Member, Reacts } from '../circle';
 import { plural } from '../dates';
 import type { UmrahApi } from '../umrahCircle';
-import { UmrahTrips } from './UmrahTrips';
+import { UmrahHub } from './UmrahHub';
 import type { KhatmApi } from '../khatm';
 import { KhatmSection } from './Khatm';
 import type { IftarApi } from '../iftar';
@@ -119,7 +119,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const umraGoing = Boolean(me && Object.entries(umrah.rsvp[me] ?? {}).some(([h, r]) => r.s === 'go' && umrah.trips[h]));
 
   const umraName = (id: string) => names[id]?.name || umrah.names[id] || khatm.names[id] || 'Участник';
-  if (umra) return <UmrahTrips api={umrah} myReady={myReady} nameOf={umraName} onBack={() => { setUmra(false); window.scrollTo(0, 0); }} />;
+  if (umra) return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={umraName} start="trip" backLabel="Круг" onExit={() => { setUmra(false); window.scrollTo(0, 0); }} />;
   if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
   if (inviting && cur) return <InviteByNick code={cur.code} onBack={() => { setInviting(false); window.scrollTo(0, 0); }} />;
 

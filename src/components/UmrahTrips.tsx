@@ -3,11 +3,11 @@ import type { UmrahApi, URsvp, UStatus, UTrip } from '../umrahCircle';
 import { uid } from '../store';
 import { UmrahPlan } from './UmrahPlan';
 
-interface Props { api: UmrahApi; myReady: number; nameOf: (id: string) => string; onBack: () => void }
+interface Props { api: UmrahApi; myReady: number; nameOf: (id: string) => string; onBack?: () => void; embedded?: boolean }
 
 const ST: { s: UStatus; l: string }[] = [{ s: 'go', l: 'Еду' }, { s: 'maybe', l: 'Думаю' }, { s: 'no', l: 'Не в этот раз' }];
 
-export function UmrahTrips({ api, myReady, nameOf, onBack }: Props) {
+export function UmrahTrips({ api, myReady, nameOf, onBack, embedded }: Props) {
   const { me, trips, rsvp } = api;
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function UmrahTrips({ api, myReady, nameOf, onBack }: Props) {
   // One trip on its own screen.
   if (open && trips[open]) {
     return (
-      <div className="page umrah-page">
+      <div className={embedded ? 'umrah-page' : 'page umrah-page'}>
         <button type="button" className="link-btn um-back" onClick={() => go(null)}>← Все поездки</button>
         <TripCard host={open} trip={trips[open]} api={api} nameOf={nameOf} myReady={myReady} open onToggle={() => go(null)} />
       </div>
@@ -32,13 +32,15 @@ export function UmrahTrips({ api, myReady, nameOf, onBack }: Props) {
   }
 
   return (
-    <div className="page umrah-page">
-      <button type="button" className="link-btn um-back" onClick={onBack}>← Круг</button>
-      <div className="um-hero">
-        <span>🕋</span>
-        <h1 className="page-h">Умра</h1>
-        <p>Поездка группой из Круга: даты, билеты, жильё, документы и общая касса в одном месте. Без агентства и обычно дешевле.</p>
-      </div>
+    <div className={embedded ? '' : 'page umrah-page'}>
+      {!embedded && <button type="button" className="link-btn um-back" onClick={onBack}>← Круг</button>}
+      {embedded ? <p className="tiny">Поездка группой из Круга: даты, билеты, жильё, документы и общая касса в одном месте. Без агентства и обычно дешевле.</p> : (
+        <div className="um-hero">
+          <span>🕋</span>
+          <h1 className="page-h">Умра</h1>
+          <p>Поездка группой из Круга: даты, билеты, жильё, документы и общая касса в одном месте. Без агентства и обычно дешевле.</p>
+        </div>
+      )}
       {!api.ready && <p className="tiny">Загружаю поездки…</p>}
       {api.error && <div className="warn">{api.error}</div>}
       {api.ready && hosts.length === 0 && !creating && <p className="tiny">Пока никто не собирает поездку. Предложи первым: братья и сёстры из Круга смогут присоединиться, разделить задачи и готовиться вместе.</p>}

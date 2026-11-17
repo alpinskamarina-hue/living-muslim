@@ -66,7 +66,7 @@ export function Umrah({ state, update, onExit }: Props) {
   );
 }
 
-function DuaList({ state, update }: { state: AppState; update: Props['update'] }) {
+export function DuaList({ state, update }: { state: AppState; update: Props['update'] }) {
   const u = umrahOf(state);
   const [text, setText] = useState('');
   const [who, setWho] = useState('');
@@ -92,7 +92,7 @@ function DuaList({ state, update }: { state: AppState; update: Props['update'] }
   );
 }
 
-function StepView({ step, state, update, onBack, onNext }: { step: Step; state: AppState; update: Props['update']; onBack: () => void; onNext: () => void }) {
+export function StepView({ step, state, update, onBack, onNext }: { step: Step; state: AppState; update: Props['update']; onBack: () => void; onNext: () => void }) {
   const u = umrahOf(state);
   const idx = STEPS.findIndex((x) => x.id === step.id);
   const n = step.counter ? u[step.counter] : 0;

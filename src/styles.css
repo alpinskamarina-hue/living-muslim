@@ -1305,3 +1305,22 @@ button:disabled { opacity: .5; cursor: default; }
 .trip-head:disabled { cursor: default; opacity: 1; }
 .trip-head > span:last-child[aria-hidden] { font-size: 22px; color: var(--ink-2); }
 .umrah-page > .trip { border: 0; background: none; } .umrah-page > .trip > .trip-head { padding: 4px 0 14px; } .umrah-page > .trip > .trip-body { padding: 0; }
+/* Umrah hub */
+.um-ready { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.um-ready span { display: grid; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,.1); }
+.um-ready b { font-size: 20px; }
+.um-ready small { font-size: 11.5px; opacity: .85; }
+.um-now { padding: 14px; border-radius: 18px; border: 1.5px solid var(--gold); background: var(--gold-soft); display: grid; gap: 6px; margin-bottom: 12px; }
+.um-now > em { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.um-now > b { font-size: 16px; }
+.um-now > p { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+.um-due { display: grid; gap: 6px; margin-top: 4px; }
+.um-due .chk { background: var(--surface); border-radius: 12px; padding: 8px 10px; }
+.um-dates { font-size: 12px; color: var(--ink-2); }
+.um-seg { margin: 0 0 12px; position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0; }
+.um-sec { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.um-sec > * { min-width: 0; }
+.um-sec h3 { margin: 10px 0 0; font-size: 15px; }
+.um-sec h3 small { font-weight: 500; color: var(--ink-2); font-size: 12px; }
+.um-k { display: block; font-size: 11.5px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+.um-solo { padding: 12px; border-radius: 14px; background: var(--surface-2); display: grid; gap: 6px; margin-top: 8px; }

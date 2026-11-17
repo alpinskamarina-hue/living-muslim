@@ -175,6 +175,11 @@ export interface UmrahState {
   duas: { id: string; text: string; who?: string; done?: boolean }[];
   tawaf: number;
   saee: number;
+  /** My own travel days when I go without a Circle group (YYYY-MM-DD). */
+  from?: string;
+  to?: string;
+  /** Dua requests from the Circle I have already made: `${from}:${host}:${i}`. */
+  asked?: string[];
 }
 
 export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz';
