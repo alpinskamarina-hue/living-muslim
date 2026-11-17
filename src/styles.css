@@ -1494,3 +1494,12 @@ button:disabled { opacity: .5; cursor: default; }
 .os-box b { font-size: 22px; }
 .os-box a { font-size: 24px; font-weight: 800; color: #0f5132; }
 .os-hint { color: #555; }
+
+/* "Your dua was made at the Kaaba" */
+.mk-card { display: flex; gap: 12px; margin: 12px 16px 0; padding: 14px; border-radius: 18px; background: linear-gradient(150deg, #0f5132, #0b1510); color: #f1f6f0; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+.mk-ic { font-size: 30px; }
+.mk-card > div { display: grid; gap: 4px; min-width: 0; }
+.mk-card b { font-size: 16px; }
+.mk-card small { color: #d9ad55; font-size: 13px; }
+.mk-card p { margin: 2px 0 4px; font-size: 13px; opacity: .85; }
+.mk-ok { justify-self: start; background: #d9ad55; color: #14261c; border: 0; border-radius: 12px; padding: 8px 14px; font-weight: 800; }

@@ -190,6 +190,8 @@ export interface UmrahState {
   /** Savings for umrah: mine (no `for`) and gifts for a parent. Sums only, the money stays with the person. */
   /** On the ground: hotel for the lost card, walk to the mosque, group meeting point and leader. */
   site?: { city?: 'makkah' | 'madinah'; hotel?: string; hotelAr?: string; address?: string; walk?: number; meet?: string; amir?: string; amirName?: string };
+  /** "Made at the Kaaba" notes I have already seen. */
+  madeSeen?: string[];
   /** Days I did the walking norm (YYYY-MM-DD). */
   walk?: string[];
   /** Talbiya phrases I know by heart (indexes 0..3). */

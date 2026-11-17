@@ -16,6 +16,7 @@ import { syncPush } from './push';
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
+import { UmrahMadeCard } from './components/UmrahMade';
 import { prepPct } from './components/Umrah';
 import { Goals } from './components/Goals';
 import { progress, snapshot } from './goals';
@@ -156,6 +157,7 @@ export function App() {
   return (
     <div className="app">
       <main className="screen" data-tab={tab}>
+        {tab === 'today' && <UmrahMadeCard state={state} update={update} api={umrah} />}
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || 'Участник'), onOpen: () => setTab('circle') } : undefined}

@@ -29,6 +29,7 @@ export interface URsvp {
   docs?: string[]; // my documents checklist (ids)
   paid?: UPaid[];
   settled?: Record<string, number>; // money I already returned, by person
+  made?: string[]; // dua requests I made in Makkah: `${from}:${host}:${i}`
 }
 
 export interface UmrahApi {

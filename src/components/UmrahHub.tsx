@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi } from '../umrahCircle';
 import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
@@ -59,6 +59,16 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
   // Requests for dua from the Circle for the trips I am going on.
   const asks = Object.entries(duas).flatMap(([who, m]) => myTrips.flatMap((h) => (m?.[h] ?? []).map((text, i) => ({ key: `${who}:${h}:${i}`, who, text }))));
+  // While in Makkah, ticked requests are shared back, so the person who asked learns it was made.
+  const askedKey = (u.asked ?? []).join(',');
+  useEffect(() => {
+    if (phase !== 'there' || !me) return;
+    for (const h of myTrips) {
+      const made = (u.asked ?? []).filter((k) => k.split(':')[1] === h).sort();
+      const cur = [...(rsvp[me]?.[h]?.made ?? [])].sort();
+      if (made.join(',') !== cur.join(',')) api.respond(h, { made });
+    }
+  }, [askedKey, phase, me, myTrips.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggleAsk = (k: string) => update((s) => { const a = umrahOf(s).asked ?? []; return patch(s, { asked: a.includes(k) ? a.filter((x) => x !== k) : [...a, k] }); });
 
   if (step) return <StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
