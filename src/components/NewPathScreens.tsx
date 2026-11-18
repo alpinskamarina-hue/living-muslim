@@ -46,7 +46,7 @@ export function PathScreen({ state, update, today, prayer, start, onClose, onGo 
       <div className="h-wrap">
         {view.v === 'list' && <PathList state={state} update={update} today={today} open={open} f={f} />}
         {view.v === 'lesson' && <LessonView state={state} update={update} today={today} n={view.n} open={open} onGo={onGo} f={f} />}
-        {view.v === 'poses' && <Poses />}
+        {view.v === 'poses' && <Poses f={f} />}
       </div>
     </div>
   );
@@ -194,7 +194,7 @@ const FRAME_TEXT: Record<Frame, string> = {
   sujud2: _t("Так же, как первый. После него ракаат завершён."),
   tash: _t("После второго ракаата и в конце намаза. Указательный палец правой руки показывает вперёд."),
 };
-const frameSrc = (fr: Frame) => `/app/salah/m-${FRAME_IMG[fr]}.webp`;
+const frameSrc = (fr: Frame, f?: boolean) => `/app/salah/${f ? 'w' : 'm'}-${FRAME_IMG[fr]}.webp`;
 
 /** Which frames show the current teacher step. */
 function stepFrames(pose: Pose, r: number, s: number): Frame[] {
@@ -203,10 +203,10 @@ function stepFrames(pose: Pose, r: number, s: number): Frame[] {
   return ['tash'];
 }
 
-function RakahPlayer({ frames, dark }: { frames: Frame[]; dark?: boolean }) {
+function RakahPlayer({ frames, f: w }: { frames: Frame[]; f?: boolean }) {
   const [i, setI] = useState(0);
   const [play, setPlay] = useState(frames.length > 1);
-  const key = frames.join();
+  const key = frames.join() + (w ? 'w' : 'm');
   useEffect(() => { setI(0); setPlay(frames.length > 1); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!play || frames.length < 2) return;
@@ -216,9 +216,9 @@ function RakahPlayer({ frames, dark }: { frames: Frame[]; dark?: boolean }) {
   const fr = frames[Math.min(i, frames.length - 1)];
   const go = (d: number) => { setPlay(false); setI((x) => (x + d + frames.length) % frames.length); };
   return (
-    <div className={`np-film${dark ? ' dark' : ''}`}>
+    <div className="np-film">
       <div className="np-film-pic" onClick={() => frames.length > 1 && setPlay(!play)}>
-        {frames.map((f, k) => <img key={f} src={frameSrc(f)} alt={k === i ? FRAME_NAME[f] : ''} className={k === i ? 'on' : ''} loading={k === 0 ? 'eager' : 'lazy'} decoding="async" />)}
+        {frames.map((f, k) => <img key={f + k} src={frameSrc(f, w)} alt={k === i ? FRAME_NAME[f] : ''} className={k === i ? 'on' : ''} loading={k === 0 ? 'eager' : 'lazy'} decoding="async" />)}
         {frames.length > 1 && <span className="np-film-n">{i + 1} / {frames.length}</span>}
       </div>
       <div className="np-film-cap">
@@ -237,11 +237,16 @@ function RakahPlayer({ frames, dark }: { frames: Frame[]; dark?: boolean }) {
   );
 }
 
-function Poses() {
+function Poses({ f }: { f: boolean }) {
+  const [w, setW] = useState(f);
   return (
     <div className="np-poses">
       <p className="np-poses-h">{_t("Один ракаат от начала до конца. Листается сам, можно остановить и листать руками.")}</p>
-      <RakahPlayer frames={FRAME_ORDER} />
+      <div className="np-who" role="tablist">
+        <button type="button" role="tab" aria-selected={!w} onClick={() => setW(false)}>{_t("Брат")}</button>
+        <button type="button" role="tab" aria-selected={w} onClick={() => setW(true)}>{_t("Сестра")}</button>
+      </div>
+      <RakahPlayer frames={FRAME_ORDER} f={w} />
     </div>
   );
 }
@@ -341,7 +346,7 @@ function Teacher({ state, update, today, start, onClose, f }: { state: AppState;
               <button type="button" className={show === 'pose' ? 'on' : ''} onClick={() => setShow(show === 'pose' ? '' : 'pose')}>{_t("Показать движения")}</button>
             </div>
             {show === 'text' && step.dhikr.map((d) => <DhikrCard key={d} id={d} />)}
-            {show === 'pose' && <RakahPlayer frames={stepFrames(step.pose, r, s)} />}
+            {show === 'pose' && <RakahPlayer frames={stepFrames(step.pose, r, s)} f={f} />}
             {step.last && <button type="button" className="pri-btn" onClick={() => setPhase('end')}>{f ? _t("Я завершила намаз") : _t("Я завершил намаз")}</button>}
           </div>
           <div className="np-under">
