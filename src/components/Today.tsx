@@ -39,9 +39,11 @@ interface Props {
   quits?: React.ReactNode;
   quitCheck?: React.ReactNode;
   onQibla: (tab: QiblaTab) => void;
+  /** «Новый путь»: the path card, or the choice for someone new. */
+  pathCard?: React.ReactNode;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck, onQibla }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck, onQibla, pathCard }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -144,6 +146,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
 
       <div className="scroll">
         <MosqueCard state={state} update={update} today={today} now={now} times={times} next={next} onOpen={onQibla} />
+        {pathCard}
         {plan}
         {quits}
         {(j.streak > 0 || j.lit > 0) && (
@@ -187,7 +190,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
             <span aria-hidden="true">›</span>
           </button>
         )}
-        {active.length === 0 && (
+        {active.length === 0 && state.settings.path && !state.newpath?.on && (
           <div className="welcome">
             <h2>{_tj("Ас-саляму алейкум{0}", state.settings.name ? `, ${state.settings.name}` : '')}</h2>
             <p className="motto">{_t("«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»")}</p>

@@ -19,7 +19,9 @@ export const PRICES = {
 } as const;
 export type PlanId = keyof typeof PRICES;
 
-interface PlanStore { trial: number; early?: { plan: PlanId; at: number }; seen?: number[] }
+interface PlanStore { trial: number; early?: { plan: PlanId; at: number }; seen?: number[]; gift?: number }
+/** «Новый путь»: the first year of Pro is a gift to someone who has just accepted Islam. */
+export const GIFT_DAYS = 365;
 const LS = 'lm.plan';
 const DAY = 86400000;
 
@@ -52,6 +54,8 @@ export interface PlanInfo {
   ends: Date;
   limits: Record<LimitKey, number>;
   owner: boolean;        // the app's owner (email in lm_admins): everything open, no tariff at all
+  gift: boolean;         // a year of Pro as a gift for a new Muslim
+  giftEnds: Date | null;
 }
 // The owner (lm_is_admin said yes for the signed-in email) never sees a tariff. Cleared on sign-out.
 const OWNER = 'lm.owner';
@@ -69,8 +73,10 @@ export function planInfo(now = Date.now()): PlanInfo {
   const msLeft = Math.max(0, ends.getTime() - now);
   const trial = msLeft > 0;
   const early = Boolean(s.early);
-  const pro = owner || trial || early || !LIMITS_ON;
-  return { owner, pro, trial: trial && !owner, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
+  const giftEnds = s.gift ? new Date(s.gift + GIFT_DAYS * DAY) : null;
+  const gift = Boolean(giftEnds && giftEnds.getTime() > now);
+  const pro = owner || trial || early || gift || !LIMITS_ON;
+  return { owner, gift, giftEnds, pro, trial: trial && !owner && !gift, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
 }
 export const limitOf = (k: LimitKey) => planInfo().limits[k];
 export function usePlan(): PlanInfo {
@@ -87,11 +93,13 @@ export function usePlan(): PlanInfo {
 /** «Оформить»: no payments yet, so the person joins the first buyers and keeps Pro until payment starts. */
 export function joinEarly(plan: PlanId) { set({ early: { plan, at: Date.now() } }); }
 export const earlyPlan = () => get().early?.plan ?? null;
+/** Start the gift year once; choosing «Новый путь» again later does not restart it. */
+export function giveGift() { if (!get().gift) set({ gift: Date.now() }); }
 
 /** Reminder sheets on day 5, day 7 and the first day after the trial; each shown once. */
 export function dueSheet(): 5 | 7 | 8 | null {
   const p = planInfo();
-  if (p.owner || p.early || !LIMITS_ON) return null;
+  if (p.owner || p.early || p.gift || !LIMITS_ON) return null;
   const seen = get().seen ?? [];
   const d = p.trial ? p.day : 8;
   for (const k of [8, 7, 5] as const) if (d >= k && !seen.includes(k)) return k;

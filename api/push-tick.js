@@ -118,6 +118,13 @@ export function events(prefs, now) {
   return { day: day.key, list: out };
 }
 
+/** Quiet mode (someone whose family does not know yet): no religious words on the lock screen. */
+export function quietText(prefs, e) {
+  if (!prefs.quiet) return { title: e.title, body: e.body };
+  const en = prefs.lang === 'en';
+  return { title: en ? 'Time for yourself' : 'Время для себя', body: en ? 'A few quiet minutes, as planned.' : 'Пара спокойных минут, как договаривались.' };
+}
+
 /** True during the first 20 minutes after a prayer starts: chat waits until after the prayer. */
 export function inPrayer(prefs, now) {
   if (typeof prefs.lat !== 'number') return false;
@@ -144,8 +151,8 @@ async function chatPush(secret, subs, now) {
     if (inPrayer(prefs, now)) continue;
     const en = prefs.lang === 'en';
     const what = c.kind === 'voice' ? (en ? '🎙 voice message' : '🎙 голосовое') : c.kind === 'event' ? `🤲 ${c.body}` : c.kind === 'photo' ? `📷 ${c.body || (en ? 'photo' : 'фото')}` : c.kind === 'file' ? `📄 ${c.body || (en ? 'file' : 'файл')}` : c.body;
-    const title = c.title || (en ? 'Your circle' : 'Круг');
-    const body = c.n > 1 ? `${c.from}: ${what}`.slice(0, 120) + (en ? ` · ${c.n} new` : ` · новых: ${c.n}`) : `${c.from}: ${what}`.slice(0, 140);
+    const title = prefs.quiet ? (en ? 'New message' : 'Новое сообщение') : c.title || (en ? 'Your circle' : 'Круг');
+    const body = prefs.quiet ? (en ? 'Open the app to read it.' : 'Открой приложение, чтобы прочитать.') : c.n > 1 ? `${c.from}: ${what}`.slice(0, 120) + (en ? ` · ${c.n} new` : ` · новых: ${c.n}`) : `${c.from}: ${what}`.slice(0, 140);
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title, body, tag: `chat-${c.code}`, url: `/app/?chat=${c.code}` }), { TTL: 3600 });
       sent++;
@@ -173,8 +180,9 @@ export default async function handler(req, res) {
     const due = list.filter((e) => now >= e.at && now - e.at < WINDOW_MS && !done.includes(e.key));
     if (!due.length) return;
     for (const e of due) {
+      const q = quietText(prefs, e);
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: e.title, body: e.body, tag: e.tag, url: '/app/' }), { TTL: 900 });
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: q.title, body: q.body, tag: e.tag, url: '/app/' }), { TTL: 900 });
         sent++;
       } catch (err) {
         if (err.statusCode === 404 || err.statusCode === 410) { dropped++; await rpc('lm_push_delete', { p_endpoint: s.endpoint }).catch(() => {}); return; }

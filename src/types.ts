@@ -50,6 +50,10 @@ export interface Settings {
   lang?: 'ru' | 'en';
   /** Night colours in Ramadan; default on. */
   ramadanTheme?: boolean;
+  /** «Где ты сейчас на своём пути?»: new to Islam, praying and want consistency, coming back to prayer. */
+  path?: 'new' | 'steady' | 'back';
+  /** Quiet mode: notifications without religious words («Время для себя»). */
+  quiet?: boolean;
 }
 
 export interface ReminderPrefs {
@@ -114,6 +118,8 @@ export interface AppState {
   goalReview?: string; // day of the last weekly review
   pastTrips?: { from: string; to: string }[];
   family?: FamilyState;
+  /** «Новый путь» for those who have just accepted Islam. */
+  newpath?: import('./newpath').NewPathState;
 }
 
 export interface KidTask { id: string; t: string; icon: string }

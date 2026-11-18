@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { plural } from '../dates';
 import { FREE, PRO as PRO_LIM, PRICES, type PlanId, usePlan, joinEarly, earlyPlan, leftLabel, inviteFriend } from '../plan';
-import { _t, _tj } from '../i18n';
+import { _t, _tj, LOC } from '../i18n';
 
 // Pricing screen. 7 days of Pro open from the first day, then Free «по 3». No payments yet:
 // «Оформить» puts the person on the list of first buyers and keeps Pro open until payment starts.
@@ -44,6 +44,8 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
 
       {p.owner ? (
         <div className="pro-on">{_t("✓ Ты владелец приложения: всё открыто, тарифов для тебя нет")}</div>
+      ) : p.gift && p.giftEnds ? (
+        <div className="pro-on">{_tj("✓ Pro в подарок на первый год, до {0}", p.giftEnds.toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' }))}<small>{_t("Для тех, кто недавно принял ислам. Платить ничего не нужно")}</small></div>
       ) : p.early ? (
         <div className="pro-on">{_tj("✓ Ты в списке первых ({0}). Pro открыт, пока не подключим оплату", NAME[mine ?? 'year'])}</div>
       ) : p.trial ? (
@@ -67,7 +69,7 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
         <small>{PRICES[plan].note}</small>
       </div>
 
-      {!p.early && !p.owner && <button type="button" className="pri-btn big-btn" onClick={buy}>{_tj("{0} за {1}", p.trial ? _t("Оставить Pro") : _t("Вернуть Pro"), PRICES[plan].price)}</button>}
+      {!p.early && !p.owner && !p.gift && <button type="button" className="pri-btn big-btn" onClick={buy}>{_tj("{0} за {1}", p.trial ? _t("Оставить Pro") : _t("Вернуть Pro"), PRICES[plan].price)}</button>}
       {note && <p className="pro-note">{note}</p>}
 
       <div className="pro-cols">

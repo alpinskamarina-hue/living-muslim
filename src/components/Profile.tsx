@@ -5,6 +5,8 @@ import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
 import { usePlan } from '../plan';
+import { openPath } from './NewPath';
+import { pathNow } from '../newpath';
 import { GiftPass } from './GiftPass';
 import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
@@ -106,7 +108,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
 
       <button type="button" className="pro-entry" onClick={() => go('pro')}>
         <span className="pro-badge">PRO</span>
-        <span><b>Living Muslim Pro</b><small>{plan.owner ? _t("Ты владелец: всё открыто, без тарифа") : plan.early ? _t("Ты в списке первых: Pro открыт") : plan.trial ? _t("Pro открыт ещё {0} {1}. Потом по 3", plan.daysLeft, plural(plan.daysLeft, _t("день"), _t("дня"), _t("дней"))) : _t("Сейчас бесплатный: по 3. Первый год Pro −37%")}</small></span>
+        <span><b>Living Muslim Pro</b><small>{plan.owner ? _t("Ты владелец: всё открыто, без тарифа") : plan.gift ? _t("Pro в подарок на первый год") : plan.early ? _t("Ты в списке первых: Pro открыт") : plan.trial ? _t("Pro открыт ещё {0} {1}. Потом по 3", plan.daysLeft, plural(plan.daysLeft, _t("день"), _t("дня"), _t("дней"))) : _t("Сейчас бесплатный: по 3. Первый год Pro −37%")}</small></span>
         <i aria-hidden="true">›</i>
       </button>
 
@@ -123,6 +125,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         {isCloud && nicks && <Row icon="🪪" title={_t("Мой профиль")} sub={prof?.nick ? _t("@{0} · фото, приватность", prof.nick) : _t("Ник, фото, кто может звать в круги")} onClick={() => go('me')} />}
         {!onClaude && <Row icon="👤" title={_t("Аккаунт")} sub={me ? _t("{0} · имя «{1}»", me.email, name) : _t("Войти по почте, имя")} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title={_t("Имя")} sub={name} onClick={() => go('account')} />}
+        <Row icon="🌙" title={_t("Новый путь")} sub={state.newpath?.on ? _t("День {0} из 40 · учитель намаза, суры", pathNow(state, dayKey(new Date())).day) : _t("Для тех, кто недавно принял ислам")} onClick={() => openPath({ v: 'list' })} />
         <Row icon="🕌" title={_t("Намазы")} sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
         {isCloud && <Row icon="🔔" title={_t("Напоминания")} sub={s.reminders?.on ? _t("Включены · {0} из 5 намазов", s.reminders.prayers.length) : (isStandalone() ? _t("Выключены") : _t("Установить на телефон, напоминания"))} onClick={() => go('remind')} />}
         <Row icon="🌱" title={_t("Мои привычки")} sub={_t("{0} из {1} мест занято", used, activeLimit())} onClick={() => go('habits')} />

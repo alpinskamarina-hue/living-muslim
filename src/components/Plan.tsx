@@ -35,7 +35,7 @@ function Dial({ left, size = 62 }: { left: number; size?: number }) {
 export function TrialDial() {
   const p = usePlan();
   const now = useNow(1000);
-  if (p.early || p.owner) return null;
+  if (p.early || p.owner || p.gift) return null;
   if (!p.trial) {
     return (
       <button type="button" className="pl-free" onClick={openPro}>

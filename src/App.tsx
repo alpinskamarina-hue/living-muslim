@@ -47,6 +47,11 @@ import { dayPlan, goalsWaiting } from './dayplan';
 import { TrialDial, PlanSheet } from './components/Plan';
 import { useIsAdmin } from './components/Admin';
 import { _t } from './i18n';
+import { PathChoice, PathToday, PATH_EVENT, type PathView } from './components/NewPath';
+import { npOf } from './newpath';
+import { lazyNamed } from './lazy';
+import type { OutGo } from './components/NewPathScreens';
+const PathScreen = lazyNamed(() => import('./components/NewPathScreens').then((m) => m.PathScreen));
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
 
@@ -121,6 +126,13 @@ export function App() {
   }, [season]);
   const [safar, setSafar] = useState(false);
   const [qiblaOpen, setQiblaOpen] = useState<QiblaTab | null>(null);
+  const [pathOpen, setPathOpen] = useState<PathView | null>(null);
+  useEffect(() => {
+    const f = (e: Event) => setPathOpen({ ...((e as CustomEvent).detail as PathView) });
+    window.addEventListener(PATH_EVENT, f);
+    try { if (new URLSearchParams(location.search).get('path') === 'new' && !state.settings.path) setPathOpen({ v: 'list' }); } catch { /* */ }
+    return () => window.removeEventListener(PATH_EVENT, f);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [ramadan, setRamadan] = useState<false | string>(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
@@ -287,6 +299,20 @@ export function App() {
     return () => window.removeEventListener(PRO_EVENT, f);
   });
 
+  // «Новый путь»: the card on Today, the prayer the teacher opens with, and lesson buttons that lead elsewhere.
+  const npOn = Boolean(npOf(state).on);
+  const ws = windowState(times, now);
+  const teachA: Anchor = ws.current ?? ws.next ?? 'fajr';
+  const pathCard = npOn ? <PathToday state={state} update={update} today={today} prayer={teachA} />
+    : !state.settings.path && active.length === 0 ? <PathChoice state={state} update={update} today={today} /> : null;
+  const pathGo = (g: OutGo) => {
+    setPathOpen(null);
+    if (g === 'qibla' || g === 'mosques') { setQiblaOpen(g); return; }
+    if (g === 'azkar' || g === 'quran') { setPracticeStart((x) => ({ n: x.n + 1, mode: g })); setTab('practice'); window.scrollTo(0, 0); return; }
+    if (g === 'circle') { setTab('circle'); window.scrollTo(0, 0); return; }
+    setTab('today'); setSheet({ anchor: current });
+  };
+
   const nextUp = state.habits.find((h) => h.status === 'active' && h.anchor === current && !state.log[today]?.[h.id]);
 
   return (
@@ -298,7 +324,7 @@ export function App() {
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
             onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
             quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
-            quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
+            quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
@@ -342,6 +368,7 @@ export function App() {
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
+      {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}
       {qiblaOpen && <QiblaScreen state={state} update={update} today={today} start={qiblaOpen} onClose={() => setQiblaOpen(null)} />}
 
       {planSheet && !sheet && <PlanSheet k={planSheet} state={state} today={today} onClose={() => setPlanSheet(null)} />}
