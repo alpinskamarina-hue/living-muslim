@@ -23,6 +23,9 @@ import { patchF, famOf } from '../family';
 import type { Shura, Advice } from '../biz';
 import { NikahInCircle } from './Nikah';
 import { ShuraCard, BizHabitsOffer, AdviceBox, bizLine } from './BizCircle';
+import { useChat, duaReplies, duaEventId } from '../chat';
+import { CircleChat, DuaReplies, type Draft } from './CircleChat';
+import { CH_KINDS } from '../cweek';
 
 interface Props {
   circle: CircleApi;
@@ -49,6 +52,8 @@ interface Props {
   adv: Advice[];
   giveAdv: (a: Advice) => void;
   onNikah?: () => void;
+  /** Unread chat messages per circle code. */
+  chatUnread?: Record<string, number>;
 }
 
 const REACTIONS = [
@@ -56,7 +61,7 @@ const REACTIONS = [
   { e: '✨', label: 'МашаАллах', short: 'МашаАллах' },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah, chatUnread }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -65,6 +70,19 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const [inviting, setInviting] = useState(false);
   const [nicks, setNicks] = useState(false);
   useEffect(() => { nicksReady().then(setNicks); }, []);
+  const chatCode = isCloud ? currentCircle()?.code : undefined;
+  const [view, setView] = useState<'circle' | 'chat'>(() => {
+    try { const c = sessionStorage.getItem('lm.chat'); if (c && c === chatCode) { sessionStorage.removeItem('lm.chat'); return 'chat'; } } catch { /* */ }
+    return 'circle';
+  });
+  const chat = useChat(joined ? chatCode : undefined, view === 'chat');
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const openChat = (d?: Draft) => { if (d) setDraft(d); setView('chat'); window.scrollTo(0, 0); };
+  useEffect(() => {
+    const f = () => { try { if (sessionStorage.getItem('lm.chat') === chatCode) { sessionStorage.removeItem('lm.chat'); setView('chat'); } } catch { /* */ } };
+    window.addEventListener('lm-open-chat', f);
+    return () => window.removeEventListener('lm-open-chat', f);
+  }, [chatCode]);
   const invite = () => { if (!nicks) { if (isCloud && currentCircle()) shareInvite(currentCircle()!.code); return; } setInviting(true); window.scrollTo(0, 0); };
   const famKindOwner = isCloud && currentCircle()?.kind === 'family' && isOwner && !famOf(state).on;
   useEffect(() => { if (famKindOwner) update((s) => patchF(s, () => ({ on: true }))); }, [famKindOwner]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -107,6 +125,26 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const familyKind = kind === 'family' || (!kind && members.some((m) => m.fam));
   const biz = kind === 'biz';
   const alone = members.filter((m) => m.id !== me).length === 0;
+  const chatOn = Boolean(chat.ready && joined && isCloud && !alone && me);
+  const ask = (a: DuaAsk | null) => {
+    if (chatOn && myAsk) { const id = duaEventId(chat.msgs, me!, myAsk.d); if (id && (!a || a.t !== myAsk.t)) chat.remove(id); }
+    onAsk(a);
+    if (a && chatOn) chat.send(a.t, { t: 'dua', d: a.d }, 'event');
+  };
+  const ch2 = {
+    ...ch,
+    accept: (id: string) => {
+      ch.accept(id);
+      const c = members.flatMap((m) => (m.chs ?? []).map((x) => ({ ...x, from: m.id }))).find((x) => x.id === id);
+      if (c && chatOn) chat.send(`принял вызов «${CH_KINDS[c.k].short}»${c.from !== me ? ` от ${names[c.from]?.name || 'брата'}` : ''}`, { t: 'ch', k: c.k }, 'event');
+    },
+  };
+  const duaExtra = (asker: string, a: DuaAsk) => (
+    <>
+      {biz && me && <AdviceBox members={members} me={me} to={asker} k="a" w={a.d} nameOf={nm} mine={adv} give={giveAdv} />}
+      {chatOn && me && <DuaReplies list={duaReplies(chat.msgs, asker, a.d)} names={names} me={me} onReply={() => { const id = duaEventId(chat.msgs, asker, a.d); openChat({ text: '', ref: id ? { r: id } : { t: 'dua', to: asker, d: a.d } }); }} />}
+    </>
+  );
 
   const wk = members.reduce((acc, m) => ({ p: acc.p + (m.week?.p ?? 0), h: acc.h + (m.week?.h ?? 0) }), { p: 0, h: 0 });
   const tdy = members.filter((m) => m.day === today).reduce((acc, m) => ({ p: acc.p + m.prayers, h: acc.h + m.done }), { p: 0, h: 0 });
@@ -152,7 +190,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <div className="ch-tabs">
           {myCircles().map((c) => (
             <button key={c.code} type="button" aria-pressed={c.code === cur?.code} onClick={() => c.code !== cur?.code && switchCircle(c.code)}>
-              {kindOf(c.kind)?.ic ?? '👥'} {c.title}
+              {kindOf(c.kind)?.ic ?? '👥'} {c.title}{c.code !== cur?.code && (chatUnread?.[c.code] ?? 0) > 0 && <span className="cc-badge">{chatUnread![c.code]}</span>}
             </button>
           ))}
           <button type="button" className="ch-add" onClick={() => setAdding(true)}>+ Новый</button>
@@ -160,6 +198,16 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
       <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && kindInfo.ru !== cur.title ? ` · ${kindInfo.ru}` : ''} · </> : null}{members.length} {plural(members.length, 'человек', 'человека', 'человек')} · видят только итог дня</p>
 
+      {chatOn && (
+        <div className="cc-tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={view === 'circle'} onClick={() => setView('circle')}>Круг</button>
+          <button type="button" role="tab" aria-selected={view === 'chat'} onClick={() => openChat()}>Чат{view !== 'chat' && chat.unread > 0 && <span className="cc-badge">{chat.unread > 99 ? '99+' : chat.unread}</span>}</button>
+        </div>
+      )}
+      {chatOn && view === 'chat' ? (
+        <CircleChat chat={chat} me={me!} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update}
+          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || 'Круг'} />
+      ) : (<>
       {isCloud && nicks && <InviteInbox />}
       {circle.error && <div className="warn">{circle.error}</div>}
       {circle.stale && <p className="tiny">Данные круга пока не загрузились, могут быть устаревшими.</p>}
@@ -224,10 +272,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
 
       {joined && biz && <BizHabitsOffer state={state} update={update} today={today} />}
-      {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={onAsk} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }}
-        biz={biz} extra={biz ? (asker, a) => <AdviceBox members={members} me={me} to={asker} k="a" w={a.d} nameOf={nm} mine={adv} give={giveAdv} /> : undefined} />}
+      {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={ask} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }}
+        biz={biz} extra={biz || chatOn ? duaExtra : undefined} />}
       {joined && me && isCloud && cur && !alone && <NikahInCircle code={cur.code} me={me} reacts={reacts} today={today} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }} onOpenMine={() => onNikah?.()} />}
-      {joined && me && !(alone && isCloud) && <Challenges members={members} me={me} today={today} nameOf={nm} ch={ch} />}
+      {joined && me && !(alone && isCloud) && <Challenges members={members} me={me} today={today} nameOf={nm} ch={ch2} />}
       {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
       {joined && isOwner && !isCloud && !members.some((m) => m.fam) && (
@@ -272,6 +320,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                         const on = mine?.e === r.e && mine.day === today;
                         return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
                       })}
+                      {chatOn && <button type="button" aria-label={`Написать ${p?.name || 'участнику'} в чате`} onClick={() => openChat({ text: `${(p?.name || '').split(' ')[0]}, `, ref: null })}>💬</button>}
                       {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? '👋 Отправлено' : '👋 Подтолкнуть'}</button>}
                     </div>
                   )}
@@ -313,6 +362,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <button type="button" className="link-btn" onClick={() => { if (confirm('Выключить семейный режим? Детские профили останутся на этом телефоне.')) update((s) => patchF(s, () => ({ on: false }))); }}>Выключить семейный режим</button>
       )}
       {joined && !isCloud && <button type="button" className="danger" onClick={onLeave}>Выйти из круга</button>}
+      </>)}
     </div>
   );
 }

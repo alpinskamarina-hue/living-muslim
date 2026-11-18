@@ -1,0 +1,250 @@
+// Circle chat on the standalone site: text, voice (up to 60 s) and event cards (dua requests, challenges).
+// Server: supabase/chat.sql. Until it is run, chatReady() is false and nothing about the chat is shown.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { isCloud, meRpc, serverHas, cloudMe } from './cloud';
+import { currentSubscription } from './push';
+
+export type MsgKind = 'text' | 'voice' | 'event';
+/** r: reply to a message; t: an event card (dua, ch) or a reply tied to someone's dua request (t 'dua', to). */
+export interface MsgRef { r?: number; t?: 'dua' | 'ch'; d?: string; to?: string; k?: string }
+export interface Msg {
+  id: number; uid: string; kind: MsgKind; body: string; ref: MsgRef | null;
+  sec: number | null; bars: number[] | null; reacts: Record<string, string>;
+  deleted: boolean; at: string; voice: boolean; pending?: boolean; failed?: boolean;
+}
+interface ListRes { msgs: Msg[]; seen: number; voice: boolean; owner: string }
+
+let readyP: Promise<boolean> | null = null;
+export function chatReady(): Promise<boolean> {
+  if (!isCloud) return Promise.resolve(false);
+  try { if (sessionStorage.getItem('lm.chat.ok') === '1') return Promise.resolve(true); } catch { /* */ }
+  readyP ??= serverHas('lm_chat_list', { p_uid: null, p_token: null, p_code: null }).then((ok) => {
+    if (ok) try { sessionStorage.setItem('lm.chat.ok', '1'); } catch { /* */ }
+    return ok;
+  });
+  return readyP;
+}
+
+let linked = false;
+/** Ties this phone's push subscription to me, so the server can announce new messages. */
+async function linkPush() {
+  if (linked) return;
+  linked = true;
+  try {
+    const sub = await currentSubscription();
+    if (sub) await meRpc('lm_push_link', { p_endpoint: sub.endpoint });
+  } catch { /* no push or older server */ }
+}
+
+const merge = (a: Msg[], b: Msg[]) => {
+  const m = new Map<number, Msg>();
+  for (const x of a) m.set(x.id, x);
+  for (const x of b) m.set(x.id, x);
+  return [...m.values()].sort((x, y) => x.id - y.id);
+};
+
+export interface ChatApi {
+  ready: boolean;
+  msgs: Msg[];
+  /** Last message id I had seen when the chat was opened (for the «new» line). */
+  seenAtOpen: number;
+  unread: number;
+  voiceOn: boolean;
+  owner: string;
+  more: boolean;
+  error: string;
+  send: (body: string, ref?: MsgRef | null, kind?: 'text' | 'event') => Promise<boolean>;
+  sendVoice: (blob: Blob, sec: number, bars: number[], ref?: MsgRef | null) => Promise<string>;
+  react: (id: number, e: string) => void;
+  retry: (m: Msg) => void;
+  remove: (id: number) => Promise<boolean>;
+  report: (id: number, reason: string) => Promise<boolean>;
+  older: () => Promise<void>;
+  setVoice: (on: boolean) => Promise<boolean>;
+  voiceUrl: (id: number) => Promise<string>;
+}
+
+const voiceCache = new Map<number, string>();
+
+/** One circle's chat. Polls every 3 s while open, every 20 s otherwise (dua replies and the badge). */
+export function useChat(code: string | undefined, open: boolean): ChatApi {
+  const [ready, setReady] = useState(false);
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [seen, setSeen] = useState(0);
+  const [seenAtOpen, setSeenAtOpen] = useState(0);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [owner, setOwner] = useState('');
+  const [more, setMore] = useState(false);
+  const [error, setError] = useState('');
+  const last = useRef(0);
+  const me = cloudMe()?.uid ?? '';
+
+  useEffect(() => { chatReady().then(setReady); }, []);
+
+  const pull = useCallback(async (full = false) => {
+    if (!code) return;
+    try {
+      const r = await meRpc<ListRes | null>('lm_chat_list', { p_code: code, p_after: full ? 0 : last.current, p_before: 0 });
+      if (!r) return;
+      setVoiceOn(r.voice !== false); setOwner(r.owner || ''); setSeen((s) => Math.max(s, r.seen || 0)); setError('');
+      if (full) setMore(r.msgs.length >= 60);
+      if (full || r.msgs.length) {
+        setMsgs((old) => {
+          // after a full load drop what is gone (deleted by the owner, people who left)
+          const minNew = r.msgs[0]?.id ?? Infinity;
+          const next = full ? merge(old.filter((m) => m.pending || m.id < minNew), r.msgs) : merge(old, r.msgs);
+          last.current = next.filter((m) => !m.pending).reduce((a, m) => Math.max(a, m.id), 0);
+          return next;
+        });
+      }
+    } catch { setError('Нет связи, сообщения обновятся сами'); }
+  }, [code]);
+
+  // full reload now and then picks up reactions and deletions on older messages
+  useEffect(() => {
+    if (!ready || !code) return;
+    let n = 0, t: number | undefined, alive = true;
+    const tick = async () => {
+      if (!alive) return;
+      if (document.visibilityState === 'visible') await pull(n % 3 === 0);
+      n++;
+      t = window.setTimeout(tick, open ? 3000 : 20000);
+    };
+    tick();
+    const vis = () => { if (document.visibilityState === 'visible') pull(true); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { alive = false; clearTimeout(t); document.removeEventListener('visibilitychange', vis); };
+  }, [ready, code, open, pull]);
+
+  useEffect(() => { if (ready && open) linkPush(); }, [ready, open]);
+  useEffect(() => { if (open) setSeenAtOpen(seen); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // mark as read while the chat is open
+  const top = msgs.filter((m) => !m.pending).reduce((a, m) => Math.max(a, m.id), 0);
+  useEffect(() => {
+    if (!open || !code || !top || top <= seen) return;
+    setSeen(top);
+    meRpc('lm_chat_seen', { p_code: code, p_id: top }).catch(() => {});
+    window.dispatchEvent(new Event('lm-chat-seen'));
+  }, [open, code, top, seen]);
+
+  const unread = msgs.filter((m) => m.id > seen && m.uid !== me && !m.deleted && !m.pending).length;
+
+  const tmp = useRef(-1);
+  const send = async (body: string, ref: MsgRef | null = null, kind: 'text' | 'event' = 'text') => {
+    const b = body.trim().slice(0, 2000);
+    if (!b || !code) return false;
+    const id = tmp.current--;
+    const local: Msg = { id: 1e15 + -id, uid: me, kind, body: b, ref, sec: null, bars: null, reacts: {}, deleted: false, at: new Date().toISOString(), voice: false, pending: true };
+    setMsgs((m) => [...m, local]);
+    try {
+      const r = await meRpc<Msg & { error?: string }>('lm_chat_send', { p_code: code, p_body: b, p_ref: ref, p_kind: kind });
+      if (r?.error) throw new Error(r.error);
+      setMsgs((m) => merge(m.filter((x) => x !== local), [r]));
+      last.current = Math.max(last.current, r.id);
+      return true;
+    } catch (e) {
+      setMsgs((m) => m.map((x) => (x === local ? { ...x, failed: true } : x)));
+      setError(String((e as Error).message) === 'slow' ? 'Слишком часто. Подожди минуту' : 'Не отправилось. Нажми на сообщение, чтобы повторить');
+      return false;
+    }
+  };
+
+  const sendVoice = async (blob: Blob, sec: number, bars: number[], ref: MsgRef | null = null) => {
+    if (!code) return 'error';
+    const b64 = await new Promise<string>((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result).split(',')[1] || '');
+      fr.onerror = () => rej(fr.error);
+      fr.readAsDataURL(blob);
+    });
+    try {
+      const r = await meRpc<Msg & { error?: string }>('lm_chat_voice_send', { p_code: code, p_mime: blob.type || 'audio/webm', p_b64: b64, p_sec: Math.round(sec), p_bars: bars, p_ref: ref });
+      if (r?.error) return r.error;
+      voiceCache.set(r.id, URL.createObjectURL(blob));
+      setMsgs((m) => merge(m, [r]));
+      last.current = Math.max(last.current, r.id);
+      return '';
+    } catch { return 'error'; }
+  };
+
+  const react = (id: number, e: string) => {
+    setMsgs((m) => m.map((x) => {
+      if (x.id !== id) return x;
+      const r = { ...x.reacts };
+      if (r[me] === e) delete r[me]; else r[me] = e;
+      return { ...x, reacts: r };
+    }));
+    meRpc<Msg | null>('lm_chat_react', { p_id: id, p_emoji: e }).then((r) => { if (r) setMsgs((m) => merge(m, [r])); }).catch(() => {});
+  };
+
+  const remove = async (id: number) => {
+    const ok = await meRpc<boolean>('lm_chat_delete', { p_id: id }).catch(() => false);
+    if (ok) setMsgs((m) => m.map((x) => (x.id === id ? { ...x, deleted: true, body: '', reacts: {}, voice: false } : x)));
+    return ok;
+  };
+  const report = (id: number, reason: string) => meRpc<boolean>('lm_chat_report', { p_id: id, p_reason: reason }).catch(() => false);
+
+  const older = async () => {
+    if (!code || !msgs.length) return;
+    const first = msgs.find((m) => !m.pending)?.id ?? 0;
+    const r = await meRpc<ListRes | null>('lm_chat_list', { p_code: code, p_after: 0, p_before: first }).catch(() => null);
+    if (!r) return;
+    setMore(r.msgs.length >= 60);
+    setMsgs((m) => merge(r.msgs, m));
+  };
+
+  const setVoice = async (on: boolean) => {
+    const ok = await meRpc<boolean>('lm_chat_settings', { p_code: code, p_voice: on }).catch(() => false);
+    if (ok) setVoiceOn(on);
+    return ok;
+  };
+
+  const voiceUrl = async (id: number) => {
+    const c = voiceCache.get(id);
+    if (c) return c;
+    const r = await meRpc<{ mime: string; b64: string } | null>('lm_chat_voice', { p_id: id });
+    if (!r?.b64) return '';
+    const bin = atob(r.b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: r.mime }));
+    voiceCache.set(id, url);
+    return url;
+  };
+
+  const retry = (m: Msg) => { setMsgs((x) => x.filter((y) => y !== m)); send(m.body, m.ref, m.kind === 'event' ? 'event' : 'text'); };
+
+  return { ready, msgs, seenAtOpen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl };
+}
+
+/** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */
+export function useChatUnread(): Record<string, number> {
+  const [u, setU] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!isCloud) return;
+    let alive = true, t: number | undefined;
+    const tick = async () => {
+      if (!alive) return;
+      if (document.visibilityState === 'visible' && cloudMe() && (await chatReady())) {
+        const r = await meRpc<Record<string, number> | null>('lm_chat_unread').catch(() => null);
+        if (r && alive) setU(r);
+      }
+      t = window.setTimeout(tick, 30000);
+    };
+    tick();
+    const now = () => { clearTimeout(t); tick(); };
+    window.addEventListener('lm-chat-seen', now);
+    document.addEventListener('visibilitychange', now);
+    return () => { alive = false; clearTimeout(t); window.removeEventListener('lm-chat-seen', now); document.removeEventListener('visibilitychange', now); };
+  }, []);
+  return u;
+}
+
+/** Messages answering someone's dua request: replies to its event card, or tied to it directly. */
+export function duaReplies(msgs: Msg[], asker: string, day: string): Msg[] {
+  const ev = msgs.filter((m) => m.kind === 'event' && m.ref?.t === 'dua' && m.uid === asker && (m.ref.d ?? '') >= day).map((m) => m.id);
+  return msgs.filter((m) => !m.deleted && m.uid !== asker && m.kind !== 'event' && ((m.ref?.r && ev.includes(m.ref.r)) || (m.ref?.t === 'dua' && m.ref.to === asker && (m.ref.d ?? '') >= day)));
+}
+export const duaEventId = (msgs: Msg[], asker: string, day: string) =>
+  [...msgs].reverse().find((m) => m.kind === 'event' && m.ref?.t === 'dua' && m.uid === asker && (m.ref.d ?? '') >= day)?.id;

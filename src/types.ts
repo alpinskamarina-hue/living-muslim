@@ -60,6 +60,8 @@ export interface ReminderPrefs {
   muhasaba: string;
   /** Ramadan reminders; missing means the defaults (RPUSH_DEFAULT). */
   ramadan?: RamadanPush;
+  /** New messages in circle chats; missing means on. */
+  chat?: boolean;
 }
 
 export interface RamadanPush {

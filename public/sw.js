@@ -1,5 +1,5 @@
 // Living Muslim service worker: works offline and shows prayer reminders.
-const CACHE = 'lm-v1';
+const CACHE = 'lm-v2';
 const SHELL = ['/app/', '/manifest.webmanifest', '/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -29,6 +29,7 @@ self.addEventListener('push', (e) => {
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     tag: d.tag || 'lm',
+    renotify: /^chat-/.test(d.tag || ''),
     data: { url: d.url || '/app/' },
   }));
 });
@@ -37,7 +38,7 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || '/app/';
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ws) => {
-    for (const w of ws) if (w.url.includes('/app/') && 'focus' in w) return w.focus();
+    for (const w of ws) if (w.url.includes('/app/') && 'focus' in w) { w.postMessage({ type: 'open', url }); return w.focus(); }
     return self.clients.openWindow(url);
   }));
 });
