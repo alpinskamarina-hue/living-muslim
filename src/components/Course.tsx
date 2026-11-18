@@ -5,36 +5,11 @@ import { TR } from '../course/tr';
 import { uid } from '../store';
 import { dayKey } from '../dates';
 import { _t, _tj } from '../i18n';
+import { speak, ttsAvailable } from '../speech';
+import { deleteFile, getFile, putFile } from '../idb';
 
 const TOTAL = A1.reduce((n, l) => n + l.p.length, 0);
 type Tab = 'lesson' | 'dialog' | 'cards' | 'speak';
-
-// ---- speech ----
-function ttsAvailable() {
-  try { return typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'; } catch { return false; }
-}
-function pickVoice() {
-  try {
-    const v = speechSynthesis.getVoices().filter((x) => x.lang.toLowerCase().startsWith('en'));
-    return v.find((x) => /en-(US|GB)/i.test(x.lang) && /google|samantha|daniel|natural/i.test(x.name)) ?? v.find((x) => /en-(US|GB)/i.test(x.lang)) ?? v[0];
-  } catch { return undefined; }
-}
-export function speak(text: string, slow = false): Promise<void> {
-  return new Promise((res) => {
-    if (!ttsAvailable()) return res();
-    try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      const v = pickVoice();
-      if (v) u.voice = v;
-      u.rate = slow ? 0.6 : 0.9;
-      u.onend = () => res();
-      u.onerror = () => res();
-      speechSynthesis.speak(u);
-    } catch { res(); }
-  });
-}
 
 interface Props {
   state: AppState;
@@ -72,6 +47,12 @@ export function Course({ state, update, habitName, onExit, onFinish }: Props) {
   const pick = (i: number) => { if (!unlocked(i)) return; setDay(i); setTab('lesson'); setC((x) => ({ ...x, day: i })); };
   const toggle = (key: string) => setC((x) => ({ ...x, learned: x.learned.includes(key) ? x.learned.filter((k) => k !== key) : [...x.learned, key] }));
   const learn = (key: string) => setC((x) => (x.learned.includes(key) ? x : { ...x, learned: [...x.learned, key] }));
+
+  const saveRec = (d: number, date: string | null) => setC((x) => {
+    const rec = { ...(x.rec ?? {}) };
+    if (date) rec[d] = date; else delete rec[d];
+    return { ...x, rec };
+  });
 
   const complete = () => {
     const today = dayKey(new Date());
@@ -154,7 +135,7 @@ export function Course({ state, update, habitName, onExit, onFinish }: Props) {
 
         {tab === 'dialog' && <Dialog lines={L.d} slow={slow} onNext={() => setTab('cards')} />}
         {tab === 'cards' && <Cards day={day} phrases={L.p} slow={slow} onLearn={learn} onNext={() => setTab('speak')} />}
-        {tab === 'speak' && <Speak task={L.task} phrases={L.p} long={day === A1.length - 1} onDone={complete} done={c.done.includes(day)} />}
+        {tab === 'speak' && <Speak day={day} task={L.task} phrases={L.p} long={day === A1.length - 1} onDone={complete} done={c.done.includes(day)} rec={c.rec ?? {}} onSaved={saveRec} />}
       </div>
 
       {finish && (
@@ -277,14 +258,81 @@ function Cards({ day, phrases, slow, onLearn, onNext }: { day: number; phrases: 
   );
 }
 
-function Speak({ task, phrases, long, onDone, done }: { task: string; phrases: [string, string][]; long: boolean; onDone: () => void; done: boolean }) {
+type RecState = 'off' | 'rec' | 'nomic';
+
+function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
+  day: number; task: string; phrases: [string, string][]; long: boolean; onDone: () => void; done: boolean;
+  rec: Record<number, string>; onSaved: (day: number, date: string | null) => void;
+}) {
   const total = long ? 120 : 60;
   const [left, setLeft] = useState<number | null>(null);
+  const [mic, setMic] = useState<RecState>('off');
+  const [url, setUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const mr = useRef<MediaRecorder | null>(null);
+  const urls = useRef<string[]>([]);
+  const keep = (b: Blob) => { const u = URL.createObjectURL(b); urls.current.push(u); return u; };
+
+  // The recording of this day, if there is one on this phone.
   useEffect(() => {
-    if (left === null || left <= 0) return;
+    let off = false;
+    setUrl(null);
+    if (rec[day]) getFile(`speak:${day}`).then((b) => { if (b && !off) setUrl(keep(b)); }).catch(() => { /* */ });
+    return () => { off = true; };
+  }, [day]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => {
+    try { if (mr.current && mr.current.state !== 'inactive') mr.current.stop(); } catch { /* */ }
+    urls.current.forEach((u) => URL.revokeObjectURL(u));
+  }, []);
+
+  useEffect(() => {
+    if (left === null) return;
+    if (left <= 0) { stopRec(); return; }
     const t = setTimeout(() => setLeft(left - 1), 1000);
     return () => clearTimeout(t);
-  }, [left]);
+  }, [left]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stopRec = () => { try { if (mr.current && mr.current.state !== 'inactive') mr.current.stop(); } catch { /* */ } };
+
+  const start = async () => {
+    setUrl(null);
+    setMic('off');
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') throw new Error('no');
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const m = new MediaRecorder(s);
+      const parts: Blob[] = [];
+      m.ondataavailable = (e) => { if (e.data.size) parts.push(e.data); };
+      m.onstop = async () => {
+        s.getTracks().forEach((t) => t.stop());
+        setMic('off');
+        const b = new Blob(parts, { type: m.mimeType || 'audio/webm' });
+        if (!b.size) return;
+        setUrl(keep(b));
+        setSaving(true);
+        try { await putFile(`speak:${day}`, b); onSaved(day, dayKey(new Date())); } catch { /* the recording still plays now */ }
+        setSaving(false);
+      };
+      mr.current = m;
+      m.start();
+      setMic('rec');
+    } catch {
+      setMic('nomic');
+    }
+    setLeft(total);
+  };
+
+  const remove = async () => {
+    await deleteFile(`speak:${day}`).catch(() => { /* */ });
+    onSaved(day, null);
+    setUrl(null);
+  };
+
+  const fmt = (d: string) => { const [y, m, dd] = d.split('-'); return `${dd}.${m}.${y}`; };
+  const others = Object.keys(rec).map(Number).filter((d) => d !== day).sort((a, b) => a - b);
+  const running = left !== null && left > 0;
+
   return (
     <>
       <div className="task">
@@ -294,13 +342,60 @@ function Speak({ task, phrases, long, onDone, done }: { task: string; phrases: [
       <p className="tiny">{_tj("Говори вслух {0}  {1} без остановки. Ошибки — нормально, главное не молчать. Подсказки:", total / 60, long ? _t("минуты") : _t("минуту"))}</p>
       <ul className="cheat">{phrases.map(([en]) => <li key={en}>{en}</li>)}</ul>
       <div className="speak-timer">{left === null ? `${total / 60}:00` : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</div>
-      {left === null ? (
-        <button type="button" className="pri-btn big-btn" onClick={() => setLeft(total)}>{_t("Начать говорить")}</button>
-      ) : left > 0 ? (
-        <button type="button" className="ghost-btn" style={{ width: '100%' }} onClick={() => setLeft(0)}>{_t("Закончил раньше")}</button>
-      ) : (
-        <button type="button" className="pri-btn big-btn" onClick={onDone}>{done ? _t("Пройти ещё раз") : _t("Завершить день")}</button>
+      {running && mic === 'rec' && <p className="tiny" style={{ textAlign: 'center' }}><span className="rec-dot" />{_t("Идёт запись, потом сможешь себя послушать")}</p>}
+      {mic === 'nomic' && <p className="tiny" style={{ textAlign: 'center' }}>{_t("Нет доступа к микрофону, поэтому без записи. Разреши микрофон для сайта в настройках браузера.")}</p>}
+
+      {!running && url && (
+        <div className="rec-box">
+          <b>{rec[day] ? _tj("Твоя запись · {0}", fmt(rec[day])) : _t("Твоя запись")}</b>
+          <audio controls src={url} preload="metadata" />
+          <small className="tiny">{saving ? _t("Сохраняю…") : _t("Запись хранится на этом телефоне. Через неделю послушай её снова и услышь разницу.")}</small>
+          <div className="row2 light">
+            <button type="button" onClick={start}>{_t("Записать заново")}</button>
+            <button type="button" onClick={remove}>{_t("Удалить")}</button>
+          </div>
+        </div>
       )}
+
+      {left === null && !url ? (
+        <button type="button" className="pri-btn big-btn" onClick={start}>{_t("Начать говорить")}</button>
+      ) : running ? (
+        <button type="button" className="ghost-btn" style={{ width: '100%' }} onClick={() => { stopRec(); setLeft(0); }}>{_t("Закончил раньше")}</button>
+      ) : (
+        <>
+          {!url && left !== null && <button type="button" className="ghost-btn" style={{ width: '100%' }} onClick={start}>{_t("Ещё раз")}</button>}
+          <button type="button" className="pri-btn big-btn" onClick={onDone}>{done ? _t("Пройти ещё раз") : _t("Завершить день")}</button>
+        </>
+      )}
+
+      {others.length > 0 && <RecList days={others} rec={rec} fmt={fmt} />}
     </>
+  );
+}
+
+/** Recordings of other days, to hear how speech changes over the course. */
+function RecList({ days, rec, fmt }: { days: number[]; rec: Record<number, string>; fmt: (d: string) => string }) {
+  const [open, setOpen] = useState<number | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+  const play = async (d: number) => {
+    if (open === d) { setOpen(null); setUrl(null); return; }
+    const b = await getFile(`speak:${d}`).catch(() => undefined);
+    setOpen(d);
+    setUrl(b ? URL.createObjectURL(b) : null);
+  };
+  return (
+    <div className="rec-list">
+      <div className="lab" style={{ margin: '10px 0 2px' }}>{_t("Мои записи")}</div>
+      {days.map((d) => (
+        <div key={d}>
+          <div className="rec-row">
+            <span>{_tj("День {0}", d + 1)} <small>· {fmt(rec[d])}</small></span>
+            <button type="button" className="say-btn sm" onClick={() => play(d)} aria-label={_t("Послушать запись")}>{open === d ? '✕' : '▶'}</button>
+          </div>
+          {open === d && (url ? <audio controls autoPlay src={url} style={{ width: '100%', marginTop: 6 }} /> : <p className="tiny">{_t("Эта запись не нашлась на этом телефоне.")}</p>)}
+        </div>
+      ))}
+    </div>
   );
 }
