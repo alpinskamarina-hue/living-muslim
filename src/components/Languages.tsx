@@ -1,8 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { AppState, Card, LangState, Mark } from '../types';
 import { uid } from '../store';
 import { addDays, dayKey, plural } from '../dates';
 import { _t, _tj, isEn } from '../i18n';
+import { hasVoice, speak, speechLang } from '../speech';
+import { lookupIpa, needsLookup, pronOf } from '../pron';
 
 interface Lang { id: string; label: string; rtl?: boolean; starter: [string, string][] }
 
@@ -90,16 +92,22 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
       },
     }));
 
+  const setTr = (cardId: string, tr: string) =>
+    setLs((l) => ({ ...l, decks: Object.fromEntries(Object.entries(l.decks).map(([k, d]) => [k, d.map((c) => (c.id === cardId ? { ...c, tr } : c))])) }));
+
   const addCard = () => {
     if (!front.trim() || !back.trim()) return;
-    setLs((l) => ({ ...l, decks: { ...l.decks, [l.current]: [{ id: uid(), front: front.trim(), back: back.trim(), box: 0, due: today }, ...(l.decks[l.current] ?? [])] } }));
+    const id = uid();
+    const w = front.trim();
+    setLs((l) => ({ ...l, decks: { ...l.decks, [l.current]: [{ id, front: w, back: back.trim(), box: 0, due: today }, ...(l.decks[l.current] ?? [])] } }));
+    if (needsLookup(ls.current, w)) lookupIpa(w).then((ipa) => { if (ipa) setTr(id, ipa); });
     setFront('');
     setBack('');
   };
   const removeCard = (id: string) => setLs((l) => ({ ...l, decks: { ...l.decks, [l.current]: (l.decks[l.current] ?? []).filter((c) => c.id !== id) } }));
 
   if (mode === 'review' && lang)
-    return <Review lang={lang} cards={due.slice(0, SESSION_MAX)} habitName={habitName} onGrade={grade} onBack={() => setMode('home')} onFinish={(m) => { onFinish(m); onExit(); }} />;
+    return <Review lang={lang} cards={due.slice(0, SESSION_MAX)} habitName={habitName} onGrade={grade} onTr={setTr} onBack={() => setMode('home')} onFinish={(m) => { onFinish(m); onExit(); }} />;
 
   return (
     <div className="sess light-sess">
@@ -163,8 +171,12 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
 
         {mode === 'words' && lang && deck.map((c) => (
           <div className="word" key={c.id}>
-            <span className={lang.rtl ? 'w-f ar' : 'w-f'} dir={lang.rtl ? 'rtl' : undefined}>{c.front}</span>
+            <span className="w-fp">
+              <span className={lang.rtl ? 'w-f ar' : 'w-f'} dir={lang.rtl ? 'rtl' : undefined}>{c.front}</span>
+              {pronOf(lang.id, c.front, c.tr).map((x) => <small key={x} className="w-tr">{x}</small>)}
+            </span>
             <span className="w-b">{c.back}</span>
+            <SayBtn lang={lang.id} text={c.front} small />
             <span className="w-box" title={_t("Уровень")}>{c.box}</span>
             <button type="button" className="hg-act" onClick={() => removeCard(c.id)}>{_t("Убрать")}</button>
           </div>
@@ -174,8 +186,24 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
   );
 }
 
-function Review({ lang, cards, habitName, onGrade, onBack, onFinish }: {
-  lang: Lang; cards: Card[]; habitName?: string; onGrade: (id: string, ok: boolean) => void; onBack: () => void; onFinish: (m: Mark) => void;
+/** Listen button: the phone's own voice for this language. */
+function SayBtn({ lang, text, small, slow }: { lang: string; text: string; small?: boolean; slow?: boolean }) {
+  const code = speechLang(lang);
+  const [none, setNone] = useState(false);
+  if (!code) return null;
+  const say = () => {
+    if (hasVoice(code) === false) { setNone(true); return; }
+    void speak(text, slow, code);
+  };
+  return (
+    <button type="button" className={small ? 'say-btn sm' : 'say-btn'} onClick={(e) => { e.stopPropagation(); say(); }} aria-label={slow ? _t("Послушать медленно") : _t("Послушать произношение")} title={none ? _t("На этом телефоне нет голоса для этого языка") : undefined}>
+      {none ? '🔇' : slow ? '🐢' : '🔊'}
+    </button>
+  );
+}
+
+function Review({ lang, cards, habitName, onGrade, onTr, onBack, onFinish }: {
+  lang: Lang; cards: Card[]; habitName?: string; onGrade: (id: string, ok: boolean) => void; onTr: (id: string, tr: string) => void; onBack: () => void; onFinish: (m: Mark) => void;
 }) {
   const [queue] = useState(() => [...cards].sort(() => Math.random() - 0.5));
   const [i, setI] = useState(0);
@@ -184,6 +212,29 @@ function Review({ lang, cards, habitName, onGrade, onBack, onFinish }: {
   const card = queue[i];
   const done = i >= queue.length;
   const pct = useMemo(() => (queue.length ? (i / queue.length) * 100 : 100), [i, queue.length]);
+  const [found, setFound] = useState<Record<string, string>>({});
+  const code = speechLang(lang.id);
+
+  // English words added before IPA lookup existed: find it once, keep it on the card.
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      for (const c of queue) {
+        if (off) return;
+        if (!needsLookup(lang.id, c.front, c.tr)) continue;
+        const ipa = await lookupIpa(c.front);
+        if (ipa && !off) { setFound((f) => ({ ...f, [c.id]: ipa })); onTr(c.id, ipa); }
+      }
+    })();
+    return () => { off = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Say the word when a new card comes up.
+  useEffect(() => {
+    if (!card || !code || hasVoice(code) === false) return;
+    const t = setTimeout(() => void speak(card.front, false, code), 250);
+    return () => clearTimeout(t);
+  }, [i]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const answer = (good: boolean) => {
     onGrade(card.id, good);
@@ -201,10 +252,17 @@ function Review({ lang, cards, habitName, onGrade, onBack, onFinish }: {
       <div className="rev-bar"><i style={{ width: `${pct}%` }} /></div>
       {!done ? (
         <div className="rev">
-          <button type="button" className="flash" onClick={() => setShown(true)} aria-label={_t("Показать перевод")}>
-            <span className={lang.rtl ? 'flash-f ar' : 'flash-f'} dir={lang.rtl ? 'rtl' : undefined}>{card.front}</span>
-            {shown ? <span className="flash-b">{card.back}</span> : <span className="flash-hint">{_t("Вспомни перевод и нажми")}</span>}
-          </button>
+          <div className="flash-wrap">
+            <button type="button" className="flash" onClick={() => setShown(true)} aria-label={_t("Показать перевод")}>
+              <span className={lang.rtl ? 'flash-f ar' : 'flash-f'} dir={lang.rtl ? 'rtl' : undefined}>{card.front}</span>
+              {pronOf(lang.id, card.front, card.tr ?? found[card.id]).map((x, k) => <span key={x} className={k ? 'flash-tr2' : 'flash-tr'}>{x}</span>)}
+              {shown ? <span className="flash-b">{card.back}</span> : <span className="flash-hint">{_t("Вспомни перевод и нажми")}</span>}
+            </button>
+            <div className="flash-say">
+              <SayBtn lang={lang.id} text={card.front} />
+              <SayBtn lang={lang.id} text={card.front} slow />
+            </div>
+          </div>
           {shown ? (
             <div className="row2 light rev-btns">
               <button type="button" onClick={() => answer(false)}>{_t("Не помню")}</button>

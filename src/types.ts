@@ -104,7 +104,7 @@ export interface AppState {
   mosque?: import('./mosques').MosqueSettings;
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
-  course?: { learned: string[]; done: number[]; day: number };
+  course?: { learned: string[]; done: number[]; day: number; rec?: Record<number, string> };
   books?: BookMeta[];
   summaryRead?: string[];
   summaryNotes?: { key: string; date: string; text: string }[];
@@ -178,6 +178,7 @@ export interface Card {
   back: string;
   box: number; // Leitner box 0..5
   due: string; // YYYY-MM-DD
+  tr?: string; // pronunciation (IPA) found for a word the person added
 }
 
 export interface LangState {

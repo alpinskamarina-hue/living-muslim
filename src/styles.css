@@ -318,6 +318,26 @@ button:disabled { opacity: .5; cursor: default; }
 .big-btn { width: 100%; margin-top: 10px; padding: 14px; font-size: 15px; }
 .word { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .w-f { font-weight: 700; flex: 1; min-width: 0; }
+.w-fp { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.w-fp .w-f { flex: none; }
+.w-tr { font-size: 12px; color: var(--gold); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.say-btn { width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); font-size: 22px; display: grid; place-items: center; cursor: pointer; flex: none; }
+.say-btn.sm { width: 38px; height: 38px; font-size: 17px; }
+.say-btn:active { transform: scale(.94); }
+.flash-wrap { position: relative; }
+.flash-wrap .flash { width: 100%; padding-top: 72px; }
+.flash-say { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }
+.flash-tr { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--gold); font-size: 17px; margin-top: -6px; text-align: center; }
+.flash-tr2 { color: var(--ink-2); font-size: 15px; margin-top: -10px; text-align: center; }
+.rec-box { border: 1.5px solid var(--line); border-radius: 18px; background: var(--surface-2); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.rec-box b { font-size: 15px; }
+.rec-box audio { width: 100%; }
+.rec-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #d64545; margin-right: 8px; animation: recp 1s ease-in-out infinite; vertical-align: middle; }
+@keyframes recp { 50% { opacity: .3; } }
+.rec-list { display: flex; flex-direction: column; gap: 6px; }
+.rec-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.rec-row span { flex: 1; font-size: 14px; }
+.rec-row small { color: var(--ink-2); font-size: 12.5px; }
 .w-f.ar, .flash-f.ar { font-family: var(--f-ar); font-size: 1.4em; font-weight: 400; }
 .w-b { flex: 1; min-width: 0; color: var(--ink-2); font-size: 14px; }
 .w-box { width: 22px; height: 22px; border-radius: 50%; background: var(--gold-soft); color: var(--gold); display: grid; place-items: center; font-size: 11px; font-weight: 700; flex: none; }
