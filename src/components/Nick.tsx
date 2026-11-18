@@ -5,7 +5,8 @@ import {
   getProfile, saveProfile, nickFree, findNick, findNicks, circleMates, sendInvite, inbox, answerInvite, blockUser, myCircles, kindOf, cleanNick, NICK_RE,
   type Profile, type Found, type Invite,
 } from '../cloud';
-import { shareInvite } from './CloudCircle';
+import { inviteText } from './CloudCircle';
+import { ShareRow } from './ShareRow';
 import { authMe, signInUrl } from '../auth';
 import { plural } from '../dates';
 import { ProGate } from './Plan';
@@ -302,7 +303,7 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
       {!mine?.nick && <p className="tiny nk-note">{_t("У тебя пока нет ника. Его можно задать в Профиле → Мой профиль, тогда тебя тоже смогут найти.")}</p>}
 
       <div className="nk-sec">{_t("Или по ссылке")}</div>
-      <button type="button" className="nk-share" onClick={() => shareInvite(to || code)}>{_t("Поделиться ссылкой в WhatsApp, Telegram…")}</button>
+      <ShareRow {...inviteText(to || code)} />
     </div>
   );
 }

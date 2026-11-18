@@ -6,6 +6,7 @@ import { ProGate } from './Plan';
 import { limitOf } from '../plan';
 import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 import { _t, _tj } from '../i18n';
+import { ShareRow } from './ShareRow';
 
 function InboxIfReady() {
   const [ok, setOk] = useState(false);
@@ -99,11 +100,16 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   );
 }
 
+/** The invite message and link for a circle. */
+export function inviteText(code: string) {
+  const url = inviteLink(code);
+  const c = myCircles().find((x) => x.code === code);
+  return { url, text: _t("Присоединяйся к {0} в Living Muslim: {1}", c?.title ? _t("кругу «{0}»", c.title) : _t("моему кругу"), url) };
+}
+
 /** Opens the share sheet with the invite link (or copies it). */
 export async function shareInvite(code: string) {
-  const link = inviteLink(code);
-  const c = myCircles().find((x) => x.code === code);
-  const text = _t("Присоединяйся к {0} в Living Muslim: {1}", c?.title ? _t("кругу «{0}»", c.title) : _t("моему кругу"), link);
+  const { url: link, text } = inviteText(code);
   try {
     if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url: link }); return true; }
     await navigator.clipboard.writeText(text); alert(_t("Ссылка скопирована. Отправь её в мессенджер."));
@@ -114,29 +120,15 @@ export async function shareInvite(code: string) {
 /** Invite link + name change + leaving the circle, shown under the members list. */
 export function CloudInvite({ isOwner }: { isOwner: boolean }) {
   const me = cloudMe();
-  const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setN] = useState(me?.name ?? '');
   if (!me?.circle) return null;
-  const link = inviteLink(me.circle);
-
-  const share = async () => {
-    const t = myCircles().find((x) => x.code === me.circle)?.title;
-    const text = _t("Присоединяйся к {0} в Living Muslim: {1}", t ? _t("кругу «{0}»", t) : _t("моему кругу"), link);
-    try {
-      if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url: link }); return; }
-      await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000);
-    } catch { /* cancelled */ }
-  };
 
   return (
     <div className="invite">
       <b>{isOwner ? _t("Пригласи близких") : _t("Пригласить ещё кого-то")}</b>
       <p>{_t("Отправь эту ссылку. Человек откроет её, напишет имя и нажмёт «Вступить».")}</p>
-      <div className="cl-row">
-        <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} aria-label={_t("Ссылка-приглашение")} />
-        <button type="button" className="pri-btn" onClick={share}>{copied ? _t("Скопировано") : _t("Поделиться")}</button>
-      </div>
+      <ShareRow {...inviteText(me.circle)} />
       <p>
         {_t("Тебя видят как ")}<b>{me.name || _t("Участник")}</b>.{' '}
         {!editing && <button type="button" className="link-btn" onClick={() => setEditing(true)}>{_t("Изменить имя")}</button>}

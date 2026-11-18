@@ -10,6 +10,7 @@ import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
 import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
+import { ShareRow } from './ShareRow';
 import { RamadanPushFields } from './Ramadan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
 import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
@@ -481,22 +482,17 @@ function DataSettings({ state, replace }: { state: AppState; replace: Props['rep
 }
 
 function HelpPage() {
-  const [shared, setShared] = useState('');
+  const [open, setOpen] = useState(false);
   const url = typeof location !== 'undefined' && !onClaude ? location.origin + '/' : 'https://living-muslim.vercel.app/';
-  const share = async () => {
-    const text = _t("Living Muslim: привычки вокруг пяти намазов, без рекламы и без вины за пропуски.");
-    try {
-      if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url }); return; }
-      await navigator.clipboard.writeText(`${text} ${url}`); setShared(_t("Ссылка скопирована"));
-    } catch { /* cancelled */ }
-  };
+  const text = _t("Living Muslim: привычки вокруг пяти намазов, без рекламы и без вины за пропуски.");
   return (
     <div className="menu">
-      <button type="button" className="menu-row" onClick={share}>
+      <button type="button" className="menu-row" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="mi" aria-hidden="true">💌</span>
-        <span className="mt"><b>{_t("Поделиться приложением")}</b><small>{shared || _t("Садака джария: за каждого, кто начнёт молиться вовремя")}</small></span>
-        <i aria-hidden="true">›</i>
+        <span className="mt"><b>{_t("Поделиться приложением")}</b><small>{_t("Садака джария: за каждого, кто начнёт молиться вовремя")}</small></span>
+        <i aria-hidden="true">{open ? '⌃' : '›'}</i>
       </button>
+      {open && <div className="menu-share"><ShareRow text={text} url={url} /></div>}
       {SUPPORT_EMAIL && (
         <a className="menu-row" href={`mailto:${SUPPORT_EMAIL}?subject=Living%20Muslim`}>
           <span className="mi" aria-hidden="true">✉️</span>

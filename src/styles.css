@@ -2427,3 +2427,16 @@ button:disabled { opacity: .5; cursor: default; }
 .lazy-wait { min-height: 50vh; display: grid; place-items: center; }
 .lazy-wait i { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--green-2); animation: lazy-spin .8s linear infinite; }
 @keyframes lazy-spin { to { transform: rotate(360deg); } }
+
+/* Share buttons: WhatsApp, Telegram, copy link, more */
+.share-row { display: flex; gap: 8px; width: 100%; }
+.sh-btn { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); font-size: 12.5px; font-weight: 700; text-decoration: none; }
+.sh-ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.sh-btn.wa .sh-ic { background: #25d366; }
+.sh-btn.tg .sh-ic { background: #229ed9; }
+.sh-btn.cp .sh-ic { background: var(--green-2); }
+.sh-btn.mo .sh-ic { background: var(--surface-2); color: var(--ink); border: 1.5px solid var(--line); }
+.sh-btn:active { transform: scale(.97); }
+.share-row.compact .sh-btn { padding: 8px 2px; font-size: 11.5px; }
+.share-row.compact .sh-ic { width: 36px; height: 36px; }
+.menu-share { padding: 4px 12px 12px; }
