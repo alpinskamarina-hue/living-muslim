@@ -22,6 +22,8 @@ import { isCloud } from '../cloud';
 import { catalog as catalogItems } from '../videos';
 import { _t, _tj, isEn } from '../i18n';
 import { dayPlan, markStarted, startedOf, type PlanItem } from '../dayplan';
+import { Azkar } from './Azkar';
+import { azkarNow, streak as azkarStreak } from '../azkar';
 
 interface Props {
   state: AppState;
@@ -35,7 +37,7 @@ interface Props {
   umrah: UmrahApi;
 }
 
-type Mode = 'home' | 'focus' | 'tasbih' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
+type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
 
 export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
@@ -71,6 +73,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
       </div>
     </div>
   );
+  if (mode === 'azkar') return <Azkar state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'tasbih') return <Tasbih onExit={() => setMode('home')} onFinish={() => markHabit('done')} habitName={habit?.action} />;
 
   // ---- home: «Сейчас», favourites, groups ----
@@ -82,8 +85,11 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const rLeft = debt(ramadanOf(state)).left;
   const sq = sadaqaOf(state); const sqN = sadaqaStreak(sq, today); const sqToday = sq.days[today];
 
+  const az = azkarNow(state, today);
+  const azN = azkarStreak(state, today, az.part);
   const P: Record<string, Item> = {
     quran: { ic: 'قرآن', ar: true, title: _t("Коран"), sub: state.quran ? _t("Сура {0}, аят {1}", state.quran.surah, state.quran.ayah) : _t("Текст и перевод смыслов, закладка"), pct: state.quran ? state.quran.surah / 114 : undefined, open: () => setMode('quran') },
+    azkar: { ic: 'أذكار', ar: true, title: _t("Азкары"), sub: az.done ? (az.part === 'm' ? _t("Утренние прочитаны ✓") : _t("Вечерние прочитаны ✓")) + (azN > 1 ? _t(" · серия {0}", azN) : '') : az.line, open: () => setMode('azkar') },
     tasbih: { ic: 'سبحان', ar: true, title: _t("Тасбих"), sub: _t("33 · 33 · 34 после намаза"), open: () => setMode('tasbih') },
     sadaqa: { ic: 'صدقة', ar: true, title: _t("Садака"), sub: sqToday?.money || sqToday?.deed ? _t("Сегодня есть ✓ · серия {0}", sqN) : sqN ? _t("Серия {0} · доброе дело дня ждёт", sqN) : _t("Каждый день понемногу, в тайне"), open: () => setMode('sadaqa') },
     ...(isCloud ? { videos: { ic: '▶', title: _t("Видеоуроки"), sub: vidDone ? _t("Просмотрено уроков: {0}", vidDone) : _t("Вера, бизнес, развитие и другое"), open: () => setMode('videos') } } : {}),
@@ -108,11 +114,12 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     ramadan: rDay ? { title: _t("Рамадан, день {0}", rDay), sub: _t("Пост, хатм, ночи"), btn: _t("Открыть"), go: onRamadan, short: _t("Рамадан") } : null,
     video: vs?.last ? { title: _t("Продолжить видеоурок"), sub: (() => { const it = [...vs.mine, ...catalogItems()].find((x) => x.id === vs.last!.item); return it ? it.title : _t("С того места, где остановился"); })(), btn: _t("▶ Продолжить"), go: () => setMode('videos'), short: _t("Видеоурок") } : null,
     quran: { title: state.quran ? _t("Коран: сура {0}, аят {1}", state.quran.surah, state.quran.ayah) : _t("Коран: несколько аятов"), sub: state.quran ? _t("С закладки, с переводом смыслов") : _t("Начни с суры Аль-Фатиха"), btn: _t("Читать"), go: () => setMode('quran'), short: _t("Коран") },
+    azkar: az.live && !az.done ? { title: az.part === 'm' ? _t("Утренние азкары") : _t("Вечерние азкары"), sub: az.line, btn: _t("Начать"), go: () => setMode('azkar'), short: _t("Азкары") } : null,
     tasbih: { title: _t("Тасбих после намаза"), sub: _t("СубханаЛлах 33 · Альхамдулиллях 33 · Аллаху акбар 34"), btn: _t("Начать"), go: () => setMode('tasbih'), short: _t("Тасбих 33·33·34") },
     langs: due ? { title: _t("Повтори слова: {0}", due), sub: _t("Пара минут на карточки"), btn: _t("Повторить"), go: () => setMode('langs'), short: _t("Слова") } : null,
     course: state.course ? { title: _t("Английский: день {0}", state.course.day + 1), sub: A1[state.course.day]?.t ?? _t("Урок на 15 минут"), btn: _t("Продолжить"), go: () => setMode('course'), short: _t("Английский") } : null,
   };
-  const order = part === _t("утро") ? ['ramadan', 'quran', 'tasbih', 'langs'] : part === _t("день") ? ['ramadan', 'langs', 'course', 'video', 'quran'] : part === _t("вечер") ? ['ramadan', 'video', 'quran', 'tasbih'] : ['ramadan', 'tasbih', 'quran'];
+  const order = part === _t("утро") ? ['ramadan', 'azkar', 'quran', 'tasbih', 'langs'] : part === _t("день") ? ['ramadan', 'azkar', 'langs', 'course', 'video', 'quran'] : part === _t("вечер") ? ['ramadan', 'azkar', 'video', 'quran', 'tasbih'] : ['ramadan', 'azkar', 'tasbih', 'quran'];
   const picks = order.map((k) => cand[k]).filter(Boolean) as Now[];
   const now = picks[0], alt = picks[1];
 
@@ -182,7 +189,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
       )}
 
       <div className="pgl">{_t("Поклонение")}</div>
-      <div className="pgrp">{['quran', 'tasbih', 'sadaqa'].map(row)}</div>
+      <div className="pgrp">{['quran', 'azkar', 'tasbih', 'sadaqa'].map(row)}</div>
       <div className="pgl">{_t("Знания")}</div>
       <div className="pgrp">{['videos', 'books', 'langs'].map(row)}</div>
       <div className="pgl">{_t("Тело и время")}</div>

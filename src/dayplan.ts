@@ -8,8 +8,9 @@ import { isCloud } from './cloud';
 import { _t } from './i18n';
 import { addDays } from './dates';
 import { ANCHOR_LABEL } from './types';
+import { azkarHabits, azkarNow } from './azkar';
 
-export type PlanMode = 'quran' | 'videos' | 'course' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
+export type PlanMode = 'azkar' | 'quran' | 'videos' | 'course' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
 export interface PlanItem {
   key: string;            // h:<habitId> or g:<goalId>
   ic: string;
@@ -22,7 +23,7 @@ export interface PlanItem {
   min?: string;           // the minimum version, for «2 минуты»
 }
 
-const IC: Record<PlanMode, string> = { quran: '📖', videos: '▶', course: '🇬🇧', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
+const IC: Record<PlanMode, string> = { azkar: '🤲', quran: '📖', videos: '▶', course: '🇬🇧', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
 
 /** Which practice a habit lives in, guessed from its name (English is checked before «урок», so «урок английского» goes to the course). */
 export function modeOfHabit(h: Habit, s: AppState): PlanMode | null {
@@ -31,7 +32,8 @@ export function modeOfHabit(h: Habit, s: AppState): PlanMode | null {
   if (/коран|аят|сур[аыу]|quran|qur'an|ayah|surah/.test(a)) return 'quran';
   if (isCloud && /видео|ролик|урок|курс|лекци|video|lesson|course|lecture/.test(a)) return 'videos';
   if (/книг|чита|страниц|глав|book|read|page|chapter/.test(a)) return 'books';
-  if (/тасбих|зикр|азкар|dhikr|tasbih|adhkar|azkar/.test(a)) return 'tasbih';
+  if (/азкар|adhkar|azkar/.test(a) || (/зикр|dhikr/.test(a) && /утр|вечер|morning|evening/.test(a))) return 'azkar';
+  if (/тасбих|зикр|dhikr|tasbih/.test(a)) return 'tasbih';
   if (/трениров|спорт|зарядк|бег|отжим|workout|exercise|run|sport/.test(a)) return 'health';
   return null;
 }
@@ -53,11 +55,20 @@ export function dayPlan(s: AppState, today: string): PlanItem[] {
   const out: PlanItem[] = [];
   const modes = new Set<PlanMode>();
   const habits = s.habits.filter((h) => h.status === 'active').sort((a, b) => ANCHORS.indexOf(a.anchor) - ANCHORS.indexOf(b.anchor));
+  // Adhkar in their time (morning from Fajr, evening from Asr) until read or started.
+  const az = azkarNow(s, today);
+  const azKey = `az:${az.part}`;
+  const azHabit = azkarHabits(s, az.part)[0];
   for (const h of habits) {
     const m = modeOfHabit(h, s);
+    if (m === 'azkar' && h.id !== azHabit?.id) continue;
+    if (m === 'azkar' && (!az.live || az.done)) continue;
     if (!m || isCounted(s.log[today]?.[h.id]) || started.includes(`h:${h.id}`)) continue;
     modes.add(m);
     out.push({ key: `h:${h.id}`, ic: IC[m], title: h.action, sub: _t("{0} · минимум: {1}", afterLabel(h.anchor), h.min), mode: m, habitId: h.id, anchor: h.anchor, min: h.min });
+  }
+  if (az.live && !az.done && !azHabit && !started.includes(azKey)) {
+    out.push({ key: azKey, ic: az.part === 'm' ? '☀️' : '🌙', title: az.part === 'm' ? _t("Утренние азкары") : _t("Вечерние азкары"), sub: az.line, mode: 'azkar' });
   }
   for (const g of (s.goals ?? []).filter((x) => x.status === 'active')) {
     const st = todayStep(s, g, today);
