@@ -1,3 +1,4 @@
+import { QuitToday, QuitCheck, QuitScreen, type QuitView } from './components/Quit';
 import { useEffect, useMemo, useState } from 'react';
 import { WordCard, WordsLayer } from './components/Words';
 import { todayTrigger, useWordsWatch } from './wordsWatch';
@@ -120,6 +121,7 @@ export function App() {
   const [safar, setSafar] = useState(false);
   const [ramadan, setRamadan] = useState<false | string>(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
+  const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
   const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>({ n: 0 });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [profileStart, setProfileStart] = useState<{ p: ProfilePage; n: number }>({ p: 'main', n: 0 });
@@ -292,7 +294,9 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
+            quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
+            quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
@@ -301,7 +305,7 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
+        {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
           <div className="page">
             {!goalOpen && !reviewOpen && <Hint id="goals" />}
@@ -333,6 +337,7 @@ export function App() {
       </nav>
 
       <WordsLayer state={state} today={today} />
+      {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
 

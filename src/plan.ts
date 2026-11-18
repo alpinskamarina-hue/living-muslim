@@ -8,8 +8,8 @@ import { _t } from './i18n';
 export const TRIAL_DAYS = 7;
 /** Free limits switch on after the trial. Turn off to keep everything open (e.g. while payments are not ready). */
 export const LIMITS_ON = true;
-export const FREE = { habits: 3, circles: 3, goals: 3, books: 3, courses: 3 } as const;
-export const PRO = { habits: 5, circles: 20, goals: 5, books: 100, courses: 100 } as const;
+export const FREE = { habits: 3, circles: 3, goals: 3, books: 3, courses: 3, quits: 1 } as const;
+export const PRO = { habits: 5, circles: 20, goals: 5, books: 100, courses: 100, quits: 3 } as const;
 export type LimitKey = keyof typeof FREE;
 
 export const PRICES = {
@@ -105,6 +105,7 @@ export const LIMIT_RU: Record<LimitKey, [string, string]> = {
   goals: [_t("активные цели"), _t("цели")],
   books: [_t("книги в библиотеке"), _t("книги")],
   courses: [_t("видеокурсы"), _t("видеокурса")],
+  quits: [_t("привычки, которые оставляешь"), _t("привычка, которую оставляешь")],
 };
 
 /** Opens the Pro screen from anywhere (App listens). */

@@ -23,6 +23,7 @@ import { catalog as catalogItems } from '../videos';
 import { _t, _tj, isEn } from '../i18n';
 import { dayPlan, markStarted, startedOf, type PlanItem } from '../dayplan';
 import { Azkar } from './Azkar';
+import { activeQuits, cleanDays } from '../quit';
 import { azkarNow, streak as azkarStreak } from '../azkar';
 
 interface Props {
@@ -35,11 +36,12 @@ interface Props {
   /** Opened from a goal: which practice, and for videos which course. */
   start?: { mode: string; ref?: string };
   umrah: UmrahApi;
+  onQuit?: () => void;
 }
 
 type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
 
-export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah }: Props) {
+export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah, onQuit }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
   const active = state.habits.filter((h) => h.status === 'active');
   const [habitId, setHabitId] = useState<string>(suggestedId ?? active[0]?.id ?? '');
@@ -98,6 +100,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     body: { ic: '🌿', title: _t("Здоровье и питание"), sub: _t("Вода {0}/{1} · еда {2} из 3 · сон, посты", health(state).water[today] ?? 0, health(state).waterGoal, Object.keys(foodOf(state).meals[today] ?? {}).length), open: () => setMode('body') },
     focus: { ic: '⏱', title: _t("Фокус-таймер"), sub: _t("Засечь время на любое дело"), open: () => setMode('focus') },
     umrah: { ic: 'عمرة', ar: true, title: _t("Умра"), sub: state.umrah?.prep?.length ? _t("Подготовка {0}%", prepPct(state)) : _t("Обряды со счётчиком, подготовка, дуа"), open: () => setMode('umrah') },
+    quit: { ic: '🛡', title: _t("Хочу оставить"), sub: (() => { const a = activeQuits(state); return a.length ? a.map((q) => _t("{0}: {1} дн.", q.what, cleanDays(q, today))).join(' · ') : _t("Оставить вредную привычку, тайно"); })(), open: () => onQuit?.() },
     safar: { ic: '🧭', title: _t("Сафар"), sub: state.trip ? _t("Поездка: {0}", state.trip.place) : _t("Поездка, кибла, дуа путника"), open: onSafar },
   };
   const favIds = (state.practiceFav ?? ['quran', 'videos', 'tasbih', 'langs']).filter((id) => P[id]).slice(0, 4);
@@ -194,6 +197,8 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
       <div className="pgrp">{['videos', 'books', 'langs'].map(row)}</div>
       <div className="pgl">{_t("Тело и время")}</div>
       <div className="pgrp">{['body', 'focus'].map(row)}</div>
+      <div className="pgl">{_t("Работа над собой")}</div>
+      <div className="pgrp">{['quit'].map(row)}</div>
 
       <button type="button" className="pmore" onClick={() => setSpecial(!special)} aria-expanded={special}>
         <span>{_tj("Особые случаи: {0}", season ? _t("Умра, Сафар") : _t("Рамадан, Умра, Сафар"))}</span><span>{special ? '▴' : '›'}</span>

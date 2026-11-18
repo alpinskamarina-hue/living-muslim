@@ -94,6 +94,8 @@ export interface AppState {
   started?: Record<string, string[]>;
   /** Morning (m) and evening (e) adhkar: the days they were read; short = the short set; tr = show transliteration. */
   azkar?: { m: string[]; e: string[]; short?: boolean; tr?: boolean };
+  /** «Хочу оставить»: bad habits the person is leaving (private, device only). */
+  quits?: import('./quit').Quit[];
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number };
