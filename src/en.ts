@@ -4300,4 +4300,6 @@ export const EN: Record<string, string> = {
   "мой список ›": "my list ›",
   "План дня на месте": "Day plan on site",
   "{0} {1} · по {2}": "{0} {1} · {2} each",
+  "Поездки собираются внутри Круга. Сейчас открыт «{0}», здесь поездок нет.": "Trips live inside a Circle. «{0}» is open now and has no trips.",
+  "Если поездка в другом круге, открой его:": "If your trip is in another circle, open it:",
 };

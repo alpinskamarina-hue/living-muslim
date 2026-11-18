@@ -9,7 +9,7 @@ import { UmrahTrips, TripCard } from './UmrahTrips';
 import { CircleChat } from './CircleChat';
 import { useChat } from '../chat';
 import type { CircleApi } from '../circle';
-import { isCloud, currentCircle, inviteLink, nicksReady } from '../cloud';
+import { isCloud, currentCircle, inviteLink, nicksReady, myCircles, switchCircle } from '../cloud';
 import { InviteByNick } from './Nick';
 import { QiblaScreen } from './Mosques';
 import { MiqatView } from './Miqat';
@@ -138,7 +138,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const asks = Object.entries(duas).flatMap(([who, m]) => myTrips.flatMap((h) => (m?.[h] ?? []).map((text, i) => ({ key: `${who}:${h}:${i}`, who, text }))));
   // While in Makkah, ticked requests are shared back, so the person who asked learns it was made.
   const askedKey = (u.asked ?? []).join(',');
-  const groupHost = myTrips[0];
+  // The group trip on «Сейчас»: one I go on, else the one I am gathering myself even before I pressed «Еду».
+  const groupHost: string | undefined = myTrips[0] ?? (me && trips[me] ? me : undefined);
   const groupMembers = groupHost ? [...new Set([groupHost, ...Object.entries(rsvp).filter(([, r]) => r[groupHost]?.s === 'go').map(([id]) => id)])] : [];
   useStopSharingAfter(state, update, rawApi, onSite);
   useEffect(() => {
@@ -284,6 +285,15 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
                   <button type="button" onClick={() => go('money')}><i>3</i><span><b>{_t("Начни копилку")}</b><small>{_t("Сумма и сколько откладывать в неделю")}</small></span><em>›</em></button>
                 </div>
               </>
+            )}
+            {phase === 'none' && !groupHost && !tripHost && isCloud && myCircles().length > 1 && (
+              <div className="um-other">
+                <b>{_tj("Поездки собираются внутри Круга. Сейчас открыт «{0}», здесь поездок нет.", currentCircle()?.title ?? _t("Круг"))}</b>
+                <small>{_t("Если поездка в другом круге, открой его:")}</small>
+                <div>{myCircles().filter((c) => c.code !== currentCircle()?.code).map((c) => (
+                  <button key={c.code} type="button" onClick={() => { try { sessionStorage.setItem('lm.umrahGo', '1'); } catch { /* */ } switchCircle(c.code); }}>{c.title || _t("Круг")} ›</button>
+                ))}</div>
+              </div>
             )}
             {phase === 'none' && !groupHost && (
               <>
@@ -448,7 +458,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
         {NAV.map((n) => (
           <button key={n.k} type="button" className={`${tab === n.k ? 'on' : ''}${n.k === 'lost' ? ' sos' : ''}`} aria-current={tab === n.k ? 'page' : undefined}
             onClick={() => { try { navigator.vibrate?.(8); } catch { /* */ } if (n.k === 'lost') setLost(true); else if (n.k === 'qibla') setQibla(true); else go(n.k); }}>
-            <span className="k" aria-hidden="true">{n.ic}{n.k === 'group' && unread > 0 && <i className="nav-badge">{unread > 9 ? '9+' : unread}</i>}</span>
+            <span className="k" aria-hidden="true">{n.k === 'lost' ? '!' : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{UM_ICONS[n.k] ?? UM_ICONS.now}</svg>}{n.k === 'group' && unread > 0 && <i className="nav-badge">{unread > 9 ? '9+' : unread}</i>}</span>
             <small>{n.l}</small>
           </button>
         ))}
@@ -456,6 +466,18 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     </div>
   );
 }
+
+/** Line icons for the umrah keys, drawn like the main app's tab keys. */
+const UM_ICONS: Record<string, React.ReactNode> = {
+  now: <><path d="M4 8l8-4 8 4v10l-8 3-8-3z" /><path d="M4 8l8 3 8-3M12 11v10" /><path d="M4 11.5l8 3 8-3" /></>,
+  rite: <><path d="M4 8l8-4 8 4v10l-8 3-8-3z" /><path d="M4 8l8 3 8-3M12 11v10" /><path d="M4 11.5l8 3 8-3" /></>,
+  prep: <><path d="M9 4h6v3H9z" /><path d="M7 5H5v16h14V5h-2" /><path d="M8.5 13l2.5 2.5 4.5-5" /></>,
+  group: <><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.6 2.7-6 6-6s6 2.4 6 6" /><circle cx="17" cy="9" r="2.6" /><path d="M16 14.2c2.9.1 5 2.3 5 5.3" /></>,
+  docs: <><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><path d="M8 13h8M8 16h5" /></>,
+  money: <><rect x="3" y="7" width="18" height="13" rx="2.5" /><path d="M3 11h18" /><circle cx="16.5" cy="15.5" r="1.4" /><path d="M6 7l9-3.5 2 3.5" /></>,
+  duas: <><path d="M8 21v-6l-3-4 1-6 2 5" /><path d="M16 21v-6l3-4-1-6-2 5" /><path d="M12 3v3M10 5h4" /></>,
+  qibla: <><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5l-2 5-5 2 2-5z" /></>,
+};
 
 type UTab = 'now' | 'prep' | 'group' | 'duas' | 'money' | 'rite' | 'docs';
 
