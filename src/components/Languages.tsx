@@ -5,6 +5,7 @@ import { addDays, dayKey, plural } from '../dates';
 import { _t, _tj, isEn } from '../i18n';
 import { hasVoice, speak, speechLang } from '../speech';
 import { lookupIpa, needsLookup, pronOf } from '../pron';
+import { sayAr } from '../course/arAudio';
 
 interface Lang { id: string; label: string; rtl?: boolean; starter: [string, string][] }
 
@@ -55,9 +56,10 @@ interface Props {
   onExit: () => void;
   onFinish: (m: Mark) => void;
   onCourse?: () => void;
+  onCourseAr?: () => void;
 }
 
-export function Languages({ state, update, habitName, onExit, onFinish, onCourse }: Props) {
+export function Languages({ state, update, habitName, onExit, onFinish, onCourse, onCourseAr }: Props) {
   const today = dayKey(new Date());
   const ls: LangState = state.langs ?? { current: '', decks: {} };
   const [mode, setMode] = useState<'home' | 'review' | 'words'>('home');
@@ -120,6 +122,13 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
       <div className="q-list">
         {mode === 'home' && (
           <>
+            {onCourseAr && (
+              <button type="button" className="course-card ar-card" onClick={onCourseAr}>
+                <small>{_t("Курс · фусха A1")}</small>
+                <b>{_t("Арабский по дням")}</b>
+                <span>{state.courseAr ? _t("День {0} · фраз выучено {1}", state.courseAr.day + 1, state.courseAr.learned.length) : _t("30 уроков по 15 минут: буквы, фразы с озвучкой, диалоги, слово из Корана")}</span>
+              </button>
+            )}
             {onCourse && !isEn && (
               <button type="button" className="course-card" onClick={onCourse}>
                 <small>{_t("Курс · разговорный A1")}</small>
@@ -192,6 +201,8 @@ function SayBtn({ lang, text, small, slow }: { lang: string; text: string; small
   const [none, setNone] = useState(false);
   if (!code) return null;
   const say = () => {
+    // Arabic: the recorded course clip when there is one, else the phone voice.
+    if (lang === 'ar') { void sayAr(text, slow).then((ok) => setNone(!ok)); return; }
     if (hasVoice(code) === false) { setNone(true); return; }
     void speak(text, slow, code);
   };
@@ -231,7 +242,9 @@ function Review({ lang, cards, habitName, onGrade, onTr, onBack, onFinish }: {
 
   // Say the word when a new card comes up.
   useEffect(() => {
-    if (!card || !code || hasVoice(code) === false) return;
+    if (!card || !code) return;
+    if (lang.id === 'ar') { const t = setTimeout(() => void sayAr(card.front), 250); return () => clearTimeout(t); }
+    if (hasVoice(code) === false) return;
     const t = setTimeout(() => void speak(card.front, false, code), 250);
     return () => clearTimeout(t);
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps

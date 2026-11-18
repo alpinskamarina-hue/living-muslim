@@ -18,6 +18,7 @@ import { lazyNamed } from '../lazy';
 const Books = lazyNamed(() => import('./Books').then((m) => m.Books));
 const Languages = lazyNamed(() => import('./Languages').then((m) => m.Languages));
 const Course = lazyNamed(() => import('./Course').then((m) => m.Course));
+const ArCourse = lazyNamed(() => import('./ArCourse').then((m) => m.ArCourse));
 const Health = lazyNamed(() => import('./Health').then((m) => m.Health));
 const UmrahHub = lazyNamed(() => import('./UmrahHub').then((m) => m.UmrahHub));
 const Videos = lazyNamed(() => import('./Videos').then((m) => m.Videos));
@@ -45,7 +46,7 @@ interface Props {
   onQuit?: () => void;
 }
 
-type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
+type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'course-ar' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
 
 export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah, onQuit, circle, joined, umrahStart }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
@@ -63,7 +64,8 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   if (mode === 'focus') return <Focus habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'course') return <Course state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
-  if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onCourse={() => setMode('course')} />;
+  if (mode === 'course-ar') return <ArCourse state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
+  if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onCourse={() => setMode('course')} onCourseAr={() => setMode('course-ar')} />;
   if (mode === 'books') return <Books state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
@@ -102,7 +104,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     sadaqa: { ic: 'صدقة', ar: true, title: _t("Садака"), sub: sqToday?.money || sqToday?.deed ? _t("Сегодня есть ✓ · серия {0}", sqN) : sqN ? _t("Серия {0} · доброе дело дня ждёт", sqN) : _t("Каждый день понемногу, в тайне"), open: () => setMode('sadaqa') },
     ...(isCloud ? { videos: { ic: '▶', title: _t("Видеоуроки"), sub: vidDone ? _t("Просмотрено уроков: {0}", vidDone) : _t("Вера, бизнес, развитие и другое"), open: () => setMode('videos') } } : {}),
     books: { ic: '📖', title: _t("Книги"), sub: state.books?.length ? _t("На полке: {0}", state.books.length) : _t("Атомные привычки и свои PDF"), open: () => setMode('books') },
-    langs: { ic: 'Aa', title: _t("Языки"), sub: state.course ? _t("Английский A1: день {0}{1}", state.course.day + 1, due ? _t(" · {0} к повторению", due) : '') : due ? _t("{0} карточек к повторению", due) : isEn ? _t("Карточки слов с повторением") : _t("Курс английского, карточки слов"), pct: state.course ? (state.course.day + 1) / A1.length : undefined, open: () => setMode('langs') },
+    langs: { ic: 'Aa', title: _t("Языки"), sub: state.course ? _t("Английский A1: день {0}{1}", state.course.day + 1, due ? _t(" · {0} к повторению", due) : '') : state.courseAr ? _t("Арабский A1: день {0}{1}", state.courseAr.day + 1, due ? _t(" · {0} к повторению", due) : '') : due ? _t("{0} карточек к повторению", due) : isEn ? _t("Арабский A1, карточки слов") : _t("Курсы английского и арабского, карточки слов"), pct: state.course ? (state.course.day + 1) / A1.length : state.courseAr ? (state.courseAr.day + 1) / 30 : undefined, open: () => setMode('langs') },
     body: { ic: '🌿', title: _t("Здоровье и питание"), sub: _t("Вода {0}/{1} · еда {2} из 3 · сон, посты", health(state).water[today] ?? 0, health(state).waterGoal, Object.keys(foodOf(state).meals[today] ?? {}).length), open: () => setMode('body') },
     focus: { ic: '⏱', title: _t("Фокус-таймер"), sub: _t("Засечь время на любое дело"), open: () => setMode('focus') },
     umrah: { ic: 'عمرة', ar: true, title: _t("Умра"), sub: state.umrah?.prep?.length ? _t("Подготовка {0}%", prepPct(state)) : _t("Обряды со счётчиком, подготовка, дуа"), open: () => setMode('umrah') },
@@ -127,8 +129,9 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     tasbih: { title: _t("Тасбих после намаза"), sub: _t("СубханаЛлах 33 · Альхамдулиллях 33 · Аллаху акбар 34"), btn: _t("Начать"), go: () => setMode('tasbih'), short: _t("Тасбих 33·33·34") },
     langs: due ? { title: _t("Повтори слова: {0}", due), sub: _t("Пара минут на карточки"), btn: _t("Повторить"), go: () => setMode('langs'), short: _t("Слова") } : null,
     course: state.course ? { title: _t("Английский: день {0}", state.course.day + 1), sub: A1[state.course.day]?.t ?? _t("Урок на 15 минут"), btn: _t("Продолжить"), go: () => setMode('course'), short: _t("Английский") } : null,
+    courseAr: state.courseAr ? { title: _t("Арабский: день {0}", state.courseAr.day + 1), sub: _t("Урок на 15 минут"), btn: _t("Продолжить"), go: () => setMode('course-ar'), short: _t("Арабский") } : null,
   };
-  const order = part === _t("утро") ? ['ramadan', 'azkar', 'quran', 'tasbih', 'langs'] : part === _t("день") ? ['ramadan', 'azkar', 'langs', 'course', 'video', 'quran'] : part === _t("вечер") ? ['ramadan', 'azkar', 'video', 'quran', 'tasbih'] : ['ramadan', 'azkar', 'tasbih', 'quran'];
+  const order = part === _t("утро") ? ['ramadan', 'azkar', 'quran', 'tasbih', 'langs'] : part === _t("день") ? ['ramadan', 'azkar', 'langs', 'course', 'courseAr', 'video', 'quran'] : part === _t("вечер") ? ['ramadan', 'azkar', 'video', 'quran', 'tasbih'] : ['ramadan', 'azkar', 'tasbih', 'quran'];
   const picks = order.map((k) => cand[k]).filter(Boolean) as Now[];
   const now = picks[0], alt = picks[1];
 

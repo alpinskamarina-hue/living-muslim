@@ -1,3 +1,4 @@
+import { arTr } from './course/arTranslit';
 // How a starter word sounds: IPA for English and Turkish, a reading in Russian letters (CAPS = stressed syllable)
 // and a Latin reading for Arabic. Words people add themselves get IPA from a free dictionary (English only).
 import { isEn } from './i18n';
@@ -44,6 +45,8 @@ export function pronOf(lang: string, word: string, own?: string): string[] {
   if (p?.ru && !isEn) out.push(p.ru);
   if (!out.length && own) out.push(own.startsWith('/') || own.startsWith('[') ? own : `[${own}]`);
   if (lang === 'en' && !isEn && TR[word.trim()] && !p) out.push(TR[word.trim()]);
+  // Vowelled Arabic (course phrases) gets its reading from the rules.
+  if (lang === 'ar' && !out.length && /[\u064B-\u0652]/.test(word)) out.push(arTr(word, isEn ? 'lat' : 'ru'));
   return out;
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppState, Mark } from '../types';
 import { A1 } from '../course/a1';
 import { TR } from '../course/tr';
@@ -260,9 +260,13 @@ function Cards({ day, phrases, slow, onLearn, onNext }: { day: number; phrases: 
 
 type RecState = 'off' | 'rec' | 'nomic';
 
-function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
+export function Speak({ day, task, phrases, long, onDone, done, rec, onSaved, prefix = 'speak:', cheat }: {
   day: number; task: string; phrases: [string, string][]; long: boolean; onDone: () => void; done: boolean;
   rec: Record<number, string>; onSaved: (day: number, date: string | null) => void;
+  /** Where recordings are kept on the phone: one key per course. */
+  prefix?: string;
+  /** Hints shown instead of the plain phrase list. */
+  cheat?: ReactNode;
 }) {
   const total = long ? 120 : 60;
   const [left, setLeft] = useState<number | null>(null);
@@ -277,7 +281,7 @@ function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
   useEffect(() => {
     let off = false;
     setUrl(null);
-    if (rec[day]) getFile(`speak:${day}`).then((b) => { if (b && !off) setUrl(keep(b)); }).catch(() => { /* */ });
+    if (rec[day]) getFile(`${prefix}${day}`).then((b) => { if (b && !off) setUrl(keep(b)); }).catch(() => { /* */ });
     return () => { off = true; };
   }, [day]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -311,7 +315,7 @@ function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
         if (!b.size) return;
         setUrl(keep(b));
         setSaving(true);
-        try { await putFile(`speak:${day}`, b); onSaved(day, dayKey(new Date())); } catch { /* the recording still plays now */ }
+        try { await putFile(`${prefix}${day}`, b); onSaved(day, dayKey(new Date())); } catch { /* the recording still plays now */ }
         setSaving(false);
       };
       mr.current = m;
@@ -324,7 +328,7 @@ function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
   };
 
   const remove = async () => {
-    await deleteFile(`speak:${day}`).catch(() => { /* */ });
+    await deleteFile(`${prefix}${day}`).catch(() => { /* */ });
     onSaved(day, null);
     setUrl(null);
   };
@@ -340,7 +344,7 @@ function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
         <p>{task}</p>
       </div>
       <p className="tiny">{_tj("Говори вслух {0}  {1} без остановки. Ошибки — нормально, главное не молчать. Подсказки:", total / 60, long ? _t("минуты") : _t("минуту"))}</p>
-      <ul className="cheat">{phrases.map(([en]) => <li key={en}>{en}</li>)}</ul>
+      {cheat ?? <ul className="cheat">{phrases.map(([en]) => <li key={en}>{en}</li>)}</ul>}
       <div className="speak-timer">{left === null ? `${total / 60}:00` : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</div>
       {running && mic === 'rec' && <p className="tiny" style={{ textAlign: 'center' }}><span className="rec-dot" />{_t("Идёт запись, потом сможешь себя послушать")}</p>}
       {mic === 'nomic' && <p className="tiny" style={{ textAlign: 'center' }}>{_t("Нет доступа к микрофону, поэтому без записи. Разреши микрофон для сайта в настройках браузера.")}</p>}
@@ -368,19 +372,19 @@ function Speak({ day, task, phrases, long, onDone, done, rec, onSaved }: {
         </>
       )}
 
-      {others.length > 0 && <RecList days={others} rec={rec} fmt={fmt} />}
+      {others.length > 0 && <RecList days={others} rec={rec} fmt={fmt} prefix={prefix} />}
     </>
   );
 }
 
 /** Recordings of other days, to hear how speech changes over the course. */
-function RecList({ days, rec, fmt }: { days: number[]; rec: Record<number, string>; fmt: (d: string) => string }) {
+function RecList({ days, rec, fmt, prefix }: { days: number[]; rec: Record<number, string>; fmt: (d: string) => string; prefix: string }) {
   const [open, setOpen] = useState<number | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
   const play = async (d: number) => {
     if (open === d) { setOpen(null); setUrl(null); return; }
-    const b = await getFile(`speak:${d}`).catch(() => undefined);
+    const b = await getFile(`${prefix}${d}`).catch(() => undefined);
     setOpen(d);
     setUrl(b ? URL.createObjectURL(b) : null);
   };

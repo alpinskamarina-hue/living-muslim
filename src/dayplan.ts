@@ -10,7 +10,7 @@ import { addDays } from './dates';
 import { ANCHOR_LABEL } from './types';
 import { azkarHabits, azkarNow } from './azkar';
 
-export type PlanMode = 'azkar' | 'quran' | 'videos' | 'course' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
+export type PlanMode = 'azkar' | 'quran' | 'videos' | 'course' | 'course-ar' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
 export interface PlanItem {
   key: string;            // h:<habitId> or g:<goalId>
   ic: string;
@@ -23,11 +23,12 @@ export interface PlanItem {
   min?: string;           // the minimum version, for «2 минуты»
 }
 
-const IC: Record<PlanMode, string> = { azkar: '🤲', quran: '📖', videos: '▶', course: '🇬🇧', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
+const IC: Record<PlanMode, string> = { azkar: '🤲', quran: '📖', videos: '▶', course: '🇬🇧', 'course-ar': 'ع', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
 
 /** Which practice a habit lives in, guessed from its name (English is checked before «урок», so «урок английского» goes to the course). */
 export function modeOfHabit(h: Habit, s: AppState): PlanMode | null {
   const a = h.action.toLowerCase();
+  if (/араб|arabic/.test(a)) return s.courseAr ? 'course-ar' : 'langs';
   if (/англ|english|язык|слов|language|word/.test(a)) return s.course ? 'course' : 'langs';
   if (/коран|аят|сур[аыу]|quran|qur'an|ayah|surah/.test(a)) return 'quran';
   if (isCloud && /видео|ролик|урок|курс|лекци|video|lesson|course|lecture/.test(a)) return 'videos';

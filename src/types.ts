@@ -105,6 +105,8 @@ export interface AppState {
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number; rec?: Record<number, string> };
+  /** Arabic A1 course: the same shape as the English one. */
+  courseAr?: { learned: string[]; done: number[]; day: number; rec?: Record<number, string>; tr?: boolean };
   books?: BookMeta[];
   summaryRead?: string[];
   summaryNotes?: { key: string; date: string; text: string }[];
