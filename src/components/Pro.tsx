@@ -1,50 +1,36 @@
 import { useState } from 'react';
+import { plural } from '../dates';
+import { FREE, PRO as PRO_LIM, PRICES, type PlanId, usePlan, joinEarly, earlyPlan, leftLabel, inviteFriend } from '../plan';
 
-// Pricing screen. No payments yet: buttons explain what will happen and remember a demo trial on this device.
+// Pricing screen. 7 days of Pro open from the first day, then Free «по 3». No payments yet:
+// «Оформить» puts the person on the list of first buyers and keeps Pro open until payment starts.
 
-const FREE = [
-  '5 намазов: вовремя, с опозданием, статистика за 30 дней',
-  'До 3 активных привычек вокруг намазов',
-  'Коран с переводом, тасбих, фокус',
-  'Рамадан, садака, сафар',
-  'Круг до 5 человек',
+const FREE_LIST = [
+  'Намазы, Коран с переводом, тасбих, фокус: навсегда',
+  'Рамадан, садака, сафар, умра-гид: навсегда',
+  `${FREE.habits} активные привычки вокруг намазов`,
+  `${FREE.circles} круга, ${FREE.goals} активные цели`,
+  `${FREE.books} книги и ${FREE.courses} видеокурса`,
 ];
-const PRO = [
-  'До 5 активных привычек, очередь «Скоро», минимальные версии',
-  'Цели с вехами, автопрогресс и пятничный пересмотр',
-  'Вся история и статистика, поиск по мухасабе',
-  'Книги, пересказы глав, курс английского, языки',
-  'Умра-гид, совместная умра, общий хатм и ифтары',
-  'Круг до 30 человек',
-  'Синхронизация между устройствами и резервная копия',
-  'Темы и иконки',
+const PRO_LIST = [
+  `До ${PRO_LIM.habits} активных привычек и очередь «Скоро»`,
+  `До ${PRO_LIM.circles} кругов и ${PRO_LIM.goals} активных целей`,
+  'Книги и видеокурсы без ограничений',
+  'Всё новое в Pro первым',
 ];
-
-const PLANS = {
-  year: { price: '€29.99', per: 'в год', note: '≈ €2.50 в месяц · выгоднее в 2 раза' },
-  month: { price: '€3.99', per: 'в месяц', note: 'можно отменить в любой момент' },
-  family: { price: '€44.99', per: 'в год', note: 'до 5 человек в одной семье' },
-} as const;
-type PlanId = keyof typeof PLANS;
-
-const LS = 'lm.pro';
-function readTrial(): number | null {
-  try { const x = JSON.parse(localStorage.getItem(LS) || 'null'); return typeof x?.trial === 'number' ? x.trial : null; } catch { return null; }
-}
+const NAME: Record<PlanId, string> = { year: 'Год', month: 'Месяц', family: 'Семья' };
 
 export function ProPlans({ onBack }: { onBack: () => void }) {
-  const [plan, setPlan] = useState<PlanId>('year');
-  const [trial, setTrial] = useState<number | null>(readTrial());
+  const p = usePlan();
+  const [plan, setPlan] = useState<PlanId>(earlyPlan() ?? 'year');
   const [note, setNote] = useState('');
-  const daysLeft = trial ? Math.max(0, 14 - Math.floor((Date.now() - trial) / 86400000)) : 0;
+  const mine = earlyPlan();
 
-  const startTrial = () => {
-    const t = Date.now();
-    try { localStorage.setItem(LS, JSON.stringify({ trial: t })); } catch { /* private mode */ }
-    setTrial(t);
-    setNote('Пробный период включён на 14 дней. Карта не нужна, в конце ничего не спишется само.');
+  const buy = () => {
+    joinEarly(plan);
+    setNote('Ты в списке первых. Оплату ещё не подключили, поэтому Pro остаётся открытым, пока она не появится. Тогда приложение спросит тебя, само ничего не спишется.');
   };
-  const soon = (what: string) => setNote(`${what} появится, когда подключим оплату. Сейчас все функции открыты бесплатно.`);
+  const soon = (what: string) => setNote(`${what} появится, когда подключим оплату.`);
 
   return (
     <div className="page pro">
@@ -52,52 +38,62 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
       <div className="pro-hero">
         <span className="pro-badge">PRO</span>
         <h1>Living Muslim Pro</h1>
-        <p>Всё, что касается поклонения, бесплатно навсегда. Pro для тех, кто растёт дальше: цели, книги, курсы и большой Круг.</p>
+        <p>Всё, что касается поклонения, бесплатно навсегда. Pro для тех, кто растёт дальше: больше привычек, кругов и целей, книги и курсы без ограничений.</p>
       </div>
+
+      {p.early ? (
+        <div className="pro-on">✓ Ты в списке первых ({NAME[mine ?? 'year']}). Pro открыт, пока не подключим оплату</div>
+      ) : p.trial ? (
+        <div className="pro-on">Pro открыт ещё {p.daysLeft} {plural(p.daysLeft, 'день', 'дня', 'дней')} · {leftLabel(p.msLeft)}<small>Потом бесплатный тариф: по {FREE.habits}</small></div>
+      ) : (
+        <div className="pro-on off">Сейчас бесплатный тариф: по {FREE.habits} привычки, круга, цели, книги и курса</div>
+      )}
 
       <div className="pro-seg" role="tablist">
         {(['year', 'month', 'family'] as PlanId[]).map((id) => (
           <button key={id} type="button" role="tab" aria-selected={plan === id} onClick={() => setPlan(id)}>
-            {id === 'year' ? 'Год' : id === 'month' ? 'Месяц' : 'Семья'}
+            {NAME[id]}
             {id === 'year' && <i>−37%</i>}
           </button>
         ))}
       </div>
 
       <div className="pro-price">
-        <b>{PLANS[plan].price}</b> <span>{PLANS[plan].per}</span>
-        <small>{PLANS[plan].note}</small>
+        <b>{PRICES[plan].price}</b> <span>{PRICES[plan].per}</span>
+        {plan === 'year' && <s>€47.88</s>}
+        <small>{PRICES[plan].note}</small>
       </div>
 
-      {trial && daysLeft > 0 ? (
-        <div className="pro-on">Pro пробный: осталось {daysLeft} {daysLeft === 1 ? 'день' : daysLeft < 5 ? 'дня' : 'дней'}</div>
-      ) : (
-        <button type="button" className="pri-btn big-btn" onClick={startTrial}>Попробовать 14 дней бесплатно</button>
-      )}
-      <button type="button" className="ghost-btn" onClick={() => soon('Оформление подписки')}>Оформить за {PLANS[plan].price}</button>
+      {!p.early && <button type="button" className="pri-btn big-btn" onClick={buy}>{p.trial ? 'Оставить Pro' : 'Вернуть Pro'} за {PRICES[plan].price}</button>}
       {note && <p className="pro-note">{note}</p>}
 
       <div className="pro-cols">
         <div className="pro-col">
           <h3>Бесплатно</h3>
-          <ul>{FREE.map((x) => <li key={x}>{x}</li>)}</ul>
+          <ul>{FREE_LIST.map((x) => <li key={x}>{x}</li>)}</ul>
         </div>
         <div className="pro-col is-pro">
           <h3>Pro <small>всё из бесплатного, плюс</small></h3>
-          <ul>{PRO.map((x) => <li key={x}>{x}</li>)}</ul>
+          <ul>{PRO_LIST.map((x) => <li key={x}>{x}</li>)}</ul>
         </div>
+      </div>
+
+      <div className="pro-card">
+        <b>🤝 Позови друга</b>
+        <p>Без бонусов и баллов: просто хорошее дело. Друг получит те же 7 дней Pro с первого дня.</p>
+        <button type="button" className="ghost-btn" onClick={async () => { const r = await inviteFriend(); if (r === 'copied') setNote('Ссылка скопирована. Отправь её другу.'); }}>Отправить ссылку</button>
       </div>
 
       <div className="pro-card">
         <b>🎁 Подари Pro</b>
         <p>Год Pro брату или сестре как садака. Человек получит ссылку и откроет Pro без оплаты.</p>
-        <button type="button" className="ghost-btn" onClick={() => soon('Подарок Pro')}>Подарить год за €29.99</button>
+        <button type="button" className="ghost-btn" onClick={() => soon('Подарок Pro')}>Подарить год за {PRICES.year.price}</button>
       </div>
 
       <div className="pro-card soft">
         <b>Не можешь оплатить?</b>
         <p>Студентам и тем, кому сейчас трудно, дадим Pro бесплатно. Без справок и объяснений.</p>
-        <button type="button" className="link-btn" onClick={() => setNote('Спасибо, что написал. Когда подключим оплату, такие просьбы будут одобряться сразу. Пока всё и так открыто.')}>Попросить Pro бесплатно</button>
+        <button type="button" className="link-btn" onClick={() => { joinEarly('year'); setNote('Принято. Pro открыт. Когда подключим оплату, такие просьбы будут одобряться сразу.'); }}>Попросить Pro бесплатно</button>
       </div>
 
       <ul className="pro-fair">

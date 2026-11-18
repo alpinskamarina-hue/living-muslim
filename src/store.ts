@@ -7,7 +7,9 @@ import { ramadanHidden } from './rplan';
 
 const KEY = 'qadam.v1';
 const OLD_KEYS = ['istiqama.v1'];
-export const ACTIVE_LIMIT = 5;
+import { limitOf } from './plan';
+/** Active habit slots: 5 in Pro, 3 in Free (see plan.ts). */
+export const activeLimit = () => limitOf('habits');
 const FORM_DAYS = 21;
 const FORM_RATE = 0.8;
 
@@ -99,6 +101,14 @@ export function consistency(s: AppState, h: Habit, today: string, days = 28) {
   return { total, hit, rate: total ? hit / total : 0 };
 }
 
+/** Active habits that do not fit under the limit: the newest ones go to the queue first. */
+function overLimit(habits: AppState['habits'], lim: number) {
+  const act = habits.map((h, i) => ({ h, i })).filter(({ h }) => h.status === 'active' && !h.formed && !h.ramadan);
+  return act.sort((a, b) => (a.h.createdAt < b.h.createdAt ? 1 : a.h.createdAt > b.h.createdAt ? -1 : b.i - a.i)).slice(0, Math.max(0, act.length - lim));
+}
+/** Which habits would wait in «Скоро» under this limit (shown before the trial ends). */
+export const wouldQueue = (s: AppState, lim: number) => overLimit(s.habits, lim).map(({ h }) => h);
+
 /** Mark formed habits and move the queue forward while there is room. */
 function promote(s: AppState): AppState {
   const today = dayKey(new Date());
@@ -112,8 +122,14 @@ function promote(s: AppState): AppState {
     }
     return h;
   });
+  const lim = activeLimit();
   let used = habits.filter((h) => h.status === 'active' && !h.formed && !h.ramadan).length;
-  for (let i = 0; i < habits.length && used < ACTIVE_LIMIT; i++) {
+  // Free plan after the trial: the newest extra habits wait in the queue «Скоро», nothing is deleted.
+  if (used > lim) {
+    for (const { i } of overLimit(habits, lim)) habits[i] = { ...habits[i], status: 'queued' };
+    used = lim; changed = true;
+  }
+  for (let i = 0; i < habits.length && used < lim; i++) {
     if (habits[i].status === 'queued') {
       habits[i] = { ...habits[i], status: 'active', createdAt: today };
       used++;

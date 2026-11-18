@@ -7,6 +7,8 @@ import { dayKey } from '../dates';
 import { deleteFile, getFile, putFile } from '../idb';
 import { SUMMARY_BOOKS, useSummaries } from '../summaries';
 import { SummaryBook } from './Summaries';
+import { ProGate } from './Plan';
+import { limitOf } from '../plan';
 
 let workerReady = false;
 function ensureWorker() {
@@ -109,10 +111,12 @@ export function Books({ state, update, habitName, onExit, onFinish }: Props) {
             </div>
           );
         })}
-        <button type="button" className="upload" onClick={() => input.current?.click()}>
-          <b>+ Добавить книгу</b>
-          <small>PDF или TXT с телефона</small>
-        </button>
+        {books.length >= limitOf('books') ? <ProGate k="books" have={books.length} /> : (
+          <button type="button" className="upload" onClick={() => input.current?.click()}>
+            <b>+ Добавить книгу</b>
+            <small>PDF или TXT с телефона</small>
+          </button>
+        )}
         <input ref={input} type="file" accept=".pdf,.txt,application/pdf,text/plain" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) add(f); e.target.value = ''; }} />
         {busy && <p className="q-msg">{busy}</p>}
         {books.length === 0 && !busy && <p className="q-msg">Свои книги в PDF или TXT хранятся только на этом устройстве.</p>}

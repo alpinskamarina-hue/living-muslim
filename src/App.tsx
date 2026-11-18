@@ -36,9 +36,11 @@ import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
 import { useNikahReady, useNikahMe, nikahTodo } from './nikah';
 import { bizToday, takeBizPick, addBizHabits, useMyShura, useMyAdvice } from './biz';
-import { ACTIVE_LIMIT, slotsUsed } from './store';
+import { activeLimit, slotsUsed } from './store';
 import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays, chDays, useMyChallenges, useMyAmir, CH_KINDS } from './cweek';
 import type { GoTo } from './guide';
+import { usePlan, dueSheet, PRO_EVENT } from './plan';
+import { TrialDial, PlanSheet } from './components/Plan';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
 
@@ -127,7 +129,7 @@ export function App() {
   const nk = useNikahMe(nikahOn);
   const [myAdv, giveAdv] = useMyAdvice(today);
   // Business habits picked while creating or joining a business circle (the page reloaded since).
-  useEffect(() => { const p = takeBizPick(); if (p?.length) update((s) => addBizHabits(s, p, today, ACTIVE_LIMIT, slotsUsed(s))); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const p = takeBizPick(); if (p?.length) update((s) => addBizHabits(s, p, today, activeLimit(), slotsUsed(s))); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const summary = {
     day: today,
     done: active.filter((h) => isCounted(state.log[today]?.[h.id])).length,
@@ -234,6 +236,18 @@ export function App() {
     if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
   };
 
+  // Tariff: 7 days of Pro from the first day, then Free «по 3». Re-check the limits when the plan changes,
+  // show the reminder sheets on day 5, day 7 and day 8, and open the Pro screen from anywhere.
+  const plan = usePlan();
+  const [planSheet, setPlanSheet] = useState<5 | 7 | 8 | null>(null);
+  useEffect(() => { update((s) => s); }, [plan.pro]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const k = dueSheet(); if (k && k !== planSheet) setPlanSheet(k); }, [plan.day, plan.trial, plan.early]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const f = () => { setPlanSheet(null); go({ profile: 'pro' }); window.scrollTo(0, 0); };
+    window.addEventListener(PRO_EVENT, f);
+    return () => window.removeEventListener(PRO_EVENT, f);
+  });
+
   const nextUp = state.habits.find((h) => h.status === 'active' && h.anchor === current && !state.log[today]?.[h.id]);
 
   return (
@@ -243,7 +257,7 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || 'Участник'), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
@@ -286,6 +300,8 @@ export function App() {
       <WordsLayer state={state} today={today} />
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
+
+      {planSheet && !sheet && <PlanSheet k={planSheet} state={state} today={today} onClose={() => setPlanSheet(null)} />}
 
       {sheet && (
         <HabitSheet

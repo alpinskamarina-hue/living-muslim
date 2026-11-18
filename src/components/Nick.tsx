@@ -8,6 +8,8 @@ import {
 import { shareInvite } from './CloudCircle';
 import { authMe, signInUrl } from '../auth';
 import { plural } from '../dates';
+import { ProGate } from './Plan';
+import { limitOf } from '../plan';
 
 const CACHE = 'lm.profile';
 export function cachedProfile(): Partial<Profile> | null {
@@ -339,6 +341,7 @@ export function InviteInbox() {
   const setList = (f: (l: Invite[]) => Invite[]) => setInvites(f(invList));
   const [busy, setBusy] = useState('');
   const [menu, setMenu] = useState('');
+  const [gate, setGate] = useState('');
   if (!list.length) return null;
 
   const answer = async (inv: Invite, yes: boolean) => {
@@ -367,8 +370,9 @@ export function InviteInbox() {
             </div>
             {menu === inv.id && <button type="button" className="link-btn nk-block" onClick={() => block(inv)}>Заблокировать @{inv.from.nick || 'пользователя'}</button>}
             <div className="nk-ci">{k?.ic ?? '👥'} <b>{inv.title || 'Круг'}</b> · {inv.count} {plural(inv.count, 'человек', 'человека', 'человек')}{k && <small>{k.hint}</small>}</div>
+            {gate === inv.id && <ProGate k="circles" have={myCircles().length} />}
             <div className="nk-row">
-              <button type="button" className="pri-btn" disabled={busy === inv.id} onClick={() => answer(inv, true)}>Вступить</button>
+              <button type="button" className="pri-btn" disabled={busy === inv.id} onClick={() => (myCircles().length >= limitOf('circles') ? setGate(inv.id) : answer(inv, true))}>Вступить</button>
               <button type="button" className="nk-no" disabled={busy === inv.id} onClick={() => answer(inv, false)}>Не сейчас</button>
             </div>
           </div>

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { AppState, Goal, Habit } from '../types';
 import { ANCHOR_LABEL } from '../types';
-import { ACTIVE_LIMIT, isCounted, slotsUsed, streak, uid } from '../store';
+import { activeLimit, isCounted, slotsUsed, streak, uid } from '../store';
 import { addDays, daysBetween, fromKey } from '../dates';
 import {
-  GOAL_LIMIT, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, HIFZ, surahAyahs, hifzName, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
+  goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, HIFZ, surahAyahs, hifzName, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
 } from '../goals';
 import { ramadanMonth } from '../ramadan';
@@ -82,7 +82,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
           )}
           {active.length === 0 && <p className="tiny">Пока целей нет. Начни с одной: например, хатм Корана к Рамадану. Цель держится на системе: намерение, образ себя и привычки.</p>}
           {active.map((g) => <GoalCard key={g.id} g={g} state={state} today={today} onOpen={() => setOpenId(g.id)} onAct={(st) => act(g, st)} />)}
-          <button type="button" className="g-new" onClick={() => setWizard(true)}>+ Новая цель · {active.length < GOAL_LIMIT ? `свободно ${GOAL_LIMIT - active.length} из ${GOAL_LIMIT}` : 'встанет в «Потом»'}</button>
+          <button type="button" className="g-new" onClick={() => setWizard(true)}>+ Новая цель · {active.length < goalLimit() ? `свободно ${goalLimit() - active.length} из ${goalLimit()}` : 'встанет в «Потом»'}</button>
           {active.length > 0 && !isReviewDay(state, today) && <button type="button" className="link-btn" onClick={() => setReviewOpen(true)}>Пересмотреть неделю сейчас</button>}
           {later.length > 0 && (
             <div className="g-later">
@@ -90,7 +90,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
               {later.map((g) => (
                 <div key={g.id} className="g-later-row">
                   <button type="button" className="link-btn" onClick={() => setOpenId(g.id)}>{g.title}</button>
-                  <button type="button" className="hg-act" disabled={active.length >= GOAL_LIMIT} onClick={() => update((s) => patchGoal(s, g.id, { status: 'active' }))}>{active.length >= GOAL_LIMIT ? 'нет места' : 'Начать'}</button>
+                  <button type="button" className="hg-act" disabled={active.length >= goalLimit()} onClick={() => update((s) => patchGoal(s, g.id, { status: 'active' }))}>{active.length >= goalLimit() ? 'нет места' : 'Начать'}</button>
                 </div>
               ))}
             </div>
@@ -170,7 +170,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
   const suggest = (tpl?.habits ?? []).filter((h) => !state.habits.some((x) => x.action === h.action && x.status !== 'archived'));
   const circles = isCloud ? myCircles() : [];
   const addHabit = (h: Template['habits'][number]) => update((s) => {
-    const st2: Habit['status'] = slotsUsed(s) < ACTIVE_LIMIT ? 'active' : 'queued';
+    const st2: Habit['status'] = slotsUsed(s) < activeLimit() ? 'active' : 'queued';
     const nh: Habit = { id: uid(), action: h.action, min: h.min, anchor: h.anchor, sphere: h.sphere, status: st2, createdAt: today };
     return { ...patchGoal({ ...s, habits: [...s.habits, nh] }, g.id, { habitIds: [...g.habitIds, nh.id] }) };
   });
@@ -191,7 +191,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
         <div className="g-menu">
           {g.due && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { due: addDays(g.due!, 7) })); setMenu(false); }}>Сдвинуть срок на неделю</button>}
           {g.status === 'active' && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { status: 'later' })); onClose(); }}>Отложить на потом</button>}
-          {g.status === 'later' && <button type="button" disabled={activeCount >= GOAL_LIMIT} onClick={() => update((s) => patchGoal(s, g.id, { status: 'active' }))}>Начать сейчас</button>}
+          {g.status === 'later' && <button type="button" disabled={activeCount >= goalLimit()} onClick={() => update((s) => patchGoal(s, g.id, { status: 'active' }))}>Начать сейчас</button>}
           {g.status !== 'done' && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { status: 'done', doneAt: today })); onClose(); }}>Цель достигнута</button>}
           {confirm
             ? <button type="button" className="danger" onClick={() => { update((s) => ({ ...s, goals: (s.goals ?? []).filter((x) => x.id !== g.id) })); onClose(); }}>Точно удалить</button>
@@ -340,14 +340,14 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
     update((s) => {
       let used = slotsUsed(s);
       const created: Habit[] = newHabits.map((h) => {
-        const st: Habit['status'] = used < ACTIVE_LIMIT ? 'active' : 'queued';
+        const st: Habit['status'] = used < activeLimit() ? 'active' : 'queued';
         if (st === 'active') used++;
         return { id: uid(), action: h.action, min: h.min, anchor: h.anchor, sphere: h.sphere, status: st, createdAt: today };
       });
       const g: Goal = {
         id, title: title.trim(), source, identity: identity.trim(), niyya: niyya.trim(), target, unit, start: 0, manual: 0,
         due: due || undefined, habitIds: [...pick, ...created.map((h) => h.id)], ref: ref || undefined,
-        status: activeCount < GOAL_LIMIT ? 'active' : 'later', createdAt: today,
+        status: activeCount < goalLimit() ? 'active' : 'later', createdAt: today,
       };
       let next: AppState = { ...s, habits: [...s.habits, ...created] };
       if (source === 'video' && ref && seed.length) {
@@ -376,7 +376,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
       {step === 0 && (
         <>
           <p className="q">Что хочешь достичь?</p>
-          {activeCount >= GOAL_LIMIT && <p className="tiny">Активных целей уже {GOAL_LIMIT}. Новая встанет в «Потом».</p>}
+          {activeCount >= goalLimit() && <p className="tiny">Активных целей уже {goalLimit()}. Новая встанет в «Потом».</p>}
           {showR && (
             <div className="g-season">
               <b>🌙 К Рамадану{rStart ? `, ${fmt(rStart)}` : ''}</b>
@@ -463,7 +463,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
             </label>
           ))}
           <QuickHabit onAdd={(h) => setNewHabits([...newHabits, h])} />
-          {slotsUsed(state) + newHabits.length > ACTIVE_LIMIT && <p className="tiny">Лимит 5 активных привычек: лишние встанут в очередь «Скоро».</p>}
+          {slotsUsed(state) + newHabits.length > activeLimit() && <p className="tiny">Лимит {activeLimit()} активных привычек: лишние встанут в очередь «Скоро».</p>}
           {!hasSystem && <p className="tiny">Эта цель считается по привычкам: выбери хотя бы одну.</p>}
           <button type="button" className="pri-btn" disabled={!identity.trim() || !hasSystem} onClick={finish}>Сохранить цель</button>
         </>

@@ -4,7 +4,7 @@ import { plural, addDays } from '../dates';
 import { weekStart, isFriday, rangeLabel } from '../cweek';
 import { daysBetween } from '../dates';
 import { ANCHOR_LABEL, type AppState } from '../types';
-import { ACTIVE_LIMIT, slotsUsed } from '../store';
+import { activeLimit, slotsUsed } from '../store';
 import { BIZ_HABITS, BIZ_DEFAULT, addBizHabits, adviceFor, shuraTotals, type Advice, type Shura } from '../biz';
 
 const AFTER: Record<string, string> = { fajr: 'После Фаджра', dhuhr: 'После Зухра', asr: 'После Асра', maghrib: 'После Магриба', isha: 'После Иши' };
@@ -35,9 +35,9 @@ export function BizHabitsOffer({ state, update, today }: { state: AppState; upda
   return (
     <div className="bz-card">
       <BizPick pick={pick} setPick={setPick} />
-      {used + pick.length > ACTIVE_LIMIT && <p className="tiny">Активных привычек уже {used} из {ACTIVE_LIMIT}: лишние встанут в очередь и включатся, когда освободится место.</p>}
+      {used + pick.length > activeLimit() && <p className="tiny">Активных привычек уже {used} из {activeLimit()}: лишние встанут в очередь и включатся, когда освободится место.</p>}
       <div className="da-row">
-        <button type="button" className="pri-btn" disabled={!pick.length} onClick={() => update((s) => addBizHabits(s, pick, today, ACTIVE_LIMIT, slotsUsed(s)))}>Добавить себе</button>
+        <button type="button" className="pri-btn" disabled={!pick.length} onClick={() => update((s) => addBizHabits(s, pick, today, activeLimit(), slotsUsed(s)))}>Добавить себе</button>
         <button type="button" className="link-btn" onClick={() => { try { localStorage.setItem('lm.bizoffer', '1'); } catch { /* */ } setHide(true); }}>Не сейчас</button>
       </div>
     </div>

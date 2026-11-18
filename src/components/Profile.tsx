@@ -4,6 +4,7 @@ import type { GoTo } from '../guide';
 import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
+import { usePlan } from '../plan';
 import { GiftPass } from './GiftPass';
 import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
@@ -19,7 +20,7 @@ import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { METHODS, PLACES, type DayTimes } from '../prayer';
 import { addDays, dayKey, daysBetween, hhmm, plural } from '../dates';
-import { ACTIVE_LIMIT, initialState, slotsUsed } from '../store';
+import { activeLimit, initialState, slotsUsed } from '../store';
 
 interface Props {
   state: AppState;
@@ -41,6 +42,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const nk = useNikahMe(nikahOn);
   const nkTodo = nikahTodo(nk);
   const admin = useIsAdmin();
+  const plan = usePlan();
   useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
   const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
@@ -101,7 +103,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
 
       <button type="button" className="pro-entry" onClick={() => go('pro')}>
         <span className="pro-badge">PRO</span>
-        <span><b>Living Muslim Pro</b><small>Цели, книги, курсы, большой Круг. 14 дней бесплатно</small></span>
+        <span><b>Living Muslim Pro</b><small>{plan.early ? 'Ты в списке первых: Pro открыт' : plan.trial ? `Pro открыт ещё ${plan.daysLeft} ${plural(plan.daysLeft, 'день', 'дня', 'дней')}. Потом по 3` : 'Сейчас бесплатный: по 3. Первый год Pro −37%'}</small></span>
         <i aria-hidden="true">›</i>
       </button>
 
@@ -120,7 +122,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         {onClaude && <Row icon="👤" title="Имя" sub={name} onClick={() => go('account')} />}
         <Row icon="🕌" title="Намазы" sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
         {isCloud && <Row icon="🔔" title="Напоминания" sub={s.reminders?.on ? `Включены · ${s.reminders.prayers.length} из 5 намазов` : (isStandalone() ? 'Выключены' : 'Установить на телефон, напоминания')} onClick={() => go('remind')} />}
-        <Row icon="🌱" title="Мои привычки" sub={`${used} из ${ACTIVE_LIMIT} мест занято`} onClick={() => go('habits')} />
+        <Row icon="🌱" title="Мои привычки" sub={`${used} из ${activeLimit()} мест занято`} onClick={() => go('habits')} />
         <Row icon="🤲" title="Фразы и напоминания" sub={`${s.me === 'f' ? 'Я сестра' : s.me === 'm' ? 'Я брат' : 'Брат или сестра?'} · ${(s.words ?? 'calm') === 'normal' ? 'обычно' : (s.words ?? 'calm') === 'calm' ? 'спокойно' : 'только фразы'}`} onClick={() => go('words')} />
         <Row icon="🎨" title="Внешний вид" sub={`Тема ${theme} · текст ${s.textScale && s.textScale > 1 ? 'крупнее' : 'обычный'}`} onClick={() => go('look')} />
         <Row icon="💾" title="Данные" sub="Резервная копия, перенос, удаление" onClick={() => go('data')} />
@@ -257,14 +259,14 @@ function HabitsSettings({ state, update, onEdit }: { state: AppState; update: Pr
   const used = slotsUsed(state);
   return (
     <>
-      <p className="page-sub">{used} из {ACTIVE_LIMIT} мест занято. Нажми на привычку, чтобы изменить её.</p>
+      <p className="page-sub">{used} из {activeLimit()} мест занято. Нажми на привычку, чтобы изменить её.</p>
       <HabitGroup title="Активные" list={byStatus('active')} onEdit={onEdit} action={(h) => ['В архив', () => setStatus(h.id, 'archived')]} />
       <HabitGroup title="Очередь «Скоро»" list={byStatus('queued')} onEdit={onEdit} action={(h) => ['Убрать', () => setStatus(h.id, 'archived')]} />
       <HabitGroup
         title="Архив"
         list={byStatus('archived')}
         onEdit={onEdit}
-        action={(h) => (used < ACTIVE_LIMIT ? ['Вернуть', () => setStatus(h.id, 'active')] : ['Удалить', () => remove(h.id)])}
+        action={(h) => (used < activeLimit() ? ['Вернуть', () => setStatus(h.id, 'active')] : ['Удалить', () => remove(h.id)])}
       />
       {!state.habits.length && <p className="tiny">Привычек пока нет. Добавь первую на экране «Сегодня».</p>}
     </>

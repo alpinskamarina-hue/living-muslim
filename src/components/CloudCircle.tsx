@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { InviteInbox } from './Nick';
 import { BizPick } from './BizCircle';
 import { BIZ_DEFAULT, rememberBizPick } from '../biz';
+import { ProGate } from './Plan';
+import { limitOf } from '../plan';
 import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 
 function InboxIfReady() {
@@ -24,6 +26,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const ok = name.trim().length >= 2;
+  const full = mineCodes.length >= limitOf('circles');
   const k = kindOf(kind)!;
   const invited = Boolean(code && code === inv);
   const run = async (fn: () => Promise<boolean | string>) => {
@@ -57,10 +60,14 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
               <i>{kindOf(meta.kind)?.ic ?? '👥'}</i>
               <span><b>{meta.title || 'Круг друзей'}</b><small>{kindOf(meta.kind)?.ru ?? 'Круг'} · код {code}</small></span>
             </div>
+            {full ? <ProGate k="circles" have={mineCodes.length} /> : <>
             {meta.kind === 'biz' && <BizPick pick={pick} setPick={setPick} />}
             <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => joinCircle(name, code, meta.title, meta.kind))}>Вступить в круг</button>
+            </>}
             <button type="button" className="link-btn" onClick={() => { setCode(''); try { sessionStorage.removeItem('lm.invite'); } catch { /* */ } }}>Нет, создать свой</button>
           </>
+        ) : full ? (
+          <ProGate k="circles" have={mineCodes.length} />
         ) : (
           <>
             <div className="cl-f"><span>Какой это круг</span></div>

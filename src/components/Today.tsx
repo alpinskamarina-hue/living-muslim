@@ -32,9 +32,10 @@ interface Props {
   onRamadan: (tab?: 'prep' | 'day' | 'fast' | 'quran' | 'nights' | 'eid') => void;
   onGarden: () => void;
   support?: { text: string; onOpen: () => void; cls?: string }[];
+  plan?: React.ReactNode;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -114,6 +115,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
       </header>
 
       <div className="scroll">
+        {plan}
         {(j.streak > 0 || j.lit > 0) && (
           <button type="button" className="streak-line" onClick={onGarden}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21V11M12 11C12 7 9 5 5 5c0 4 3 6 7 6zM12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z" /></svg>

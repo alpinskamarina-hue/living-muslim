@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
+import { ProGate } from './Plan';
+import { limitOf } from '../plan';
 import {
   catalog, catOf, dur, emptyVideos, lessons, loadCourses, lookup, parseYouTube, thumb, VIDEO_CATS,
   type Lesson, type VideoCat, type VideoItem, type VideoState,
@@ -152,6 +154,15 @@ function Course({ item, vs, setVs, onBack, onPlay }: { item: VideoItem; vs: Vide
   const done = items.filter((x) => vs.pos[x.id]?.done).length;
   const next = Math.max(0, items.findIndex((x) => !vs.pos[x.id]?.done));
   const total = items.reduce((a, x) => a + x.seconds, 0);
+  // Free plan: 3 started courses; the ones already started stay open.
+  const started = new Set([...Object.entries(vs.byCourse ?? {}).filter(([, v]) => v.length).map(([k]) => k), ...(vs.started ?? [])]);
+  const locked = !started.has(item.id) && started.size >= limitOf('courses');
+  const [gate, setGate] = useState(false);
+  const play = (i: number) => {
+    if (locked) { setGate(true); return; }
+    if (!started.has(item.id)) setVs((v) => ({ ...v, started: [...new Set([...(v.started ?? []), item.id])] }));
+    onPlay(i);
+  };
   return (
     <div className="page vids">
       <button type="button" className="link-btn pro-back" onClick={onBack}>← Видеоуроки</button>
@@ -160,7 +171,8 @@ function Course({ item, vs, setVs, onBack, onPlay }: { item: VideoItem; vs: Vide
       {items.length > 0 && <div className="vprog"><i style={{ width: `${(done / items.length) * 100}%` }} /></div>}
       <p className="page-sub">{items.length ? `${done} из ${items.length} уроков · ` : ''}{catOf(item.cat).ic} {catOf(item.cat).ru}{data?.channel ? ` · ${data.channel}` : ''}</p>
       {item.note && <p className="tiny">{item.note}</p>}
-      {items.length > 0 && <button type="button" className="pri-btn big-btn" onClick={() => onPlay(next)}>{done ? (done === items.length ? 'Пересмотреть' : `Продолжить: урок ${next + 1}`) : 'Начать курс'}</button>}
+      {(gate || (locked && !done)) && <ProGate k="courses" have={started.size} />}
+      {items.length > 0 && <button type="button" className="pri-btn big-btn" onClick={() => play(next)}>{done ? (done === items.length ? 'Пересмотреть' : `Продолжить: урок ${next + 1}`) : 'Начать курс'}</button>}
       <p className="tiny">Чтобы урок стал привычкой, выбери привычку в Практике, например «Один урок после Иши». Просмотренный урок отметит её сам.</p>
       {err && <p className="warn">Не получилось загрузить уроки. Проверь интернет и открой курс ещё раз.</p>}
       {!data && !err && <p className="tiny">Загружаю уроки…</p>}
@@ -168,7 +180,7 @@ function Course({ item, vs, setVs, onBack, onPlay }: { item: VideoItem; vs: Vide
         {items.map((x, i) => {
           const p = vs.pos[x.id];
           return (
-            <button key={x.id} type="button" className={`vl${p?.done ? ' d' : ''}${i === next && !p?.done ? ' n' : ''}`} onClick={() => onPlay(i)}>
+            <button key={x.id} type="button" className={`vl${p?.done ? ' d' : ''}${i === next && !p?.done ? ' n' : ''}`} onClick={() => play(i)}>
               <i>{p?.done ? '✓' : i + 1}</i>
               <span><b>{x.title}</b><small>{x.seconds ? dur(x.seconds) : ''}{p && !p.done && p.t > 5 ? ` · остановился на ${dur(Math.floor(p.t))}` : ''}</small></span>
             </button>

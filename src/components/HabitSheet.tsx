@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Anchor, AppState, Habit, Sphere } from '../types';
 import { ANCHORS, ANCHOR_LABEL, SPHERES } from '../types';
-import { ACTIVE_LIMIT, slotsUsed, uid } from '../store';
+import { activeLimit, slotsUsed, uid } from '../store';
 import { dayKey } from '../dates';
 
 const IDEAS: { action: string; min: string; anchor: Anchor; sphere: Sphere }[] = [
@@ -36,7 +36,7 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
   const [replace, setReplace] = useState(false);
 
   const used = slotsUsed(state);
-  const full = !editing && used >= ACTIVE_LIMIT;
+  const full = !editing && used >= activeLimit();
   const queue = state.habits.filter((h) => h.status === 'queued');
   const active = state.habits.filter((h) => h.status === 'active' && !h.formed);
   const ok = action.trim().length > 0;
@@ -106,8 +106,8 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
 
         {full && (
           <div className="limit">
-            <b>Активных уже {used} из {ACTIVE_LIMIT}</b>
-            <div className="slots5">{Array.from({ length: ACTIVE_LIMIT }, (_, i) => <i key={i} />)}</div>
+            <b>Активных уже {used} из {activeLimit()}</b>
+            <div className="slots5">{Array.from({ length: activeLimit() }, (_, i) => <i key={i} />)}</div>
             Новая привычка встанет в очередь «Скоро» и включится сама, когда одна из текущих продержится 21 день на 80%.
             {queue.length > 0 && (
               <div className="queue">

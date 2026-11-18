@@ -38,6 +38,8 @@ export interface VideoState {
   last?: { item: string; v: string };
   /** Watched lesson ids per course, for goals. */
   byCourse?: Record<string, string[]>;
+  /** Courses the person started (the free plan allows 3). */
+  started?: string[];
 }
 export const emptyVideos = (): VideoState => ({ mine: [], pos: {}, notes: {} });
 
