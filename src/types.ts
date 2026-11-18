@@ -117,7 +117,7 @@ export interface AppState {
   quits?: import('./quit').Quit[];
   /** «Моя мечеть», jamaat times, the Today card switch, Friday sunnah ticks. Position and search results stay on the phone. */
   mosque?: import('./mosques').MosqueSettings;
-  quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
+  quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr'; /** Reading in Russian or Latin letters under the Arabic; missing means on. */ tr?: boolean };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number; rec?: Record<number, string> };
   /** Arabic A1 course: the same shape as the English one. */
@@ -285,8 +285,10 @@ export interface Goal {
   shared?: boolean;
   /** Circles the goal is shown in (standalone site); empty = the open one. */
   circles?: string[];
-  /** video: course id; hifz: surah number. */
+  /** video: course id; hifz: surah numbers, «67» or «112,113,114». */
   ref?: string;
+  /** hifz: learned ayahs per surah. */
+  hifz?: Record<string, number>;
   doneAt?: string;
 }
 

@@ -47,7 +47,7 @@ function wordTr(word: string, sys: Sys, first: boolean, prevEndsVowel: boolean):
   const k = sys === 'lat' ? 0 : 1;
   // Allah
   const bare = word.replace(/[ً-ْٰ]/g, '');
-  if (/^(ال|وال|بال|فال)?لله$|^الله$|^اللهم$/.test(bare) || bare === 'لله') {
+  if (/^[وبف]?الله$|^اللهم$/.test(bare) || bare === 'لله') {
     const pre = bare.startsWith('و') ? (sys === 'lat' ? 'wa-' : 'ва-') : bare.startsWith('ب') ? (sys === 'lat' ? 'bi-' : 'би-') : bare.startsWith('ف') ? (sys === 'lat' ? 'fa-' : 'фа-') : '';
     const end = word.endsWith(DAMMA) ? k ? 'у' : 'u' : word.endsWith(KASRA) ? k ? 'и' : 'i' : word.endsWith(FATHA) ? k ? 'а' : 'a' : '';
     if (bare === 'لله') return (sys === 'lat' ? 'lillāh' : 'лилляах') + end;
@@ -70,7 +70,11 @@ function wordTr(word: string, sys: Sys, first: boolean, prevEndsVowel: boolean):
       const isArt = !!next && next.ch === 'ل' && (next.marks.includes(SUKUN) || (!next.marks && !!u[i + 2] && u[i + 2].marks.includes(SHADDA)));
       const wasl = !marks && (i === 0 || (prefixed && (isArt || (!!next && next.marks.includes(SUKUN)))));
       if (wasl) {
-        if (i === 0) out.push(first ? (k ? 'а' : 'a') : prevEndsVowel ? '' : (isArt ? (k ? 'а' : 'a') : (k ? 'и' : 'i')));
+        if (i === 0) {
+          // Starting vowel of hamzat al-wasl: «a» before the article, «u» when the verb's next vowel is u, otherwise «i».
+          const wv = isArt ? (k ? 'а' : 'a') : u[i + 2] && u[i + 2].marks.includes(DAMMA) ? (k ? 'у' : 'u') : (k ? 'и' : 'i');
+          out.push(first ? wv : prevEndsVowel ? '' : wv);
+        }
         if (isArt) {
           const lam = next!; const after = u[i + 2];
           const assim = !lam.marks.includes(SUKUN) && !!after && after.marks.includes(SHADDA) && SUN.has(after.ch);
@@ -144,7 +148,7 @@ export function arTr(text: string, sys: Sys): string {
     let t = wordTr(core, sys, first, prevVowel);
     if (!first && /^[aiuаиу]?[a-zʿʾа-яʼḥṣḍṭẓ]+-/i.test(t) === false && t.startsWith('-')) t = t.slice(1);
     res.push(lead + t + tail.replace(/،/g, ',').replace(/؟/g, '?'));
-    prevVowel = /[aiuāīūаиуя]$/i.test(t);
+    prevVowel = /[aiuāīūаиуяю]$/i.test(t);
   });
   // Capital letter at the start and after . ! ?
   return res.join(' ').replace(/(^|[.!?]\s+)([ʿʾʼ-]?)(\p{L})/gu, (_, a: string, b: string, c: string) => a + b + c.toUpperCase());

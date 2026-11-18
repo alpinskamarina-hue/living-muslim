@@ -31,7 +31,7 @@ export const SOURCES: SourceDef[] = [
   { id: 'habits', label: _t("Образ себя по привычкам"), hint: _t("доля дней за 30 дней"), unit: '%', target: 100, counter: false, identity: true },
   { id: 'manual', label: _t("Своё число"), hint: _t("ввожу сам: деньги, вес, шаги"), unit: '', target: 100, counter: false },
   { id: 'video', label: _t("Видеокурс"), hint: _t("просмотренные уроки"), unit: _t("уроков"), target: 20, counter: false },
-  { id: 'hifz', label: _t("Выучить суру"), hint: _t("отмечаю выученные аяты"), unit: _t("аятов"), target: 30, counter: false },
+  { id: 'hifz', label: _t("Выучить суры"), hint: _t("выбираю суры, отмечаю выученные аяты"), unit: _t("аятов"), target: 30, counter: false },
 ];
 
 /** Surahs people most often learn by heart. */
@@ -40,7 +40,43 @@ export const HIFZ: { n: number; ru: string }[] = [
   { n: 56, ru: _t("аль-Вакиа") }, { n: 78, ru: _t("ан-Наба") }, { n: 32, ru: _t("ас-Саджда") }, { n: 87, ru: _t("аль-Аля") }, { n: 2, ru: _t("аль-Бакара, последние 2 аята") },
 ];
 export const surahAyahs = (n: number) => AYAHS[n - 1] ?? 0;
-export const hifzName = (ref?: string) => HIFZ.find((h) => String(h.n) === ref)?.ru ?? (ref ? _t("сура {0}", ref) : _t("сура"));
+/** Surah names as in the Quran list (transliterated). */
+export const SURAH_NAMES: string[] = ["Al-Fatihah", "Al-Baqarah", "Ali 'Imran", "An-Nisa", "Al-Ma'idah", "Al-An'am", "Al-A'raf", "Al-Anfal", "At-Tawbah", "Yunus", "Hud", "Yusuf", "Ar-Ra'd", "Ibrahim", "Al-Hijr", "An-Nahl", "Al-Isra", "Al-Kahf", "Maryam", "Taha", "Al-Anbya", "Al-Hajj", "Al-Mu'minun", "An-Nur", "Al-Furqan", "Ash-Shu'ara", "An-Naml", "Al-Qasas", "Al-'Ankabut", "Ar-Rum", "Luqman", "As-Sajdah", "Al-Ahzab", "Saba", "Fatir", "Ya-Sin", "As-Saffat", "Sad", "Az-Zumar", "Ghafir", "Fussilat", "Ash-Shuraa", "Az-Zukhruf", "Ad-Dukhan", "Al-Jathiyah", "Al-Ahqaf", "Muhammad", "Al-Fath", "Al-Hujurat", "Qaf", "Adh-Dhariyat", "At-Tur", "An-Najm", "Al-Qamar", "Ar-Rahman", "Al-Waqi'ah", "Al-Hadid", "Al-Mujadila", "Al-Hashr", "Al-Mumtahanah", "As-Saf", "Al-Jumu'ah", "Al-Munafiqun", "At-Taghabun", "At-Talaq", "At-Tahrim", "Al-Mulk", "Al-Qalam", "Al-Haqqah", "Al-Ma'arij", "Nuh", "Al-Jinn", "Al-Muzzammil", "Al-Muddaththir", "Al-Qiyamah", "Al-Insan", "Al-Mursalat", "An-Naba", "An-Nazi'at", "'Abasa", "At-Takwir", "Al-Infitar", "Al-Mutaffifin", "Al-Inshiqaq", "Al-Buruj", "At-Tariq", "Al-A'la", "Al-Ghashiyah", "Al-Fajr", "Al-Balad", "Ash-Shams", "Al-Layl", "Ad-Duhaa", "Ash-Sharh", "At-Tin", "Al-'Alaq", "Al-Qadr", "Al-Bayyinah", "Az-Zalzalah", "Al-'Adiyat", "Al-Qari'ah", "At-Takathur", "Al-'Asr", "Al-Humazah", "Al-Fil", "Quraysh", "Al-Ma'un", "Al-Kawthar", "Al-Kafirun", "An-Nasr", "Al-Masad", "Al-Ikhlas", "Al-Falaq", "An-Nas"];
+const SURAH_RU: string[] = ["аль-Фатиха", "аль-Бакара", "Аль Имран", "ан-Ниса", "аль-Маида", "аль-Анам", "аль-Араф", "аль-Анфаль", "ат-Тауба", "Юнус", "Худ", "Юсуф", "ар-Раад", "Ибрахим", "аль-Хиджр", "ан-Нахль", "аль-Исра", "аль-Кахф", "Марьям", "Та Ха", "аль-Анбия", "аль-Хадж", "аль-Муминун", "ан-Нур", "аль-Фуркан", "аш-Шуара", "ан-Намль", "аль-Касас", "аль-Анкабут", "ар-Рум", "Лукман", "ас-Саджда", "аль-Ахзаб", "Саба", "Фатыр", "Йа Син", "ас-Саффат", "Сад", "аз-Зумар", "Гафир", "Фуссылят", "аш-Шура", "аз-Зухруф", "ад-Духан", "аль-Джасия", "аль-Ахкаф", "Мухаммад", "аль-Фатх", "аль-Худжурат", "Каф", "аз-Зарият", "ат-Тур", "ан-Наджм", "аль-Камар", "ар-Рахман", "аль-Вакиа", "аль-Хадид", "аль-Муджадила", "аль-Хашр", "аль-Мумтахана", "ас-Сафф", "аль-Джумуа", "аль-Мунафикун", "ат-Тагабун", "ат-Талак", "ат-Тахрим", "аль-Мульк", "аль-Калям", "аль-Хакка", "аль-Мааридж", "Нух", "аль-Джинн", "аль-Муззаммиль", "аль-Муддассир", "аль-Кияма", "аль-Инсан", "аль-Мурсалят", "ан-Наба", "ан-Назиат", "Абаса", "ат-Таквир", "аль-Инфитар", "аль-Мутаффифин", "аль-Иншикак", "аль-Бурудж", "ат-Тарик", "аль-Аля", "аль-Гашия", "аль-Фаджр", "аль-Баляд", "аш-Шамс", "аль-Лейль", "ад-Духа", "аш-Шарх", "ат-Тин", "аль-Алак", "аль-Кадр", "аль-Баййина", "аз-Зальзаля", "аль-Адийат", "аль-Кариа", "ат-Такасур", "аль-Аср", "аль-Хумаза", "аль-Филь", "Курайш", "аль-Маун", "аль-Каусар", "аль-Кафирун", "ан-Наср", "аль-Масад", "аль-Ихлас", "аль-Фалак", "ан-Нас"];
+/** One surah: the popular name in the user's language, else the transliterated one. 2 means the last two ayahs of al-Baqarah. */
+export const surahName = (n: number) => HIFZ.find((h) => h.n === n)?.ru ?? (isEn ? SURAH_NAMES : SURAH_RU)[n - 1] ?? _t("сура {0}", n);
+/** hifz goals keep their surahs in ref as «67» or «112,113,114». */
+export const hifzRefs = (ref?: string) => [...new Set((ref ?? '').split(',').map(Number).filter((n) => n >= 1 && n <= 114))];
+export const hifzAyahs = (n: number) => (n === 2 ? 2 : surahAyahs(n));
+export const hifzTotal = (refs: number[]) => refs.reduce((a, n) => a + hifzAyahs(n), 0);
+export function hifzName(ref?: string) {
+  const r = hifzRefs(ref);
+  if (!r.length) return _t("сура");
+  if (r.length <= 3) return r.map(surahName).join(', ');
+  return _t("{0} и ещё {1}", r.slice(0, 2).map(surahName).join(', '), r.length - 2);
+}
+/** Learned ayahs per surah. Old one-surah goals kept only the total. */
+export function hifzMap(g: Pick<Goal, 'ref' | 'manual' | 'hifz'>): Record<string, number> {
+  if (g.hifz) return g.hifz;
+  const r = hifzRefs(g.ref);
+  return r.length === 1 ? { [r[0]]: g.manual } : {};
+}
+/** +d ayahs to surah n (or to the first unfinished one). */
+export function hifzStep(g: Goal, d: number, n?: number): Partial<Goal> {
+  const refs = hifzRefs(g.ref);
+  const m = { ...hifzMap(g) };
+  const at = n ?? refs.find((x) => (m[x] ?? 0) < hifzAyahs(x)) ?? refs[refs.length - 1];
+  if (!at) return { manual: Math.max(0, Math.min(g.target, g.manual + d)) };
+  m[at] = Math.max(0, Math.min(hifzAyahs(at), (m[at] ?? 0) + d));
+  return { hifz: m, manual: Math.min(g.target, Object.values(m).reduce((a, x) => a + x, 0)) };
+}
+/** Ready-made sets for the picker. */
+export const HIFZ_SETS: { id: string; ru: string; refs: number[] }[] = [
+  { id: 'last10', ru: _t("Последние 10 сур"), refs: [105, 106, 107, 108, 109, 110, 111, 112, 113, 114] },
+  { id: 'amma', ru: _t("Джуз Амма (78–114)"), refs: Array.from({ length: 37 }, (_, i) => 78 + i) },
+  { id: 'night', ru: _t("Перед сном: аль-Мульк, ас-Саджда"), refs: [67, 32] },
+  { id: 'friday', ru: _t("Пятница: аль-Кахф"), refs: [18] },
+];
 export const sourceDef = (id: GoalSource) => SOURCES.find((s) => s.id === id)!;
 
 /** Raw value of a source right now. */
@@ -137,7 +173,7 @@ export interface Template { group: TplGroup; ic: string; ar?: boolean; sub: stri
 export const TEMPLATES: Template[] = ([
   { group: 'faith', ic: 'قرآن', ar: true, sub: _t("считается по закладке в Коране"), title: _t("Хатм Корана"), source: 'quran', identity: _t("Я тот, кто читает Коран каждый день"), habits: [{ action: _t("Читать Коран 2 страницы"), min: _t("1 аят"), anchor: 'fajr', sphere: 'faith' }, { action: _t("Слушать Коран в дороге"), min: _t("10 минут"), anchor: 'dhuhr', sphere: 'faith' }] },
   { group: 'faith', ic: '🕌', sub: _t("доля намазов вовремя за 30 дней"), title: _t("Все намазы вовремя"), source: 'prayers', identity: _t("Я тот, кто встречает намаз, а не догоняет"), habits: [{ action: _t("Вуду сразу после азана"), min: _t("встать после азана"), anchor: 'asr', sphere: 'faith' }, { action: _t("Лечь спать до 23:00"), min: _t("телефон убран в 22:30"), anchor: 'isha', sphere: 'body' }] },
-  { group: 'faith', ic: 'حفظ', ar: true, sub: _t("аль-Мульк, Йа Син, аль-Кахф…"), title: _t("Выучить суру"), source: 'hifz', identity: _t("Я тот, кто носит Коран в сердце"), habits: [{ action: _t("Повторить выученные аяты"), min: _t("1 аят"), anchor: 'fajr', sphere: 'faith' }] },
+  { group: 'faith', ic: 'حفظ', ar: true, sub: _t("Любые суры: последние 10, Джуз Амма, аль-Мульк…"), title: _t("Выучить суры"), source: 'hifz', identity: _t("Я тот, кто носит Коран в сердце"), habits: [{ action: _t("Повторить выученные аяты"), min: _t("1 аят"), anchor: 'fajr', sphere: 'faith' }] },
   { group: 'faith', ic: '🌙', sub: _t("понедельник и четверг"), title: _t("Посты сунны"), source: 'fasts', target: 8, identity: _t("Я тот, кто держит пост по понедельникам и четвергам"), habits: [] },
   { group: 'faith', ic: '🕋', sub: _t("по списку подготовки"), title: _t("Готов к умре"), source: 'umrah', identity: _t("Я тот, кто едет к Каабе подготовленным"), habits: [] },
   { group: 'mind', ic: '▶', sub: _t("Сира, сподвижники, бизнес · по просмотрам"), title: _t("Пройти видеокурс"), source: 'video', identity: _t("Я тот, кто учится каждый день"), habits: [{ action: _t("Один урок"), min: _t("5 минут видео"), anchor: 'isha', sphere: 'mind' }] },
@@ -200,7 +236,10 @@ export function todayStep(s: AppState, g: Goal, today: string): Step {
     case 'umrah': return { text: _t("Подготовка: {0}%", p.value), sub: _t("следующий пункт из списка умры"), btn: _t("Открыть"), action: 'umrah' };
     case 'hifz': {
       const n = Math.max(1, Math.ceil(perDay || 1));
-      return { text: _t("Выучить {0} {1}", n, pl(n, _t("аят"), _t("аята"), _t("аятов"))), sub: _t("{0} · {1} из {2}", hifzName(g.ref), p.value, g.target), btn: _t("+1 аят"), action: 'add' };
+      const refs = hifzRefs(g.ref);
+      const m = hifzMap(g);
+      const cur = refs.find((x) => (m[x] ?? 0) < hifzAyahs(x));
+      return { text: _t("Выучить {0} {1}", n, pl(n, _t("аят"), _t("аята"), _t("аятов"))), sub: cur && refs.length > 1 ? _t("Сейчас: {0}, {1} из {2} · всего {3} из {4}", surahName(cur), m[cur] ?? 0, hifzAyahs(cur), p.value, g.target) : _t("{0} · {1} из {2}", hifzName(g.ref), p.value, g.target), btn: _t("+1 аят"), action: 'add' };
     }
     case 'manual': {
       const u = g.unit || '';

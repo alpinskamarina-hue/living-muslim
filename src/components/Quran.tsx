@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
-import { _t, _tj } from '../i18n';
+import { _t, _tj, LANG } from '../i18n';
+import { surahTr } from '../quranTr';
 
 // [arabic name, transliteration, russian name, meccan|medinan, [[arabic, russian], ...]]
 type Surah = [string, string, string, string, [string, string][]];
@@ -29,19 +30,22 @@ interface Props {
   state: AppState;
   update: (fn: (s: AppState) => AppState) => void;
   habitName?: string;
+  /** Opens this surah right away (from a goal). */
+  startSurah?: number;
   onExit: () => void;
   onFinish: (m: Mark) => void;
 }
 
-const DEF = { surah: 1, ayah: 1, translation: true, size: 26, lang: 'ru' as QLang };
+const DEF = { surah: 1, ayah: 1, translation: true, size: 26, lang: 'ru' as QLang, tr: true };
 
-export function Quran({ state, update, habitName, onExit, onFinish }: Props) {
+export function Quran({ state, update, habitName, startSurah, onExit, onFinish }: Props) {
   const q = { ...DEF, ...(state.quran ?? {}) };
   const setQ = (patch: Partial<typeof DEF>) => update((s) => ({ ...s, quran: { ...DEF, ...(s.quran ?? {}), ...patch } }));
   const [data, setData] = useState<Surah[] | null>(null);
   const [err, setErr] = useState(false);
-  const [view, setView] = useState<'list' | 'read'>('list');
-  const [surah, setSurah] = useState(q.surah);
+  const okStart = startSurah && startSurah >= 1 && startSurah <= 114 ? startSurah : 0;
+  const [view, setView] = useState<'list' | 'read'>(okStart ? 'read' : 'list');
+  const [surah, setSurah] = useState(okStart || q.surah);
   const [find, setFind] = useState('');
   const [finish, setFinish] = useState(false);
   const seen = useRef(new Set<string>());
@@ -104,8 +108,9 @@ export function Quran({ state, update, habitName, onExit, onFinish }: Props) {
           key={surah}
           n={surah}
           s={data[surah - 1]}
-          startAyah={surah === q.surah ? q.ayah : 1}
+          startAyah={surah === 2 && okStart === 2 ? 285 : surah === q.surah ? q.ayah : 1}
           translation={q.translation}
+          tr={q.tr}
           size={q.size}
           lang={q.lang}
           setQ={setQ}
@@ -136,11 +141,13 @@ export function Quran({ state, update, habitName, onExit, onFinish }: Props) {
 }
 
 function Reader(props: {
-  n: number; s: Surah; startAyah: number; translation: boolean; size: number; lang: QLang;
+  n: number; s: Surah; startAyah: number; translation: boolean; tr: boolean; size: number; lang: QLang;
   setQ: (p: Partial<typeof DEF>) => void; onSeen: (id: string) => void; onNext?: () => void;
 }) {
-  const { n, s, startAyah, translation, size, lang, setQ, onSeen, onNext } = props;
+  const { n, s, startAyah, translation, tr, size, lang, setQ, onSeen, onNext } = props;
   const box = useRef<HTMLDivElement>(null);
+  // Russian letters for Russian speakers, Latin for everyone else.
+  const reading = useMemo(() => (tr ? surahTr(n, s[4], LANG === 'ru' ? 'ru' : 'lat') : null), [n, s, tr]);
 
   useEffect(() => {
     const el = box.current?.querySelector(`[data-a="${startAyah}"]`);
@@ -172,6 +179,7 @@ function Reader(props: {
   return (
     <>
       <div className="q-tools">
+        <button type="button" aria-pressed={tr} onClick={() => setQ({ tr: !tr })}>{_t("Чтение")}</button>
         <button type="button" aria-pressed={translation} onClick={() => setQ({ translation: !translation })}>{_t("Перевод")}</button>
         <select value={lang} onChange={(e) => setQ({ lang: e.target.value as QLang })} aria-label={_t("Язык перевода")}>
           {Q_LANGS.map((l) => <option key={l.id} value={l.id}>{l.id.toUpperCase()}</option>)}
@@ -186,10 +194,12 @@ function Reader(props: {
             <p className="ayah-ar" lang="ar" dir="rtl" style={{ fontSize: size }}>
               {ar} <span className="ayah-n">{i + 1}</span>
             </p>
+            {reading && <p className="ayah-tr">{reading[i]}</p>}
             {translation && <p className="ayah-ru" lang={lang}><span>{n}:{i + 1}</span> {ru}</p>}
           </div>
         ))}
         {onNext && <button type="button" className="pri-btn next-surah" onClick={onNext}>{_t("Следующая сура")}</button>}
+        {reading && <p className="q-src">{_t("Чтение русскими буквами составлено по правилам из арабского текста. Оно помогает читать вместе с арабским, но не передаёт все правила таджвида. Сверяйся с арабским текстом и чтецом.")}</p>}
       </div>
     </>
   );

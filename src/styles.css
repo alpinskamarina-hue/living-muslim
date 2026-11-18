@@ -282,6 +282,7 @@ button:disabled { opacity: .5; cursor: default; }
 .ayah { padding: 12px 0; border-bottom: 1px solid var(--line); }
 .ayah-ar { font-family: "Amiri Quran", var(--f-ar); line-height: 2.1; margin: 0; text-align: right; }
 .ayah-n { font-family: var(--f-body); font-weight: 700; vertical-align: middle; display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; font-size: .6em; color: var(--gold); border: 1.5px solid var(--gold); border-radius: 50%; padding: 0 .2em; }
+.ayah-tr { margin: 4px 0 0; font-size: 15px; line-height: 1.5; color: var(--green-2); font-style: italic; }
 .ayah-ru { margin: 6px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink); }
 .ayah-ru span { color: var(--green-2); font-weight: 700; font-size: 12px; margin-right: 4px; }
 .next-surah { display: block; margin: 20px auto 0; }
@@ -3041,3 +3042,28 @@ button.ud-wait em { font-style: normal; }
 .adh-src { display: block; font-size: 11.5px; color: var(--ink-2); margin-top: 4px; }
 .adh-toast { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top, 0px)); display: flex; align-items: center; gap: 10px; border: 0; border-radius: 999px; padding: 10px 18px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--gold); font-weight: 700; font-size: 14.5px; box-shadow: 0 8px 24px rgba(0,0,0,.25); width: max-content; max-width: calc(100% - 32px); white-space: nowrap; }
 .adh-toast .adh-ar { font-family: var(--f-ar); color: var(--gold); font-size: 20px; }
+
+/* ---- Hifz goal: surahs ---- */
+.hz-pick { display: flex; flex-direction: column; gap: 8px; font-weight: 500; color: var(--ink); }
+.hz-pick .q-find { margin: 0; width: 100%; box-sizing: border-box; }
+.hz-sets { display: flex; flex-wrap: wrap; gap: 6px; }
+.hz-sets button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.hz-sets button[aria-pressed="true"] { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+.hz-list { display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; padding: 4px; background: var(--surface); }
+.hz-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+.hz-row.on { background: var(--green-soft); }
+.hz-row input { width: 18px; height: 18px; accent-color: var(--green-2); flex: none; }
+.hz-row .q-n { flex: none; width: 28px; text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.hz-row b { display: block; font-size: 14.5px; }
+.hz-row small { color: var(--ink-2); font-size: 12px; }
+.hz-goal { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.hz-g { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 8px 8px 8px 12px; }
+.hz-g.done { border-color: var(--green-2); background: var(--green-soft); }
+.hz-open { flex: 1; min-width: 0; border: 0; background: none; text-align: left; padding: 2px 0; color: var(--ink); font: inherit; }
+.hz-open b { display: block; font-size: 14.5px; }
+.hz-open small { color: var(--ink-2); font-size: 12px; }
+.hz-bar { display: block; height: 5px; border-radius: 99px; background: var(--line); margin-top: 6px; overflow: hidden; }
+.hz-bar > i { display: block; height: 100%; background: var(--green-2); border-radius: 99px; }
+.hz-btns { display: flex; gap: 4px; flex: none; }
+.hz-btns button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 10px; min-width: 38px; height: 36px; font-weight: 700; font-size: 13px; color: var(--green-2); padding: 0 8px; }
+.hz-btns button:disabled { opacity: .4; }

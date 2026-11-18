@@ -4,10 +4,11 @@ import { ANCHOR_LABEL } from '../types';
 import { activeLimit, isCounted, slotsUsed, streak, uid } from '../store';
 import { addDays, daysBetween, fromKey } from '../dates';
 import {
-  goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, HIFZ, surahAyahs, hifzName, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
+  goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, hifzName, hifzRefs, hifzStep, hifzTotal, hifzMap, hifzAyahs, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
 } from '../goals';
 import { markStarted } from '../dayplan';
+import { SurahPicker, SurahProgress } from './HifzSurahs';
 import { ramadanMonth } from '../ramadan';
 import { catalog, lessons, emptyVideos } from '../videos';
 import { isCloud, myCircles, kindOf } from '../cloud';
@@ -61,7 +62,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
   const act = (g: Goal, st: Step) => {
     update((s) => markStarted(s, today, `g:${g.id}`));
     if (st.action !== 'add') return onDo(st);
-    if (g.source === 'hifz') update((s) => patchGoal(s, g.id, { manual: Math.min(g.target, g.manual + 1) }));
+    if (g.source === 'hifz') update((s) => patchGoal(s, g.id, hifzStep(g, 1)));
     else setOpenId(g.id);
   };
 
@@ -228,7 +229,18 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
         </div>
       )}
       {def.counter && <p className="tiny">{_t("Считается с момента создания цели.")}</p>}
-      {g.source === 'hifz' && g.manual > 0 && <button type="button" className="link-btn" onClick={() => update((s) => patchGoal(s, g.id, { manual: g.manual - 1 }))}>{_t("−1 аят (ошибся)")}</button>}
+      {g.source === 'hifz' && (
+        <SurahProgress g={g}
+          onStep={(n, d) => update((s) => patchGoal(s, g.id, hifzStep(g, d, n)))}
+          onOpen={(n) => onDo({ text: '', sub: '', btn: '', action: 'quran', ref: String(n) })}
+          onSet={(refs) => update((s) => {
+            const m = hifzMap(g);
+            const kept: Record<string, number> = {};
+            refs.forEach((n) => { kept[n] = Math.min(hifzAyahs(n), m[n] ?? 0); });
+            const target = hifzTotal(refs);
+            return patchGoal(s, g.id, { ref: refs.join(','), hifz: kept, target, manual: Math.min(target, Object.values(kept).reduce((a, x) => a + x, 0)) });
+          })} />
+      )}
 
       <div className="g-sec">{_t("Система: привычки к цели")}</div>
       <div className="g-habs">
@@ -331,8 +343,8 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
     const d = sourceDef(src);
     setTpl(t); setTitle(t.title === _t("Своя цель") ? '' : t.title); setSource(src);
     setTarget(t.target ?? (src === 'manual' && u === _t("раз") ? 30 : d.target)); setUnit(u ?? t.unit ?? d.unit); setIdentity(t.identity); setNewHabits(t.habits);
-    setRef(src === 'video' ? courses[0]?.id ?? '' : src === 'hifz' ? '67' : '');
-    if (src === 'hifz') { setTarget(surahAyahs(67)); setTitle(_t("Выучить суру аль-Мульк")); }
+    setRef(src === 'video' ? courses[0]?.id ?? '' : '');
+    if (src === 'hifz') { setTarget(0); setTitle(''); }
     if (src === 'video' && courses[0]) setTitle(_t("Пройти курс «{0}»", courses[0].title));
     setDue(t.title.includes(_t("Рамадан")) && rStart ? rStart : '');
     setStep(1);
@@ -363,7 +375,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
     onClose(id);
   };
 
-  const ok1 = title.trim() && target > 0 && (source !== 'video' || ref);
+  const ok1 = title.trim() && target > 0 && (source !== 'video' || ref) && (source !== 'hifz' || hifzRefs(ref).length > 0);
   const hasSystem = pick.length + newHabits.length > 0 || !def.identity;
   const existing = state.habits.filter((h) => h.status === 'active' || h.status === 'queued');
   const own: Template = { group: 'life', ic: '✨', sub: '', title: _t("Своя цель"), source: 'habits', identity: '', habits: [] };
@@ -408,11 +420,13 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
         <>
           <p className="q">{_t("Сколько и к какому сроку?")}</p>
           {source === 'hifz' && (
-            <label className="field"><span>{_t("Какую суру")}</span>
-              <select value={ref} onChange={(e) => { const n = Number(e.target.value); setRef(e.target.value); setTarget(n === 2 ? 2 : surahAyahs(n)); setTitle(_t("Выучить суру {0}", hifzName(e.target.value))); }}>
-                {HIFZ.map((h) => <option key={h.n} value={h.n}>{_tj("{0} · {1} аятов", h.ru, h.n === 2 ? 2 : surahAyahs(h.n))}</option>)}
-              </select>
-            </label>
+            <div className="field"><span>{_t("Какие суры")}</span>
+              <SurahPicker value={hifzRefs(ref)} onChange={(refs) => {
+                setRef(refs.join(','));
+                setTarget(hifzTotal(refs));
+                setTitle(refs.length === 1 ? _t("Выучить суру {0}", hifzName(String(refs[0]))) : refs.length ? _t("Выучить суры: {0}", hifzName(refs.join(','))) : '');
+              }} />
+            </div>
           )}
           {source === 'video' && (
             <label className="field"><span>{_t("Какой курс")}</span>

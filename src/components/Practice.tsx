@@ -62,7 +62,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const OPEN: Partial<Record<Mode, Trigger>> = { quran: 'quran_open', langs: 'langs_open', books: 'books_open', health: 'health_open', sadaqa: 'sadaqa_open', food: 'food_open', umrah: 'umrah_open' };
   useEffect(() => { const t = OPEN[mode]; if (t) say(t); }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
   if (mode === 'focus') return <Focus habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
-  if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
+  if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} startSurah={start?.mode === 'quran' && start.ref ? Number(start.ref) : undefined} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'course') return <Course state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
   if (mode === 'course-ar') return <ArCourse state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
   if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onCourse={() => setMode('course')} onCourseAr={() => setMode('course-ar')} />;
