@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { ChatApi, Msg, MsgRef } from '../chat';
+import { FILE_MAX, type ChatApi, type Msg, type MsgRef } from '../chat';
 import type { Member, Reacts } from '../circle';
 import { askAnswers } from '../cweek';
 import { blockUser } from '../cloud';
@@ -35,6 +35,58 @@ function prayerNow(state: AppState): string {
     for (const a of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const) if (now >= t[a].getTime() && now - t[a].getTime() < 20 * 60000) return PRAYER[a];
   } catch { /* no place set */ }
   return '';
+}
+
+/** One line for a message in quotes and previews. */
+export function shortOf(m: Msg, n = 90) {
+  if (m.kind === 'voice') return _t("🎙 Голосовое");
+  if (m.kind === 'photo') return _t("📷 Фото") + (m.body ? ` · ${m.body.slice(0, n)}` : '');
+  if (m.kind === 'file') return `📄 ${m.file?.name || _t("Файл")}` + (m.body ? ` · ${m.body.slice(0, n)}` : '');
+  return m.body.slice(0, n);
+}
+const sizeOf = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} ${_t("МБ")}` : `${Math.max(1, Math.round(b / 1024))} ${_t("КБ")}`);
+const iconOf = (name: string) => (/\.pdf$/i.test(name) ? '📕' : /\.(docx?|odt|rtf|txt)$/i.test(name) ? '📝' : /\.(xlsx?|csv|ods)$/i.test(name) ? '📊' : /\.(pptx?|key)$/i.test(name) ? '📽' : /\.(zip|rar|7z)$/i.test(name) ? '🗜' : /\.(mp3|m4a|ogg|wav)$/i.test(name) ? '🎵' : /\.(mp4|mov|webm)$/i.test(name) ? '🎬' : '📄');
+
+function Photo({ m, chat, onOpen }: { m: Msg; chat: ChatApi; onOpen: (url: string) => void }) {
+  const [url, setUrl] = useState('');
+  const box = useRef<HTMLSpanElement>(null);
+  const f = m.file!;
+  useEffect(() => {
+    if (!f.ok || url) return;
+    const el = box.current;
+    if (!el) return;
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); chat.fileUrl(m.id).then(setUrl).catch(() => {}); } }, { rootMargin: '300px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [m.id, f.ok]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!f.ok) return <span className="cc-gone">{_t("📷 Фото больше не доступно")}</span>;
+  const w = Math.min(230, f.w || 230), h = f.w && f.h ? Math.round((w * f.h) / f.w) : 170;
+  return (
+    <span ref={box} className="cc-photo" style={{ width: w, height: Math.min(320, h), backgroundImage: f.thumb ? `url(${f.thumb})` : undefined }} onClick={() => url && onOpen(url)}>
+      {url && <img src={url} alt="" />}
+    </span>
+  );
+}
+
+function FileCard({ m, chat }: { m: Msg; chat: ChatApi }) {
+  const [busy, setBusy] = useState(false);
+  const f = m.file!;
+  if (!f.ok) return <span className="cc-gone">📄 {f.name} · {_t("файл больше не доступен")}</span>;
+  const open = async () => {
+    setBusy(true);
+    const url = await chat.fileUrl(m.id).catch(() => '');
+    setBusy(false);
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url; a.download = f.name || 'file'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  return (
+    <button type="button" className="cc-file" onClick={open}>
+      <i>{iconOf(f.name)}</i>
+      <span><b>{f.name || _t("Файл")}</b><small>{sizeOf(f.size)} · {busy ? _t("загружаю…") : _t("скачать")}</small></span>
+    </button>
+  );
 }
 
 function Ava({ id, names }: { id: string; names: Names }) {
@@ -201,6 +253,27 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
     if (count) first.current = false;
   }, [lastId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [file, setFile] = useState<File | null>(null);
+  const [view, setView] = useState('');
+  const fileIn = useRef<HTMLInputElement>(null);
+  const pickFile = (f: File | undefined) => {
+    if (!f) return;
+    const pic = /^image\//.test(f.type);
+    if (!pic && f.size > FILE_MAX) { flash(_t("Файл больше 5 МБ. Отправь ссылку на него")); return; }
+    setFile(f);
+    setTimeout(() => ta.current?.focus(), 50);
+  };
+  const sendFile = async () => {
+    if (!file) return;
+    const f = file, cap = text, r = ref;
+    setSending(true); setFile(null); setText(''); setRef(null);
+    const e = await chat.sendFile(f, cap, r);
+    setSending(false);
+    if (e) {
+      setFile(f); setText(cap); setRef(r);
+      flash(e === 'big' ? _t("Файл больше 5 МБ. Отправь ссылку на него") : e === 'type' ? _t("Такой тип файла нельзя отправить") : e === 'day' ? _t("На сегодня лимит файлов исчерпан (50 МБ)") : e === 'slow' ? _t("Слишком часто. Подожди минуту") : _t("Файл не отправился. Попробуй ещё раз"));
+    }
+  };
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote(''), 2600); };
 
   const send = async (body = text, kind: 'text' | 'event' = 'text') => {
@@ -319,8 +392,11 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
               {!mine && <Ava id={m.uid} names={names} />}
               <div className={`cc-m${mine ? ' mine' : ''}${m.failed ? ' failed' : ''}`} {...holdProps(m)} onClick={m.failed ? () => chat.retry(m) : undefined}>
                 {!mine && <b className="cc-who">{nm(m.uid)}</b>}
-                {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : q.kind === 'voice' ? _t("🎙 Голосовое") : q.body.slice(0, 90)}</span>}
-                {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} /> : <span className="cc-t">{m.body}</span>}
+                {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : shortOf(q)}</span>}
+                {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
+                  : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
+                  : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
+                  : <span className="cc-t">{m.body}</span>}
                 <small className="cc-time">{m.failed ? _t("⚠ Не отправлено · нажми, чтобы повторить") : <>{hm(m.at)}{mine ? (m.pending ? ' ⏳' : ' ✓') : ''}</>}</small>
               </div>
               {rs.length > 0 && (
@@ -340,7 +416,7 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
       <div className="cc-compose">
         {reply && (
           <div className="cc-reply">
-            <span><b>{_tj("Ответ {0}", reply.uid === me ? _t("себе") : nm(reply.uid))}</b>{reply.kind === 'voice' ? _t("🎙 Голосовое") : reply.body.slice(0, 80)}</span>
+            <span><b>{_tj("Ответ {0}", reply.uid === me ? _t("себе") : nm(reply.uid))}</b>{shortOf(reply, 80)}</span>
             <button type="button" aria-label={_t("Отменить ответ")} onClick={() => setRef(null)}>✕</button>
           </div>
         )}
@@ -368,12 +444,20 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
         ) : (
           <>
             <div className="cc-quick">{QUICK.map((t) => <button key={t} type="button" onClick={() => send(t)}>{t}</button>)}</div>
+            {file && (
+              <div className="cc-reply cc-pick">
+                <span><b>{/^image\//.test(file.type) ? _t("📷 Фото") : `${iconOf(file.name)} ${_t("Файл")}`}</b>{file.name} · {sizeOf(file.size)}</span>
+                <button type="button" aria-label={_t("Убрать файл")} onClick={() => setFile(null)}>✕</button>
+              </div>
+            )}
             <div className="cc-in">
-              <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={ref ? _t("Ответ…") : _t("Написать в круг…")}
+              <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
+              {chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
+              <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); send(); } }} />
-              {text.trim() || !recorder.supported || !chat.voiceOn ? (
-                <button type="button" className="cc-send" disabled={!text.trim()} aria-label={_t("Отправить")} onClick={() => { send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); if (file) sendFile(); else send(); } }} />
+              {file || text.trim() || !recorder.supported || !chat.voiceOn ? (
+                <button type="button" className="cc-send" disabled={(!text.trim() && !file) || sending} aria-label={_t("Отправить")} onClick={() => { if (file) sendFile(); else send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
               ) : (
                 <button type="button" className="cc-mic" disabled={sending} aria-label={_t("Удерживай, чтобы записать голосовое")}
                   onPointerDown={(e) => { e.preventDefault(); recorder.start(e.clientX); }}
@@ -384,6 +468,15 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
         )}
       </div>
 
+      {view && (
+        <div className="cc-view" onClick={() => setView('')}>
+          <img src={view} alt="" />
+          <div className="cc-view-bar" onClick={(e) => e.stopPropagation()}>
+            <a href={view} download="photo.jpg">{_t("Скачать")}</a>
+            <button type="button" onClick={() => setView('')}>{_t("Закрыть")}</button>
+          </div>
+        </div>
+      )}
       {menu && (
         <>
           <div className="dim" onClick={() => setMenu(null)} />
@@ -408,7 +501,7 @@ export function DuaReplies({ list, names, me, onReply }: { list: Msg[]; names: N
   return (
     <div className="cc-dr">
       {list.slice(-2).map((m) => (
-        <div key={m.id} className="cc-dr-m"><Ava id={m.uid} names={names} /><span><b>{nm(m.uid)}</b> {m.kind === 'voice' ? _t("🎙 голосовое") : m.body}</span></div>
+        <div key={m.id} className="cc-dr-m"><Ava id={m.uid} names={names} /><span><b>{nm(m.uid)}</b> {shortOf(m)}</span></div>
       ))}
       {list.length > 2 && <small className="tiny">{_tj("И ещё {0} в чате", list.length - 2)}</small>}
       <button type="button" className="link-btn cc-dr-btn" onClick={onReply}>💬 {list.length ? _t("Открыть в чате") : _t("Ответить в чате")}</button>

@@ -75,8 +75,22 @@ async function signup(pg, name, email) {
     const box = await mic.boundingBox();
     await B.mouse.move(box.x + 20, box.y + 20); await B.mouse.down(); await wait(2600); await B.mouse.up(); await wait(2500);
     say('B voice rows:', await L.q(`select m.id, m.sec, length(v.data) bytes, v.mime from chat_msgs m join chat_voice v on v.id = m.id`));
+    // photo and a document
+    const png = await B.screenshot();
+    await B.locator('.cc-in input[type=file]').setInputFiles({ name: 'office.png', mimeType: 'image/png', buffer: png });
+    await wait(300);
+    await B.locator('.cc-in textarea').fill('Вот вариант офиса');
+    await B.locator('.cc-send').click(); await wait(2500);
+    await B.locator('.cc-in input[type=file]').setInputFiles({ name: 'dogovor.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 test file '.repeat(200)) });
+    await wait(300); await B.locator('.cc-send').click(); await wait(2500);
+    await B.locator('.cc-in input[type=file]').setInputFiles({ name: 'virus.exe', mimeType: 'application/octet-stream', buffer: Buffer.from('MZ'.repeat(100)) });
+    await wait(300); await B.locator('.cc-send').click(); await wait(1500);
+    say('B exe note:', await B.locator('.cc-note').allInnerTexts());
+    await B.locator('.cc-pick button').click().catch(() => {});
+    say('files:', await L.q(`select m.kind, m.body, m.file->>'name' name, m.file->>'w' w, length(f.data) bytes, length(m.file->>'thumb') thumb from chat_msgs m join chat_files f on f.id = m.id`));
     // reaction by long press on A's message
     const am = B.locator('.cc-m', { hasText: 'Ассаляму' });
+    await am.evaluate((e) => e.scrollIntoView({ block: 'center' })); await wait(300);
     const ab = await am.boundingBox();
     await B.mouse.move(ab.x + 30, ab.y + 15); await B.mouse.down(); await wait(700); await B.mouse.up(); await wait(400);
     await shot(B, 'chat-b2-menu');
@@ -88,6 +102,15 @@ async function signup(pg, name, email) {
     say('A chat:', await A.locator('.cc-list').innerText().then((x) => x.replace(/\n+/g, ' | ')));
     await A.locator('.cc-play').first().click(); await wait(1500);
     say('A play state:', await A.locator('.cc-play').first().innerText());
+    await A.locator('.cc-photo img').first().waitFor({ timeout: 8000 }).catch(() => {});
+    say('A photo loaded:', await A.locator('.cc-photo img').count(), 'file card:', await A.locator('.cc-file').allInnerTexts());
+    const dl = A.waitForEvent('download', { timeout: 8000 }).catch(() => null);
+    await A.locator('.cc-file').first().click();
+    const d = await dl; say('A download:', d && d.suggestedFilename());
+    await A.locator('.cc-photo').first().click(); await wait(600);
+    say('A lightbox:', await A.locator('.cc-view img').count());
+    await shot(A, 'chat-a0-view');
+    await A.locator('.cc-view-bar button').click(); await wait(300);
     await shot(A, 'chat-a1-chat');
     await A.locator('.cc-tabs button', { hasText: 'Круг' }).click(); await wait(800);
     say('A dua card:', await A.locator('.da-card.mine').innerText().then((x) => x.replace(/\n+/g, ' | ')));
