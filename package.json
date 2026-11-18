@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/landing.mjs",
+    "build:single": "tsc --noEmit && SINGLE=1 vite build && node scripts/landing.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

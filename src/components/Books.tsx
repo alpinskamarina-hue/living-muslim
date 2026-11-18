@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import * as pdfjs from 'pdfjs-dist';
-import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?worker&inline';
+import type * as PdfJs from 'pdfjs-dist';
 import type { AppState, BookMeta, Mark } from '../types';
 import { uid } from '../store';
 import { dayKey } from '../dates';
@@ -11,11 +10,14 @@ import { ProGate } from './Plan';
 import { limitOf } from '../plan';
 import { _t, _tj, isEn } from '../i18n';
 
-let workerReady = false;
-function ensureWorker() {
-  if (workerReady) return;
-  pdfjs.GlobalWorkerOptions.workerPort = new PdfWorker();
-  workerReady = true;
+// The PDF reader is heavy: it is downloaded only when a PDF is added or opened.
+let pdfLib: Promise<typeof PdfJs> | null = null;
+function loadPdf() {
+  pdfLib ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.js?worker&inline')]).then(([lib, W]) => {
+    lib.GlobalWorkerOptions.workerPort = new W.default();
+    return lib;
+  });
+  return pdfLib;
 }
 
 interface Props {
@@ -47,7 +49,7 @@ export function Books({ state, update, habitName, onExit, onFinish }: Props) {
       const id = uid();
       let pages = 1;
       if (isPdf) {
-        ensureWorker();
+        const pdfjs = await loadPdf();
         const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
         pages = doc.numPages;
         await doc.destroy();
@@ -148,7 +150,7 @@ function Reader({ book, habitName, onPage, onNote, onClose, onFinish }: {
 }) {
   const [page, setPage] = useState(book.page);
   const [startPage] = useState(book.page);
-  const [doc, setDoc] = useState<pdfjs.PDFDocumentProxy | null>(null);
+  const [doc, setDoc] = useState<PdfJs.PDFDocumentProxy | null>(null);
   const [text, setText] = useState<string | null>(null);
   const [err, setErr] = useState('');
   const [finish, setFinish] = useState(false);
@@ -158,13 +160,13 @@ function Reader({ book, habitName, onPage, onNote, onClose, onFinish }: {
 
   useEffect(() => {
     let alive = true;
-    let d: pdfjs.PDFDocumentProxy | null = null;
+    let d: PdfJs.PDFDocumentProxy | null = null;
     (async () => {
       try {
         const blob = await getFile(book.id);
         if (!blob) throw new Error('missing');
         if (book.kind === 'pdf') {
-          ensureWorker();
+          const pdfjs = await loadPdf();
           d = await pdfjs.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
           if (alive) setDoc(d);
         } else if (alive) setText(await blob.text());
@@ -178,7 +180,7 @@ function Reader({ book, habitName, onPage, onNote, onClose, onFinish }: {
   useEffect(() => {
     if (!doc || !canvas.current || !wrap.current) return;
     let cancelled = false;
-    let task: ReturnType<pdfjs.PDFPageProxy['render']> | null = null;
+    let task: ReturnType<PdfJs.PDFPageProxy['render']> | null = null;
     (async () => {
       const p = await doc.getPage(page);
       if (cancelled) return;

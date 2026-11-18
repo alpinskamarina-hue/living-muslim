@@ -38,7 +38,9 @@ export const ordL = (l: Lang, n: number) => {
 // Every Russian UI string goes through _t() (see scripts/i18n-codemod.cjs). The language is read once at start;
 // switching it in Profile reloads the app.
 import { Fragment, createElement } from 'react';
-import { EN } from './en';
+/** Filled from ./en before the app starts, only when the interface is English (see main.tsx). */
+let EN: Record<string, string> = {};
+export const setEN = (d: Record<string, string>) => { EN = d; };
 
 function startLang(): Lang {
   try {

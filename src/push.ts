@@ -13,12 +13,15 @@ export const RPUSH_DEFAULT: RamadanPush = { suhoor: 45, iftar: 15, tarawih: fals
 export const rpushOf = (p?: ReminderPrefs): RamadanPush => ({ ...RPUSH_DEFAULT, ...(p?.ramadan ?? {}) });
 
 // ---- install ----
-let deferred: any = null;
+// main.tsx keeps an install prompt that fired before this module loaded.
+let deferred: any = typeof window !== 'undefined' ? (window as any).__lmInstall ?? null : null;
 const listeners = new Set<() => void>();
 if (isCloud && typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; listeners.forEach((f) => f()); });
   window.addEventListener('appinstalled', () => { deferred = null; listeners.forEach((f) => f()); });
-  if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+  // The app code loads after the page, so the load event may already be over.
+  const reg = () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); };
+  if ('serviceWorker' in navigator) { if (document.readyState === 'complete') reg(); else window.addEventListener('load', reg); }
 }
 export const onInstallChange = (f: () => void) => { listeners.add(f); return () => { listeners.delete(f); }; };
 export const isStandalone = () => typeof window !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true);

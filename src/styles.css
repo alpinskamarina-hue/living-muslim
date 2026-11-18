@@ -2422,3 +2422,8 @@ button:disabled { opacity: .5; cursor: default; }
 .mq-jgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0 8px; }
 .mq-manual { gap: 10px; margin-bottom: 12px; }
 .mq-manual .field { width: 100%; margin: 0; }
+
+/* Placeholder while a screen downloads the first time */
+.lazy-wait { min-height: 50vh; display: grid; place-items: center; }
+.lazy-wait i { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--green-2); animation: lazy-spin .8s linear infinite; }
+@keyframes lazy-spin { to { transform: rotate(360deg); } }
