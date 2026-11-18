@@ -5,13 +5,15 @@ import { isCloud, meRpc, serverHas, cloudMe } from './cloud';
 import { currentSubscription } from './push';
 import { _t } from './i18n';
 
-export type MsgKind = 'text' | 'voice' | 'event';
+export type MsgKind = 'text' | 'voice' | 'event' | 'photo' | 'file';
+export interface MsgFile { name: string; size: number; mime: string; thumb?: string; w?: number; h?: number; ok: boolean }
+export const FILE_MAX = 5 * 1024 * 1024;
 /** r: reply to a message; t: an event card (dua, ch) or a reply tied to someone's dua request (t 'dua', to). */
 export interface MsgRef { r?: number; t?: 'dua' | 'ch'; d?: string; to?: string; k?: string }
 export interface Msg {
   id: number; uid: string; kind: MsgKind; body: string; ref: MsgRef | null;
   sec: number | null; bars: number[] | null; reacts: Record<string, string>;
-  deleted: boolean; at: string; voice: boolean; pending?: boolean; failed?: boolean;
+  deleted: boolean; at: string; voice: boolean; file?: MsgFile | null; pending?: boolean; failed?: boolean;
 }
 interface ListRes { msgs: Msg[]; seen: number; voice: boolean; owner: string }
 
@@ -46,6 +48,8 @@ const merge = (a: Msg[], b: Msg[]) => {
 
 export interface ChatApi {
   ready: boolean;
+  /** Photos and documents: true once supabase/chat-files.sql is on the server. */
+  filesOn: boolean;
   msgs: Msg[];
   /** Last message id I had seen when the chat was opened (for the «new» line). */
   seenAtOpen: number;
@@ -63,6 +67,9 @@ export interface ChatApi {
   older: () => Promise<void>;
   setVoice: (on: boolean) => Promise<boolean>;
   voiceUrl: (id: number) => Promise<string>;
+  /** Photo or document: '' when sent, else an error code (big, type, day, error). */
+  sendFile: (f: File, caption: string, ref?: MsgRef | null) => Promise<string>;
+  fileUrl: (id: number) => Promise<string>;
 }
 
 const voiceCache = new Map<number, string>();
@@ -80,7 +87,9 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   const last = useRef(0);
   const me = cloudMe()?.uid ?? '';
 
+  const [filesOn, setFilesOn] = useState(false);
   useEffect(() => { chatReady().then(setReady); }, []);
+  useEffect(() => { if (ready) serverHas('lm_chat_file', { p_uid: null, p_token: null, p_id: 0 }).then(setFilesOn); }, [ready]);
 
   const pull = useCallback(async (full = false) => {
     if (!code) return;
@@ -181,7 +190,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
 
   const remove = async (id: number) => {
     const ok = await meRpc<boolean>('lm_chat_delete', { p_id: id }).catch(() => false);
-    if (ok) setMsgs((m) => m.map((x) => (x.id === id ? { ...x, deleted: true, body: '', reacts: {}, voice: false } : x)));
+    if (ok) setMsgs((m) => m.map((x) => (x.id === id ? { ...x, deleted: true, body: '', reacts: {}, voice: false, file: null } : x)));
     return ok;
   };
   const report = (id: number, reason: string) => meRpc<boolean>('lm_chat_report', { p_id: id, p_reason: reason }).catch(() => false);
@@ -216,7 +225,37 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
 
   const retry = (m: Msg) => { setMsgs((x) => x.filter((y) => y !== m)); send(m.body, m.ref, m.kind === 'event' ? 'event' : 'text'); };
 
-  return { ready, msgs, seenAtOpen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl };
+  const sendFile = async (f: File, caption: string, ref: MsgRef | null = null) => {
+    if (!code) return 'error';
+    try {
+      let photo = /^image\/(jpeg|png|webp|heic|heif)$/i.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name);
+      let blob: Blob = f, meta: Record<string, unknown> = { name: f.name.slice(0, 120), mime: f.type || 'application/octet-stream' };
+      if (photo) {
+        const p = await shrinkPhoto(f).catch(() => null);
+        if (p) { blob = p.blob; meta = { name: f.name.replace(/\.[^.]+$/, '') + '.jpg', mime: 'image/jpeg', thumb: p.thumb, w: p.w, h: p.h }; }
+        else photo = false; // a picture this browser cannot open goes as a document
+      }
+      if (blob.size > FILE_MAX) return 'big';
+      const r = await meRpc<Msg & { error?: string }>('lm_chat_file_send', { p_code: code, p_kind: photo ? 'photo' : 'file', p_meta: meta, p_b64: await toB64(blob), p_body: caption.trim().slice(0, 1000), p_ref: ref });
+      if (r?.error) return r.error;
+      fileCache.set(r.id, URL.createObjectURL(blob));
+      setMsgs((m) => merge(m, [r]));
+      last.current = Math.max(last.current, r.id);
+      return '';
+    } catch { return 'error'; }
+  };
+
+  const fileUrl = async (id: number) => {
+    const c = fileCache.get(id);
+    if (c) return c;
+    const r = await meRpc<{ mime: string; b64: string } | null>('lm_chat_file', { p_id: id });
+    if (!r?.b64) return '';
+    const url = URL.createObjectURL(b64Blob(r.b64, r.mime));
+    fileCache.set(id, url);
+    return url;
+  };
+
+  return { ready, filesOn, msgs, seenAtOpen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
 }
 
 /** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */
@@ -249,3 +288,41 @@ export function duaReplies(msgs: Msg[], asker: string, day: string): Msg[] {
 }
 export const duaEventId = (msgs: Msg[], asker: string, day: string) =>
   [...msgs].reverse().find((m) => m.kind === 'event' && m.ref?.t === 'dua' && m.uid === asker && (m.ref.d ?? '') >= day)?.id;
+
+const fileCache = new Map<number, string>();
+
+function toB64(blob: Blob): Promise<string> {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(',')[1] || '');
+    fr.onerror = () => rej(fr.error);
+    fr.readAsDataURL(blob);
+  });
+}
+function b64Blob(b64: string, mime: string) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+/** Photos are shrunk on the phone: up to 1600 px, JPEG ~80%, plus a tiny preview for the list. */
+async function shrinkPhoto(f: File): Promise<{ blob: Blob; thumb: string; w: number; h: number }> {
+  const url = URL.createObjectURL(f);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const draw = (max: number) => {
+      const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      const g = c.getContext('2d')!;
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      return c;
+    };
+    const big = draw(1600);
+    const blob = await new Promise<Blob>((res, rej) => big.toBlob((b) => (b ? res(b) : rej(new Error('jpeg'))), 'image/jpeg', 0.8));
+    const thumb = draw(48).toDataURL('image/jpeg', 0.6);
+    return { blob, thumb, w: big.width, h: big.height };
+  } finally { URL.revokeObjectURL(url); }
+}

@@ -143,7 +143,7 @@ async function chatPush(secret, subs, now) {
     const prefs = s.prefs || {};
     if (inPrayer(prefs, now)) continue;
     const en = prefs.lang === 'en';
-    const what = c.kind === 'voice' ? (en ? '🎙 voice message' : '🎙 голосовое') : c.kind === 'event' ? `🤲 ${c.body}` : c.body;
+    const what = c.kind === 'voice' ? (en ? '🎙 voice message' : '🎙 голосовое') : c.kind === 'event' ? `🤲 ${c.body}` : c.kind === 'photo' ? `📷 ${c.body || (en ? 'photo' : 'фото')}` : c.kind === 'file' ? `📄 ${c.body || (en ? 'file' : 'файл')}` : c.body;
     const title = c.title || (en ? 'Your circle' : 'Круг');
     const body = c.n > 1 ? `${c.from}: ${what}`.slice(0, 120) + (en ? ` · ${c.n} new` : ` · новых: ${c.n}`) : `${c.from}: ${what}`.slice(0, 140);
     try {

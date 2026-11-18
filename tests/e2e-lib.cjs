@@ -52,7 +52,7 @@ function server(port) {
 }
 const CODE = '12345678';
 async function phone(br, label) {
-  const ctx = await br.newContext({ viewport: { width: 390, height: 844 } });
+  const ctx = await br.newContext({ viewport: { width: 390, height: 844 }, locale: process.env.LM_LOCALE || 'ru-RU' });
   const pg = await ctx.newPage();
   pg.label = label; pg.dialogs = []; pg.answers = [];
   pg.on('pageerror', (e) => errors.push(`[${label}] PAGEERR ${e.message}`));
