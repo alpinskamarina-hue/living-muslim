@@ -118,6 +118,45 @@ export function events(prefs, now) {
   return { day: day.key, list: out };
 }
 
+/** True during the first 20 minutes after a prayer starts: chat waits until after the prayer. */
+export function inPrayer(prefs, now) {
+  if (typeof prefs.lat !== 'number') return false;
+  const tz = prefs.tz || 'Europe/Amsterdam';
+  const day = localParts(tz, new Date(now));
+  const params = (CalculationMethod[prefs.method] || CalculationMethod.MuslimWorldLeague)();
+  params.madhab = prefs.madhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi;
+  const coords = new Coordinates(prefs.lat, prefs.lng);
+  params.highLatitudeRule = HighLatitudeRule.recommended(coords);
+  const t = new PrayerTimes(coords, new Date(day.y, day.m - 1, day.d, 12), params);
+  return ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].some((a) => now >= t[a].getTime() && now - t[a].getTime() < 20 * 60000);
+}
+
+/** New circle messages: one notification per circle, replaced by the next one (same tag). */
+async function chatPush(secret, subs, now) {
+  let list;
+  try { list = (await rpc('lm_chat_push', { p_secret: secret })) || []; } catch { return 0; } // chat.sql not run yet
+  const byEp = new Map(subs.map((s) => [s.endpoint, s]));
+  let sent = 0;
+  for (const c of list) {
+    const s = byEp.get(c.endpoint);
+    if (!s) continue;
+    const prefs = s.prefs || {};
+    if (inPrayer(prefs, now)) continue;
+    const en = prefs.lang === 'en';
+    const what = c.kind === 'voice' ? (en ? '🎙 voice message' : '🎙 голосовое') : c.kind === 'event' ? `🤲 ${c.body}` : c.body;
+    const title = c.title || (en ? 'Your circle' : 'Круг');
+    const body = c.n > 1 ? `${c.from}: ${what}`.slice(0, 120) + (en ? ` · ${c.n} new` : ` · новых: ${c.n}`) : `${c.from}: ${what}`.slice(0, 140);
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title, body, tag: `chat-${c.code}`, url: `/app/?chat=${c.code}` }), { TTL: 3600 });
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 404 || err.statusCode === 410) { await rpc('lm_push_delete', { p_endpoint: s.endpoint }).catch(() => {}); continue; }
+    }
+    await rpc('lm_chat_push_mark', { p_secret: secret, p_endpoint: s.endpoint, p_code: c.code, p_id: c.last }).catch(() => {});
+  }
+  return sent;
+}
+
 export default async function handler(req, res) {
   const secret = process.env.PUSH_SECRET;
   if (!secret || req.headers['x-push-secret'] !== secret) return res.status(401).json({ error: 'unauthorized' });
@@ -144,5 +183,6 @@ export default async function handler(req, res) {
     }
     await rpc('lm_push_mark', { p_secret: secret, p_endpoint: s.endpoint, p_sent: done }).catch(() => {});
   }));
-  res.status(200).json({ ok: true, subs: subs.length, sent, dropped });
+  const chat = await chatPush(secret, subs, now);
+  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat });
 }

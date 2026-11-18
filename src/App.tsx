@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { WordCard, WordsLayer } from './components/Words';
 import { todayTrigger, useWordsWatch } from './wordsWatch';
 import { say } from './words';
-import { isCloud, currentCircle } from './cloud';
+import { isCloud, currentCircle, myCircles, switchCircle } from './cloud';
+import { useChatUnread } from './chat';
 import type { Anchor, Habit } from './types';
 import { useAppState } from './store';
-import { dayKey, addDays, fromKey } from './dates';
+import { dayKey, addDays, fromKey, plural } from './dates';
 import { prayerTimes, windowState } from './prayer';
 import { Today } from './components/Today';
 import { HabitSheet } from './components/HabitSheet';
@@ -59,8 +60,29 @@ export function App() {
   const [tab, setTab] = useState<Tab>(() => {
     try { const t = sessionStorage.getItem('lm.tab'); sessionStorage.removeItem('lm.tab'); if (t === 'circle') return 'circle' as Tab; } catch { /* */ }
     try { if (new URLSearchParams(location.search).get('c')) return 'circle' as Tab; } catch { /* */ }
+    try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     return 'today';
   });
+  const chatUnread = useChatUnread();
+  const chatTotal = Object.values(chatUnread).reduce((a, n) => a + n, 0);
+  // A chat notification was tapped: open that circle's chat (switching circle reloads the page).
+  useEffect(() => {
+    const open = (code: string) => {
+      if (!isCloud || !code) return;
+      try { sessionStorage.setItem('lm.chat', code); } catch { /* */ }
+      if (currentCircle()?.code !== code && myCircles().some((c) => c.code === code)) { switchCircle(code); return; }
+      setTab('circle');
+      window.dispatchEvent(new Event('lm-open-chat'));
+    };
+    try {
+      const u = new URL(location.href);
+      const c = u.searchParams.get('chat');
+      if (c) { u.searchParams.delete('chat'); history.replaceState(null, '', u.toString()); open(c); }
+    } catch { /* */ }
+    const onMsg = (e: MessageEvent) => { try { if (e.data?.type === 'open') open(new URL(e.data.url, location.origin).searchParams.get('chat') || ''); } catch { /* */ } };
+    navigator.serviceWorker?.addEventListener('message', onMsg);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg);
+  }, []);
   const [now, setNow] = useState(() => new Date());
   const invites = useInvites(isCloud);
   const [sheet, setSheet] = useState<null | { editing?: Habit; anchor: Anchor }>(null);
@@ -192,6 +214,12 @@ export function App() {
     support.push({ cls: 'invite', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); },
       text: invites.length === 1 ? `🔔 ${f.from.name || 'Кто-то'} зовёт тебя в круг «${f.title || 'Круг'}»` : `🔔 ${invites.length} приглашения в круги ждут ответа` });
   }
+  if (chatTotal > 0) {
+    const codes = Object.keys(chatUnread);
+    const title = codes.length === 1 ? myCircles().find((c) => c.code === codes[0])?.title : '';
+    support.push({ cls: 'invite', onOpen: () => { window.scrollTo(0, 0); try { if (codes.length === 1) sessionStorage.setItem('lm.chat', codes[0]); } catch { /* */ } if (codes.length === 1 && currentCircle()?.code !== codes[0]) { switchCircle(codes[0]); return; } setTab('circle'); window.dispatchEvent(new Event('lm-open-chat')); },
+      text: `💬 ${chatTotal} ${plural(chatTotal, 'новое сообщение', 'новых сообщения', 'новых сообщений')} в ${title ? `круге «${title}»` : 'кругах'}` });
+  }
   if (joined && circle.me) {
     const name = (id: string) => circle.names[id]?.name || 'Друг';
     const duaFrom: string[] = [], nudgeFrom: string[] = [];
@@ -266,7 +294,7 @@ export function App() {
         {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} />}
         {tab === 'progress' && (
@@ -293,7 +321,7 @@ export function App() {
       <nav className="nav" aria-label="Разделы">
         {(Object.keys(LABELS) as Tab[]).map((t) => (
           <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? `${LABELS[t]}, приглашений: ${invites.length}` : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
-            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}</span>
+            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
             <small>{LABELS[t]}</small>
           </button>
         ))}

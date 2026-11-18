@@ -57,14 +57,15 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
         <button type="button" aria-pressed={tab === 'stats'} onClick={() => setTab('stats')}>📊 Аналитика</button>
         <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Видеокурсы</button>
+        <button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>🚩 Жалобы</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : <AdminCourses />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : <AdminReports />}
     </div>
   );
 }
@@ -184,6 +185,31 @@ function Bars({ series }: { series: Stats['series'] }) {
             {x.s > 0 && <em className="s" style={{ bottom: `${(x.s / max) * 100}%` }} />}
           </div>
           <small>{i % every === 0 || i === series.length - 1 ? dShort(x.d) : ''}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface Report { id: number; msg: number; reason: string; body: string; at: string; by: string; author: string; deleted: boolean }
+/** Complaints about circle chat messages (supabase/chat.sql). The owner can remove the message for everyone. */
+function AdminReports() {
+  const [list, setList] = useState<Report[] | null>(null);
+  const [err, setErr] = useState('');
+  const load = () => call<Report[]>('lm_chat_reports', {}).then((r) => setList(r ?? [])).catch((e) => setErr(/404/.test(String(e)) ? 'Сначала запусти supabase/chat.sql' : String(e.message || e)));
+  useEffect(() => { load(); }, []);
+  if (err) return <p className="tiny">{err}</p>;
+  if (!list) return <p className="tiny">Загружаю…</p>;
+  if (!list.length) return <p className="tiny">Жалоб нет, альхамдулиллях.</p>;
+  return (
+    <div className="adm-rep">
+      {list.map((r) => (
+        <div key={r.id} className="adm-card">
+          <small>{new Date(r.at).toLocaleString('ru-RU')} · пожаловался {r.by || '?'} на {r.author || '?'}</small>
+          <p style={{ margin: '6px 0', whiteSpace: 'pre-wrap' }}>{r.body}</p>
+          {r.deleted ? <small>Сообщение уже удалено</small> : (
+            <button type="button" className="link-btn" onClick={async () => { if (!confirm('Удалить это сообщение для всех?')) return; await call('lm_chat_admin_delete', { p_id: r.msg }).catch(() => null); load(); }}>🗑 Удалить сообщение</button>
+          )}
         </div>
       ))}
     </div>

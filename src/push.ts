@@ -56,7 +56,7 @@ function serverPrefs(s: Settings, p: ReminderPrefs) {
   return {
     lat: s.lat, lng: s.lng, method: s.method, madhab: s.madhab, offsets: s.offsets ?? {},
     tz: Intl.DateTimeFormat().resolvedOptions().timeZone, prayers: p.prayers, before: p.before, muhasaba: p.muhasaba,
-    ramadan: rpushOf(p), lang: s.lang ?? (/^en\b/i.test(navigator.language) ? 'en' : 'ru'),
+    ramadan: rpushOf(p), chat: p.chat !== false, lang: s.lang ?? (/^en\b/i.test(navigator.language) ? 'en' : 'ru'),
   };
 }
 
