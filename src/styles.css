@@ -2168,3 +2168,13 @@ button:disabled { opacity: .5; cursor: default; }
 .cc-dr-m .cc-ava { width: 22px; height: 22px; font-size: 11px; }
 .cc-dr-btn { justify-self: start; font-weight: 700; color: var(--green-2); }
 .adm-card { border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; margin: 8px 0; background: var(--surface); }
+
+/* done habits fold into one line */
+.done-fold { display: flex; align-items: center; gap: 10px; width: 100%; border: 1px dashed var(--line); border-radius: 16px; background: none; padding: 10px 14px; font: inherit; text-align: left; color: var(--ink-2); cursor: pointer; }
+.done-fold svg { width: 20px; height: 20px; color: var(--green-2); flex: none; }
+.done-fold span { flex: 1; min-width: 0; }
+.done-fold b { display: block; font-size: 14px; color: var(--green-2); }
+.done-fold small { display: block; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.done-fold i { font-style: normal; font-size: 12.5px; color: var(--ink-2); flex: none; }
+.done-fold.all { border-style: solid; background: var(--green-soft); border-color: transparent; padding: 14px; }
+.done-fold.all b { font-size: 15px; }

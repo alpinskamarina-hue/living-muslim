@@ -48,7 +48,16 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
   const light = dayLight(state, today);
   const j = useMemo(() => journey(state, today), [state.log, state.prayers, state.hard, state.habits, state.trip, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const mark = (id: string) => (m: Mark | null) => update((s) => setMark(s, today, id, m));
+  // Done habits fold away so the eye stays on what is still waiting. A fresh tick stays a moment, so the person sees it land.
+  const [fresh, setFresh] = useState<string[]>([]);
+  const [showDone, setShowDone] = useState<Anchor[]>([]);
+  const mark = (id: string) => (m: Mark | null) => {
+    update((s) => setMark(s, today, id, m));
+    if (m && isCounted(m)) {
+      setFresh((f) => [...f, id]);
+      setTimeout(() => setFresh((f) => f.filter((x) => x !== id)), 1400);
+    }
+  };
 
   const title = next
     ? _t("{0} через {1}", ANCHOR_LABEL[next].ru, durationLabel(times[next].getTime() - now.getTime()))
@@ -63,20 +72,33 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
           {_tj("+ Добавить привычку {0}", ANCHOR_LABEL[a].after.replace(_t("После"), _t("после")))}
         </button>
       );
+    const card = (h: Habit) => (
+      <HabitCard
+        key={h.id}
+        habit={h}
+        mark={log[h.id]}
+        streak={streak(state, h, today)}
+        risk={atRisk(state, h, today)}
+        onMark={mark(h.id)}
+        onOpen={() => onEdit(h)}
+        ramadanMin={ramadanMode(state, h, today) === 'min'}
+      />
+    );
+    const done = list.filter((h) => isCounted(log[h.id]) && !fresh.includes(h.id));
+    const todo = list.filter((h) => !done.includes(h));
+    const shown = showDone.includes(a);
+    const flip = () => setShowDone((x) => (shown ? x.filter((y) => y !== a) : [...x, a]));
     return (
       <div className="cards">
-        {list.map((h) => (
-          <HabitCard
-            key={h.id}
-            habit={h}
-            mark={log[h.id]}
-            streak={streak(state, h, today)}
-            risk={atRisk(state, h, today)}
-            onMark={mark(h.id)}
-            onOpen={() => onEdit(h)}
-            ramadanMin={ramadanMode(state, h, today) === 'min'}
-          />
-        ))}
+        {todo.map(card)}
+        {done.length > 0 && (
+          <button type="button" className={`done-fold${todo.length ? '' : ' all'}`} aria-expanded={shown} onClick={flip}>
+            <Ticks />
+            <span><b>{todo.length ? _t("Сделано") : _t("Всё сделано")}</b>{!shown && <small>{done.map((h) => h.action).join(' · ')}</small>}</span>
+            <i aria-hidden="true">{shown ? _t("скрыть") : _t("показать")}</i>
+          </button>
+        )}
+        {shown && done.map(card)}
       </div>
     );
   };
@@ -178,14 +200,14 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
             {ANCHOR_LABEL[nowAnchor].after}
             <small>{current ? _t("сейчас · до {0}", hhmm(end(nowAnchor))) : _t("скоро · {0}", hhmm(times.fajr))}</small>
           </h3>
-          {active.some((h) => h.anchor === nowAnchor) && (
+          {(hardOn || active.some((h) => h.anchor === nowAnchor && !isCounted(log[h.id]))) && (
             <button type="button" className="hard" aria-pressed={hardOn} onClick={() => update((s) => toggleHard(s, today, nowAnchor))}>
               {_t("Тяжёлый день")}
             </button>
           )}
         </div>
         {renderCards(nowAnchor)}
-        {active.some((h) => h.anchor === nowAnchor) && (
+        {active.some((h) => h.anchor === nowAnchor && !isCounted(log[h.id])) && (
           <div className="hint">{_t("Касание по кружку — сделал. Свайп влево — минимум или позже. Касание по названию — изменить.")}</div>
         )}
 
