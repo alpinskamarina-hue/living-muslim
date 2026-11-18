@@ -7,6 +7,8 @@ import { isCounted, setMark } from '../store';
 import { Quran } from './Quran';
 import { prepPct } from './Umrah';
 import type { UmrahApi } from '../umrahCircle';
+import type { CircleApi } from '../circle';
+import type { HubTab } from './UmrahHub';
 import { Food, foodOf } from './Food';
 import { Sadaqa, sadaqaOf, sadaqaStreak } from './Sadaqa';
 import { health } from '../health';
@@ -37,12 +39,15 @@ interface Props {
   /** Opened from a goal: which practice, and for videos which course. */
   start?: { mode: string; ref?: string };
   umrah: UmrahApi;
+  circle?: CircleApi;
+  joined?: boolean;
+  umrahStart?: HubTab;
   onQuit?: () => void;
 }
 
 type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body';
 
-export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah, onQuit }: Props) {
+export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah, onQuit, circle, joined, umrahStart }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
   const active = state.habits.filter((h) => h.status === 'active');
   const [habitId, setHabitId] = useState<string>(suggestedId ?? active[0]?.id ?? '');
@@ -63,7 +68,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} />;
-  if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
+  if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} start={umrahStart} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
   if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={vref} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'body') return (
     <div className="page">

@@ -85,6 +85,11 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     window.addEventListener('lm-open-chat', f);
     return () => window.removeEventListener('lm-open-chat', f);
   }, [chatCode]);
+  // Came by «Позвать в поездку»: once in the circle, open the umrah group.
+  useEffect(() => {
+    if (!joined) return;
+    try { if (sessionStorage.getItem('lm.umrahGo')) { sessionStorage.removeItem('lm.umrahGo'); setUmra(true); window.scrollTo(0, 0); } } catch { /* */ }
+  }, [joined]);
   const invite = () => { if (!nicks) { if (isCloud && currentCircle()) shareInvite(currentCircle()!.code); return; } setInviting(true); window.scrollTo(0, 0); };
   const famKindOwner = isCloud && currentCircle()?.kind === 'family' && isOwner && !famOf(state).on;
   useEffect(() => { if (famKindOwner) update((s) => patchF(s, () => ({ on: true }))); }, [famKindOwner]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -177,7 +182,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const umraGoing = Boolean(me && Object.entries(umrah.rsvp[me] ?? {}).some(([h, r]) => r.s === 'go' && umrah.trips[h]));
 
   const umraName = (id: string) => names[id]?.name || umrah.names[id] || khatm.names[id] || _t("Участник");
-  if (umra) return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={umraName} start="trip" backLabel={_t("Круг")} onExit={() => { setUmra(false); window.scrollTo(0, 0); }} />;
+  if (umra) return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={umraName} start="trip" circle={circle} joined={joined} backLabel={_t("Круг")} onExit={() => { setUmra(false); window.scrollTo(0, 0); }} />;
   if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
   if (inviting && cur) return <InviteByNick code={cur.code} onBack={() => { setInviting(false); window.scrollTo(0, 0); }} />;
 

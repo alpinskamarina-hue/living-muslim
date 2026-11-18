@@ -2693,3 +2693,98 @@ button:disabled { opacity: .5; cursor: default; }
 .np-end span { color: var(--on-dark-2); }
 .np-end .gold-btn { padding: 14px; border-radius: 14px; }
 .np-pr > button.np-tap { width: min(250px, 66vw); max-width: none; flex: none; }
+
+/* ── Umrah as its own app: dark green and gold, its own bottom bar ── */
+body.um-on { background: #0b2419; }
+body.um-on .nav, body.um-on .fab { display: none; }
+.um-app {
+  --bg: #0b2419; --surface: #133224; --surface-2: #183b2b; --ink: #f1f6f0; --ink-2: #a9bfb1; --line: rgba(217, 173, 85, .22);
+  --green: #0e3a27; --green-2: #2f9e66; --green-soft: #1b4431; --gold: #d9ad55; --gold-soft: rgba(217, 173, 85, .12); --tick: #5fd08f;
+  --on-dark: #f1f6f0; --danger: #e07a66; color-scheme: dark;
+  background: radial-gradient(120% 50% at 85% -5%, rgba(217, 173, 85, .16), transparent 60%), var(--bg);
+  color: var(--ink); min-height: 100vh; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px calc(var(--nav-h) + 96px + env(safe-area-inset-bottom, 0px));
+  max-width: 480px; margin: 0 auto;
+}
+.um-app .page { padding-left: 0; padding-right: 0; }
+.um-app .um-back { display: none; }
+.um-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.um-out { border: 0; background: rgba(255, 255, 255, .08); color: var(--ink); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 600; }
+.um-badge { color: var(--gold); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+.um-title { margin: 4px 0 8px; }
+.um-title h1 { font-family: var(--f-display); font-size: 32px; line-height: 1.05; margin: 0; }
+.um-title small { display: block; color: #f3dca4; font-weight: 600; font-size: 13px; margin-top: 4px; }
+.um-app .um-ready span { background: rgba(255, 255, 255, .06); border: 1px solid var(--line); }
+.um-app .um-now { background: rgba(255, 255, 255, .05); }
+.um-app .um-due .chk { background: rgba(255, 255, 255, .05); }
+.um-app input, .um-app select, .um-app textarea { background: var(--surface-2); color: var(--ink); border-color: var(--line); }
+.um-app .seg { padding: 0; }
+.um-app .seg button { background: rgba(255, 255, 255, .06); border-color: var(--line); color: var(--ink-2); }
+.um-app .seg button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #1d1606; font-weight: 800; }
+.um-app .pri-btn { background: var(--gold); color: #1d1606; border-color: var(--gold); }
+.um-app .q-row, .um-app .os-row button, .um-app .trip, .um-app .um-vid { background: rgba(255, 255, 255, .05); border-color: var(--line); color: var(--ink); }
+.um-card { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; border: 1px solid var(--line); background: rgba(255, 255, 255, .06); color: var(--ink); border-radius: 16px; padding: 12px 14px; }
+.um-card small { color: #f3dca4; }
+
+/* the gold «next step» bar above the bottom buttons */
+.um-next { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--nav-h) + 10px + env(safe-area-inset-bottom, 0px)); width: calc(100% - 28px); max-width: 452px; z-index: 6;
+  display: flex; align-items: center; gap: 10px; text-align: left; border: 0; border-radius: 18px; padding: 11px 16px; color: #1d1606;
+  background: linear-gradient(135deg, #e6bd66, #b88a2c); box-shadow: 0 8px 22px rgba(0, 0, 0, .35); }
+.um-next span { flex: 1; display: grid; min-width: 0; }
+.um-next em { font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.um-next b { font-size: 15.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.um-next i { font-style: normal; font-size: 24px; font-weight: 700; }
+
+/* the umrah bottom bar: big keys */
+.um-nav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 480px; z-index: 7; display: grid; grid-template-columns: repeat(5, 1fr);
+  background: #071a12; border-top: 1px solid var(--line); padding: 8px 4px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.um-nav button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #a9bfb1; font-size: 11px; font-weight: 600; touch-action: manipulation; }
+.um-nav .k { position: relative; width: 54px; height: 42px; border-radius: 14px; display: grid; place-items: center; font-size: 21px; font-style: normal; }
+.um-nav button.on { color: var(--gold); font-weight: 800; }
+.um-nav button.on .k { background: rgba(217, 173, 85, .18); }
+.um-nav button:active .k { transform: translateY(2px); }
+.um-nav .sos .k { background: #d0503a; color: #fff; font-weight: 900; font-size: 24px; }
+.um-nav .sos { color: #ffb3a6; }
+.um-nav .nav-badge { box-shadow: 0 0 0 2px #071a12; }
+
+/* people of the trip */
+.um-ppl { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 6px; scrollbar-width: none; }
+.um-av { flex: 0 0 auto; width: 58px; border: 0; background: none; color: var(--ink); display: grid; justify-items: center; gap: 1px; padding: 0; }
+.um-av > span, .um-av > img { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 18px; color: #14261c; border: 2.5px solid var(--gold); object-fit: cover; }
+.um-av.maybe > span, .um-av.maybe > img { border-color: rgba(255, 255, 255, .4); opacity: .85; }
+.um-av.silent > span, .um-av.silent > img { border: 2px dashed rgba(255, 255, 255, .35); opacity: .6; }
+.um-av.add > span { background: transparent; border: 2px dashed var(--gold); color: var(--gold); font-size: 24px; }
+.um-av small { font-size: 11px; max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.um-av em { font-style: normal; font-size: 10px; color: var(--ink-2); }
+.um-trips { display: flex; gap: 6px; overflow-x: auto; }
+.um-trips button { flex: 0 0 auto; border: 1px solid var(--line); background: rgba(255, 255, 255, .05); color: var(--ink-2); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; }
+.um-trips button[aria-pressed="true"] { color: #1d1606; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+.um-group .um-gseg { margin: 4px 0; }
+.um-app .cc-compose { bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); background: #0e2b1e; z-index: 6; }
+.um-app .cc-sys.cc-trip { background: rgba(217, 173, 85, .12); color: #f3dca4; }
+
+/* the rite: one big counter */
+.um-rite { display: grid; justify-items: center; gap: 10px; text-align: center; padding: 16px 12px 18px; border-radius: 26px; border: 1px solid var(--line);
+  background: radial-gradient(circle at 50% 25%, #1f6b46, #0f3a26); }
+.um-rite-h { border: 0; background: none; color: var(--ink); display: grid; gap: 2px; }
+.um-rite-h b { font-family: var(--f-display); font-size: 28px; }
+.um-rite-h small { color: var(--ink-2); font-size: 12.5px; }
+.um-ring { position: relative; width: 190px; height: 190px; }
+.um-ring svg { width: 100%; height: 100%; }
+.um-ring > div { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.um-ring b { font-family: var(--f-display); font-size: 64px; line-height: .9; }
+.um-ring small { font-size: 12px; color: var(--ink-2); margin-top: 6px; }
+.um-rite-btns { display: flex; gap: 10px; width: 100%; }
+.um-rite-go { flex: 1; border: 0; border-radius: 18px; padding: 18px 12px; font-size: 18px; font-weight: 800; color: #1d1606; background: linear-gradient(135deg, #e6bd66, #b88a2c); box-shadow: 0 6px 16px rgba(0, 0, 0, .3); touch-action: manipulation; }
+.um-rite-go:active { transform: translateY(2px); }
+.um-rite-undo { width: 64px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255, 255, 255, .06); color: var(--ink); font-weight: 700; }
+.um-rite-done { font-size: 18px; }
+.um-awake { text-align: center; margin: 0; }
+
+/* the door on «Сегодня» */
+.um-tile { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 12px 16px 0; padding: 12px 14px; border: 0; border-radius: 18px; text-align: left; color: #f1f6f0;
+  background: linear-gradient(135deg, #0b2e1f, #1a4d35); box-shadow: 0 6px 16px rgba(11, 46, 31, .2); }
+.um-tile-ic { width: 44px; height: 44px; border-radius: 13px; background: #d9ad55; display: grid; place-items: center; font-size: 24px; flex: 0 0 auto; }
+.um-tile > span:nth-child(2) { flex: 1; display: grid; min-width: 0; }
+.um-tile b { font-family: var(--f-display); font-size: 22px; line-height: 1.05; }
+.um-tile small { color: rgba(241, 246, 240, .75); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.um-tile i { font-style: normal; font-size: 22px; color: #d9ad55; }

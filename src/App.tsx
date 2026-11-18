@@ -19,6 +19,7 @@ import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
 import { UmrahMadeCard } from './components/UmrahMade';
+import { UmrahTile } from './components/UmrahTile';
 import { GiftNudge } from './components/GiftPass';
 import { prepPct } from './components/Umrah';
 import { Goals } from './components/Goals';
@@ -68,7 +69,7 @@ export function App() {
   const [state, update, replace] = useAppState();
   const [tab, setTab] = useState<Tab>(() => {
     try { const t = sessionStorage.getItem('lm.tab'); sessionStorage.removeItem('lm.tab'); if (t === 'circle') return 'circle' as Tab; } catch { /* */ }
-    try { if (new URLSearchParams(location.search).get('c')) return 'circle' as Tab; } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.get('c')) { if (q.has('umrah')) sessionStorage.setItem('lm.umrahGo', '1'); return 'circle' as Tab; } if (q.has('umrah')) return 'practice' as Tab; } catch { /* */ }
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     return 'today';
   });
@@ -136,7 +137,11 @@ export function App() {
   const [ramadan, setRamadan] = useState<false | string>(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
-  const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>({ n: 0 });
+  // ?umrah opens the umrah app right away (the phone shortcut and /umrah links).
+  const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>(() => {
+    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) return { n: 0, mode: 'umrah', ref: q.get('umrah') || undefined }; } catch { /* */ }
+    return { n: 0 };
+  });
   const [reviewOpen, setReviewOpen] = useState(false);
   const [profileStart, setProfileStart] = useState<{ p: ProfilePage; n: number }>({ p: 'main', n: 0 });
   const openGarden = () => { setProfileStart((x) => ({ p: 'garden', n: x.n + 1 })); setTab('profile'); window.scrollTo(0, 0); };
@@ -319,6 +324,7 @@ export function App() {
     <div className="app">
       <main className="screen" data-tab={tab}>
         {tab === 'today' && <UmrahMadeCard state={state} update={update} api={umrah} />}
+        {tab === 'today' && <UmrahTile state={state} api={umrah} today={today} onOpen={() => go({ practice: 'umrah' })} />}
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
@@ -333,7 +339,7 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice umrah={umrah} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
+        {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
           <div className="page">
             {!goalOpen && !reviewOpen && <Hint id="goals" />}

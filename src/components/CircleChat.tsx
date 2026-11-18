@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FILE_MAX, type ChatApi, type Msg, type MsgRef } from '../chat';
 import type { Member, Reacts } from '../circle';
 import { askAnswers } from '../cweek';
@@ -219,11 +219,14 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder }: {
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
+  /** A branch of the circle chat (an umrah trip): only its messages are shown and everything sent is tagged with it. */
+  topic?: string; emptyNote?: string; placeholder?: string;
 }) {
+  const chat = useTopic(all, topic);
   const [text, setText] = useState('');
   const [ref, setRef] = useState<MsgRef | null>(null);
   const [menu, setMenu] = useState<Msg | null>(null);
@@ -382,7 +385,7 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
             return out;
           }
           if (m.kind === 'event') {
-            out.push(<div key={m.id} className="cc-sys">⚔️ {mine ? _t("Ты") : nm(m.uid)} {m.body}</div>);
+            out.push(<div key={m.id} className={`cc-sys${m.ref?.tr ? ' cc-trip' : ''}`}>{m.ref?.tr ? '🕋' : '⚔️'} {m.ref?.tr ? names[m.uid]?.name || _t("Участник") : mine ? _t("Ты") : nm(m.uid)} {m.body}</div>);
             return out;
           }
 
@@ -453,7 +456,7 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
             <div className="cc-in">
               <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
               {chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
-              <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : _t("Написать в круг…")}
+              <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : placeholder ?? _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); if (file) sendFile(); else send(); } }} />
               {file || text.trim() || !recorder.supported || !chat.voiceOn ? (
@@ -507,4 +510,19 @@ export function DuaReplies({ list, names, me, onReply }: { list: Msg[]; names: N
       <button type="button" className="link-btn cc-dr-btn" onClick={onReply}>💬 {list.length ? _t("Открыть в чате") : _t("Ответить в чате")}</button>
     </div>
   );
+}
+
+/** The circle chat seen through one branch: its messages only, and sends tagged with it. Without a topic, the branches are hidden. */
+function useTopic(chat: ChatApi, topic?: string): ChatApi {
+  return useMemo(() => {
+    const tag = (r?: MsgRef | null): MsgRef | null => (topic ? { ...(r ?? {}), tr: topic } : r ?? null);
+    const msgs = chat.msgs.filter((m) => (topic ? m.ref?.tr === topic : !m.ref?.tr));
+    const out: ChatApi = {
+      ...chat, msgs,
+      send: (b, r, k) => chat.send(b, tag(r), k),
+      sendVoice: (bl, sec, bars, r) => chat.sendVoice(bl, sec, bars, tag(r)),
+      sendFile: (f, c, r) => chat.sendFile(f, c, tag(r)),
+    };
+    return out;
+  }, [chat, topic]);
 }

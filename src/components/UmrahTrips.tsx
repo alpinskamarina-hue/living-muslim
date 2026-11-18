@@ -76,7 +76,7 @@ function TripForm({ initial, onSave, onCancel }: { initial?: UTrip; onSave: (t: 
   );
 }
 
-function TripCard({ host, trip, api, nameOf, myReady, open, onToggle }: { host: string; trip: UTrip; api: UmrahApi; nameOf: (id: string) => string; myReady: number; open: boolean; onToggle: () => void }) {
+export function TripCard({ host, trip, api, nameOf, myReady, open, onToggle }: { host: string; trip: UTrip; api: UmrahApi; nameOf: (id: string) => string; myReady: number; open: boolean; onToggle: () => void }) {
   const { me, rsvp, duas } = api;
   const isHost = me === host;
   const [edit, setEdit] = useState(false);
