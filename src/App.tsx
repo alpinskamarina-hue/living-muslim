@@ -41,6 +41,7 @@ import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, a
 import type { GoTo } from './guide';
 import { usePlan, dueSheet, PRO_EVENT } from './plan';
 import { TrialDial, PlanSheet } from './components/Plan';
+import { useIsAdmin } from './components/Admin';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
 
@@ -239,6 +240,7 @@ export function App() {
   // Tariff: 7 days of Pro from the first day, then Free «по 3». Re-check the limits when the plan changes,
   // show the reminder sheets on day 5, day 7 and day 8, and open the Pro screen from anywhere.
   const plan = usePlan();
+  useIsAdmin(); // marks the owner, who never sees a tariff
   const [planSheet, setPlanSheet] = useState<5 | 7 | 8 | null>(null);
   useEffect(() => { update((s) => s); }, [plan.pro]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { const k = dueSheet(); if (k && k !== planSheet) setPlanSheet(k); }, [plan.day, plan.trial, plan.early]); // eslint-disable-line react-hooks/exhaustive-deps

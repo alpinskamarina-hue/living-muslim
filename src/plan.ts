@@ -50,15 +50,26 @@ export interface PlanInfo {
   daysLeft: number;      // whole days left, rounded up
   ends: Date;
   limits: Record<LimitKey, number>;
+  owner: boolean;        // the app's owner (email in lm_admins): everything open, no tariff at all
 }
+// The owner (lm_is_admin said yes for the signed-in email) never sees a tariff. Cleared on sign-out.
+const OWNER = 'lm.owner';
+export const isOwner = () => { try { return localStorage.getItem(OWNER) === '1'; } catch { return false; } };
+export function setOwner(on: boolean) {
+  if (on === isOwner()) return;
+  try { if (on) localStorage.setItem(OWNER, '1'); else localStorage.removeItem(OWNER); } catch { /* */ }
+  subs.forEach((f) => f());
+}
+
 export function planInfo(now = Date.now()): PlanInfo {
   const s = get();
+  const owner = isOwner();
   const ends = new Date(s.trial + TRIAL_DAYS * DAY);
   const msLeft = Math.max(0, ends.getTime() - now);
   const trial = msLeft > 0;
   const early = Boolean(s.early);
-  const pro = trial || early || !LIMITS_ON;
-  return { pro, trial, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
+  const pro = owner || trial || early || !LIMITS_ON;
+  return { owner, pro, trial: trial && !owner, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
 }
 export const limitOf = (k: LimitKey) => planInfo().limits[k];
 export function usePlan(): PlanInfo {
@@ -79,7 +90,7 @@ export const earlyPlan = () => get().early?.plan ?? null;
 /** Reminder sheets on day 5, day 7 and the first day after the trial; each shown once. */
 export function dueSheet(): 5 | 7 | 8 | null {
   const p = planInfo();
-  if (p.early || !LIMITS_ON) return null;
+  if (p.owner || p.early || !LIMITS_ON) return null;
   const seen = get().seen ?? [];
   const d = p.trial ? p.day : 8;
   for (const k of [8, 7, 5] as const) if (d >= k && !seen.includes(k)) return k;

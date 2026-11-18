@@ -103,7 +103,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
 
       <button type="button" className="pro-entry" onClick={() => go('pro')}>
         <span className="pro-badge">PRO</span>
-        <span><b>Living Muslim Pro</b><small>{plan.early ? 'Ты в списке первых: Pro открыт' : plan.trial ? `Pro открыт ещё ${plan.daysLeft} ${plural(plan.daysLeft, 'день', 'дня', 'дней')}. Потом по 3` : 'Сейчас бесплатный: по 3. Первый год Pro −37%'}</small></span>
+        <span><b>Living Muslim Pro</b><small>{plan.owner ? 'Ты владелец: всё открыто, без тарифа' : plan.early ? 'Ты в списке первых: Pro открыт' : plan.trial ? `Pro открыт ещё ${plan.daysLeft} ${plural(plan.daysLeft, 'день', 'дня', 'дней')}. Потом по 3` : 'Сейчас бесплатный: по 3. Первый год Pro −37%'}</small></span>
         <i aria-hidden="true">›</i>
       </button>
 

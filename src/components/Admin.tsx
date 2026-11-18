@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accessToken, authMe } from '../auth';
 import { AdminCourses } from './AdminCourses';
+import { setOwner } from '../plan';
 
 // Owner analytics: who comes, from where, on what, and what they do. Shown only to emails listed in lm_admins.
 // The numbers come from lm_admin_stats, which checks the signed-in email on the server.
@@ -32,8 +33,8 @@ const CACHE = 'lm.admin';
 export function useIsAdmin(): boolean {
   const [ok, setOk] = useState(() => { try { return sessionStorage.getItem(CACHE) === '1'; } catch { return false; } });
   useEffect(() => {
-    if (!authMe()) { setOk(false); return; }
-    call<boolean>('lm_is_admin', {}).then((v) => { setOk(Boolean(v)); try { sessionStorage.setItem(CACHE, v ? '1' : '0'); } catch { /* */ } }).catch(() => { /* server without admin.sql yet */ });
+    if (!authMe()) { setOk(false); setOwner(false); return; }
+    call<boolean>('lm_is_admin', {}).then((v) => { setOk(Boolean(v)); if (v !== null) setOwner(Boolean(v)); try { sessionStorage.setItem(CACHE, v ? '1' : '0'); } catch { /* */ } }).catch(() => { /* server without admin.sql yet */ });
   }, []);
   return ok;
 }

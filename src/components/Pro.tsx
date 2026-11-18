@@ -41,7 +41,9 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
         <p>Всё, что касается поклонения, бесплатно навсегда. Pro для тех, кто растёт дальше: больше привычек, кругов и целей, книги и курсы без ограничений.</p>
       </div>
 
-      {p.early ? (
+      {p.owner ? (
+        <div className="pro-on">✓ Ты владелец приложения: всё открыто, тарифов для тебя нет</div>
+      ) : p.early ? (
         <div className="pro-on">✓ Ты в списке первых ({NAME[mine ?? 'year']}). Pro открыт, пока не подключим оплату</div>
       ) : p.trial ? (
         <div className="pro-on">Pro открыт ещё {p.daysLeft} {plural(p.daysLeft, 'день', 'дня', 'дней')} · {leftLabel(p.msLeft)}<small>Потом бесплатный тариф: по {FREE.habits}</small></div>
@@ -64,7 +66,7 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
         <small>{PRICES[plan].note}</small>
       </div>
 
-      {!p.early && <button type="button" className="pri-btn big-btn" onClick={buy}>{p.trial ? 'Оставить Pro' : 'Вернуть Pro'} за {PRICES[plan].price}</button>}
+      {!p.early && !p.owner && <button type="button" className="pri-btn big-btn" onClick={buy}>{p.trial ? 'Оставить Pro' : 'Вернуть Pro'} за {PRICES[plan].price}</button>}
       {note && <p className="pro-note">{note}</p>}
 
       <div className="pro-cols">

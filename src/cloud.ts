@@ -425,6 +425,7 @@ export function forgetIdentity() {
     }
     drop.forEach((k) => localStorage.removeItem(k));
     sessionStorage.removeItem('lm.admin');
+    localStorage.removeItem('lm.owner');
   } catch { /* */ }
 }
 
