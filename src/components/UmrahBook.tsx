@@ -1,5 +1,6 @@
 import type { AppState, UmrahState } from '../types';
 import { umrahOf } from './Umrah';
+import { _t, _tj } from '../i18n';
 
 const patch = (s: AppState, p: Partial<UmrahState>): AppState => ({ ...s, umrah: { ...umrahOf(s), ...p } });
 
@@ -9,28 +10,28 @@ const patch = (s: AppState, p: Partial<UmrahState>): AppState => ({ ...s, umrah:
 interface Item { id: string; icon: string; t: string; tip: string; btn: string; url: (from?: string, to?: string) => string; when: string }
 const ITEMS: Item[] = [
   {
-    id: 'visa', icon: '🛂', t: 'Виза', when: 'за 1–2 месяца', btn: 'Открыть Nusuk',
-    tip: 'Умру можно сделать по туристической визе или через Nusuk. Официально и без посредников.',
+    id: 'visa', icon: '🛂', t: _t("Виза"), when: _t("за 1–2 месяца"), btn: _t("Открыть Nusuk"),
+    tip: _t("Умру можно сделать по туристической визе или через Nusuk. Официально и без посредников."),
     url: () => 'https://umrah.nusuk.sa',
   },
   {
-    id: 'flight', icon: '✈️', t: 'Билеты', when: 'за 1–3 месяца', btn: 'Найти билеты',
-    tip: 'Лети в Джидду (JED) или сразу в Медину (MED). Если сначала Мекка, ихрам надевай до миката, ещё в самолёте.',
+    id: 'flight', icon: '✈️', t: _t("Билеты"), when: _t("за 1–3 месяца"), btn: _t("Найти билеты"),
+    tip: _t("Лети в Джидду (JED) или сразу в Медину (MED). Если сначала Мекка, ихрам надевай до миката, ещё в самолёте."),
     url: (f, t) => `https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights to JED${f ? ` on ${f}` : ''}${t ? ` through ${t}` : ''}`)}`,
   },
   {
-    id: 'hotel', icon: '🏨', t: 'Отель у Харама', when: 'вместе с билетами', btn: 'Отели в Мекке',
-    tip: 'Смотри не на звёзды, а на минуты пешком до мечети: 5–10 минут меняют всю поездку, особенно к фаджру.',
+    id: 'hotel', icon: '🏨', t: _t("Отель у Харама"), when: _t("вместе с билетами"), btn: _t("Отели в Мекке"),
+    tip: _t("Смотри не на звёзды, а на минуты пешком до мечети: 5–10 минут меняют всю поездку, особенно к фаджру."),
     url: (f, t) => `https://www.booking.com/searchresults.html?ss=Makkah${f ? `&checkin=${f}` : ''}${t ? `&checkout=${t}` : ''}`,
   },
   {
-    id: 'esim', icon: '📶', t: 'eSIM', when: 'за неделю', btn: 'eSIM для Саудии',
-    tip: 'Интернет сразу после посадки: карта, связь с группой, такси. Ставится за 5 минут, если телефон поддерживает eSIM.',
+    id: 'esim', icon: '📶', t: 'eSIM', when: _t("за неделю"), btn: _t("eSIM для Саудии"),
+    tip: _t("Интернет сразу после посадки: карта, связь с группой, такси. Ставится за 5 минут, если телефон поддерживает eSIM."),
     url: () => 'https://www.airalo.com/saudi-arabia-esim',
   },
   {
-    id: 'insure', icon: '🛡️', t: 'Страховка', when: 'с билетами', btn: 'Посмотреть',
-    tip: 'Медстраховка уже входит в саудовскую визу. Отдельная нужна, только если хочешь защитить отмену поездки или багаж.',
+    id: 'insure', icon: '🛡️', t: _t("Страховка"), when: _t("с билетами"), btn: _t("Посмотреть"),
+    tip: _t("Медстраховка уже входит в саудовскую визу. Отдельная нужна, только если хочешь защитить отмену поездки или багаж."),
     url: () => 'https://safetywing.com/nomad-insurance',
   },
 ];
@@ -47,7 +48,7 @@ export function UmrahBook({ state, update, from, to, compact }: { state: AppStat
     return (
       <div className="bk-next">
         <span>{it.icon}</span>
-        <div><b>Поездка: {ITEMS.length - left.length} из {ITEMS.length}</b><small>Дальше: {left.map((i) => i.t).join(', ')}</small></div>
+        <div><b>{_tj("Поездка: {0} из {1}", ITEMS.length - left.length, ITEMS.length)}</b><small>{_tj("Дальше: {0}", left.map((i) => i.t).join(', '))}</small></div>
         <button className="bk-go" onClick={() => open(it)}>{it.btn}</button>
       </div>
     );
@@ -55,13 +56,13 @@ export function UmrahBook({ state, update, from, to, compact }: { state: AppStat
 
   return (
     <div className="pp-card bk">
-      <div className="bk-head"><b>Собрать поездку</b><small>{done.length} из {ITEMS.length}</small></div>
+      <div className="bk-head"><b>{_t("Собрать поездку")}</b><small>{_tj("{0} из {1}", done.length, ITEMS.length)}</small></div>
       <div className="bk-bar"><i style={{ width: `${(done.length / ITEMS.length) * 100}%` }} /></div>
       {ITEMS.map((it) => {
         const ok = done.includes(it.id);
         return (
           <div key={it.id} className={`bk-row${ok ? ' ok' : ''}`}>
-            <button className="bk-tick" onClick={() => toggle(it.id)} aria-label={ok ? 'Снять отметку' : 'Готово'}>{ok ? '✓' : it.icon}</button>
+            <button className="bk-tick" onClick={() => toggle(it.id)} aria-label={ok ? _t("Снять отметку") : _t("Готово")}>{ok ? '✓' : it.icon}</button>
             <div className="bk-t">
               <b>{it.t} <small>· {it.when}</small></b>
               {!ok && <p>{it.tip}</p>}
@@ -70,7 +71,7 @@ export function UmrahBook({ state, update, from, to, compact }: { state: AppStat
           </div>
         );
       })}
-      {from && <p className="tiny">Даты поездки уже подставлены в поиск билетов и отелей.</p>}
+      {from && <p className="tiny">{_t("Даты поездки уже подставлены в поиск билетов и отелей.")}</p>}
     </div>
   );
 }

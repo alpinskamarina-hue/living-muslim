@@ -7,23 +7,24 @@ import { prayerTimes } from '../prayer';
 import { enablePush, currentSubscription, DEFAULT_PREFS } from '../push';
 import type { AppState } from '../types';
 import { plural } from '../dates';
+import { _t, _tj, LOC } from '../i18n';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 export interface Draft { text: string; ref: MsgRef | null; label?: string }
 
-const QUICK = ['🤲 Амин', '✨ МашаАллах', '💪 Я с тобой'];
+const QUICK = [_t("🤲 Амин"), _t("✨ МашаАллах"), _t("💪 Я с тобой")];
 const EMOJI = ['🤲', '❤️', '✨', '💪', '👍'];
-const PRAYER: Record<string, string> = { fajr: 'Фаджр', dhuhr: 'Зухр', asr: 'Аср', maghrib: 'Магриб', isha: 'Иша' };
+const PRAYER: Record<string, string> = { fajr: _t("Фаджр"), dhuhr: _t("Зухр"), asr: _t("Аср"), maghrib: _t("Магриб"), isha: _t("Иша") };
 const MAX_SEC = 60;
 
-const hm = (iso: string) => new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+const hm = (iso: string) => new Date(iso).toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
 const dayKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
 function dayLabel(iso: string) {
   const d = new Date(iso), now = new Date();
   const y = new Date(now); y.setDate(now.getDate() - 1);
-  if (dayKey(iso) === dayKey(now.toISOString())) return 'Сегодня';
-  if (dayKey(iso) === dayKey(y.toISOString())) return 'Вчера';
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' });
+  if (dayKey(iso) === dayKey(now.toISOString())) return _t("Сегодня");
+  if (dayKey(iso) === dayKey(y.toISOString())) return _t("Вчера");
+  return d.toLocaleDateString(LOC, { day: 'numeric', month: 'long', weekday: 'short' });
 }
 
 /** The prayer that started less than 20 minutes ago, if any. */
@@ -67,11 +68,11 @@ function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
     window.addEventListener('lm-voice', stop);
     return () => window.removeEventListener('lm-voice', stop);
   }, [m.id]);
-  if (!m.voice) return <span className="cc-gone">🎙 Голосовое больше не доступно</span>;
+  if (!m.voice) return <span className="cc-gone">{_t("🎙 Голосовое больше не доступно")}</span>;
   const bars = m.bars?.length ? m.bars : Array.from({ length: 24 }, (_, i) => 3 + ((m.id * 7 + i * 13) % 6));
   return (
     <span className={`cc-voice${mine ? ' mine' : ''}`}>
-      <button type="button" className="cc-play" onClick={toggle} aria-label={state === 'play' ? 'Пауза' : 'Слушать'}>{state === 'play' ? '❚❚' : state === 'load' ? '…' : '▶'}</button>
+      <button type="button" className="cc-play" onClick={toggle} aria-label={state === 'play' ? _t("Пауза") : _t("Слушать")}>{state === 'play' ? '❚❚' : state === 'load' ? '…' : '▶'}</button>
       <span className="cc-wave" aria-hidden="true">{bars.map((b, i) => <i key={i} className={i / bars.length < pos ? 'on' : ''} style={{ height: `${4 + b * 2.2}px` }} />)}</span>
       <small>0:{String(m.sec || 0).padStart(2, '0')}</small>
     </span>
@@ -106,7 +107,7 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
     setMsg('');
     let stream: MediaStream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
-    catch { setMsg('Нет доступа к микрофону. Разреши его в настройках браузера'); return; }
+    catch { setMsg(_t("Нет доступа к микрофону. Разреши его в настройках браузера")); return; }
     const type = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported?.(t)) || '';
     const mr = new MediaRecorder(stream, { ...(type ? { mimeType: type } : {}), audioBitsPerSecond: 24000 });
     x.mr = mr; x.stream = stream;
@@ -139,7 +140,7 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
       const cancel = x.cancel;
       cleanup();
       if (!cancel && dur >= 1 && blob.size > 200) onDone(blob, Math.min(MAX_SEC, dur), bars);
-      else if (!cancel) setMsg('Слишком коротко. Удерживай кнопку и говори');
+      else if (!cancel) setMsg(_t("Слишком коротко. Удерживай кнопку и говори"));
     };
     mr.start(250);
     // released before the microphone was ready: a tap, so keep recording hands-free
@@ -179,7 +180,7 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
   const [sending, setSending] = useState(false);
   const ta = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
-  const nm = (id: string) => (id === me ? 'Ты' : names[id]?.name || 'Участник');
+  const nm = (id: string) => (id === me ? _t("Ты") : names[id]?.name || _t("Участник"));
   const byId = new Map(chat.msgs.map((m) => [m.id, m]));
   const quiet = prayerNow(state);
 
@@ -215,7 +216,7 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
     const e = await chat.sendVoice(blob, sec, bars, ref);
     setSending(false);
     if (!e) setRef(null);
-    else flash(e === 'voice_off' ? 'Владелец круга выключил голосовые' : e === 'big' ? 'Слишком длинное голосовое' : 'Голосовое не отправилось. Попробуй ещё раз');
+    else flash(e === 'voice_off' ? _t("Владелец круга выключил голосовые") : e === 'big' ? _t("Слишком длинное голосовое") : _t("Голосовое не отправилось. Попробуй ещё раз"));
   });
 
   const replyTo = (m: Msg) => { setRef({ r: m.id }); setMenu(null); setTimeout(() => ta.current?.focus(), 50); };
@@ -233,14 +234,14 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
   const chatPushOn = state.settings.reminders?.on && state.settings.reminders.chat !== false;
   const toggleChatPush = async () => {
     const r = state.settings.reminders;
-    if (chatPushOn) { update((s) => ({ ...s, settings: { ...s.settings, reminders: { ...(s.settings.reminders ?? DEFAULT_PREFS), chat: false } } })); flash('Уведомления о сообщениях выключены'); return; }
+    if (chatPushOn) { update((s) => ({ ...s, settings: { ...s.settings, reminders: { ...(s.settings.reminders ?? DEFAULT_PREFS), chat: false } } })); flash(_t("Уведомления о сообщениях выключены")); return; }
     const next = { ...(r ?? { ...DEFAULT_PREFS, prayers: [] }), on: true, chat: true };
     if (!r?.on || !(await currentSubscription())) {
       const err = await enablePush(state.settings, next);
-      if (err) { flash(err === 'ios-install' ? 'На iPhone сначала добавь приложение на экран «Домой»' : err === 'denied' ? 'Уведомления запрещены в настройках браузера' : 'Этот браузер не умеет уведомления'); return; }
+      if (err) { flash(err === 'ios-install' ? _t("На iPhone сначала добавь приложение на экран «Домой»") : err === 'denied' ? _t("Уведомления запрещены в настройках браузера") : _t("Этот браузер не умеет уведомления")); return; }
     }
     update((s) => ({ ...s, settings: { ...s.settings, reminders: next } }));
-    flash('Уведомления о сообщениях включены. Во время намаза они ждут');
+    flash(_t("Уведомления о сообщениях включены. Во время намаза они ждут"));
   };
 
   const reply = ref?.r ? byId.get(ref.r) : null;
@@ -250,25 +251,25 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
   return (
     <div className="cc">
       <div className="cc-bar">
-        <span>{members.length} {plural(members.length, 'участник', 'участника', 'участников')} · видят только люди круга</span>
-        <button type="button" className="cc-dots" aria-label="Настройки чата" onClick={() => setOpts((v) => !v)}>⋯</button>
+        <span>{_tj("{0}  {1} · видят только люди круга", members.length, plural(members.length, _t("участник"), _t("участника"), _t("участников")))}</span>
+        <button type="button" className="cc-dots" aria-label={_t("Настройки чата")} onClick={() => setOpts((v) => !v)}>⋯</button>
       </div>
       {opts && (
         <div className="cc-opts">
-          <button type="button" onClick={toggleChatPush}>{chatPushOn ? '🔔 Уведомления о сообщениях: вкл' : '🔕 Уведомления о сообщениях: выкл'}</button>
-          {isOwner && <button type="button" onClick={async () => { const on = !chat.voiceOn; if (await chat.setVoice(on)) flash(on ? 'Голосовые включены' : 'Теперь в круге только текст'); }}>{chat.voiceOn ? '🎙 Голосовые в круге: вкл' : '🎙 Голосовые в круге: выкл (только текст)'}</button>}
-          <small>Долгое нажатие на сообщение: ответить, реакция, пожаловаться{isOwner ? ', удалить любое (ты владелец круга)' : ', удалить своё'}.</small>
+          <button type="button" onClick={toggleChatPush}>{chatPushOn ? _t("🔔 Уведомления о сообщениях: вкл") : _t("🔕 Уведомления о сообщениях: выкл")}</button>
+          {isOwner && <button type="button" onClick={async () => { const on = !chat.voiceOn; if (await chat.setVoice(on)) flash(on ? _t("Голосовые включены") : _t("Теперь в круге только текст")); }}>{chat.voiceOn ? _t("🎙 Голосовые в круге: вкл") : _t("🎙 Голосовые в круге: выкл (только текст)")}</button>}
+          <small>{_tj("Долгое нажатие на сообщение: ответить, реакция, пожаловаться{0}.", isOwner ? _t(", удалить любое (ты владелец круга)") : _t(", удалить своё"))}</small>
         </div>
       )}
-      {quiet && <div className="cc-quiet">🕌 Сейчас {quiet}. Уведомления придут после намаза</div>}
+      {quiet && <div className="cc-quiet">{_tj("🕌 Сейчас {0}. Уведомления придут после намаза", quiet)}</div>}
 
       <div className="cc-list">
-        {chat.more && <button type="button" className="link-btn cc-older" onClick={() => chat.older()}>Показать раньше</button>}
+        {chat.more && <button type="button" className="link-btn cc-older" onClick={() => chat.older()}>{_t("Показать раньше")}</button>}
         {!chat.msgs.length && (
           <div className="cc-empty">
             <i>💬</i>
-            <b>Здесь пока тихо</b>
-            <p>Напиши братьям «Ассаляму алейкум» или ответь на просьбу о дуа. Сообщения видят только люди «{title}».</p>
+            <b>{_t("Здесь пока тихо")}</b>
+            <p>{_tj("Напиши братьям «Ассаляму алейкум» или ответь на просьбу о дуа. Сообщения видят только люди «{0}».", title)}</p>
           </div>
         )}
         {chat.msgs.map((m) => {
@@ -277,11 +278,11 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
           if (dk !== lastDay) {
             lastDay = dk;
             const fri = new Date(m.at).getDay() === 5;
-            out.push(<div key={`d${m.id}`} className="cc-day"><span>{dayLabel(m.at)}{fri ? ' · Джума мубарак 🕌' : ''}</span></div>);
+            out.push(<div key={`d${m.id}`} className="cc-day"><span>{dayLabel(m.at)}{fri ? _t(" · Джума мубарак 🕌") : ''}</span></div>);
           }
           if (!newLine && chat.seenAtOpen && m.id > chat.seenAtOpen && m.uid !== me && !m.pending) {
             newLine = true;
-            out.push(<div key={`n${m.id}`} className="cc-new"><span>Новые сообщения</span></div>);
+            out.push(<div key={`n${m.id}`} className="cc-new"><span>{_t("Новые сообщения")}</span></div>);
           }
           const mine = m.uid === me;
           const rs = Object.entries(m.reacts || {});
@@ -293,14 +294,14 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
             const done = got.includes(me);
             out.push(
               <div key={m.id} className="cc-ev" {...holdProps(m)}>
-                <p>🤲 <b>{mine ? 'Ты просишь дуа' : `${nm(m.uid)} просит дуа`}</b></p>
-                <q>{m.deleted ? 'Просьба снята' : m.body}</q>
+                <p>🤲 <b>{mine ? _t("Ты просишь дуа") : _t("{0} просит дуа", nm(m.uid))}</b></p>
+                <q>{m.deleted ? _t("Просьба снята") : m.body}</q>
                 {!m.deleted && (
                   <div className="cc-ev-row">
-                    {mine ? <small>{got.length ? `🤲 Дуа сделали: ${got.map(nm).join(', ')}` : 'Пока никто не ответил'}</small> : (
-                      <button type="button" className={done ? 'on' : ''} onClick={() => { if (!done) { onAmin(m.uid); chat.send('🤲 Амин', { r: m.id }); } }}>{done ? '✓ Ты сделал дуа' : '🤲 Амин'}{got.length ? ` · ${got.length}` : ''}</button>
+                    {mine ? <small>{got.length ? _t("🤲 Дуа сделали: {0}", got.map(nm).join(', ')) : _t("Пока никто не ответил")}</small> : (
+                      <button type="button" className={done ? 'on' : ''} onClick={() => { if (!done) { onAmin(m.uid); chat.send(_t("🤲 Амин"), { r: m.id }); } }}>{done ? _t("✓ Ты сделал дуа") : _t("🤲 Амин")}{got.length ? ` · ${got.length}` : ''}</button>
                     )}
-                    <button type="button" onClick={() => replyTo(m)}>Ответить</button>
+                    <button type="button" onClick={() => replyTo(m)}>{_t("Ответить")}</button>
                   </div>
                 )}
               </div>,
@@ -308,7 +309,7 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
             return out;
           }
           if (m.kind === 'event') {
-            out.push(<div key={m.id} className="cc-sys">⚔️ {mine ? 'Ты' : nm(m.uid)} {m.body}</div>);
+            out.push(<div key={m.id} className="cc-sys">⚔️ {mine ? _t("Ты") : nm(m.uid)} {m.body}</div>);
             return out;
           }
 
@@ -318,9 +319,9 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
               {!mine && <Ava id={m.uid} names={names} />}
               <div className={`cc-m${mine ? ' mine' : ''}${m.failed ? ' failed' : ''}`} {...holdProps(m)} onClick={m.failed ? () => chat.retry(m) : undefined}>
                 {!mine && <b className="cc-who">{nm(m.uid)}</b>}
-                {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? 'Сообщение удалено' : q.kind === 'voice' ? '🎙 Голосовое' : q.body.slice(0, 90)}</span>}
-                {m.deleted ? <span className="cc-gone">Сообщение удалено</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} /> : <span className="cc-t">{m.body}</span>}
-                <small className="cc-time">{m.failed ? '⚠ Не отправлено · нажми, чтобы повторить' : <>{hm(m.at)}{mine ? (m.pending ? ' ⏳' : ' ✓') : ''}</>}</small>
+                {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : q.kind === 'voice' ? _t("🎙 Голосовое") : q.body.slice(0, 90)}</span>}
+                {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} /> : <span className="cc-t">{m.body}</span>}
+                <small className="cc-time">{m.failed ? _t("⚠ Не отправлено · нажми, чтобы повторить") : <>{hm(m.at)}{mine ? (m.pending ? ' ⏳' : ' ✓') : ''}</>}</small>
               </div>
               {rs.length > 0 && (
                 <div className="cc-rs">
@@ -339,27 +340,27 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
       <div className="cc-compose">
         {reply && (
           <div className="cc-reply">
-            <span><b>Ответ {reply.uid === me ? 'себе' : nm(reply.uid)}</b>{reply.kind === 'voice' ? '🎙 Голосовое' : reply.body.slice(0, 80)}</span>
-            <button type="button" aria-label="Отменить ответ" onClick={() => setRef(null)}>✕</button>
+            <span><b>{_tj("Ответ {0}", reply.uid === me ? _t("себе") : nm(reply.uid))}</b>{reply.kind === 'voice' ? _t("🎙 Голосовое") : reply.body.slice(0, 80)}</span>
+            <button type="button" aria-label={_t("Отменить ответ")} onClick={() => setRef(null)}>✕</button>
           </div>
         )}
         {!reply && ref?.t === 'dua' && ref.to && (
           <div className="cc-reply">
-            <span><b>Ответ на просьбу о дуа</b>{nm(ref.to)}</span>
-            <button type="button" aria-label="Отменить ответ" onClick={() => setRef(null)}>✕</button>
+            <span><b>{_t("Ответ на просьбу о дуа")}</b>{nm(ref.to)}</span>
+            <button type="button" aria-label={_t("Отменить ответ")} onClick={() => setRef(null)}>✕</button>
           </div>
         )}
         {recorder.rec ? (
           <div className="cc-rec">
-            <span className="cc-rec-t"><i className="cc-dot" /> <b>0:{String(recorder.sec).padStart(2, '0')}</b> <small>до {MAX_SEC} сек</small></span>
+            <span className="cc-rec-t"><i className="cc-dot" /> <b>0:{String(recorder.sec).padStart(2, '0')}</b> <small>{_tj("до {0} сек", MAX_SEC)}</small></span>
             {recorder.rec.locked ? (
               <>
-                <button type="button" className="link-btn" onClick={() => recorder.stop(true)}>Отменить</button>
-                <button type="button" className="cc-send" aria-label="Отправить голосовое" onClick={() => recorder.stop(false)}>➤</button>
+                <button type="button" className="link-btn" onClick={() => recorder.stop(true)}>{_t("Отменить")}</button>
+                <button type="button" className="cc-send" aria-label={_t("Отправить голосовое")} onClick={() => recorder.stop(false)}>➤</button>
               </>
             ) : (
               <>
-                <small className="cc-swipe">‹ влево, чтобы отменить</small>
+                <small className="cc-swipe">{_t("‹ влево, чтобы отменить")}</small>
                 <span className="cc-mic big" aria-hidden="true">🎙</span>
               </>
             )}
@@ -368,13 +369,13 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
           <>
             <div className="cc-quick">{QUICK.map((t) => <button key={t} type="button" onClick={() => send(t)}>{t}</button>)}</div>
             <div className="cc-in">
-              <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={ref ? 'Ответ…' : 'Написать в круг…'}
+              <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={ref ? _t("Ответ…") : _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); send(); } }} />
               {text.trim() || !recorder.supported || !chat.voiceOn ? (
-                <button type="button" className="cc-send" disabled={!text.trim()} aria-label="Отправить" onClick={() => { send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
+                <button type="button" className="cc-send" disabled={!text.trim()} aria-label={_t("Отправить")} onClick={() => { send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
               ) : (
-                <button type="button" className="cc-mic" disabled={sending} aria-label="Удерживай, чтобы записать голосовое"
+                <button type="button" className="cc-mic" disabled={sending} aria-label={_t("Удерживай, чтобы записать голосовое")}
                   onPointerDown={(e) => { e.preventDefault(); recorder.start(e.clientX); }}
                   onContextMenu={(e) => e.preventDefault()}>{sending ? '…' : '🎙'}</button>
               )}
@@ -386,14 +387,14 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
       {menu && (
         <>
           <div className="dim" onClick={() => setMenu(null)} />
-          <div className="cc-menu" role="dialog" aria-label="Сообщение">
+          <div className="cc-menu" role="dialog" aria-label={_t("Сообщение")}>
             {!menu.deleted && menu.kind !== 'event' && <div className="cc-emo">{EMOJI.map((e) => <button key={e} type="button" className={menu.reacts?.[me] === e ? 'on' : ''} onClick={() => { chat.react(menu.id, e); setMenu(null); }}>{e}</button>)}</div>}
-            {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}>↩️ Ответить</button>}
-            {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash('Скопировано'); }}>📋 Скопировать</button>}
-            {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? 'Жалоба отправлена. Спасибо, разберёмся' : 'Не получилось отправить жалобу'); }}>🚩 Пожаловаться</button>}
-            {menu.uid !== me && <button type="button" onClick={async () => { if (!confirm(`Скрыть все сообщения ${nm(menu.uid)} и запретить ему приглашать тебя?`)) return; const ok = await blockUser(menu.uid); setMenu(null); flash(ok ? 'Его сообщения скрыты' : 'Не получилось'); }}>🙈 Скрыть сообщения человека</button>}
-            {(menu.uid === me || isOwner) && !menu.deleted && <button type="button" className="danger-t" onClick={async () => { if (!confirm('Удалить сообщение для всех?')) return; const ok = await chat.remove(menu.id); setMenu(null); flash(ok ? 'Удалено' : 'Не получилось удалить'); }}>🗑 Удалить{menu.uid !== me ? ' (ты владелец круга)' : ''}</button>}
-            <button type="button" className="link-btn" onClick={() => setMenu(null)}>Закрыть</button>
+            {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}>{_t("↩️ Ответить")}</button>}
+            {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}>{_t("📋 Скопировать")}</button>}
+            {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? _t("Жалоба отправлена. Спасибо, разберёмся") : _t("Не получилось отправить жалобу")); }}>{_t("🚩 Пожаловаться")}</button>}
+            {menu.uid !== me && <button type="button" onClick={async () => { if (!confirm(_t("Скрыть все сообщения {0} и запретить ему приглашать тебя?", nm(menu.uid)))) return; const ok = await blockUser(menu.uid); setMenu(null); flash(ok ? _t("Его сообщения скрыты") : _t("Не получилось")); }}>{_t("🙈 Скрыть сообщения человека")}</button>}
+            {(menu.uid === me || isOwner) && !menu.deleted && <button type="button" className="danger-t" onClick={async () => { if (!confirm(_t("Удалить сообщение для всех?"))) return; const ok = await chat.remove(menu.id); setMenu(null); flash(ok ? _t("Удалено") : _t("Не получилось удалить")); }}>{_tj("🗑 Удалить{0}", menu.uid !== me ? _t(" (ты владелец круга)") : '')}</button>}
+            <button type="button" className="link-btn" onClick={() => setMenu(null)}>{_t("Закрыть")}</button>
           </div>
         </>
       )}
@@ -403,14 +404,14 @@ export function CircleChat({ chat, me, names, members, reacts, today, isOwner, s
 
 /** Under a dua request on the circle screen: the last answers from the chat and a way to answer. */
 export function DuaReplies({ list, names, me, onReply }: { list: Msg[]; names: Names; me: string; onReply: () => void }) {
-  const nm = (id: string) => (id === me ? 'Ты' : names[id]?.name || 'Участник');
+  const nm = (id: string) => (id === me ? _t("Ты") : names[id]?.name || _t("Участник"));
   return (
     <div className="cc-dr">
       {list.slice(-2).map((m) => (
-        <div key={m.id} className="cc-dr-m"><Ava id={m.uid} names={names} /><span><b>{nm(m.uid)}</b> {m.kind === 'voice' ? '🎙 голосовое' : m.body}</span></div>
+        <div key={m.id} className="cc-dr-m"><Ava id={m.uid} names={names} /><span><b>{nm(m.uid)}</b> {m.kind === 'voice' ? _t("🎙 голосовое") : m.body}</span></div>
       ))}
-      {list.length > 2 && <small className="tiny">И ещё {list.length - 2} в чате</small>}
-      <button type="button" className="link-btn cc-dr-btn" onClick={onReply}>💬 {list.length ? 'Открыть в чате' : 'Ответить в чате'}</button>
+      {list.length > 2 && <small className="tiny">{_tj("И ещё {0} в чате", list.length - 2)}</small>}
+      <button type="button" className="link-btn cc-dr-btn" onClick={onReply}>💬 {list.length ? _t("Открыть в чате") : _t("Ответить в чате")}</button>
     </div>
   );
 }

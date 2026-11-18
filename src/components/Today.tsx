@@ -15,6 +15,7 @@ import { progress } from '../goals';
 import { isReviewDay } from './Goals';
 import { RamadanToday } from './Ramadan';
 import { ramadanHidden, ramadanMode } from '../rplan';
+import { _t, _tj, LOC } from '../i18n';
 
 interface Props {
   state: AppState;
@@ -50,16 +51,16 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
   const mark = (id: string) => (m: Mark | null) => update((s) => setMark(s, today, id, m));
 
   const title = next
-    ? `${ANCHOR_LABEL[next].ru} через ${durationLabel(times[next].getTime() - now.getTime())}`
-    : 'Все намазы дня прошли';
-  const sub = current ? `Сейчас окно ${ANCHOR_LABEL[current].after.replace('После', 'после')}` : 'До Фаджра';
+    ? _t("{0} через {1}", ANCHOR_LABEL[next].ru, durationLabel(times[next].getTime() - now.getTime()))
+    : _t("Все намазы дня прошли");
+  const sub = current ? _t("Сейчас окно {0}", ANCHOR_LABEL[current].after.replace(_t("После"), _t("после"))) : _t("До Фаджра");
 
   const renderCards = (a: Anchor) => {
     const list = active.filter((h) => h.anchor === a);
     if (!list.length)
       return (
         <button type="button" className="empty" onClick={() => onAdd(a)}>
-          + Добавить привычку {ANCHOR_LABEL[a].after.replace('После', 'после')}
+          {_tj("+ Добавить привычку {0}", ANCHOR_LABEL[a].after.replace(_t("После"), _t("после")))}
         </button>
       );
     return (
@@ -93,10 +94,10 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         </div>
         <div className="row">
           <div className="top-main">
-            {next ? <Countdown to={times[next]} label={ANCHOR_LABEL[next].after.replace('После', 'До')} /> : <b>{title}</b>}
-            <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? '🧭 в пути' : '🧭 Сафар'}</button></small>
+            {next ? <Countdown to={times[next]} label={ANCHOR_LABEL[next].after.replace(_t("После"), _t("До"))} /> : <b>{title}</b>}
+            <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? _t("🧭 в пути") : _t("🧭 Сафар")}</button></small>
           </div>
-          <button type="button" className="ring light" onClick={onGarden} aria-label={`Свет дня: ${Math.round(light.total * 100)}%. Открыть мой сад`}>
+          <button type="button" className="ring light" onClick={onGarden} aria-label={_t("Свет дня: {0}%. Открыть мой сад", Math.round(light.total * 100))}>
             <svg viewBox="0 0 62 62" aria-hidden="true">
               {light.windows.map((f, i) => (
                 <g key={i}>
@@ -109,7 +110,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
                 </g>
               ))}
             </svg>
-            <span>{light.lit ? <Sun /> : <small>свет</small>}</span>
+            <span>{light.lit ? <Sun /> : <small>{_t("свет")}</small>}</span>
           </button>
         </div>
       </header>
@@ -120,9 +121,9 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
           <button type="button" className="streak-line" onClick={onGarden}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21V11M12 11C12 7 9 5 5 5c0 4 3 6 7 6zM12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z" /></svg>
             <span>
-              <b>{j.streak > 0 ? `Серия ${j.streak} ${plural(j.streak, 'день', 'дня', 'дней')}` : 'Начни серию сегодня'}</b>
+              <b>{j.streak > 0 ? _t("Серия {0} {1}", j.streak, plural(j.streak, _t("день"), _t("дня"), _t("дней"))) : _t("Начни серию сегодня")}</b>
               <small>
-                {j.pausedToday ? 'Сегодня пауза: серия не сгорит' : j.litToday ? 'Сегодня засчитан, машаАллах' : j.repairLeft ? 'Один пропуск в неделю простится' : 'Пропуск на этой неделе уже был: сегодня важно'}
+                {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
               </small>
             </span>
             <i aria-hidden="true">›</i>
@@ -145,7 +146,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         })()}
         {isReviewDay(state, today) && (
           <button type="button" className="g-review-cta" onClick={onReview} style={{ marginBottom: 10, width: '100%' }}>
-            <b>Пересмотр недели</b><small>Пятница. 2 минуты: что продвинулось и какой шаг на неделю</small>
+            <b>{_t("Пересмотр недели")}</b><small>{_t("Пятница. 2 минуты: что продвинулось и какой шаг на неделю")}</small>
           </button>
         )}
         <RamadanToday state={state} update={update} today={today} now={now} times={times} onOpen={onRamadan} />
@@ -153,16 +154,16 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         {firstWeek}
         {circleLine && (
           <button type="button" className="circle-line" onClick={circleLine.onOpen}>
-            <span><b>{circleLine.names.slice(0, 2).join(' и ')}</b>{circleLine.names.length > 2 ? ` и ещё ${circleLine.names.length - 2}` : ''} уже {circleLine.names.length > 1 ? 'отметились' : 'отметился'} сегодня</span>
+            <span><b>{circleLine.names.slice(0, 2).join(_t(" и "))}</b>{_tj("{0} уже {1} сегодня", circleLine.names.length > 2 ? _t(" и ещё {0}", circleLine.names.length - 2) : '', circleLine.names.length > 1 ? _t("отметились") : _t("отметился"))}</span>
             <span aria-hidden="true">›</span>
           </button>
         )}
         {active.length === 0 && (
           <div className="welcome">
-            <h2>Ас-саляму алейкум{state.settings.name ? `, ${state.settings.name}` : ''}</h2>
-            <p className="motto">«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»</p>
-            <p>Начни с одной–трёх привычек и привяжи каждую к намазу. Лучше маленькая привычка каждый день, чем большая раз в неделю.</p>
-            <button type="button" className="pri-btn" onClick={() => onAdd(nowAnchor)}>Добавить первую привычку</button>
+            <h2>{_tj("Ас-саляму алейкум{0}", state.settings.name ? `, ${state.settings.name}` : '')}</h2>
+            <p className="motto">{_t("«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»")}</p>
+            <p>{_t("Начни с одной–трёх привычек и привяжи каждую к намазу. Лучше маленькая привычка каждый день, чем большая раз в неделю.")}</p>
+            <button type="button" className="pri-btn" onClick={() => onAdd(nowAnchor)}>{_t("Добавить первую привычку")}</button>
           </div>
         )}
 
@@ -175,22 +176,22 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <div className="sec">
           <h3>
             {ANCHOR_LABEL[nowAnchor].after}
-            <small>{current ? `сейчас · до ${hhmm(end(nowAnchor))}` : `скоро · ${hhmm(times.fajr)}`}</small>
+            <small>{current ? _t("сейчас · до {0}", hhmm(end(nowAnchor))) : _t("скоро · {0}", hhmm(times.fajr))}</small>
           </h3>
           {active.some((h) => h.anchor === nowAnchor) && (
             <button type="button" className="hard" aria-pressed={hardOn} onClick={() => update((s) => toggleHard(s, today, nowAnchor))}>
-              Тяжёлый день
+              {_t("Тяжёлый день")}
             </button>
           )}
         </div>
         {renderCards(nowAnchor)}
         {active.some((h) => h.anchor === nowAnchor) && (
-          <div className="hint">Касание по кружку — сделал. Свайп влево — минимум или позже. Касание по названию — изменить.</div>
+          <div className="hint">{_t("Касание по кружку — сделал. Свайп влево — минимум или позже. Касание по названию — изменить.")}</div>
         )}
 
         {others.some((a) => windowStatus(a, current) === 'future') && (
           <div className="later">
-            <h4>Дальше сегодня</h4>
+            <h4>{_t("Дальше сегодня")}</h4>
             {others.filter((a) => windowStatus(a, current) === 'future').map((a) => (
               <WindowRow key={a} a={a} active={active} log={log} time={times[a]} open={open === a} onToggle={() => setOpen(open === a ? null : a)} future>
                 {renderCards(a)}
@@ -223,7 +224,7 @@ function WindowRow(props: {
           {list.length > 0 && <small>{list.map((h) => h.action).join(' · ')}</small>}
         </span>
         {all ? (
-          <span className="tk"><Ticks />{done} из {list.length}</span>
+          <span className="tk"><Ticks />{_tj("{0} из {1}", done, list.length)}</span>
         ) : (
           <span className="n">{list.length ? `${done}/${list.length}` : future ? '' : '—'}</span>
         )}
@@ -236,9 +237,9 @@ function WindowRow(props: {
 function Muhasaba({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="muhasaba">
-      <h4>Мухасаба</h4>
-      <p>Что сегодня получилось и что завтра сделать лучше? Одной-двумя фразами.</p>
-      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} placeholder="Сегодня я…" />
+      <h4>{_t("Мухасаба")}</h4>
+      <p>{_t("Что сегодня получилось и что завтра сделать лучше? Одной-двумя фразами.")}</p>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} placeholder={_t("Сегодня я…")} />
     </div>
   );
 }
@@ -267,14 +268,14 @@ function Countdown({ to, label }: { to: Date; label: string }) {
   const left = Math.max(0, Math.floor((to.getTime() - t) / 1000));
   const h = Math.floor(left / 3600), m = Math.floor((left % 3600) / 60), sec = left % 60;
   const p2 = (n: number) => String(n).padStart(2, '0');
-  const at = to.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const at = to.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
   return (
-    <div className="cd" role="timer" aria-label={`${label}: ${h} ч ${m} мин`}>
+    <div className="cd" role="timer" aria-label={_t("{0}: {1} ч {2} мин", label, h, m)}>
       <span className="cd-l">{label} · {at}</span>
       <span className="cd-t" aria-hidden="true">
-        <i><b>{p2(h)}</b><small>час</small></i><em>:</em>
-        <i><b>{p2(m)}</b><small>мин</small></i>
-        {!calm && <><em>:</em><i className="s"><b>{p2(sec)}</b><small>сек</small></i></>}
+        <i><b>{p2(h)}</b><small>{_t("час")}</small></i><em>:</em>
+        <i><b>{p2(m)}</b><small>{_t("мин")}</small></i>
+        {!calm && <><em>:</em><i className="s"><b>{p2(sec)}</b><small>{_t("сек")}</small></i></>}
       </span>
     </div>
   );

@@ -1,6 +1,7 @@
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi } from '../umrahCircle';
 import { umrahOf } from './Umrah';
+import { _t, _tj } from '../i18n';
 
 // "Your dua was made at the Kaaba": when a pilgrim ticks a request from the Circle while in Makkah,
 // the person who asked sees it on their Today screen. Marks travel inside the pilgrim's own rsvp
@@ -32,15 +33,15 @@ export function UmrahMadeCard({ state, update, api }: { state: AppState; update:
   const fresh = madeForMe(api).filter((m) => !seen.includes(m.key));
   if (!fresh.length) return null;
   const close = () => update((s) => patch(s, { madeSeen: [...(umrahOf(s).madeSeen ?? []), ...fresh.map((m) => m.key)] }));
-  const by = [...new Set(fresh.map((m) => api.names[m.by] || 'Брат из Круга'))];
+  const by = [...new Set(fresh.map((m) => api.names[m.by] || _t("Брат из Круга")))];
   return (
     <div className="mk-card" role="status">
       <span className="mk-ic">🕋</span>
       <div>
-        <b>{by.join(', ')} {by.length > 1 ? 'сделали' : 'сделал'} за тебя дуа у Каабы</b>
+        <b>{_tj("{0}  {1} за тебя дуа у Каабы", by.join(', '), by.length > 1 ? _t("сделали") : _t("сделал"))}</b>
         {fresh.slice(0, 3).map((m) => <small key={m.key}>«{m.text}»</small>)}
-        <p>Скажи «Аамин» и сделай дуа в ответ за {by.length > 1 ? 'них' : by[0]}.</p>
-        <button type="button" className="mk-ok" onClick={close}>Аамин 🤲</button>
+        <p>{_tj("Скажи «Аамин» и сделай дуа в ответ за {0}.", by.length > 1 ? _t("них") : by[0])}</p>
+        <button type="button" className="mk-ok" onClick={close}>{_t("Аамин 🤲")}</button>
       </div>
     </div>
   );

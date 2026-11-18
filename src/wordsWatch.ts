@@ -4,6 +4,7 @@ import { ANCHORS } from './types';
 import { isCounted, streak } from './store';
 import { calendarTrigger, say, type Trigger } from './words';
 import type { DayTimes } from './prayer';
+import { _t } from './i18n';
 
 const STREAKS = [3, 7, 14, 21, 30, 40, 60, 100];
 
@@ -47,7 +48,7 @@ function detect(a: AppState, b: AppState, today: string): { t: Trigger; extra?: 
     if (isCounted(m) && !isCounted(la[id])) {
       const h = b.habits.find((x) => x.id === id);
       const n = h ? streak(b, h, today) : 0;
-      if (STREAKS.includes(n)) return { t: 'streak', extra: `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'день' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'дня' : 'дней'} подряд.` };
+      if (STREAKS.includes(n)) return { t: 'streak', extra: _t("{0} {1} подряд.", n, n % 10 === 1 && n % 100 !== 11 ? _t("день") : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? _t("дня") : _t("дней")) };
       return { t: 'habit_done' };
     }
   }

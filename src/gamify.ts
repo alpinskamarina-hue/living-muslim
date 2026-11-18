@@ -5,6 +5,7 @@ import { isCounted } from './store';
 import { isTripDay } from './safar';
 import { ramadanHidden } from './rplan';
 import { hOf } from './ramadan';
+import { _t } from './i18n';
 
 /**
  * Gamification without points: the "light of the day" (five prayer windows), a soft streak
@@ -116,12 +117,12 @@ export function milestones(s: AppState, j: Journey): Milestone[] {
   const khatm = s.ramadan?.khatm?.rounds ?? 0;
   const ram = fullRamadan(s);
   return [
-    { id: 'w7', title: '7 дней подряд', quote: 'Аллах не возлагает на душу больше, чем она может вместить', src: 'Коран 2:286', now: j.best, of: 7 },
-    { id: 'l40', title: '40 дней: первый плод', quote: 'Самые любимые дела у Аллаха — самые постоянные, даже если их мало', src: 'Бухари, Муслим', now: j.lit, of: 40 },
-    { id: 'p7', title: 'Неделя намазов вовремя', quote: 'Намаз предписан верующим в определённое время', src: 'Коран 4:103', now: ot, of: 7 },
-    { id: 'l100', title: '100 дней света', quote: 'Поистине, за тягостью — облегчение', src: 'Коран 94:6', now: j.lit, of: 100 },
-    { id: 'khatm', title: 'Первый хатм', quote: 'Читайте Коран: в Судный день он придёт заступником за своих читателей', src: 'Муслим', now: khatm, of: 1 },
-    { id: 'ram', title: 'Весь Рамадан', quote: 'Кто постился в Рамадан с верой и надеждой на награду, тому простятся прежние грехи', src: 'Бухари, Муслим', now: ram, of: 29 },
+    { id: 'w7', title: _t("7 дней подряд"), quote: _t("Аллах не возлагает на душу больше, чем она может вместить"), src: _t("Коран 2:286"), now: j.best, of: 7 },
+    { id: 'l40', title: _t("40 дней: первый плод"), quote: _t("Самые любимые дела у Аллаха — самые постоянные, даже если их мало"), src: _t("Бухари, Муслим"), now: j.lit, of: 40 },
+    { id: 'p7', title: _t("Неделя намазов вовремя"), quote: _t("Намаз предписан верующим в определённое время"), src: _t("Коран 4:103"), now: ot, of: 7 },
+    { id: 'l100', title: _t("100 дней света"), quote: _t("Поистине, за тягостью — облегчение"), src: _t("Коран 94:6"), now: j.lit, of: 100 },
+    { id: 'khatm', title: _t("Первый хатм"), quote: _t("Читайте Коран: в Судный день он придёт заступником за своих читателей"), src: _t("Муслим"), now: khatm, of: 1 },
+    { id: 'ram', title: _t("Весь Рамадан"), quote: _t("Кто постился в Рамадан с верой и надеждой на награду, тому простятся прежние грехи"), src: _t("Бухари, Муслим"), now: ram, of: 29 },
   ].map((m) => ({ ...m, now: Math.min(m.now, m.of), got: m.now >= m.of }));
 }
 

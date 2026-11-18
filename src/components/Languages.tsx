@@ -2,38 +2,39 @@ import { useMemo, useState } from 'react';
 import type { AppState, Card, LangState, Mark } from '../types';
 import { uid } from '../store';
 import { addDays, dayKey, plural } from '../dates';
+import { _t, _tj, isEn } from '../i18n';
 
 interface Lang { id: string; label: string; rtl?: boolean; starter: [string, string][] }
 
 export const LANGS: Lang[] = [
   {
-    id: 'en', label: 'Английский',
+    id: 'en', label: _t("Английский"),
     starter: [
-      ['habit', 'привычка'], ['goal', 'цель'], ['patience', 'терпение'], ['gratitude', 'благодарность'],
-      ['knowledge', 'знание'], ['consistency', 'постоянство'], ['effort', 'усилие'], ['to improve', 'улучшать'],
-      ['mercy', 'милость'], ['family', 'семья'], ['health', 'здоровье'], ['to remember', 'помнить'],
-      ['success', 'успех'], ['honest', 'честный'], ['time', 'время'], ['morning', 'утро'],
-      ['evening', 'вечер'], ['to read', 'читать'], ['to grow', 'расти'], ['step', 'шаг'],
+      ['habit', _t("привычка")], ['goal', _t("цель")], ['patience', _t("терпение")], ['gratitude', _t("благодарность")],
+      ['knowledge', _t("знание")], ['consistency', _t("постоянство")], ['effort', _t("усилие")], ['to improve', _t("улучшать")],
+      ['mercy', _t("милость")], ['family', _t("семья")], ['health', _t("здоровье")], ['to remember', _t("помнить")],
+      ['success', _t("успех")], ['honest', _t("честный")], ['time', _t("время")], ['morning', _t("утро")],
+      ['evening', _t("вечер")], ['to read', _t("читать")], ['to grow', _t("расти")], ['step', _t("шаг")],
     ],
   },
   {
-    id: 'ar', label: 'Арабский', rtl: true,
+    id: 'ar', label: _t("Арабский"), rtl: true,
     starter: [
-      ['اللَّه', 'Аллах'], ['رَبّ', 'Господь'], ['قَالَ', 'сказал'], ['كِتَاب', 'книга, Писание'],
-      ['يَوْم', 'день'], ['أَرْض', 'земля'], ['سَمَاء', 'небо'], ['قَلْب', 'сердце'],
-      ['نَار', 'огонь'], ['جَنَّة', 'сад, Рай'], ['عِلْم', 'знание'], ['عَمَل', 'дело, деяние'],
-      ['صَلَاة', 'молитва, намаз'], ['رَحْمَة', 'милость'], ['نَاس', 'люди'], ['حَقّ', 'истина'],
-      ['خَيْر', 'благо'], ['نَفْس', 'душа'], ['دِين', 'религия'], ['صَبْر', 'терпение'],
+      ['اللَّه', _t("Аллах")], ['رَبّ', _t("Господь")], ['قَالَ', _t("сказал")], ['كِتَاب', _t("книга, Писание")],
+      ['يَوْم', _t("день")], ['أَرْض', _t("земля")], ['سَمَاء', _t("небо")], ['قَلْب', _t("сердце")],
+      ['نَار', _t("огонь")], ['جَنَّة', _t("сад, Рай")], ['عِلْم', _t("знание")], ['عَمَل', _t("дело, деяние")],
+      ['صَلَاة', _t("молитва, намаз")], ['رَحْمَة', _t("милость")], ['نَاس', _t("люди")], ['حَقّ', _t("истина")],
+      ['خَيْر', _t("благо")], ['نَفْس', _t("душа")], ['دِين', _t("религия")], ['صَبْر', _t("терпение")],
     ],
   },
   {
-    id: 'tr', label: 'Турецкий',
+    id: 'tr', label: _t("Турецкий"),
     starter: [
-      ['alışkanlık', 'привычка'], ['merhaba', 'привет'], ['teşekkür ederim', 'спасибо'], ['evet', 'да'],
-      ['hayır', 'нет'], ['su', 'вода'], ['ekmek', 'хлеб'], ['ev', 'дом'],
-      ['aile', 'семья'], ['kitap', 'книга'], ['okumak', 'читать'], ['sabah', 'утро'],
-      ['akşam', 'вечер'], ['bugün', 'сегодня'], ['yarın', 'завтра'], ['güzel', 'красивый, хороший'],
-      ['zaman', 'время'], ['sağlık', 'здоровье'], ['çalışmak', 'работать'], ['sabır', 'терпение'],
+      ['alışkanlık', _t("привычка")], ['merhaba', _t("привет")], ['teşekkür ederim', _t("спасибо")], ['evet', _t("да")],
+      ['hayır', _t("нет")], ['su', _t("вода")], ['ekmek', _t("хлеб")], ['ev', _t("дом")],
+      ['aile', _t("семья")], ['kitap', _t("книга")], ['okumak', _t("читать")], ['sabah', _t("утро")],
+      ['akşam', _t("вечер")], ['bugün', _t("сегодня")], ['yarın', _t("завтра")], ['güzel', _t("красивый, хороший")],
+      ['zaman', _t("время")], ['sağlık', _t("здоровье")], ['çalışmak', _t("работать")], ['sabır', _t("терпение")],
     ],
   },
 ];
@@ -103,22 +104,22 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={mode === 'words' ? () => setMode('home') : onExit} aria-label={mode === 'words' ? 'Назад' : 'Выйти'}>
+        <button type="button" className="icon-btn" onClick={mode === 'words' ? () => setMode('home') : onExit} aria-label={mode === 'words' ? _t("Назад") : _t("Выйти")}>
           {mode === 'words' ? '‹' : '✕'}
         </button>
-        <div><b>{mode === 'words' && lang ? `Слова: ${lang.label}` : 'Языки'}</b><small>{habitName ?? 'Карточки слов с повторением'}</small></div>
+        <div><b>{mode === 'words' && lang ? _t("Слова: {0}", lang.label) : _t("Языки")}</b><small>{habitName ?? _t("Карточки слов с повторением")}</small></div>
       </div>
       <div className="q-list">
         {mode === 'home' && (
           <>
-            {onCourse && (
+            {onCourse && !isEn && (
               <button type="button" className="course-card" onClick={onCourse}>
-                <small>Курс · разговорный A1</small>
-                <b>Английский по дням</b>
-                <span>{state.course ? `День ${state.course.day + 1} · фраз выучено ${state.course.learned.length}` : '30 уроков по 15 минут: фразы с озвучкой, диалоги, разговор вслух'}</span>
+                <small>{_t("Курс · разговорный A1")}</small>
+                <b>{_t("Английский по дням")}</b>
+                <span>{state.course ? _t("День {0} · фраз выучено {1}", state.course.day + 1, state.course.learned.length) : _t("30 уроков по 15 минут: фразы с озвучкой, диалоги, разговор вслух")}</span>
               </button>
             )}
-            <div className="lab" style={{ margin: '0 0 6px' }}>Какой язык учишь</div>
+            <div className="lab" style={{ margin: '0 0 6px' }}>{_t("Какой язык учишь")}</div>
             <div className="langs">
               {LANGS.map((l) => (
                 <button key={l.id} type="button" aria-pressed={ls.current === l.id} onClick={() => choose(l.id)}>{l.label}</button>
@@ -128,8 +129,8 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
               ))}
             </div>
             <div className="custom-lang">
-              <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Другой язык, например немецкий" />
-              <button type="button" disabled={!custom.trim()} onClick={() => { choose(`custom:${custom.trim()}`); setCustom(''); }}>Добавить</button>
+              <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={_t("Другой язык, например немецкий")} />
+              <button type="button" disabled={!custom.trim()} onClick={() => { choose(`custom:${custom.trim()}`); setCustom(''); }}>{_t("Добавить")}</button>
             </div>
 
             {lang ? (
@@ -137,25 +138,25 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
                 <div className="stat-card" style={{ marginTop: 14 }}>
                   <div className="big">{due.length}</div>
                   <div>
-                    <b>{due.length ? `${plural(due.length, 'слово', 'слова', 'слов')} к повторению` : 'На сегодня всё повторено'}</b>
-                    <small>{deck.length} в наборе · выучено {learned}</small>
+                    <b>{due.length ? _t("{0} к повторению", plural(due.length, _t("слово"), _t("слова"), _t("слов"))) : _t("На сегодня всё повторено")}</b>
+                    <small>{_tj("{0} в наборе · выучено {1}", deck.length, learned)}</small>
                   </div>
                 </div>
                 <button type="button" className="pri-btn big-btn" disabled={!due.length} onClick={() => setMode('review')}>
-                  {due.length ? `Повторить ${Math.min(due.length, SESSION_MAX)}` : 'Приходи завтра'}
+                  {due.length ? _t("Повторить {0}", Math.min(due.length, SESSION_MAX)) : _t("Приходи завтра")}
                 </button>
 
-                <div className="lab">Новое слово</div>
+                <div className="lab">{_t("Новое слово")}</div>
                 <div className="add-card">
-                  <input value={front} onChange={(e) => setFront(e.target.value)} placeholder={lang.rtl ? 'كَلِمَة' : 'слово'} dir={lang.rtl ? 'rtl' : undefined} />
-                  <input value={back} onChange={(e) => setBack(e.target.value)} placeholder="перевод" />
+                  <input value={front} onChange={(e) => setFront(e.target.value)} placeholder={lang.rtl ? 'كَلِمَة' : _t("слово")} dir={lang.rtl ? 'rtl' : undefined} />
+                  <input value={back} onChange={(e) => setBack(e.target.value)} placeholder={_t("перевод")} />
                   <button type="button" className="pri-btn" disabled={!front.trim() || !back.trim()} onClick={addCard}>+</button>
                 </div>
-                <button type="button" className="link-btn" onClick={() => setMode('words')}>Все слова ({deck.length})</button>
-                <p className="tiny">Каждое слово возвращается через 1, 2, 4, 7, 14 и 30 дней, если ты его помнишь. Если забыл, начинается сначала.</p>
+                <button type="button" className="link-btn" onClick={() => setMode('words')}>{_tj("Все слова ({0})", deck.length)}</button>
+                <p className="tiny">{_t("Каждое слово возвращается через 1, 2, 4, 7, 14 и 30 дней, если ты его помнишь. Если забыл, начинается сначала.")}</p>
               </>
             ) : (
-              <p className="q-msg">Выбери язык. Для английского, арабского и турецкого есть стартовый набор из 20 слов. Арабский набор собран из частых слов Корана.</p>
+              <p className="q-msg">{_t("Выбери язык. Для английского, арабского и турецкого есть стартовый набор из 20 слов. Арабский набор собран из частых слов Корана.")}</p>
             )}
           </>
         )}
@@ -164,8 +165,8 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
           <div className="word" key={c.id}>
             <span className={lang.rtl ? 'w-f ar' : 'w-f'} dir={lang.rtl ? 'rtl' : undefined}>{c.front}</span>
             <span className="w-b">{c.back}</span>
-            <span className="w-box" title="Уровень">{c.box}</span>
-            <button type="button" className="hg-act" onClick={() => removeCard(c.id)}>Убрать</button>
+            <span className="w-box" title={_t("Уровень")}>{c.box}</span>
+            <button type="button" className="hg-act" onClick={() => removeCard(c.id)}>{_t("Убрать")}</button>
           </div>
         ))}
       </div>
@@ -194,39 +195,39 @@ function Review({ lang, cards, habitName, onGrade, onBack, onFinish }: {
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Назад">‹</button>
-        <div><b>{lang.label}</b><small>{done ? 'Готово' : `${i + 1} из ${queue.length}`}</small></div>
+        <button type="button" className="icon-btn" onClick={onBack} aria-label={_t("Назад")}>‹</button>
+        <div><b>{lang.label}</b><small>{done ? _t("Готово") : _t("{0} из {1}", i + 1, queue.length)}</small></div>
       </div>
       <div className="rev-bar"><i style={{ width: `${pct}%` }} /></div>
       {!done ? (
         <div className="rev">
-          <button type="button" className="flash" onClick={() => setShown(true)} aria-label="Показать перевод">
+          <button type="button" className="flash" onClick={() => setShown(true)} aria-label={_t("Показать перевод")}>
             <span className={lang.rtl ? 'flash-f ar' : 'flash-f'} dir={lang.rtl ? 'rtl' : undefined}>{card.front}</span>
-            {shown ? <span className="flash-b">{card.back}</span> : <span className="flash-hint">Вспомни перевод и нажми</span>}
+            {shown ? <span className="flash-b">{card.back}</span> : <span className="flash-hint">{_t("Вспомни перевод и нажми")}</span>}
           </button>
           {shown ? (
             <div className="row2 light rev-btns">
-              <button type="button" onClick={() => answer(false)}>Не помню</button>
-              <button type="button" className="pri-btn" onClick={() => answer(true)}>Помню</button>
+              <button type="button" onClick={() => answer(false)}>{_t("Не помню")}</button>
+              <button type="button" className="pri-btn" onClick={() => answer(true)}>{_t("Помню")}</button>
             </div>
           ) : (
-            <button type="button" className="pri-btn big-btn" onClick={() => setShown(true)}>Показать</button>
+            <button type="button" className="pri-btn big-btn" onClick={() => setShown(true)}>{_t("Показать")}</button>
           )}
         </div>
       ) : (
         <div className="rev">
           <div className="finish light">
-            <b>Повторено {queue.length}</b>
-            <p>Помнишь {ok} из {queue.length}. {ok === queue.length ? 'МашаАллах!' : 'Забытые слова останутся в повторении на сегодня.'}</p>
+            <b>{_tj("Повторено {0}", queue.length)}</b>
+            <p>{_tj("Помнишь {0} из {1}. {2}", ok, queue.length, ok === queue.length ? _t("МашаАллах!") : _t("Забытые слова останутся в повторении на сегодня."))}</p>
           </div>
           <div className="row2 light rev-btns">
             {habitName ? (
               <>
-                <button type="button" onClick={() => onFinish('min')}>Минимум</button>
-                <button type="button" className="pri-btn" onClick={() => onFinish('done')}>Отметить привычку</button>
+                <button type="button" onClick={() => onFinish('min')}>{_t("Минимум")}</button>
+                <button type="button" className="pri-btn" onClick={() => onFinish('done')}>{_t("Отметить привычку")}</button>
               </>
             ) : (
-              <button type="button" className="pri-btn" onClick={onBack}>Готово</button>
+              <button type="button" className="pri-btn" onClick={onBack}>{_t("Готово")}</button>
             )}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { IHRAM_RULES, PREP, ROUND_IDEAS, STEPS, type Step } from '../umrah/guide
 import { uid } from '../store';
 import { UMRAH_VIDEOS, embed } from '../umrah/videos';
 import { SaeeScene, TawafScene } from './LapScene';
+import { _t, _tj } from '../i18n';
 
 interface Props {
   state: AppState;
@@ -26,11 +27,11 @@ export function Umrah({ state, update, onExit }: Props) {
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onExit} aria-label="Выйти">✕</button>
-        <div><b>Умра</b><small>Гид, подготовка {prepPct(state)}%, мои дуа</small></div>
+        <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
+        <div><b>{_t("Умра")}</b><small>{_tj("Гид, подготовка {0}%, мои дуа", prepPct(state))}</small></div>
       </div>
       <div className="seg">
-        {([['guide', 'Обряды'], ['prep', 'Подготовка'], ['duas', 'Мои дуа']] as const).map(([k, l]) => (
+        {([['guide', _t("Обряды")], ['prep', _t("Подготовка")], ['duas', _t("Мои дуа")]] as const).map(([k, l]) => (
           <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
@@ -40,23 +41,23 @@ export function Umrah({ state, update, onExit }: Props) {
             {STEPS.map((s, i) => (
               <button type="button" key={s.id} className="q-row" onClick={() => setStep(s)}>
                 <span className="q-n">{i + 1}</span>
-                <span className="q-t"><b>{s.title}</b><small>{s.short}{s.counter ? ' · счётчик' : ''}</small></span>
+                <span className="q-t"><b>{s.title}</b><small>{s.short}{s.counter ? _t(" · счётчик") : ''}</small></span>
               </button>
             ))}
-            <h2 className="sub-h">Запреты в ихраме</h2>
+            <h2 className="sub-h">{_t("Запреты в ихраме")}</h2>
             <ul className="rules">{IHRAM_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
-            <p className="q-msg left tiny-note">Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.</p>
+            <p className="q-msg left tiny-note">{_t("Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.")}</p>
           </>
         )}
         {tab === 'prep' && (
           <>
-            <div className="stat-card"><div className="big">{prepPct(state)}%</div><div><b>готовности</b><small>видна группе, если едешь с Кругом</small></div></div>
+            <div className="stat-card"><div className="big">{prepPct(state)}%</div><div><b>{_t("готовности")}</b><small>{_t("видна группе, если едешь с Кругом")}</small></div></div>
             {PREP.map((p) => {
               const ok = u.prep.includes(p.id);
               return (
                 <label key={p.id} className="chk">
                   <input type="checkbox" checked={ok} onChange={() => update((s) => patch(s, { prep: ok ? umrahOf(s).prep.filter((x) => x !== p.id) : [...umrahOf(s).prep, p.id] }))} />
-                  <span><b>{p.text}</b><small>за {p.when} до поездки</small></span>
+                  <span><b>{p.text}</b><small>{_tj("за {0} до поездки", p.when)}</small></span>
                 </label>
               );
             })}
@@ -79,15 +80,15 @@ export function DuaList({ state, update }: { state: AppState; update: Props['upd
   };
   return (
     <>
-      <p className="q-msg left">Запиши, о чём хочешь попросить у Каабы, на Сафе и Марве, когда пьёшь Замзам. И просьбы близких, чтобы ничего не забыть.</p>
-      <label className="field"><span>Дуа</span><input value={text} onChange={(e) => setText(e.target.value)} placeholder="Например: о здоровье мамы" /></label>
-      <label className="field"><span>За кого или от кого (необязательно)</span><input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Мама" /></label>
-      <button type="button" className="pri-btn" onClick={add} disabled={!text.trim()}>Добавить</button>
+      <p className="q-msg left">{_t("Запиши, о чём хочешь попросить у Каабы, на Сафе и Марве, когда пьёшь Замзам. И просьбы близких, чтобы ничего не забыть.")}</p>
+      <label className="field"><span>{_t("Дуа")}</span><input value={text} onChange={(e) => setText(e.target.value)} placeholder={_t("Например: о здоровье мамы")} /></label>
+      <label className="field"><span>{_t("За кого или от кого (необязательно)")}</span><input value={who} onChange={(e) => setWho(e.target.value)} placeholder={_t("Мама")} /></label>
+      <button type="button" className="pri-btn" onClick={add} disabled={!text.trim()}>{_t("Добавить")}</button>
       {u.duas.map((d) => (
         <label key={d.id} className="chk">
           <input type="checkbox" checked={Boolean(d.done)} onChange={() => update((s) => patch(s, { duas: umrahOf(s).duas.map((x) => (x.id === d.id ? { ...x, done: !x.done } : x)) }))} />
           <span><b style={d.done ? { textDecoration: 'line-through', opacity: 0.6 } : undefined}>{d.text}</b>{d.who && <small>{d.who}</small>}</span>
-          <button type="button" className="hg-act" onClick={(e) => { e.preventDefault(); update((s) => patch(s, { duas: umrahOf(s).duas.filter((x) => x.id !== d.id) })); }}>Убрать</button>
+          <button type="button" className="hg-act" onClick={(e) => { e.preventDefault(); update((s) => patch(s, { duas: umrahOf(s).duas.filter((x) => x.id !== d.id) })); }}>{_t("Убрать")}</button>
         </label>
       ))}
     </>
@@ -102,7 +103,7 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
   const idx = STEPS.findIndex((x) => x.id === step.id);
   const n = step.counter ? u[step.counter] : 0;
   const setN = (v: number) => step.counter && update((s) => patch(s, { [step.counter!]: Math.max(0, Math.min(7, v)) }));
-  const saeeDir = (k: number) => (k % 2 === 1 ? 'Сафа → Марва' : 'Марва → Сафа');
+  const saeeDir = (k: number) => (k % 2 === 1 ? _t("Сафа → Марва") : _t("Марва → Сафа"));
 
   // A round takes minutes, so a second tap within seconds is almost always a slip in the crowd: ask once more.
   const last = useRef(0);
@@ -146,38 +147,38 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="К обрядам">‹</button>
+        <button type="button" className="icon-btn" onClick={onBack} aria-label={_t("К обрядам")}>‹</button>
         <div><b>{idx + 1}. {step.title}</b><small>{step.short}</small></div>
       </div>
       <div className="h-wrap">
         {!step.counter && <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />}
         {step.counter && (
           <div className="lap-wrap">
-            <button type="button" className={`scene-btn${sure ? ' sure' : ''}`} onClick={tap} aria-label="Отметить круг">
+            <button type="button" className={`scene-btn${sure ? ' sure' : ''}`} onClick={tap} aria-label={_t("Отметить круг")}>
               {step.counter === 'tawaf' ? <TawafScene n={n} /> : <SaeeScene n={n} />}
             </button>
             <div className={`scene-count${n === 7 ? ' done' : ''}`}>
               <span className="lap-n">{n}<small>/7</small></span>
-              <span className="lap-t">{n === 7 ? 'Готово, машаАллах'
-                : sure ? 'Так быстро? Нажми ещё раз, если правда закончил'
-                : step.counter === 'tawaf' ? `Круг ${n + 1}: нажми, когда снова дойдёшь до Чёрного камня` : `Проход ${n + 1}: ${saeeDir(n + 1)}`}</span>
+              <span className="lap-t">{n === 7 ? _t("Готово, машаАллах")
+                : sure ? _t("Так быстро? Нажми ещё раз, если правда закончил")
+                : step.counter === 'tawaf' ? _t("Круг {0}: нажми, когда снова дойдёшь до Чёрного камня", n + 1) : _t("Проход {0}: {1}", n + 1, saeeDir(n + 1))}</span>
             </div>
-            {n < 7 && <button type="button" className={`pri-btn scene-tap${sure ? ' sure' : ''}`} onClick={tap}>{sure ? 'Да, пройден' : step.counter === 'tawaf' ? 'Круг пройден' : 'Проход пройден'}</button>}
+            {n < 7 && <button type="button" className={`pri-btn scene-tap${sure ? ' sure' : ''}`} onClick={tap}>{sure ? _t("Да, пройден") : step.counter === 'tawaf' ? _t("Круг пройден") : _t("Проход пройден")}</button>}
             <div className="row2 light">
-              <button type="button" onClick={() => setN(n - 1)} disabled={n === 0}>− Ошибся</button>
-              <button type="button" onClick={() => setN(0)} disabled={n === 0}>Сбросить</button>
+              <button type="button" onClick={() => setN(n - 1)} disabled={n === 0}>{_t("− Ошибся")}</button>
+              <button type="button" onClick={() => setN(0)} disabled={n === 0}>{_t("Сбросить")}</button>
             </div>
-            <p className="q-msg tiny-note">Если сомневаешься в числе кругов, бери меньшее и доделай.{awake ? ' Экран не погаснет, пока считаешь.' : ''}</p>
+            <p className="q-msg tiny-note">{_tj("Если сомневаешься в числе кругов, бери меньшее и доделай.{0}", awake ? _t(" Экран не погаснет, пока считаешь.") : '')}</p>
           </div>
         )}
 
         {step.counter && n < 7 && (
           <div className="h-card lap-now">
-            <small className="um-k">{step.counter === 'tawaf' ? `Круг ${n + 1}` : `Проход ${n + 1} · ${saeeDir(n + 1)}`}</small>
-            {step.counter === 'saee' && <p className="lap-hint">{n % 2 === 0 ? 'На Сафе' : 'На Марве'}: повернись к Каабе, подними руки, повтори зикр трижды и делай дуа между повторениями.{n === 0 ? ' В самом начале скажи «Инна-с-Сафа ва-ль-Марвата…».' : ''}</p>}
+            <small className="um-k">{step.counter === 'tawaf' ? _t("Круг {0}", n + 1) : _t("Проход {0} · {1}", n + 1, saeeDir(n + 1))}</small>
+            {step.counter === 'saee' && <p className="lap-hint">{_tj("{0}: повернись к Каабе, подними руки, повтори зикр трижды и делай дуа между повторениями.{1}", n % 2 === 0 ? _t("На Сафе") : _t("На Марве"), n === 0 ? _t(" В самом начале скажи «Инна-с-Сафа ва-ль-Марвата…».") : '')}</p>}
             {idea && (
               <>
-                <b className="lap-theme">О чём можно попросить: {idea.theme.toLowerCase()}</b>
+                <b className="lap-theme">{_tj("О чём можно попросить: {0}", idea.theme.toLowerCase())}</b>
                 <p className="ar-dua" lang="ar" dir="rtl">{idea.ar}</p>
                 <p className="dua-tr">{idea.tr}</p>
                 <p className="dua-ru">{idea.ru}</p>
@@ -186,7 +187,7 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
             )}
             {mine.length > 0 && (
               <div className="lap-mine">
-                <b>Из твоего списка на этот {step.counter === 'tawaf' ? 'круг' : 'проход'}</b>
+                <b>{_tj("Из твоего списка на этот {0}", step.counter === 'tawaf' ? _t("круг") : _t("проход"))}</b>
                 {mine.map((d) => (
                   <label key={d.key} className="chk">
                     <input type="checkbox" checked={d.done} onChange={() => toggle(d.key)} />
@@ -195,13 +196,13 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
                 ))}
               </div>
             )}
-            {items.length === 0 && <p className="tiny">Запиши свои дуа и просьбы близких во вкладке «Дуа», и они разложатся по кругам, чтобы никого не забыть.</p>}
-            {step.counter === 'tawaf' && <p className="lap-hint">Между Йеменским углом и Чёрным камнем: «Раббана атина фи-д-дунья хасанатан…» (дуа ниже).</p>}
-            {idea && <p className="tiny">В сунне нет особого дуа для каждого круга. Это подсказка, если растерялся: проси своими словами и на своём языке.</p>}
+            {items.length === 0 && <p className="tiny">{_t("Запиши свои дуа и просьбы близких во вкладке «Дуа», и они разложатся по кругам, чтобы никого не забыть.")}</p>}
+            {step.counter === 'tawaf' && <p className="lap-hint">{_t("Между Йеменским углом и Чёрным камнем: «Раббана атина фи-д-дунья хасанатан…» (дуа ниже).")}</p>}
+            {idea && <p className="tiny">{_t("В сунне нет особого дуа для каждого круга. Это подсказка, если растерялся: проси своими словами и на своём языке.")}</p>}
           </div>
         )}
         {step.counter && n === 7 && items.length > 0 && (
-          <div className="h-card lap-now"><b>Ты сделал {madeAll} из {items.length} дуа из списка</b>{madeAll < items.length && <p className="tiny">Остальные можно сделать на Сафе и Марве, у Замзама или в любой момент в Хараме.</p>}</div>
+          <div className="h-card lap-now"><b>{_tj("Ты сделал {0} из {1} дуа из списка", madeAll, items.length)}</b>{madeAll < items.length && <p className="tiny">{_t("Остальные можно сделать на Сафе и Марве, у Замзама или в любой момент в Хараме.")}</p>}</div>
         )}
 
         {step.counter && <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />}
@@ -215,9 +216,9 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
           </div>
         ))}
         {idx < STEPS.length - 1 ? (
-          <button type="button" className="pri-btn" onClick={onNext}>Дальше: {STEPS[idx + 1].title}</button>
+          <button type="button" className="pri-btn" onClick={onNext}>{_tj("Дальше: {0}", STEPS[idx + 1].title)}</button>
         ) : (
-          <button type="button" className="pri-btn" onClick={() => { update((s) => patch(s, { tawaf: 0, saee: 0, ihram: undefined })); onBack(); }}>Умра завершена, выйти из ихрама</button>
+          <button type="button" className="pri-btn" onClick={() => { update((s) => patch(s, { tawaf: 0, saee: 0, ihram: undefined })); onBack(); }}>{_t("Умра завершена, выйти из ихрама")}</button>
         )}
       </div>
     </div>

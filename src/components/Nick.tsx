@@ -10,6 +10,7 @@ import { authMe, signInUrl } from '../auth';
 import { plural } from '../dates';
 import { ProGate } from './Plan';
 import { limitOf } from '../plan';
+import { _t, _tj } from '../i18n';
 
 const CACHE = 'lm.profile';
 export function cachedProfile(): Partial<Profile> | null {
@@ -39,7 +40,7 @@ const DEFAULTS: Profile = {
   findable: true, invite_from: 'all', gender: '', sisters_only: false, show_photo: true, email: false,
 };
 
-const KIND_RU: Record<AvatarKind, string> = { photo: 'Фото', initials: 'Инициалы', emoji: 'Эмодзи', pattern: 'Узор' };
+const KIND_RU: Record<AvatarKind, string> = { photo: _t("Фото"), initials: _t("Инициалы"), emoji: _t("Эмодзи"), pattern: _t("Узор") };
 
 /** Profile → «Мой профиль»: picture, name, nick, about, privacy. */
 export function MyProfile({ name, onName, onSex }: { name: string; onName: (n: string) => void; onSex?: (g: 'm' | 'f') => void }) {
@@ -76,14 +77,14 @@ export function MyProfile({ name, onName, onSex }: { name: string; onName: (n: s
 
   const onFile = async (f?: File) => {
     if (!f) return;
-    try { const d = await squarePhoto(f); patch({ photo: d, avatar: { ...p.avatar, k: 'photo' } }); } catch { setMsg('Не получилось открыть это фото.'); }
+    try { const d = await squarePhoto(f); patch({ photo: d, avatar: { ...p.avatar, k: 'photo' } }); } catch { setMsg(_t("Не получилось открыть это фото.")); }
   };
 
   const save = async () => {
     const n = cleanNick(nick);
-    if (p.name.trim().length < 2) { setMsg('Напиши имя, хотя бы две буквы.'); return; }
-    if (nickState === 'bad') { setMsg('Ник: от 3 до 20 латинских букв, цифр, «_» или «.».'); return; }
-    if (nickState === 'taken') { setMsg('Этот ник уже занят, попробуй другой.'); return; }
+    if (p.name.trim().length < 2) { setMsg(_t("Напиши имя, хотя бы две буквы.")); return; }
+    if (nickState === 'bad') { setMsg(_t("Ник: от 3 до 20 латинских букв, цифр, «_» или «.».")); return; }
+    if (nickState === 'taken') { setMsg(_t("Этот ник уже занят, попробуй другой.")); return; }
     setBusy(true); setMsg('');
     const body: Partial<Profile> = {
       name: p.name.trim(), nick: n || null, bio: p.bio, avatar: p.avatar, photo: p.avatar.k === 'photo' ? p.photo : '',
@@ -92,21 +93,21 @@ export function MyProfile({ name, onName, onSex }: { name: string; onName: (n: s
     const r = await saveProfile(body, p.name.trim());
     setBusy(false);
     if (r === 'ok') {
-      savedNick.current = n; setNickState(n ? 'mine' : ''); setMsg('Сохранено');
+      savedNick.current = n; setNickState(n ? 'mine' : ''); setMsg(_t("Сохранено"));
       cache({ ...p, ...body }); onName(p.name.trim()); if (p.gender === 'm' || p.gender === 'f') onSex?.(p.gender); say('profile_saved');
-    } else setMsg(r === 'nick_taken' ? 'Этот ник уже занят, попробуй другой.' : r === 'nick_bad' ? 'Ник: от 3 до 20 латинских букв, цифр, «_» или «.».' : r === 'photo_big' ? 'Фото слишком большое.' : 'Не получилось сохранить. Проверь интернет и попробуй ещё раз.');
+    } else setMsg(r === 'nick_taken' ? _t("Этот ник уже занят, попробуй другой.") : r === 'nick_bad' ? _t("Ник: от 3 до 20 латинских букв, цифр, «_» или «.».") : r === 'photo_big' ? _t("Фото слишком большое.") : _t("Не получилось сохранить. Проверь интернет и попробуй ещё раз."));
   };
 
-  const hint = nickState === 'checking' ? <span className="nk-st">проверяю…</span>
-    : nickState === 'ok' ? <span className="nk-st ok">✓ свободен</span>
-    : nickState === 'mine' ? <span className="nk-st ok">✓ твой</span>
-    : nickState === 'taken' ? <span className="nk-st bad">занят</span>
-    : nickState === 'bad' ? <span className="nk-st bad">не подходит</span> : null;
+  const hint = nickState === 'checking' ? <span className="nk-st">{_t("проверяю…")}</span>
+    : nickState === 'ok' ? <span className="nk-st ok">{_t("✓ свободен")}</span>
+    : nickState === 'mine' ? <span className="nk-st ok">{_t("✓ твой")}</span>
+    : nickState === 'taken' ? <span className="nk-st bad">{_t("занят")}</span>
+    : nickState === 'bad' ? <span className="nk-st bad">{_t("не подходит")}</span> : null;
 
   return (
     <div className="nk">
       <div className="nk-pic">
-        <button type="button" className="nk-big" onClick={() => file.current?.click()} aria-label="Выбрать фото">
+        <button type="button" className="nk-big" onClick={() => file.current?.click()} aria-label={_t("Выбрать фото")}>
           <Ava pick={p.avatar} color={p.color} photo={p.photo} name={p.name} size={96} />
           <i aria-hidden="true">📷</i>
         </button>
@@ -124,54 +125,54 @@ export function MyProfile({ name, onName, onSex }: { name: string; onName: (n: s
         <div className="nk-grid pat">{PATTERNS.map((x) => <button key={x} type="button" aria-pressed={p.avatar.v === x} onClick={() => pick({ v: x })}><Ava pick={{ k: 'pattern', v: x }} color={color} name="" size={40} /></button>)}</div>
       )}
       {p.avatar.k !== 'photo' && (
-        <div className="nk-colors">{COLORS.map((c) => <button key={c} type="button" aria-label="Цвет" aria-pressed={color === c} style={{ background: c }} onClick={() => pick({ c })} />)}</div>
+        <div className="nk-colors">{COLORS.map((c) => <button key={c} type="button" aria-label={_t("Цвет")} aria-pressed={color === c} style={{ background: c }} onClick={() => pick({ c })} />)}</div>
       )}
 
-      <label className="field"><span>Имя</span><input value={p.name} maxLength={40} onChange={(e) => patch({ name: e.target.value })} placeholder="Как тебя зовут" /></label>
+      <label className="field"><span>{_t("Имя")}</span><input value={p.name} maxLength={40} onChange={(e) => patch({ name: e.target.value })} placeholder={_t("Как тебя зовут")} /></label>
       <label className="field">
-        <span>Ник, по нему тебя найдут</span>
-        <span className="nk-in"><b>@</b><input value={nick} maxLength={21} autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="например nasim_ams"
+        <span>{_t("Ник, по нему тебя найдут")}</span>
+        <span className="nk-in"><b>@</b><input value={nick} maxLength={21} autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={_t("например nasim_ams")}
           onChange={(e) => { setNick(e.target.value.replace(/^@/, '').toLowerCase()); setMsg(''); }} />{hint}</span>
       </label>
-      <label className="field"><span>О себе, по желанию</span><input value={p.bio} maxLength={80} onChange={(e) => patch({ bio: e.target.value })} placeholder="Город, чем занимаешься" /></label>
+      <label className="field"><span>{_t("О себе, по желанию")}</span><input value={p.bio} maxLength={80} onChange={(e) => patch({ bio: e.target.value })} placeholder={_t("Город, чем занимаешься")} /></label>
 
-      <div className="nk-sec">Приватность</div>
+      <div className="nk-sec">{_t("Приватность")}</div>
       <div className="nk-grp">
-        <label className="nk-r"><span>Находить меня по нику<small>Иначе только по ссылке-приглашению</small></span>
+        <label className="nk-r"><span>{_t("Находить меня по нику")}<small>{_t("Иначе только по ссылке-приглашению")}</small></span>
           <span className="switch"><input type="checkbox" checked={p.findable} onChange={(e) => patch({ findable: e.target.checked })} /><span /></span></label>
-        <label className="nk-r"><span>Кто может звать в круги</span>
+        <label className="nk-r"><span>{_t("Кто может звать в круги")}</span>
           <select value={p.invite_from} onChange={(e) => patch({ invite_from: e.target.value as Profile['invite_from'] })}>
-            <option value="all">Все</option><option value="circles">Только из моих кругов</option><option value="none">Никто</option>
+            <option value="all">{_t("Все")}</option><option value="circles">{_t("Только из моих кругов")}</option><option value="none">{_t("Никто")}</option>
           </select></label>
-        <label className="nk-r"><span>Я<small>Нужно для кругов «Братья» и «Сёстры»</small></span>
+        <label className="nk-r"><span>{_t("Я")}<small>{_t("Нужно для кругов «Братья» и «Сёстры»")}</small></span>
           <select value={p.gender} onChange={(e) => patch({ gender: e.target.value as Profile['gender'] })}>
-            <option value="">Не указано</option><option value="m">Брат</option><option value="f">Сестра</option>
+            <option value="">{_t("Не указано")}</option><option value="m">{_t("Брат")}</option><option value="f">{_t("Сестра")}</option>
           </select></label>
         {p.gender === 'f' && (
-          <label className="nk-r"><span>Приглашения только от сестёр<small>Братья не смогут найти тебя и позвать</small></span>
+          <label className="nk-r"><span>{_t("Приглашения только от сестёр")}<small>{_t("Братья не смогут найти тебя и позвать")}</small></span>
             <span className="switch"><input type="checkbox" checked={p.sisters_only} onChange={(e) => patch({ sisters_only: e.target.checked })} /><span /></span></label>
         )}
-        <label className="nk-r"><span>Показывать фото<small>Только участникам моих кругов</small></span>
+        <label className="nk-r"><span>{_t("Показывать фото")}<small>{_t("Только участникам моих кругов")}</small></span>
           <span className="switch"><input type="checkbox" checked={p.show_photo} onChange={(e) => patch({ show_photo: e.target.checked })} /><span /></span></label>
       </div>
 
-      <button type="button" className="pri-btn big-btn nk-save" disabled={busy} onClick={save}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>
-      {msg && <p className={`nk-msg${msg === 'Сохранено' ? ' ok' : ''}`}>{msg}</p>}
+      <button type="button" className="pri-btn big-btn nk-save" disabled={busy} onClick={save}>{busy ? _t("Сохраняю…") : _t("Сохранить")}</button>
+      {msg && <p className={`nk-msg${msg === _t("Сохранено") ? ' ok' : ''}`}>{msg}</p>}
       <p className="tiny nk-note">
-        {signed || p.email ? 'Профиль привязан к почте, поэтому он сохранится на любом телефоне.' : <>Профиль пока живёт на этом телефоне. <a href={signInUrl}>Войди по почте</a>, чтобы он сохранился на любом.</>}
+        {signed || p.email ? _t("Профиль привязан к почте, поэтому он сохранится на любом телефоне.") : <>{_t("Профиль пока живёт на этом телефоне. ")}<a href={signInUrl}>{_t("Войди по почте")}</a>{_t(", чтобы он сохранился на любом.")}</>}
       </p>
     </div>
   );
 }
 
 const SEND_ERR: Record<string, string> = {
-  closed: 'Этот человек сейчас не принимает приглашения от тебя.',
-  already_in: 'Он уже в этом круге.',
-  wrong_kind: 'Этот круг не подходит: «Братья» только для братьев, «Сёстры» только для сестёр.',
-  limit: 'Сегодня отправлено слишком много приглашений. Попробуй завтра.',
-  full: 'В круге уже 50 человек.',
-  not_member: 'Ты больше не в этом круге.',
-  error: 'Не получилось отправить. Проверь интернет и попробуй ещё раз.',
+  closed: _t("Этот человек сейчас не принимает приглашения от тебя."),
+  already_in: _t("Он уже в этом круге."),
+  wrong_kind: _t("Этот круг не подходит: «Братья» только для братьев, «Сёстры» только для сестёр."),
+  limit: _t("Сегодня отправлено слишком много приглашений. Попробуй завтра."),
+  full: _t("В круге уже 50 человек."),
+  not_member: _t("Ты больше не в этом круге."),
+  error: _t("Не получилось отправить. Проверь интернет и попробуй ещё раз."),
 };
 
 /** Circle → «+ Пригласить»: type the first letters of a nick, tap a person, pick a circle, send. Or share the link. */
@@ -231,7 +232,7 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
     setSent((s) => ({ ...s, [f.uid]: { ...s[f.uid], [to]: r } }));
   };
 
-  const title = (c: string) => circles.find((x) => x.code === c)?.title || 'Круг';
+  const title = (c: string) => circles.find((x) => x.code === c)?.title || _t("Круг");
   const f = found && typeof found === 'object' ? found : null;
   const r = f ? sent[f.uid]?.[to] : undefined;
   const n = cleanNick(q);
@@ -240,32 +241,32 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
   const row = (x: Found) => (
     <button key={x.uid} type="button" className="nk-hit" onClick={() => pick(x)}>
       <Ava pick={x.avatar} color={x.color} photo={x.photo} name={x.name} size={42} />
-      <span className="nk-hit-t"><b>{x.name || 'Без имени'}</b><small>@{x.nick}{x.shared.length > 0 ? ` · с тобой в «${title(x.shared[0])}»${x.shared.length > 1 ? ` и ещё ${x.shared.length - 1}` : ''}` : ''}</small></span>
-      {sentTo(x) ? <em className="ok">✓</em> : x.can !== 'ok' ? <em>🔒</em> : <em>Позвать</em>}
+      <span className="nk-hit-t"><b>{x.name || _t("Без имени")}</b><small>@{x.nick}{x.shared.length > 0 ? _t(" · с тобой в «{0}»{1}", title(x.shared[0]), x.shared.length > 1 ? _t(" и ещё {0}", x.shared.length - 1) : '') : ''}</small></span>
+      {sentTo(x) ? <em className="ok">✓</em> : x.can !== 'ok' ? <em>🔒</em> : <em>{_t("Позвать")}</em>}
     </button>
   );
 
   return (
     <div className="page">
-      <button type="button" className="link-btn pro-back" onClick={f ? () => setFound(null) : onBack}>← {f ? 'К поиску' : cur?.title || 'Круг'}</button>
-      <h1 className="page-h">Позвать в круг</h1>
+      <button type="button" className="link-btn pro-back" onClick={f ? () => setFound(null) : onBack}>← {f ? _t("К поиску") : cur?.title || _t("Круг")}</button>
+      <h1 className="page-h">{_t("Позвать в круг")}</h1>
       {!f && (
         <form className="nk-search" onSubmit={(e) => { e.preventDefault(); search(); }}>
           <span aria-hidden="true">@</span>
-          <input value={q} autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={old ? 'ник друга' : 'начни писать ник'} onChange={(e) => { setQ(e.target.value.replace(/^@/, '').toLowerCase()); setFound(null); }} />
-          {old ? <button type="submit" disabled={busy || n.length < 3}>Найти</button> : looking ? <i className="nk-spin" aria-label="Ищу" /> : null}
+          <input value={q} autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={old ? _t("ник друга") : _t("начни писать ник")} onChange={(e) => { setQ(e.target.value.replace(/^@/, '').toLowerCase()); setFound(null); }} />
+          {old ? <button type="submit" disabled={busy || n.length < 3}>{_t("Найти")}</button> : looking ? <i className="nk-spin" aria-label={_t("Ищу")} /> : null}
         </form>
       )}
 
-      {!f && found === 'none' && <div className="nk-none">Никого с ником <b>@{n}</b>. Проверь написание. Человек мог скрыть себя из поиска, тогда отправь ему ссылку.</div>}
-      {!f && found === 'error' && <div className="nk-none">Не получилось найти. Проверь интернет и попробуй ещё раз.</div>}
+      {!f && found === 'none' && <div className="nk-none">{_t("Никого с ником ")}<b>@{n}</b>{_t(". Проверь написание. Человек мог скрыть себя из поиска, тогда отправь ему ссылку.")}</div>}
+      {!f && found === 'error' && <div className="nk-none">{_t("Не получилось найти. Проверь интернет и попробуй ещё раз.")}</div>}
 
       {!f && list && list.length > 0 && <div className="nk-hits">{list.map(row)}</div>}
-      {!f && list && list.length === 0 && !looking && <div className="nk-none">Пока никого на <b>@{n}</b>. Попробуй другие буквы или отправь ссылку. Скрытые из поиска не показываются.</div>}
+      {!f && list && list.length === 0 && !looking && <div className="nk-none">{_t("Пока никого на ")}<b>@{n}</b>{_t(". Попробуй другие буквы или отправь ссылку. Скрытые из поиска не показываются.")}</div>}
 
       {!f && n.length < 2 && mates.length > 0 && (
         <>
-          <div className="nk-sec">Из твоих кругов</div>
+          <div className="nk-sec">{_t("Из твоих кругов")}</div>
           <div className="nk-hits">{mates.slice(0, 12).map(row)}</div>
         </>
       )}
@@ -273,11 +274,11 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
       {f && (
         <div className="nk-card">
           <Ava pick={f.avatar} color={f.color} photo={f.photo} name={f.name} size={72} />
-          <b>{f.name || 'Без имени'}</b>
+          <b>{f.name || _t("Без имени")}</b>
           <span className="nk-at">@{f.nick}</span>
-          {(f.bio || f.shared.length > 0) && <p>{f.bio}{f.bio && f.shared.length > 0 && <br />}{f.shared.length > 0 && <>С тобой уже в {f.shared.length > 1 ? 'кругах' : 'круге'} {f.shared.map((c) => `«${title(c)}»`).join(', ')}</>}</p>}
+          {(f.bio || f.shared.length > 0) && <p>{f.bio}{f.bio && f.shared.length > 0 && <br />}{f.shared.length > 0 && <>{_tj("С тобой уже в {0}  {1}", f.shared.length > 1 ? _t("кругах") : _t("круге"), f.shared.map((c) => `«${title(c)}»`).join(', '))}</>}</p>}
           {f.can !== 'ok' ? (
-            <div className="nk-none">{f.can === 'closed' ? `${f.name || 'Этот человек'} сейчас не принимает приглашения в круги.` : `${f.name || 'Этот человек'} принимает приглашения только от людей из своих кругов. Отправь ссылку.`}</div>
+            <div className="nk-none">{f.can === 'closed' ? _t("{0} сейчас не принимает приглашения в круги.", f.name || _t("Этот человек")) : _t("{0} принимает приглашения только от людей из своих кругов. Отправь ссылку.", f.name || _t("Этот человек"))}</div>
           ) : (
             <>
               <div className="nk-pick">
@@ -287,9 +288,9 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
                 })}
               </div>
               {r === 'ok' ? (
-                <div className="nk-done">✓ Приглашение в «{title(to)}» отправлено. {f.name || 'Человек'} увидит его сразу в приложении и сам решит, вступать или нет.</div>
+                <div className="nk-done">{_tj("✓ Приглашение в «{0}» отправлено. {1} увидит его сразу в приложении и сам решит, вступать или нет.", title(to), f.name || _t("Человек"))}</div>
               ) : (
-                <button type="button" className="pri-btn big-btn" disabled={busy || f.shared.includes(to)} onClick={() => send(f)}>{busy ? 'Отправляю…' : 'Отправить приглашение'}</button>
+                <button type="button" className="pri-btn big-btn" disabled={busy || f.shared.includes(to)} onClick={() => send(f)}>{busy ? _t("Отправляю…") : _t("Отправить приглашение")}</button>
               )}
               {r && r !== 'ok' && <p className="nk-msg">{SEND_ERR[r] ?? SEND_ERR.error}</p>}
             </>
@@ -297,11 +298,11 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
         </div>
       )}
 
-      {!f && <p className="tiny nk-note">Ищем по нику, от двух букв. По имени и почте искать нельзя, а кто скрыл себя из поиска, не показывается. Человек увидит приглашение в приложении и сам решит, вступать или нет.</p>}
-      {!mine?.nick && <p className="tiny nk-note">У тебя пока нет ника. Его можно задать в Профиле → Мой профиль, тогда тебя тоже смогут найти.</p>}
+      {!f && <p className="tiny nk-note">{_t("Ищем по нику, от двух букв. По имени и почте искать нельзя, а кто скрыл себя из поиска, не показывается. Человек увидит приглашение в приложении и сам решит, вступать или нет.")}</p>}
+      {!mine?.nick && <p className="tiny nk-note">{_t("У тебя пока нет ника. Его можно задать в Профиле → Мой профиль, тогда тебя тоже смогут найти.")}</p>}
 
-      <div className="nk-sec">Или по ссылке</div>
-      <button type="button" className="nk-share" onClick={() => shareInvite(to || code)}>Поделиться ссылкой в WhatsApp, Telegram…</button>
+      <div className="nk-sec">{_t("Или по ссылке")}</div>
+      <button type="button" className="nk-share" onClick={() => shareInvite(to || code)}>{_t("Поделиться ссылкой в WhatsApp, Telegram…")}</button>
     </div>
   );
 }
@@ -351,34 +352,34 @@ export function InviteInbox() {
     if (ok && !yes) setList((l) => l.filter((x) => x.id !== inv.id));
   };
   const block = async (inv: Invite) => {
-    if (!confirm(`Заблокировать ${inv.from.name || 'этого человека'}? Он больше не сможет найти тебя и позвать в круг.`)) return;
+    if (!confirm(_t("Заблокировать {0}? Он больше не сможет найти тебя и позвать в круг.", inv.from.name || _t("этого человека")))) return;
     await blockUser(inv.from.uid);
     setList((l) => l.filter((x) => x.from.uid !== inv.from.uid));
   };
 
   return (
     <div className="nk-inbox">
-      <div className="nk-bell">🔔 <span><b>{list.length} {plural(list.length, 'приглашение', 'приглашения', 'приглашений')}</b> {list.length > 1 ? 'ждут' : 'ждёт'} ответа</span></div>
+      <div className="nk-bell">🔔 <span><b>{list.length} {plural(list.length, _t("приглашение"), _t("приглашения"), _t("приглашений"))}</b>{_tj("  {0} ответа", list.length > 1 ? _t("ждут") : _t("ждёт"))}</span></div>
       {list.map((inv) => {
         const k = kindOf(inv.kind as never);
         return (
           <div key={inv.id} className="nk-req">
             <div className="nk-req-top">
               <Ava pick={inv.from.avatar} color={inv.from.color} photo={inv.from.photo} name={inv.from.name} size={44} />
-              <span><b>{inv.from.name || 'Кто-то'}</b> зовёт тебя<small>{inv.from.nick ? `@${inv.from.nick}` : ''}</small></span>
-              <button type="button" className="nk-more" aria-label="Ещё" onClick={() => setMenu(menu === inv.id ? '' : inv.id)}>⋯</button>
+              <span><b>{inv.from.name || _t("Кто-то")}</b>{_t(" зовёт тебя")}<small>{inv.from.nick ? `@${inv.from.nick}` : ''}</small></span>
+              <button type="button" className="nk-more" aria-label={_t("Ещё")} onClick={() => setMenu(menu === inv.id ? '' : inv.id)}>⋯</button>
             </div>
-            {menu === inv.id && <button type="button" className="link-btn nk-block" onClick={() => block(inv)}>Заблокировать @{inv.from.nick || 'пользователя'}</button>}
-            <div className="nk-ci">{k?.ic ?? '👥'} <b>{inv.title || 'Круг'}</b> · {inv.count} {plural(inv.count, 'человек', 'человека', 'человек')}{k && <small>{k.hint}</small>}</div>
+            {menu === inv.id && <button type="button" className="link-btn nk-block" onClick={() => block(inv)}>{_tj("Заблокировать @{0}", inv.from.nick || _t("пользователя"))}</button>}
+            <div className="nk-ci">{k?.ic ?? '👥'} <b>{inv.title || _t("Круг")}</b> · {inv.count} {plural(inv.count, _t("человек"), _t("человека"), _t("человек"))}{k && <small>{k.hint}</small>}</div>
             {gate === inv.id && <ProGate k="circles" have={myCircles().length} />}
             <div className="nk-row">
-              <button type="button" className="pri-btn" disabled={busy === inv.id} onClick={() => (myCircles().length >= limitOf('circles') ? setGate(inv.id) : answer(inv, true))}>Вступить</button>
-              <button type="button" className="nk-no" disabled={busy === inv.id} onClick={() => answer(inv, false)}>Не сейчас</button>
+              <button type="button" className="pri-btn" disabled={busy === inv.id} onClick={() => (myCircles().length >= limitOf('circles') ? setGate(inv.id) : answer(inv, true))}>{_t("Вступить")}</button>
+              <button type="button" className="nk-no" disabled={busy === inv.id} onClick={() => answer(inv, false)}>{_t("Не сейчас")}</button>
             </div>
           </div>
         );
       })}
-      <p className="tiny nk-note">Если отказаться, человек не увидит причину.</p>
+      <p className="tiny nk-note">{_t("Если отказаться, человек не увидит причину.")}</p>
     </div>
   );
 }

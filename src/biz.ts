@@ -4,16 +4,17 @@ import { isCounted, uid } from './store';
 import { isCloud, currentCircle } from './cloud';
 import type { AppState, Habit } from './types';
 import type { Member, Reacts } from './circle';
+import { _t } from './i18n';
 
 // «Круг бизнес»: business habits next to the prayers, a weekly shura (three lines each),
 // a business goal for the week and dua for a deal. Everything travels inside each member's own
 // circle doc, so no new server table is needed. Money amounts are never asked for or shown.
 
 export const BIZ_HABITS: Pick<Habit, 'action' | 'min' | 'anchor'>[] = [
-  { action: 'План дня из 3 дел', min: 'одно главное дело', anchor: 'fajr' },
-  { action: 'Один звонок клиенту', min: 'одно сообщение', anchor: 'dhuhr' },
-  { action: 'Час глубокой работы', min: '15 минут, телефон в сторону', anchor: 'asr' },
-  { action: 'Учёт дня, 5 минут', min: 'записать одно число для себя', anchor: 'isha' },
+  { action: _t("План дня из 3 дел"), min: _t("одно главное дело"), anchor: 'fajr' },
+  { action: _t("Один звонок клиенту"), min: _t("одно сообщение"), anchor: 'dhuhr' },
+  { action: _t("Час глубокой работы"), min: _t("15 минут, телефон в сторону"), anchor: 'asr' },
+  { action: _t("Учёт дня, 5 минут"), min: _t("записать одно число для себя"), anchor: 'isha' },
 ];
 export const BIZ_DEFAULT = [0, 1, 2];
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { isCloud, meRpc, serverHas, cloudMe } from './cloud';
 import { currentSubscription } from './push';
+import { _t } from './i18n';
 
 export type MsgKind = 'text' | 'voice' | 'event';
 /** r: reply to a message; t: an event card (dua, ch) or a reply tied to someone's dua request (t 'dua', to). */
@@ -97,7 +98,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
           return next;
         });
       }
-    } catch { setError('Нет связи, сообщения обновятся сами'); }
+    } catch { setError(_t("Нет связи, сообщения обновятся сами")); }
   }, [code]);
 
   // full reload now and then picks up reactions and deletions on older messages
@@ -145,7 +146,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       return true;
     } catch (e) {
       setMsgs((m) => m.map((x) => (x === local ? { ...x, failed: true } : x)));
-      setError(String((e as Error).message) === 'slow' ? 'Слишком часто. Подожди минуту' : 'Не отправилось. Нажми на сообщение, чтобы повторить');
+      setError(String((e as Error).message) === 'slow' ? _t("Слишком часто. Подожди минуту") : _t("Не отправилось. Нажми на сообщение, чтобы повторить"));
       return false;
     }
   };

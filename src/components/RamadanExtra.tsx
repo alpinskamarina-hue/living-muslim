@@ -3,7 +3,7 @@ import type { AppState } from '../types';
 import { addDays, fromKey, hhmm } from '../dates';
 import { prayerTimes } from '../prayer';
 import { here } from '../safar';
-import { type Lang, tr } from '../i18n';
+import { type Lang, tr, _t } from '../i18n';
 import { khatmProgress, patchR, ramadanDay, ramadanMonth, ramadanOf } from '../ramadan';
 
 type Update = (fn: (s: AppState) => AppState) => void;
@@ -72,13 +72,13 @@ export function RamadanStory({ state, mon, l }: { state: AppState; mon: Mon; l: 
 // ---------- 10. I'tikaf ----------
 
 const ITIKAF_DAY: { id: string; at: 'fajr' | 'sunrise' | 'dhuhr' | 'asr' | 'maghrib' | 'isha' | 'third'; t: [string, string] }[] = [
-  { id: 'fajr', at: 'fajr', t: ['Фаджр, затем Коран и утренние азкары до восхода', 'Fajr, then Quran and the morning adhkar until sunrise'] },
-  { id: 'duha', at: 'sunrise', t: ['Намаз духа, потом отдых', 'Duha prayer, then rest'] },
-  { id: 'dhuhr', at: 'dhuhr', t: ['Зухр, затем знание: тафсир, хадисы, книга', 'Dhuhr, then learning: tafsir, hadith, a book'] },
-  { id: 'asr', at: 'asr', t: ['Аср, вечерние азкары, дуа до ифтара', 'Asr, the evening adhkar, du‘a until iftar'] },
-  { id: 'iftar', at: 'maghrib', t: ['Ифтар и Магриб', 'Iftar and Maghrib'] },
-  { id: 'isha', at: 'isha', t: ['Иша и таравих', 'Isha and tarawih'] },
-  { id: 'third', at: 'third', t: ['Тахаджуд и свой список дуа', 'Tahajjud and your du‘a list'] },
+  { id: 'fajr', at: 'fajr', t: [_t("Фаджр, затем Коран и утренние азкары до восхода"), 'Fajr, then Quran and the morning adhkar until sunrise'] },
+  { id: 'duha', at: 'sunrise', t: [_t("Намаз духа, потом отдых"), 'Duha prayer, then rest'] },
+  { id: 'dhuhr', at: 'dhuhr', t: [_t("Зухр, затем знание: тафсир, хадисы, книга"), 'Dhuhr, then learning: tafsir, hadith, a book'] },
+  { id: 'asr', at: 'asr', t: [_t("Аср, вечерние азкары, дуа до ифтара"), 'Asr, the evening adhkar, du‘a until iftar'] },
+  { id: 'iftar', at: 'maghrib', t: [_t("Ифтар и Магриб"), 'Iftar and Maghrib'] },
+  { id: 'isha', at: 'isha', t: [_t("Иша и таравих"), 'Isha and tarawih'] },
+  { id: 'third', at: 'third', t: [_t("Тахаджуд и свой список дуа"), 'Tahajjud and your du‘a list'] },
 ];
 
 export function Itikaf({ state, update, today, mon, l }: { state: AppState; update: Update; today: string; mon: Mon; l: Lang }) {
@@ -131,13 +131,13 @@ export function Itikaf({ state, update, today, mon, l }: { state: AppState; upda
 // ---------- 11. Sleep in Ramadan and what to eat at suhoor ----------
 
 const SUHOOR: [string, string][] = [
-  ['Овсянка на молоке, финики, орехи, вода', 'Oats with milk, dates, nuts, water'],
-  ['Яйца, цельнозерновой хлеб, огурец, сыр', 'Eggs, wholegrain bread, cucumber, cheese'],
-  ['Йогурт или творог, банан, мёд, семена', 'Yoghurt or cottage cheese, banana, honey, seeds'],
-  ['Гречка или булгур, курица, овощи', 'Buckwheat or bulgur, chicken, vegetables'],
-  ['Фул (бобы) или хумус, лепёшка, помидоры', 'Ful (beans) or hummus, flatbread, tomatoes'],
-  ['Омлет с овощами, авокадо, чай без сахара', 'Vegetable omelette, avocado, unsweetened tea'],
-  ['Каша из пшена или риса, финики, молоко', 'Millet or rice porridge, dates, milk'],
+  [_t("Овсянка на молоке, финики, орехи, вода"), 'Oats with milk, dates, nuts, water'],
+  [_t("Яйца, цельнозерновой хлеб, огурец, сыр"), 'Eggs, wholegrain bread, cucumber, cheese'],
+  [_t("Йогурт или творог, банан, мёд, семена"), 'Yoghurt or cottage cheese, banana, honey, seeds'],
+  [_t("Гречка или булгур, курица, овощи"), 'Buckwheat or bulgur, chicken, vegetables'],
+  [_t("Фул (бобы) или хумус, лепёшка, помидоры"), 'Ful (beans) or hummus, flatbread, tomatoes'],
+  [_t("Омлет с овощами, авокадо, чай без сахара"), 'Vegetable omelette, avocado, unsweetened tea'],
+  [_t("Каша из пшена или риса, финики, молоко"), 'Millet or rice porridge, dates, milk'],
 ];
 
 export function SleepPlan({ state, update, today, l }: { state: AppState; update: Update; today: string; l: Lang }) {

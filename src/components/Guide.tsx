@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { AppState } from '../types';
 import { FAQ, FIRST_WEEK, GUIDE, HINTS, type GoTo } from '../guide';
+import { _t, _tj, LANG } from '../i18n';
 
 const ls = {
   get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -21,10 +22,10 @@ export function FirstWeek({ state, joined, go }: { state: AppState; joined: bool
     <div className="fw">
       <div className="fw-top">
         <button type="button" className="fw-h" onClick={() => setOpen(!open)} aria-expanded={open}>
-          <em>Первая неделя</em>
-          <b>{n} из {steps.length} · {open ? 'свернуть' : 'показать все шаги'} {open ? '▴' : '▾'}</b>
+          <em>{_t("Первая неделя")}</em>
+          <b>{_tj("{0} из {1} · {2}  {3}", n, steps.length, open ? _t("свернуть") : _t("показать все шаги"), open ? '▴' : '▾')}</b>
         </button>
-        <button type="button" className="fw-x" onClick={hide} aria-label="Скрыть">×</button>
+        <button type="button" className="fw-x" onClick={hide} aria-label={_t("Скрыть")}>×</button>
       </div>
       <span className="fw-bar"><i style={{ width: `${(n / steps.length) * 100}%` }} /></span>
       {!open && (
@@ -59,16 +60,16 @@ export function Hint({ id }: { id: keyof typeof HINTS }) {
     <div className="hint" role="note">
       <b>💡 {h.t}</b>
       <p>{h.p}</p>
-      <button type="button" className="link-btn" onClick={() => { ls.set(key, '1'); setSeen(true); }}>Понятно</button>
+      <button type="button" className="link-btn" onClick={() => { ls.set(key, '1'); setSeen(true); }}>{_t("Понятно")}</button>
     </div>
   );
 }
 
 /** Send the web guide to someone: the system share sheet, or copy the link. */
 function shareGuide() {
-  const url = `${location.origin}/guide/?lang=ru`;
-  if (navigator.share) { navigator.share({ title: 'Как пользоваться Living Muslim', url }).catch(() => {}); return; }
-  navigator.clipboard?.writeText(url).then(() => alert('Ссылка на гид скопирована'), () => {});
+  const url = `${location.origin}/guide/?lang=${LANG}`;
+  if (navigator.share) { navigator.share({ title: _t("Как пользоваться Living Muslim"), url }).catch(() => {}); return; }
+  navigator.clipboard?.writeText(url).then(() => alert(_t("Ссылка на гид скопирована")), () => {});
 }
 
 /** Profile → «Как пользоваться»: every part of the app in three lines, with a button that opens it. */
@@ -77,11 +78,11 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
   const [q, setQ] = useState<number | null>(null);
   return (
     <div className="guide">
-      <p className="guide-intro">Living Muslim строит день вокруг пяти намазов. Начни с намазов и одной маленькой привычки, остальное подключай, когда будешь готов.</p>
+      <p className="guide-intro">{_t("Living Muslim строит день вокруг пяти намазов. Начни с намазов и одной маленькой привычки, остальное подключай, когда будешь готов.")}</p>
       <div className="guide-web">
-        <a href="/guide/?lang=ru" target="_blank" rel="noopener">📖 Полный гид на сайте</a>
-        <a href="/guide/?lang=ru#ru-umrah" target="_blank" rel="noopener">🕋 Подробно про умру</a>
-        <button type="button" onClick={shareGuide}>Отправить гид другу</button>
+        <a href={`/guide/?lang=${LANG}`} target="_blank" rel="noopener">{_t("📖 Полный гид на сайте")}</a>
+        <a href={`/guide/?lang=${LANG}#${LANG}-umrah`} target="_blank" rel="noopener">{_t("🕋 Подробно про умру")}</a>
+        <button type="button" onClick={shareGuide}>{_t("Отправить гид другу")}</button>
       </div>
       {GUIDE.map((sec) => (
         <section key={sec.h}>
@@ -98,7 +99,7 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
                   <div className="guide-body">
                     <ol>{it.how.map((h) => <li key={h}>{h}</li>)}</ol>
                     {it.tip && <p className="guide-tip">💡 {it.tip}</p>}
-                    {it.go && <button type="button" className="pri-btn" onClick={() => go(it.go!)}>{it.open ?? 'Открыть'}</button>}
+                    {it.go && <button type="button" className="pri-btn" onClick={() => go(it.go!)}>{it.open ?? _t("Открыть")}</button>}
                   </div>
                 )}
               </div>
@@ -106,7 +107,7 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
           </div>
         </section>
       ))}
-      <h3 className="ch-h">Частые вопросы</h3>
+      <h3 className="ch-h">{_t("Частые вопросы")}</h3>
       <div className="guide-list">
         {FAQ.map((f, i) => (
           <div key={f.q} className={`guide-it${q === i ? ' open' : ''}`}>
@@ -118,7 +119,7 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
           </div>
         ))}
       </div>
-      <button type="button" className="link-btn" onClick={() => { try { localStorage.removeItem('lm.fw'); Object.keys(HINTS).forEach((k) => localStorage.removeItem(`lm.hint.${k}`)); } catch { /* */ } go({ tab: 'today' }); }}>Показать подсказки и «Первую неделю» снова</button>
+      <button type="button" className="link-btn" onClick={() => { try { localStorage.removeItem('lm.fw'); Object.keys(HINTS).forEach((k) => localStorage.removeItem(`lm.hint.${k}`)); } catch { /* */ } go({ tab: 'today' }); }}>{_t("Показать подсказки и «Первую неделю» снова")}</button>
     </div>
   );
 }

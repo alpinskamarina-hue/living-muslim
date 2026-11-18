@@ -1,6 +1,7 @@
 import type { AppState, FastMark, RamadanState } from './types';
 import { addDays, fromKey } from './dates';
 import { juzDone, ayahIndex } from './goals';
+import { _t } from './i18n';
 
 export const ramadanOf = (s: AppState): RamadanState => ({ fasts: {}, qada: [], khatm: null, nights: {}, fitr: [], keep: {}, ...(s.ramadan ?? {}) });
 export const patchR = (s: AppState, fn: (r: RamadanState) => Partial<RamadanState>): AppState => { const r = ramadanOf(s); return { ...s, ramadan: { ...r, ...fn(r) } }; };
@@ -33,11 +34,11 @@ export function ramadanMonth(today: string): { days: string[]; year: number; sta
 }
 
 export const MISSED: { id: FastMark; l: string; en: string; note: string; noteEn: string }[] = [
-  { id: 'ill', l: 'Болезнь', en: 'Illness', note: 'Возместить потом', noteEn: 'Make it up later' },
-  { id: 'travel', l: 'В пути', en: 'Travelling', note: 'Возместить потом', noteEn: 'Make it up later' },
-  { id: 'period', l: 'Месячные', en: 'Period', note: 'Возместить потом', noteEn: 'Make it up later' },
-  { id: 'other', l: 'Другое', en: 'Other', note: 'Возместить потом', noteEn: 'Make it up later' },
-  { id: 'chronic', l: 'Не могу поститься', en: 'Cannot fast', note: 'Старость или болезнь без надежды на выздоровление: фидья', noteEn: 'Old age or an illness with no hope of recovery: fidyah' },
+  { id: 'ill', l: _t("Болезнь"), en: 'Illness', note: _t("Возместить потом"), noteEn: 'Make it up later' },
+  { id: 'travel', l: _t("В пути"), en: 'Travelling', note: _t("Возместить потом"), noteEn: 'Make it up later' },
+  { id: 'period', l: _t("Месячные"), en: 'Period', note: _t("Возместить потом"), noteEn: 'Make it up later' },
+  { id: 'other', l: _t("Другое"), en: 'Other', note: _t("Возместить потом"), noteEn: 'Make it up later' },
+  { id: 'chronic', l: _t("Не могу поститься"), en: 'Cannot fast', note: _t("Старость или болезнь без надежды на выздоровление: фидья"), noteEn: 'Old age or an illness with no hope of recovery: fidyah' },
 ];
 
 export function debt(r: RamadanState) {
@@ -64,15 +65,15 @@ export function nightOf(key: string): number | null {
 }
 
 export const EID_SUNNA: [string, string][] = [
-  ['Гусль и лучшая одежда', 'Ghusl and your best clothes'],
-  ['Перед намазом съесть нечётное число фиников (аль-Бухари, 953)', 'Eat an odd number of dates before the prayer (al-Bukhari, 953)'],
-  ['Такбиры по дороге на намаз', 'Takbir on the way to the prayer'],
-  ['Пойти одной дорогой, вернуться другой (аль-Бухари, 986)', 'Go by one route and return by another (al-Bukhari, 986)'],
-  ['Поздравить: «Такаббаля-Ллаху минна ва минкум»', 'Greet: "Taqabbal-Allahu minna wa minkum"'],
+  [_t("Гусль и лучшая одежда"), 'Ghusl and your best clothes'],
+  [_t("Перед намазом съесть нечётное число фиников (аль-Бухари, 953)"), 'Eat an odd number of dates before the prayer (al-Bukhari, 953)'],
+  [_t("Такбиры по дороге на намаз"), 'Takbir on the way to the prayer'],
+  [_t("Пойти одной дорогой, вернуться другой (аль-Бухари, 986)"), 'Go by one route and return by another (al-Bukhari, 986)'],
+  [_t("Поздравить: «Такаббаля-Ллаху минна ва минкум»"), 'Greet: "Taqabbal-Allahu minna wa minkum"'],
 ];
-export const TAKBIR = { ar: 'اللَّهُ أَكْبَرُ اللَّهُ أَكْبَرُ، لَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ اللَّهُ أَكْبَرُ، وَلِلَّهِ الْحَمْدُ', tr: 'Аллаху акбар, Аллаху акбар, ля иляха илля-Ллах, ва-Ллаху акбар, Аллаху акбар, ва ли-Лляхи-ль-хамд.', trEn: 'Allahu akbar, Allahu akbar, la ilaha illa-llah, wa-llahu akbar, Allahu akbar, wa lillahi-l-hamd.' };
-export const QADR_DUA = { ar: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي', tr: 'Аллахумма иннака ‘афуввун тухиббу-ль-‘афва фа‘фу ‘анни.', trEn: 'Allahumma innaka ‘afuwwun tuhibbu-l-‘afwa fa‘fu ‘anni.', ru: '«О Аллах, Ты Прощающий, любишь прощать, так прости же меня».', en: '"O Allah, You are Pardoning and You love to pardon, so pardon me."', src: 'ат-Тирмизи, 3513', srcEn: 'at-Tirmidhi, 3513' };
-export const IFTAR_DUA = { ar: 'ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ', tr: 'Захаба-з-зама’у ва-бталляти-ль-‘урук ва сабата-ль-аджру ин ша’а-Ллах.', trEn: 'Dhahaba-dh-dhama’u wabtallati-l-‘uruqu wa thabata-l-ajru in sha’ Allah.', src: 'Абу Дауд, 2357', srcEn: 'Abu Dawud, 2357' };
+export const TAKBIR = { ar: 'اللَّهُ أَكْبَرُ اللَّهُ أَكْبَرُ، لَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ اللَّهُ أَكْبَرُ، وَلِلَّهِ الْحَمْدُ', tr: _t("Аллаху акбар, Аллаху акбар, ля иляха илля-Ллах, ва-Ллаху акбар, Аллаху акбар, ва ли-Лляхи-ль-хамд."), trEn: 'Allahu akbar, Allahu akbar, la ilaha illa-llah, wa-llahu akbar, Allahu akbar, wa lillahi-l-hamd.' };
+export const QADR_DUA = { ar: 'اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي', tr: _t("Аллахумма иннака ‘афуввун тухиббу-ль-‘афва фа‘фу ‘анни."), trEn: 'Allahumma innaka ‘afuwwun tuhibbu-l-‘afwa fa‘fu ‘anni.', ru: _t("«О Аллах, Ты Прощающий, любишь прощать, так прости же меня»."), en: '"O Allah, You are Pardoning and You love to pardon, so pardon me."', src: _t("ат-Тирмизи, 3513"), srcEn: 'at-Tirmidhi, 3513' };
+export const IFTAR_DUA = { ar: 'ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ', tr: _t("Захаба-з-зама’у ва-бталляти-ль-‘урук ва сабата-ль-аджру ин ша’а-Ллах."), trEn: 'Dhahaba-dh-dhama’u wabtallati-l-‘uruqu wa thabata-l-ajru in sha’ Allah.', src: _t("Абу Дауд, 2357"), srcEn: 'Abu Dawud, 2357' };
 
 /** Day of the 30-day programme to show on a date: the day of Ramadan, else null. */
 export const programmeDay = (key: string) => ramadanDay(key);

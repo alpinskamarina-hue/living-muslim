@@ -6,15 +6,16 @@ import { daysBetween } from '../dates';
 import { ANCHOR_LABEL, type AppState } from '../types';
 import { activeLimit, slotsUsed } from '../store';
 import { BIZ_HABITS, BIZ_DEFAULT, addBizHabits, adviceFor, shuraTotals, type Advice, type Shura } from '../biz';
+import { _t, _tj } from '../i18n';
 
-const AFTER: Record<string, string> = { fajr: 'После Фаджра', dhuhr: 'После Зухра', asr: 'После Асра', maghrib: 'После Магриба', isha: 'После Иши' };
+const AFTER: Record<string, string> = { fajr: _t("После Фаджра"), dhuhr: _t("После Зухра"), asr: _t("После Асра"), maghrib: _t("После Магриба"), isha: _t("После Иши") };
 
 /** Checklist of business habits tied to the prayers. Used when creating or joining a business circle. */
 export function BizPick({ pick, setPick }: { pick: number[]; setPick: (v: number[]) => void }) {
   return (
     <div className="bz-pick">
-      <small className="bz-k">Деловые привычки для круга</small>
-      <p>Каждый включает себе те, что подходят. В круге видна только галочка, без названий и сумм.</p>
+      <small className="bz-k">{_t("Деловые привычки для круга")}</small>
+      <p>{_t("Каждый включает себе те, что подходят. В круге видна только галочка, без названий и сумм.")}</p>
       {BIZ_HABITS.map((h, i) => (
         <label key={h.action}>
           <input type="checkbox" checked={pick.includes(i)} onChange={(e) => setPick(e.target.checked ? [...pick, i].sort() : pick.filter((x) => x !== i))} />
@@ -35,10 +36,10 @@ export function BizHabitsOffer({ state, update, today }: { state: AppState; upda
   return (
     <div className="bz-card">
       <BizPick pick={pick} setPick={setPick} />
-      {used + pick.length > activeLimit() && <p className="tiny">Активных привычек уже {used} из {activeLimit()}: лишние встанут в очередь и включатся, когда освободится место.</p>}
+      {used + pick.length > activeLimit() && <p className="tiny">{_tj("Активных привычек уже {0} из {1}: лишние встанут в очередь и включатся, когда освободится место.", used, activeLimit())}</p>}
       <div className="da-row">
-        <button type="button" className="pri-btn" disabled={!pick.length} onClick={() => update((s) => addBizHabits(s, pick, today, activeLimit(), slotsUsed(s)))}>Добавить себе</button>
-        <button type="button" className="link-btn" onClick={() => { try { localStorage.setItem('lm.bizoffer', '1'); } catch { /* */ } setHide(true); }}>Не сейчас</button>
+        <button type="button" className="pri-btn" disabled={!pick.length} onClick={() => update((s) => addBizHabits(s, pick, today, activeLimit(), slotsUsed(s)))}>{_t("Добавить себе")}</button>
+        <button type="button" className="link-btn" onClick={() => { try { localStorage.setItem('lm.bizoffer', '1'); } catch { /* */ } setHide(true); }}>{_t("Не сейчас")}</button>
       </div>
     </div>
   );
@@ -56,26 +57,26 @@ export function AdviceBox({ members, me, to, k, w, nameOf, mine, give }: {
   return (
     <div className="bz-adv">
       {shown.map((x) => <p key={x.from}><b>{nameOf(x.from)}:</b> {x.t}</p>)}
-      {my && !open && <p className="mine"><b>Ты:</b> {my.t}</p>}
+      {my && !open && <p className="mine"><b>{_t("Ты:")}</b> {my.t}</p>}
       {to !== me && (open ? (
         <div className="bz-advf">
-          <textarea value={t} maxLength={160} rows={2} autoFocus placeholder="Коротко: опыт, контакт, где посмотреть" onChange={(e) => setT(e.target.value)} />
+          <textarea value={t} maxLength={160} rows={2} autoFocus placeholder={_t("Коротко: опыт, контакт, где посмотреть")} onChange={(e) => setT(e.target.value)} />
           <div className="da-row">
-            <button type="button" className="pri-btn" disabled={!t.trim()} onClick={() => { give({ to, k, w, t: t.trim(), at: new Date().toISOString() }); setOpen(false); }}>Отправить совет</button>
-            <button type="button" className="link-btn" onClick={() => setOpen(false)}>Отмена</button>
+            <button type="button" className="pri-btn" disabled={!t.trim()} onClick={() => { give({ to, k, w, t: t.trim(), at: new Date().toISOString() }); setOpen(false); }}>{_t("Отправить совет")}</button>
+            <button type="button" className="link-btn" onClick={() => setOpen(false)}>{_t("Отмена")}</button>
           </div>
         </div>
       ) : (
-        <button type="button" className="bz-chip" onClick={() => setOpen(true)}>💬 {my ? 'Изменить совет' : 'Дать совет'}</button>
+        <button type="button" className="bz-chip" onClick={() => setOpen(true)}>💬 {my ? _t("Изменить совет") : _t("Дать совет")}</button>
       ))}
     </div>
   );
 }
 
 const LINES: { k: 'ok' | 'stuck' | 'ask'; ic: string; label: string; ph: string }[] = [
-  { k: 'ok', ic: '✅', label: 'Что получилось', ph: 'Например: запустил новую страницу заказов' },
-  { k: 'stuck', ic: '🧱', label: 'Где застрял', ph: 'Например: не успеваю отвечать клиентам' },
-  { k: 'ask', ic: '🙏', label: 'В чём нужен совет', ph: 'Например: брать помощника или автоматизировать?' },
+  { k: 'ok', ic: '✅', label: _t("Что получилось"), ph: _t("Например: запустил новую страницу заказов") },
+  { k: 'stuck', ic: '🧱', label: _t("Где застрял"), ph: _t("Например: не успеваю отвечать клиентам") },
+  { k: 'ask', ic: '🙏', label: _t("В чём нужен совет"), ph: _t("Например: брать помощника или автоматизировать?") },
 ];
 
 /** «Шура недели»: on Thursday each one writes three lines; the brothers answer with advice, dua or МашаАллах. */
@@ -100,10 +101,10 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
   return (
     <div className="bz-shura">
       <div className="bz-sh-h">
-        <b>🧭 Шура недели</b>
-        <small>{rangeLabel(w)} · {thu ? 'сегодня четверг, время шуры' : dow < 5 ? `в четверг, через ${5 - dow} ${plural(5 - dow, 'день', 'дня', 'дней')}` : 'итог после Джумы'}</small>
+        <b>{_t("🧭 Шура недели")}</b>
+        <small>{rangeLabel(w)} · {thu ? _t("сегодня четверг, время шуры") : dow < 5 ? _t("в четверг, через {0} {1}", 5 - dow, plural(5 - dow, _t("день"), _t("дня"), _t("дней"))) : _t("итог после Джумы")}</small>
       </div>
-      <p className="bz-q">«И советуйся с ними о делах» (Коран, 3:159). Три строки, без цифр и сумм.</p>
+      <p className="bz-q">{_t("«И советуйся с ними о делах» (Коран, 3:159). Три строки, без цифр и сумм.")}</p>
 
       {edit ? (
         <div className="bz-mine">
@@ -113,25 +114,25 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
             </label>
           ))}
           <div className="da-row">
-            <button type="button" className="pri-btn" disabled={!(d.ok.trim() || d.stuck.trim() || d.ask.trim())} onClick={save}>Поделиться с кругом</button>
-            <button type="button" className="link-btn" onClick={() => setEdit(false)}>Отмена</button>
+            <button type="button" className="pri-btn" disabled={!(d.ok.trim() || d.stuck.trim() || d.ask.trim())} onClick={save}>{_t("Поделиться с кругом")}</button>
+            <button type="button" className="link-btn" onClick={() => setEdit(false)}>{_t("Отмена")}</button>
           </div>
         </div>
       ) : mine ? (
         <div className="bz-mine">
-          <small className="bz-k">Моя неделя</small>
+          <small className="bz-k">{_t("Моя неделя")}</small>
           {lines(mine)}
           <AdviceBox members={members} me={me} to={me} k="s" w={w} nameOf={nameOf} mine={adv} give={give} />
           {gotOf(me).length > 0 && <small className="tiny">{gotOf(me).map(([f, map]) => `${map![`s:${me}`]!.e} ${nameOf(f)}`).join(' · ')}</small>}
           <div className="da-row">
-            <button type="button" className="link-btn" onClick={() => { setD({ ok: mine.ok, stuck: mine.stuck, ask: mine.ask }); setEdit(true); }}>Изменить</button>
-            <button type="button" className="link-btn cg-del" onClick={() => onShura(null)}>Убрать</button>
+            <button type="button" className="link-btn" onClick={() => { setD({ ok: mine.ok, stuck: mine.stuck, ask: mine.ask }); setEdit(true); }}>{_t("Изменить")}</button>
+            <button type="button" className="link-btn cg-del" onClick={() => onShura(null)}>{_t("Убрать")}</button>
           </div>
         </div>
       ) : (
         <button type="button" className={`da-ask bz-write${thu ? ' now' : ''}`} onClick={() => setEdit(true)}>
-          ✍️ Написать свои три строки
-          <small>Что получилось, где застрял, в чём нужен совет</small>
+          {_t("✍️ Написать свои три строки")}
+          <small>{_t("Что получилось, где застрял, в чём нужен совет")}</small>
         </button>
       )}
 
@@ -143,15 +144,15 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
             {lines(m.shura!)}
             <AdviceBox members={members} me={me} to={m.id} k="s" w={w} nameOf={nameOf} mine={adv} give={give} />
             <div className="bz-acts">
-              <button type="button" aria-pressed={r === '🤲'} onClick={() => react(`s:${m.id}`, '🤲')}>🤲 Дуа{r === '🤲' ? ' ✓' : ''}</button>
-              <button type="button" aria-pressed={r === '✨'} onClick={() => react(`s:${m.id}`, '✨')}>✨ МашаАллах{r === '✨' ? ' ✓' : ''}</button>
+              <button type="button" aria-pressed={r === '🤲'} onClick={() => react(`s:${m.id}`, '🤲')}>{_tj("🤲 Дуа{0}", r === '🤲' ? ' ✓' : '')}</button>
+              <button type="button" aria-pressed={r === '✨'} onClick={() => react(`s:${m.id}`, '✨')}>{_tj("✨ МашаАллах{0}", r === '✨' ? ' ✓' : '')}</button>
             </div>
           </div>
         );
       })}
-      {!others.length && members.length > 1 && <small className="tiny">{mine ? 'Братья ещё не написали. Их строки появятся здесь.' : 'Братья ещё не написали. Начни первым, это помогает.'}</small>}
+      {!others.length && members.length > 1 && <small className="tiny">{mine ? _t("Братья ещё не написали. Их строки появятся здесь.") : _t("Братья ещё не написали. Начни первым, это помогает.")}</small>}
       {isFriday(today) && tot.shared > 0 && (
-        <p className="bz-sum">Итог шуры: поделились {tot.shared} из {members.length}, {tot.advice} {plural(tot.advice, 'совет', 'совета', 'советов')}, {tot.duas} дуа{tot.mash ? `, ${tot.mash} МашаАллах` : ''}.</p>
+        <p className="bz-sum">{_tj("Итог шуры: поделились {0} из {1}, {2}  {3}, {4} дуа{5}.", tot.shared, members.length, tot.advice, plural(tot.advice, _t("совет"), _t("совета"), _t("советов")), tot.duas, tot.mash ? _t(", {0} МашаАллах", tot.mash) : '')}</p>
       )}
     </div>
   );
@@ -161,7 +162,7 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
 export function bizLine(members: Member[], today: string) {
   const on = members.filter((m) => m.day === today && (m.biz?.d ?? 0) > 0).length;
   const withBiz = members.filter((m) => (m.biz?.t ?? 0) > 0).length;
-  return withBiz ? `💼 Деловые привычки сегодня: ${on} из ${withBiz}` : '';
+  return withBiz ? _t("💼 Деловые привычки сегодня: {0} из {1}", on, withBiz) : '';
 }
 
 export const isThursdayShura = (today: string) => daysBetween(weekStart(today), today) === 5;

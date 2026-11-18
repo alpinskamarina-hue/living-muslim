@@ -3,20 +3,21 @@ import type { Anchor, AppState, Habit, Sphere } from '../types';
 import { ANCHORS, ANCHOR_LABEL, SPHERES } from '../types';
 import { activeLimit, slotsUsed, uid } from '../store';
 import { dayKey } from '../dates';
+import { _t, _tj } from '../i18n';
 
 const IDEAS: { action: string; min: string; anchor: Anchor; sphere: Sphere }[] = [
-  { action: 'Утренние азкары', min: '3 зикра', anchor: 'fajr', sphere: 'faith' },
-  { action: 'Читать Коран 1 страницу', min: '1 аят', anchor: 'fajr', sphere: 'faith' },
-  { action: 'Зарядка 15 минут', min: '10 отжиманий', anchor: 'fajr', sphere: 'body' },
-  { action: '60 минут глубокой работы', min: '15 минут', anchor: 'dhuhr', sphere: 'biz' },
-  { action: 'Обед без сахара', min: 'без десерта', anchor: 'dhuhr', sphere: 'food' },
-  { action: 'Чтение, 10 страниц', min: '2 страницы', anchor: 'asr', sphere: 'mind' },
-  { action: 'Английский 20 минут', min: '5 новых слов', anchor: 'asr', sphere: 'mind' },
-  { action: 'Прогулка 30 минут', min: '10 минут', anchor: 'asr', sphere: 'body' },
-  { action: 'Час с семьёй без телефона', min: '15 минут', anchor: 'maghrib', sphere: 'family' },
-  { action: 'Позвонить родителям', min: 'написать сообщение', anchor: 'maghrib', sphere: 'family' },
-  { action: 'Вечерние азкары', min: '3 зикра', anchor: 'isha', sphere: 'faith' },
-  { action: 'Лечь спать до 23:00', min: 'телефон убран в 22:30', anchor: 'isha', sphere: 'body' },
+  { action: _t("Утренние азкары"), min: _t("3 зикра"), anchor: 'fajr', sphere: 'faith' },
+  { action: _t("Читать Коран 1 страницу"), min: _t("1 аят"), anchor: 'fajr', sphere: 'faith' },
+  { action: _t("Зарядка 15 минут"), min: _t("10 отжиманий"), anchor: 'fajr', sphere: 'body' },
+  { action: _t("60 минут глубокой работы"), min: _t("15 минут"), anchor: 'dhuhr', sphere: 'biz' },
+  { action: _t("Обед без сахара"), min: _t("без десерта"), anchor: 'dhuhr', sphere: 'food' },
+  { action: _t("Чтение, 10 страниц"), min: _t("2 страницы"), anchor: 'asr', sphere: 'mind' },
+  { action: _t("Английский 20 минут"), min: _t("5 новых слов"), anchor: 'asr', sphere: 'mind' },
+  { action: _t("Прогулка 30 минут"), min: _t("10 минут"), anchor: 'asr', sphere: 'body' },
+  { action: _t("Час с семьёй без телефона"), min: _t("15 минут"), anchor: 'maghrib', sphere: 'family' },
+  { action: _t("Позвонить родителям"), min: _t("написать сообщение"), anchor: 'maghrib', sphere: 'family' },
+  { action: _t("Вечерние азкары"), min: _t("3 зикра"), anchor: 'isha', sphere: 'faith' },
+  { action: _t("Лечь спать до 23:00"), min: _t("телефон убран в 22:30"), anchor: 'isha', sphere: 'body' },
 ];
 
 interface Props {
@@ -55,33 +56,33 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
   return (
     <>
       <div className="dim" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={editing ? 'Привычка' : 'Новая привычка'}>
+      <div className="sheet" role="dialog" aria-label={editing ? _t("Привычка") : _t("Новая привычка")}>
         <div className="grab" />
         <div className="sheet-head">
-          <h3>{editing ? 'Привычка' : 'Новая привычка'}</h3>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Закрыть">✕</button>
+          <h3>{editing ? _t("Привычка") : _t("Новая привычка")}</h3>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={_t("Закрыть")}>✕</button>
         </div>
 
         <div className="phrase">
           <label>
-            <span>После</span>
+            <span>{_t("После")}</span>
             <select value={anchor} onChange={(e) => setAnchor(e.target.value as Anchor)}>
               {ANCHORS.map((a) => (
-                <option key={a} value={a}>{ANCHOR_LABEL[a].after.replace('После ', '')}</option>
+                <option key={a} value={a}>{ANCHOR_LABEL[a].after.replace(_t("После "), '')}</option>
               ))}
             </select>
           </label>
           <label>
-            <span>я буду</span>
-            <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="читать 10 страниц" autoFocus={!editing} />
+            <span>{_t("я буду")}</span>
+            <input value={action} onChange={(e) => setAction(e.target.value)} placeholder={_t("читать 10 страниц")} autoFocus={!editing} />
           </label>
           <label className="minv">
-            <span>Минимум</span>
-            <input value={min} onChange={(e) => setMin(e.target.value)} placeholder="2 страницы" />
+            <span>{_t("Минимум")}</span>
+            <input value={min} onChange={(e) => setMin(e.target.value)} placeholder={_t("2 страницы")} />
           </label>
         </div>
 
-        <div className="lab">Сфера</div>
+        <div className="lab">{_t("Сфера")}</div>
         <div className="spheres">
           {SPHERES.map((s) => (
             <button key={s.id} type="button" className="sph" data-sphere={s.id} aria-pressed={sphere === s.id} onClick={() => setSphere(s.id)}>
@@ -93,7 +94,7 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
 
         {!editing && (
           <>
-            <div className="lab">Идеи</div>
+            <div className="lab">{_t("Идеи")}</div>
             <div className="ideas">
               {IDEAS.filter((i) => !state.habits.some((h) => h.action === i.action && h.status !== 'archived')).map((i) => (
                 <button key={i.action} type="button" onClick={() => { setAction(i.action); setMin(i.min); setAnchor(i.anchor); setSphere(i.sphere); }}>
@@ -106,9 +107,9 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
 
         {full && (
           <div className="limit">
-            <b>Активных уже {used} из {activeLimit()}</b>
+            <b>{_tj("Активных уже {0} из {1}", used, activeLimit())}</b>
             <div className="slots5">{Array.from({ length: activeLimit() }, (_, i) => <i key={i} />)}</div>
-            Новая привычка встанет в очередь «Скоро» и включится сама, когда одна из текущих продержится 21 день на 80%.
+            {_t("Новая привычка встанет в очередь «Скоро» и включится сама, когда одна из текущих продержится 21 день на 80%.")}
             {queue.length > 0 && (
               <div className="queue">
                 {queue.map((q, i) => (
@@ -118,7 +119,7 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
             )}
             {replace && (
               <div className="queue">
-                <div className="lab" style={{ margin: '6px 0 0' }}>Какую заменить? Она уйдёт в архив</div>
+                <div className="lab" style={{ margin: '6px 0 0' }}>{_t("Какую заменить? Она уйдёт в архив")}</div>
                 {active.map((h) => (
                   <button key={h.id} type="button" className="q pick" onClick={() => save(h.id)} disabled={!ok}>{h.action}</button>
                 ))}
@@ -130,18 +131,18 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
         <div className="actions">
           {editing ? (
             <>
-              <button type="button" onClick={() => onDelete?.(editing.id)}>В архив</button>
-              <button type="button" className="pri" disabled={!ok} onClick={() => save()}>Сохранить</button>
+              <button type="button" onClick={() => onDelete?.(editing.id)}>{_t("В архив")}</button>
+              <button type="button" className="pri" disabled={!ok} onClick={() => save()}>{_t("Сохранить")}</button>
             </>
           ) : full ? (
             <>
-              <button type="button" onClick={() => setReplace((r) => !r)}>Заменить текущую</button>
-              <button type="button" className="pri" disabled={!ok} onClick={() => save()}>В очередь</button>
+              <button type="button" onClick={() => setReplace((r) => !r)}>{_t("Заменить текущую")}</button>
+              <button type="button" className="pri" disabled={!ok} onClick={() => save()}>{_t("В очередь")}</button>
             </>
           ) : (
             <>
-              <button type="button" onClick={onClose}>Отмена</button>
-              <button type="button" className="pri" disabled={!ok} onClick={() => save()}>Добавить</button>
+              <button type="button" onClick={onClose}>{_t("Отмена")}</button>
+              <button type="button" className="pri" disabled={!ok} onClick={() => save()}>{_t("Добавить")}</button>
             </>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { _t } from '../i18n';
 /** Living Muslim mark: a heartbeat line with a mosque dome, a crescent and a minaret; the gold dot is "now". */
 export function LogoMark({ size = 28, crescent = true }: { size?: number; crescent?: boolean }) {
   return (
@@ -20,7 +21,7 @@ export function LogoLockup() {
     <div className="logo-lockup">
       <LogoMark size={64} />
       <b>Living Muslim</b>
-      <small>вера, которая живёт каждый день</small>
+      <small>{_t("вера, которая живёт каждый день")}</small>
     </div>
   );
 }

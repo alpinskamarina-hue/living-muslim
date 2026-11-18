@@ -4,6 +4,7 @@ import { A1 } from '../course/a1';
 import { TR } from '../course/tr';
 import { uid } from '../store';
 import { dayKey } from '../dates';
+import { _t, _tj } from '../i18n';
 
 const TOTAL = A1.reduce((n, l) => n + l.p.length, 0);
 type Tab = 'lesson' | 'dialog' | 'cards' | 'speak';
@@ -95,13 +96,13 @@ export function Course({ state, update, habitName, onExit, onFinish }: Props) {
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onExit} aria-label="Выйти">✕</button>
-        <div><b>Английский по дням</b><small>Разговорный A1 · {A1.length} уроков</small></div>
-        <button type="button" className="slow-btn" aria-pressed={slow} onClick={() => setSlow(!slow)} title="Медленная озвучка">🐢</button>
+        <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
+        <div><b>{_t("Английский по дням")}</b><small>{_tj("Разговорный A1 · {0} уроков", A1.length)}</small></div>
+        <button type="button" className="slow-btn" aria-pressed={slow} onClick={() => setSlow(!slow)} title={_t("Медленная озвучка")}>🐢</button>
       </div>
       <div className="q-list course">
         <div className="c-prog">
-          <span>Выучено фраз: {c.learned.length} из {TOTAL}</span>
+          <span>{_tj("Выучено фраз: {0} из {1}", c.learned.length, TOTAL)}</span>
           <div className="bar"><i style={{ width: `${(c.learned.length / TOTAL) * 100}%` }} /></div>
         </div>
         <div className="days" ref={chips}>
@@ -112,23 +113,23 @@ export function Course({ state, update, habitName, onExit, onFinish }: Props) {
           ))}
         </div>
 
-        <div className="c-day">День {day + 1}</div>
+        <div className="c-day">{_tj("День {0}", day + 1)}</div>
         <h2 className="c-title">{L.t}</h2>
-        <p className="c-goal">Цель: {L.goal.toLowerCase()}</p>
+        <p className="c-goal">{_tj("Цель: {0}", L.goal.toLowerCase())}</p>
 
         <div className="c-tabs" role="tablist">
-          {([['lesson', 'Урок'], ['dialog', 'Диалог'], ['cards', 'Карточки'], ['speak', 'Говори']] as [Tab, string][]).map(([id, label]) => (
+          {([['lesson', _t("Урок")], ['dialog', _t("Диалог")], ['cards', _t("Карточки")], ['speak', _t("Говори")]] as [Tab, string][]).map(([id, label]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>{label}</button>
           ))}
         </div>
 
         {noVoice && (
-          <div className="warn">Озвучка не работает в этом окне. Открой страницу в Chrome или Safari, там звук будет. Транскрипция в скобках поможет и без звука.</div>
+          <div className="warn">{_t("Озвучка не работает в этом окне. Открой страницу в Chrome или Safari, там звук будет. Транскрипция в скобках поможет и без звука.")}</div>
         )}
 
         {tab === 'lesson' && (
           <>
-            <p className="tiny">Нажми на динамик, чтобы послушать, повтори вслух 3 раза. Галочка — «выучил».</p>
+            <p className="tiny">{_t("Нажми на динамик, чтобы послушать, повтори вслух 3 раза. Галочка — «выучил».")}</p>
             {L.p.map(([en, ru], i) => {
               const key = `${day}:${i}`;
               const ok = learnedSet.has(key);
@@ -141,13 +142,13 @@ export function Course({ state, update, habitName, onExit, onFinish }: Props) {
                     <span className="pru">{ru}</span>
                   </div>
                   <div className="pbtns">
-                    <button type="button" className="sq" onClick={() => speak(en, slow)} aria-label="Послушать">🔊</button>
-                    <button type="button" className="sq chk2" aria-pressed={ok} onClick={() => toggle(key)} aria-label="Выучил">✓</button>
+                    <button type="button" className="sq" onClick={() => speak(en, slow)} aria-label={_t("Послушать")}>🔊</button>
+                    <button type="button" className="sq chk2" aria-pressed={ok} onClick={() => toggle(key)} aria-label={_t("Выучил")}>✓</button>
                   </div>
                 </div>
               );
             })}
-            <button type="button" className="pri-btn big-btn" onClick={() => setTab('dialog')}>Дальше: диалог</button>
+            <button type="button" className="pri-btn big-btn" onClick={() => setTab('dialog')}>{_t("Дальше: диалог")}</button>
           </>
         )}
 
@@ -158,20 +159,20 @@ export function Course({ state, update, habitName, onExit, onFinish }: Props) {
 
       {finish && (
         <div className="finish-sheet">
-          <b>День {day + 1} пройден</b>
-          <p>{day < A1.length - 1 ? `Открыт день ${day + 2}. ` : 'Курс пройден, машаАллах! '}Фразы урока добавлены в карточки «Языки → Английский» для повторения.</p>
+          <b>{_tj("День {0} пройден", day + 1)}</b>
+          <p>{_tj("{0}Фразы урока добавлены в карточки «Языки → Английский» для повторения.", day < A1.length - 1 ? _t("Открыт день {0}. ", day + 2) : _t("Курс пройден, машаАллах! "))}</p>
           <div className="row2 light">
             {habitName ? (
               <>
-                <button type="button" onClick={() => onFinish('min')}>Минимум</button>
-                <button type="button" className="pri-btn" onClick={() => onFinish('done')}>Отметить привычку</button>
+                <button type="button" onClick={() => onFinish('min')}>{_t("Минимум")}</button>
+                <button type="button" className="pri-btn" onClick={() => onFinish('done')}>{_t("Отметить привычку")}</button>
               </>
             ) : (
-              <button type="button" className="pri-btn" onClick={onExit}>Готово</button>
+              <button type="button" className="pri-btn" onClick={onExit}>{_t("Готово")}</button>
             )}
           </div>
           <button type="button" className="link-btn" onClick={() => { setFinish(false); if (day < A1.length - 1) pick(day + 1); }}>
-            {day < A1.length - 1 ? 'Открыть следующий день' : 'Закрыть'}
+            {day < A1.length - 1 ? _t("Открыть следующий день") : _t("Закрыть")}
           </button>
         </div>
       )}
@@ -205,10 +206,10 @@ function Dialog({ lines, slow, onNext }: { lines: ['A' | 'B', string, string][];
   return (
     <>
       <div className="seg">
-        <button type="button" aria-pressed={!role} onClick={() => setRole(false)}>Слушать</button>
-        <button type="button" aria-pressed={role} onClick={() => { setRole(true); setOpen(new Set()); }}>По ролям: ты — B</button>
+        <button type="button" aria-pressed={!role} onClick={() => setRole(false)}>{_t("Слушать")}</button>
+        <button type="button" aria-pressed={role} onClick={() => { setRole(true); setOpen(new Set()); }}>{_t("По ролям: ты — B")}</button>
       </div>
-      <p className="tiny">{role ? 'Реплики B скрыты. Скажи их вслух по подсказке, потом открой и сверь.' : 'Послушай диалог целиком, потом попробуй по ролям.'}</p>
+      <p className="tiny">{role ? _t("Реплики B скрыты. Скажи их вслух по подсказке, потом открой и сверь.") : _t("Послушай диалог целиком, потом попробуй по ролям.")}</p>
       <div className="dlg">
         {lines.map(([who, en, ru], i) => {
           const hidden = role && who === 'B' && !open.has(i);
@@ -216,8 +217,8 @@ function Dialog({ lines, slow, onNext }: { lines: ['A' | 'B', string, string][];
             <div key={i} className={`bub ${who === 'B' ? 'me' : ''}`} data-on={playing === i || undefined}>
               {hidden ? (
                 <button type="button" className="bub-hidden" onClick={() => { setOpen(new Set([...open, i])); speak(en, slow); }}>
-                  <small>Твоя реплика:</small> {ru}
-                  <em>нажми, чтобы сверить</em>
+                  <small>{_t("Твоя реплика:")}</small> {ru}
+                  <em>{_t("нажми, чтобы сверить")}</em>
                 </button>
               ) : (
                 <button type="button" className="bub-text" onClick={() => speak(en, slow)}>
@@ -230,8 +231,8 @@ function Dialog({ lines, slow, onNext }: { lines: ['A' | 'B', string, string][];
         })}
       </div>
       <div className="row2 light">
-        <button type="button" onClick={playing >= 0 ? () => { stop.current = true; setPlaying(-1); } : playAll}>{playing >= 0 ? 'Стоп' : '▶ Проиграть'}</button>
-        <button type="button" className="pri-btn" onClick={onNext}>Дальше: карточки</button>
+        <button type="button" onClick={playing >= 0 ? () => { stop.current = true; setPlaying(-1); } : playAll}>{playing >= 0 ? _t("Стоп") : _t("▶ Проиграть")}</button>
+        <button type="button" className="pri-btn" onClick={onNext}>{_t("Дальше: карточки")}</button>
       </div>
     </>
   );
@@ -249,14 +250,14 @@ function Cards({ day, phrases, slow, onLearn, onNext }: { day: number; phrases: 
   if (done)
     return (
       <div className="cards-done">
-        <b>Все карточки пройдены</b>
-        <button type="button" className="pri-btn big-btn" onClick={onNext}>Дальше: говори</button>
+        <b>{_t("Все карточки пройдены")}</b>
+        <button type="button" className="pri-btn big-btn" onClick={onNext}>{_t("Дальше: говори")}</button>
       </div>
     );
   const [en, ru] = phrases[idx];
   return (
     <>
-      <p className="tiny">Скажи по-английски, потом открой и сверь. {i + 1} из {queue.length}</p>
+      <p className="tiny">{_tj("Скажи по-английски, потом открой и сверь. {0} из {1}", i + 1, queue.length)}</p>
       <button type="button" className="flash" onClick={() => { setShown(true); speak(en, slow); }}>
         <span className="flash-b" style={{ color: 'var(--ink)' }}>{ru}</span>
         {shown ? (
@@ -264,12 +265,12 @@ function Cards({ day, phrases, slow, onLearn, onNext }: { day: number; phrases: 
             <span className="flash-f" style={{ fontSize: 24 }}>{en}</span>
             {TR[en] && <span className="ptr">[{TR[en]}]</span>}
           </>
-        ) : <span className="flash-hint">Скажи вслух и нажми</span>}
+        ) : <span className="flash-hint">{_t("Скажи вслух и нажми")}</span>}
       </button>
       {shown && (
         <div className="row2 light rev-btns">
-          <button type="button" onClick={() => { setAgain([...again, idx]); setShown(false); setI(i + 1); }}>Ещё раз</button>
-          <button type="button" className="pri-btn" onClick={() => { onLearn(`${day}:${idx}`); setShown(false); setI(i + 1); }}>Сказал верно</button>
+          <button type="button" onClick={() => { setAgain([...again, idx]); setShown(false); setI(i + 1); }}>{_t("Ещё раз")}</button>
+          <button type="button" className="pri-btn" onClick={() => { onLearn(`${day}:${idx}`); setShown(false); setI(i + 1); }}>{_t("Сказал верно")}</button>
         </div>
       )}
     </>
@@ -287,18 +288,18 @@ function Speak({ task, phrases, long, onDone, done }: { task: string; phrases: [
   return (
     <>
       <div className="task">
-        <small>Задание</small>
+        <small>{_t("Задание")}</small>
         <p>{task}</p>
       </div>
-      <p className="tiny">Говори вслух {total / 60} {long ? 'минуты' : 'минуту'} без остановки. Ошибки — нормально, главное не молчать. Подсказки:</p>
+      <p className="tiny">{_tj("Говори вслух {0}  {1} без остановки. Ошибки — нормально, главное не молчать. Подсказки:", total / 60, long ? _t("минуты") : _t("минуту"))}</p>
       <ul className="cheat">{phrases.map(([en]) => <li key={en}>{en}</li>)}</ul>
       <div className="speak-timer">{left === null ? `${total / 60}:00` : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</div>
       {left === null ? (
-        <button type="button" className="pri-btn big-btn" onClick={() => setLeft(total)}>Начать говорить</button>
+        <button type="button" className="pri-btn big-btn" onClick={() => setLeft(total)}>{_t("Начать говорить")}</button>
       ) : left > 0 ? (
-        <button type="button" className="ghost-btn" style={{ width: '100%' }} onClick={() => setLeft(0)}>Закончил раньше</button>
+        <button type="button" className="ghost-btn" style={{ width: '100%' }} onClick={() => setLeft(0)}>{_t("Закончил раньше")}</button>
       ) : (
-        <button type="button" className="pri-btn big-btn" onClick={onDone}>{done ? 'Пройти ещё раз' : 'Завершить день'}</button>
+        <button type="button" className="pri-btn big-btn" onClick={onDone}>{done ? _t("Пройти ещё раз") : _t("Завершить день")}</button>
       )}
     </>
   );

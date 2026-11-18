@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { AppState, SadaqaDay, SadaqaState } from '../types';
 import { addDays, fromKey } from '../dates';
 import { hijri } from '../health';
+import { _t, _tj, LOC } from '../i18n';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void }
 
@@ -13,21 +14,21 @@ const given = (d?: SadaqaDay) => Boolean(d?.money || d?.deed);
 
 /** Good deeds that count as sadaqa, one offered per day. */
 export const DEEDS: { t: string; src: string }[] = [
-  { t: 'Улыбнись брату или сестре', src: '«Твоя улыбка брату — садака». ат-Тирмизи, 1956' },
-  { t: 'Скажи кому-то доброе слово', src: '«Доброе слово — садака». аль-Бухари, 2989; Муслим, 1009' },
-  { t: 'Убери что-то вредное с дороги', src: '«Убрать вредное с дороги — садака». аль-Бухари, 2989; Муслим, 1009' },
-  { t: 'Помоги человеку донести вещи', src: '«Помочь человеку сесть на верховое животное или поднять на него поклажу — садака». аль-Бухари, 2989' },
-  { t: 'Иди в мечеть пешком', src: '«Каждый шаг, который делаешь к намазу, — садака». аль-Бухари, 2989; Муслим, 1009' },
-  { t: 'Потрать на семью с намерением награды', src: '«Когда человек тратит на семью, надеясь на награду, это для него садака». аль-Бухари, 55' },
-  { t: 'Сделай 33 тасбиха, тахмида и такбира', src: '«Каждый тасбих — садака, каждый тахмид — садака…». Муслим, 1006' },
-  { t: 'Помири двоих, кто в ссоре', src: '«Рассудить двоих по справедливости — садака». аль-Бухари, 2989' },
-  { t: 'Покажи дорогу или помоги советом', src: '«Указать дорогу заблудившемуся — садака». ат-Тирмизи, 1956' },
-  { t: 'Поделись водой или едой с соседом', src: '«Налить из своего ведра в ведро брата — садака». ат-Тирмизи, 1956' },
-  { t: 'Первым поприветствуй салямом', src: '«Лучший ислам: кормить едой и приветствовать знакомых и незнакомых». аль-Бухари, 12' },
-  { t: 'Посади растение или покорми птиц', src: '«Если мусульманин посадит растение и от него поест птица или человек, это садака». аль-Бухари, 2320; Муслим, 1553' },
-  { t: 'Удержись сегодня от одного зла', src: '«Пусть удерживается от зла, это для него садака». аль-Бухари, 1445' },
+  { t: _t("Улыбнись брату или сестре"), src: _t("«Твоя улыбка брату — садака». ат-Тирмизи, 1956") },
+  { t: _t("Скажи кому-то доброе слово"), src: _t("«Доброе слово — садака». аль-Бухари, 2989; Муслим, 1009") },
+  { t: _t("Убери что-то вредное с дороги"), src: _t("«Убрать вредное с дороги — садака». аль-Бухари, 2989; Муслим, 1009") },
+  { t: _t("Помоги человеку донести вещи"), src: _t("«Помочь человеку сесть на верховое животное или поднять на него поклажу — садака». аль-Бухари, 2989") },
+  { t: _t("Иди в мечеть пешком"), src: _t("«Каждый шаг, который делаешь к намазу, — садака». аль-Бухари, 2989; Муслим, 1009") },
+  { t: _t("Потрать на семью с намерением награды"), src: _t("«Когда человек тратит на семью, надеясь на награду, это для него садака». аль-Бухари, 55") },
+  { t: _t("Сделай 33 тасбиха, тахмида и такбира"), src: _t("«Каждый тасбих — садака, каждый тахмид — садака…». Муслим, 1006") },
+  { t: _t("Помири двоих, кто в ссоре"), src: _t("«Рассудить двоих по справедливости — садака». аль-Бухари, 2989") },
+  { t: _t("Покажи дорогу или помоги советом"), src: _t("«Указать дорогу заблудившемуся — садака». ат-Тирмизи, 1956") },
+  { t: _t("Поделись водой или едой с соседом"), src: _t("«Налить из своего ведра в ведро брата — садака». ат-Тирмизи, 1956") },
+  { t: _t("Первым поприветствуй салямом"), src: _t("«Лучший ислам: кормить едой и приветствовать знакомых и незнакомых». аль-Бухари, 12") },
+  { t: _t("Посади растение или покорми птиц"), src: _t("«Если мусульманин посадит растение и от него поест птица или человек, это садака». аль-Бухари, 2320; Муслим, 1553") },
+  { t: _t("Удержись сегодня от одного зла"), src: _t("«Пусть удерживается от зла, это для него садака». аль-Бухари, 1445") },
 ];
-const JARIYA_KINDS = ['Вода и колодец', 'Мечеть', 'Коран и книги', 'Обучение', 'Дерево', 'Сироты', 'Другое'];
+const JARIYA_KINDS = [_t("Вода и колодец"), _t("Мечеть"), _t("Коран и книги"), _t("Обучение"), _t("Дерево"), _t("Сироты"), _t("Другое")];
 
 export function deedOf(today: string) {
   const n = Math.floor(fromKey(today).getTime() / 86400000);
@@ -64,9 +65,9 @@ function ramadanNow(today: string): { night: number | null; daysTo: number | nul
 
 function Money({ v, cur, secret }: { v: number; cur: string; secret: boolean }) {
   const [show, setShow] = useState(false);
-  const txt = `${v.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${cur}`;
+  const txt = `${v.toLocaleString(LOC, { maximumFractionDigits: 2 })} ${cur}`;
   if (!secret || show) return <span className="money" onClick={() => secret && setShow(false)}>{txt}</span>;
-  return <button type="button" className="money hid" onClick={() => setShow(true)} aria-label="Показать сумму">{txt}</button>;
+  return <button type="button" className="money hid" onClick={() => setShow(true)} aria-label={_t("Показать сумму")}>{txt}</button>;
 }
 
 export function Sadaqa({ state, update, today, onExit }: Props) {
@@ -89,11 +90,11 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onExit} aria-label="Выйти">✕</button>
-        <div><b>Садака</b><small>Понемногу, но постоянно. Об этом знаете ты и Аллах</small></div>
+        <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
+        <div><b>{_t("Садака")}</b><small>{_t("Понемногу, но постоянно. Об этом знаете ты и Аллах")}</small></div>
       </div>
       <div className="seg">
-        {([['day', 'День'], ['ramadan', 'Рамадан'], ['jariya', 'Джария'], ['zakat', 'Закят']] as const).map(([k, l]) => (
+        {([['day', _t("День")], ['ramadan', _t("Рамадан")], ['jariya', _t("Джария")], ['zakat', _t("Закят")]] as const).map(([k, l]) => (
           <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
@@ -101,46 +102,46 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
         {tab === 'day' && (
           <>
             <div className="h-card h-hero">
-              <small>Серия</small>
-              <b className="h-big sm">{streak} {streak % 10 === 1 && streak % 100 !== 11 ? 'день' : streak % 10 >= 2 && streak % 10 <= 4 && (streak % 100 < 10 || streak % 100 >= 20) ? 'дня' : 'дней'}</b>
+              <small>{_t("Серия")}</small>
+              <b className="h-big sm">{streak} {streak % 10 === 1 && streak % 100 !== 11 ? _t("день") : streak % 10 >= 2 && streak % 10 <= 4 && (streak % 100 < 10 || streak % 100 >= 20) ? _t("дня") : _t("дней")}</b>
               <div className="dots7">{week.map((x) => <i key={x} data-on={given(q.days[x])} />)}</div>
-              <small>«Самые любимые Аллаху дела те, что постоянны, даже если малы». аль-Бухари, 6464; Муслим, 783</small>
+              <small>{_t("«Самые любимые Аллаху дела те, что постоянны, даже если малы». аль-Бухари, 6464; Муслим, 783")}</small>
             </div>
 
             <div className="h-card">
-              <div className="meal-h"><b>Деньгами</b><small>сумму писать не обязательно</small></div>
-              <button type="button" className={d.money ? 'pri-btn' : 'gold-btn'} onClick={() => setDay((x) => ({ ...x, money: !x.money, amt: x.money ? undefined : x.amt }))}>{d.money ? 'Сегодня дал ✓' : 'Сегодня дал'}</button>
+              <div className="meal-h"><b>{_t("Деньгами")}</b><small>{_t("сумму писать не обязательно")}</small></div>
+              <button type="button" className={d.money ? 'pri-btn' : 'gold-btn'} onClick={() => setDay((x) => ({ ...x, money: !x.money, amt: x.money ? undefined : x.amt }))}>{d.money ? _t("Сегодня дал ✓") : _t("Сегодня дал")}</button>
               {d.money && (
                 <div className="task-add">
-                  <input type="number" inputMode="decimal" min="0" step="0.01" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder={`сумма, ${q.cur}`} className={q.secret ? 'secret-in' : ''} />
-                  <button type="button" className="ghost-btn" onClick={() => setDay((x) => ({ ...x, amt: Number(amt) > 0 ? Math.round(Number(amt) * 100) / 100 : undefined }))}>Сохранить</button>
+                  <input type="number" inputMode="decimal" min="0" step="0.01" value={amt} onChange={(e) => setAmt(e.target.value)} placeholder={_t("сумма, {0}", q.cur)} className={q.secret ? 'secret-in' : ''} />
+                  <button type="button" className="ghost-btn" onClick={() => setDay((x) => ({ ...x, amt: Number(amt) > 0 ? Math.round(Number(amt) * 100) / 100 : undefined }))}>{_t("Сохранить")}</button>
                 </div>
               )}
             </div>
 
             <div className="h-card deed">
-              <div className="meal-h"><b>Доброе дело дня</b><small>тоже садака</small></div>
+              <div className="meal-h"><b>{_t("Доброе дело дня")}</b><small>{_t("тоже садака")}</small></div>
               <p className="deed-t">{deed.t}</p>
               <small className="src">{deed.src}</small>
-              <button type="button" className={d.deed ? 'pri-btn' : 'gold-btn'} onClick={() => setDay((x) => ({ ...x, deed: !x.deed }))}>{d.deed ? 'Сделал ✓' : 'Сделал'}</button>
+              <button type="button" className={d.deed ? 'pri-btn' : 'gold-btn'} onClick={() => setDay((x) => ({ ...x, deed: !x.deed }))}>{d.deed ? _t("Сделал ✓") : _t("Сделал")}</button>
             </div>
 
             <GiftPassCard />
 
             <div className="h-card">
-              <div className="meal-h"><b>Тайная садака</b>
+              <div className="meal-h"><b>{_t("Тайная садака")}</b>
                 <label className="switch"><input type="checkbox" checked={q.secret} onChange={(e) => update((s) => patch(s, () => ({ secret: e.target.checked })))} /><span /></label>
               </div>
-              <small>{q.secret ? 'Суммы скрыты, пока не нажмёшь на них. В Круг садака не попадает никогда.' : 'Суммы видны. В Круг садака всё равно не попадает.'}</small>
-              <small className="src">«…так, что его левая рука не знает, что расходует правая». аль-Бухари, 1423</small>
-              {monthSum > 0 && <div className="meal-h"><small>За этот месяц</small><Money v={monthSum} cur={q.cur} secret={q.secret} /></div>}
-              <div className="meal-h"><small>Валюта</small>
+              <small>{q.secret ? _t("Суммы скрыты, пока не нажмёшь на них. В Круг садака не попадает никогда.") : _t("Суммы видны. В Круг садака всё равно не попадает.")}</small>
+              <small className="src">{_t("«…так, что его левая рука не знает, что расходует правая». аль-Бухари, 1423")}</small>
+              {monthSum > 0 && <div className="meal-h"><small>{_t("За этот месяц")}</small><Money v={monthSum} cur={q.cur} secret={q.secret} /></div>}
+              <div className="meal-h"><small>{_t("Валюта")}</small>
                 <select value={q.cur} onChange={(e) => update((s) => patch(s, () => ({ cur: e.target.value })))}>
-                  {['€', '$', '₽', '£', '₸', 'сум', '₺', 'AED', 'SAR'].map((c) => <option key={c}>{c}</option>)}
+                  {['€', '$', '₽', '£', '₸', _t("сум"), '₺', 'AED', 'SAR'].map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
             </div>
-            <p className="q-msg left tiny-note">«Садака не уменьшает имущества». Муслим, 2588</p>
+            <p className="q-msg left tiny-note">{_t("«Садака не уменьшает имущества». Муслим, 2588")}</p>
           </>
         )}
 
@@ -160,19 +161,19 @@ function Ramadan({ q, update, today }: { q: SadaqaState; update: Props['update']
   const sent = r ? plan.filter((p) => r.given.includes(p.night)).reduce((a, p) => a + p.share, 0) : 0;
   return (
     <>
-      <p className="q-msg left">Задай сумму на последние 10 ночей Рамадана. Приложение разделит её по ночам, и часть садаки точно придётся на Ляйлят аль-Кадр.</p>
+      <p className="q-msg left">{_t("Задай сумму на последние 10 ночей Рамадана. Приложение разделит её по ночам, и часть садаки точно придётся на Ляйлят аль-Кадр.")}</p>
       <div className="h-card h-hero">
-        <small>{now.night ? 'Сегодня' : 'До последних 10 ночей'}</small>
-        <b className="h-big sm">{now.night ? `${now.night}-я ночь${now.night % 2 ? ', нечётная' : ''}` : now.daysTo != null ? `${now.daysTo} дн.` : '—'}</b>
-        <small>«Ищите Ночь предопределения в нечётные ночи из последних десяти ночей Рамадана». аль-Бухари, 2017</small>
+        <small>{now.night ? _t("Сегодня") : _t("До последних 10 ночей")}</small>
+        <b className="h-big sm">{now.night ? _t("{0}-я ночь{1}", now.night, now.night % 2 ? _t(", нечётная") : '') : now.daysTo != null ? _t("{0} дн.", now.daysTo) : '—'}</b>
+        <small>{_t("«Ищите Ночь предопределения в нечётные ночи из последних десяти ночей Рамадана». аль-Бухари, 2017")}</small>
       </div>
       <div className="task-add">
-        <input type="number" inputMode="decimal" min="0" value={v} onChange={(e) => setV(e.target.value)} placeholder={`всего, ${q.cur}`} className={q.secret ? 'secret-in' : ''} />
-        <button type="button" className="pri-btn" disabled={!(Number(v) > 0)} onClick={() => update((s) => patch(s, (y) => ({ ramadan: { total: Number(v), odd2: y.ramadan?.odd2 ?? false, given: y.ramadan?.given ?? [] } })))}>{r ? 'Обновить' : 'Распределить'}</button>
+        <input type="number" inputMode="decimal" min="0" value={v} onChange={(e) => setV(e.target.value)} placeholder={_t("всего, {0}", q.cur)} className={q.secret ? 'secret-in' : ''} />
+        <button type="button" className="pri-btn" disabled={!(Number(v) > 0)} onClick={() => update((s) => patch(s, (y) => ({ ramadan: { total: Number(v), odd2: y.ramadan?.odd2 ?? false, given: y.ramadan?.given ?? [] } })))}>{r ? _t("Обновить") : _t("Распределить")}</button>
       </div>
       {r && (
         <>
-          <label className="check-row"><input type="checkbox" checked={r.odd2} onChange={(e) => update((s) => patch(s, (y) => ({ ramadan: { ...y.ramadan!, odd2: e.target.checked } })))} /> В нечётные ночи вдвое больше</label>
+          <label className="check-row"><input type="checkbox" checked={r.odd2} onChange={(e) => update((s) => patch(s, (y) => ({ ramadan: { ...y.ramadan!, odd2: e.target.checked } })))} />{_t(" В нечётные ночи вдвое больше")}</label>
           <div className="nights">
             {plan.map((p) => {
               const on = r.given.includes(p.night);
@@ -183,8 +184,8 @@ function Ramadan({ q, update, today }: { q: SadaqaState; update: Props['update']
               );
             })}
           </div>
-          <p className="q-msg left">Отдано {r.given.length} из 10 ночей{q.secret ? '' : `, ${Math.round(sent * 100) / 100} ${q.cur} из ${r.total} ${q.cur}`}. Ночь начинается с Магриба: садаку 21-й ночи отдают вечером 20-го дня. Удобно настроить автоплатёж в своём фонде и отмечать здесь.</p>
-          <button type="button" className="ghost-btn" onClick={() => update((s) => patch(s, () => ({ ramadan: null })))}>Сбросить план</button>
+          <p className="q-msg left">{_tj("Отдано {0} из 10 ночей{1}. Ночь начинается с Магриба: садаку 21-й ночи отдают вечером 20-го дня. Удобно настроить автоплатёж в своём фонде и отмечать здесь.", r.given.length, q.secret ? '' : _t(", {0} {1} из {2} {3}", Math.round(sent * 100) / 100, q.cur, r.total, q.cur))}</p>
+          <button type="button" className="ghost-btn" onClick={() => update((s) => patch(s, () => ({ ramadan: null })))}>{_t("Сбросить план")}</button>
         </>
       )}
     </>
@@ -198,26 +199,26 @@ function Jariya({ q, update, today }: { q: SadaqaState; update: Props['update'];
   return (
     <>
       <div className="h-card third">
-        <b>Садака, которая продолжается</b>
-        <small>«Когда человек умирает, его дела прекращаются, кроме трёх: продолжающейся садаки, знания, которое приносит пользу, и праведного ребёнка, который молится за него». Муслим, 1631</small>
-        <small>Садака за умерших родителей доходит до них: Саад ибн Убада сделал садаку за мать с позволения Пророка ﷺ. аль-Бухари, 2756</small>
+        <b>{_t("Садака, которая продолжается")}</b>
+        <small>{_t("«Когда человек умирает, его дела прекращаются, кроме трёх: продолжающейся садаки, знания, которое приносит пользу, и праведного ребёнка, который молится за него». Муслим, 1631")}</small>
+        <small>{_t("Садака за умерших родителей доходит до них: Саад ибн Убада сделал садаку за мать с позволения Пророка ﷺ. аль-Бухари, 2756")}</small>
       </div>
       <div className="h-card">
-        <b>Записать</b>
-        <input className="j-in" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Например: колодец в Чаде через фонд" />
+        <b>{_t("Записать")}</b>
+        <input className="j-in" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={_t("Например: колодец в Чаде через фонд")} />
         <div className="choices">{JARIYA_KINDS.map((k) => <button type="button" key={k} aria-pressed={kind === k} onClick={() => setKind(k)}>{k}</button>)}</div>
-        <input className="j-in" value={forWhom} onChange={(e) => setFor(e.target.value)} placeholder="За кого (необязательно): за маму, за деда" />
+        <input className="j-in" value={forWhom} onChange={(e) => setFor(e.target.value)} placeholder={_t("За кого (необязательно): за маму, за деда")} />
         <button type="button" className="pri-btn" disabled={!title.trim()} onClick={() => {
           update((s) => patch(s, (y) => ({ jariya: [{ id: Date.now().toString(36), title: title.trim(), kind, forWhom: forWhom.trim() || undefined, date: today }, ...y.jariya] })));
           setTitle(''); setFor('');
-        }}>Добавить</button>
+        }}>{_t("Добавить")}</button>
       </div>
-      {q.jariya.length === 0 && <p className="q-msg left">Пока пусто. Даже вклад в общий проект считается: часть колодца, страница в Коране для мечети, оплата урока.</p>}
+      {q.jariya.length === 0 && <p className="q-msg left">{_t("Пока пусто. Даже вклад в общий проект считается: часть колодца, страница в Коране для мечети, оплата урока.")}</p>}
       {q.jariya.map((j) => (
         <div key={j.id} className="h-card">
-          <div className="meal-h"><b>{j.title}</b><small>{fromKey(j.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}</small></div>
+          <div className="meal-h"><b>{j.title}</b><small>{fromKey(j.date).toLocaleDateString(LOC, { day: 'numeric', month: 'short', year: 'numeric' })}</small></div>
           <small>{j.kind}{j.forWhom ? ` · ${j.forWhom}` : ''}</small>
-          <button type="button" className="link-btn" onClick={() => update((s) => patch(s, (y) => ({ jariya: y.jariya.filter((x) => x.id !== j.id) })))}>Удалить</button>
+          <button type="button" className="link-btn" onClick={() => update((s) => patch(s, (y) => ({ jariya: y.jariya.filter((x) => x.id !== j.id) })))}>{_t("Удалить")}</button>
         </div>
       ))}
     </>

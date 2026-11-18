@@ -4,6 +4,7 @@
 
 import { avatarUrl, type AvatarPick } from './avatar';
 import { authMe, accessToken } from './auth';
+import { _t } from './i18n';
 
 const URL_ = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
@@ -15,15 +16,15 @@ export interface CircleRef { code: string; title: string; kind?: CircleKind }
 export interface CloudId { uid: string; token: string; name: string; circle?: string; circles?: CircleRef[] }
 
 export const CIRCLE_KINDS: { id: CircleKind; ru: string; ic: string; hint: string; old?: boolean; fresh?: boolean }[] = [
-  { id: 'family', ru: 'Семья', ic: '🏡', hint: 'Намаз вместе дома, детские профили, семейный сад' },
-  { id: 'brothers', ru: 'Братья', ic: '🤝', hint: 'Держать друг друга в намазе и делах' },
-  { id: 'sisters', ru: 'Сёстры', ic: '🌸', hint: 'Закрытый круг только для своих' },
-  { id: 'biz', ru: 'Бизнес', ic: '💼', hint: 'Дело рядом с намазом: деловые привычки, шура по четвергам, дуа за сделки. Суммы денег не видны никогда', fresh: true },
-  { id: 'friends', ru: 'Друзья', ic: '👥', hint: 'Близкие люди, которые поддержат' },
-  { id: 'masjid', ru: 'Мечеть, халака', ic: '🕌', hint: 'Община, уроки, общий хатм' },
-  { id: 'study', ru: 'Учёба', ic: '📚', hint: 'Коран, арабский, общий курс' },
-  { id: 'work', ru: 'Работа', ic: '💼', hint: 'Коллеги-мусульмане', old: true },
-  { id: 'other', ru: 'Своё', ic: '✨', hint: 'Любая другая цель' },
+  { id: 'family', ru: _t("Семья"), ic: '🏡', hint: _t("Намаз вместе дома, детские профили, семейный сад") },
+  { id: 'brothers', ru: _t("Братья"), ic: '🤝', hint: _t("Держать друг друга в намазе и делах") },
+  { id: 'sisters', ru: _t("Сёстры"), ic: '🌸', hint: _t("Закрытый круг только для своих") },
+  { id: 'biz', ru: _t("Бизнес"), ic: '💼', hint: _t("Дело рядом с намазом: деловые привычки, шура по четвергам, дуа за сделки. Суммы денег не видны никогда"), fresh: true },
+  { id: 'friends', ru: _t("Друзья"), ic: '👥', hint: _t("Близкие люди, которые поддержат") },
+  { id: 'masjid', ru: _t("Мечеть, халака"), ic: '🕌', hint: _t("Община, уроки, общий хатм") },
+  { id: 'study', ru: _t("Учёба"), ic: '📚', hint: _t("Коран, арабский, общий курс") },
+  { id: 'work', ru: _t("Работа"), ic: '💼', hint: _t("Коллеги-мусульмане"), old: true },
+  { id: 'other', ru: _t("Своё"), ic: '✨', hint: _t("Любая другая цель") },
 ];
 export const kindOf = (k?: CircleKind) => CIRCLE_KINDS.find((x) => x.id === k);
 
@@ -32,7 +33,7 @@ function load(): CloudId | null {
     const x: CloudId | null = JSON.parse(localStorage.getItem(LS) || 'null');
     if (!x?.uid || !x?.token) return null;
     const list = (x.circles ?? []).filter((c) => c?.code);
-    if (x.circle && !list.some((c) => c.code === x.circle)) list.unshift({ code: x.circle, title: 'Мой круг' });
+    if (x.circle && !list.some((c) => c.code === x.circle)) list.unshift({ code: x.circle, title: _t("Мой круг") });
     return { ...x, circles: list };
   } catch { return null; }
 }
@@ -124,10 +125,10 @@ async function ensureId(name: string): Promise<CloudId> {
 
 const addCircle = (me: CloudId, ref: CircleRef): CloudId => ({ ...me, circle: ref.code, circles: [...(me.circles ?? []).filter((c) => c.code !== ref.code), ref] });
 
-export async function createCircle(name: string, title = 'Мой круг', kind?: CircleKind): Promise<string> {
+export async function createCircle(name: string, title = _t("Мой круг"), kind?: CircleKind): Promise<string> {
   const me = await ensureId(name);
   const code = await rpc<string>('lm_create_circle', { p_uid: me.uid, p_token: me.token });
-  const ref = { code, title: title.trim().slice(0, 40) || 'Мой круг', kind };
+  const ref = { code, title: title.trim().slice(0, 40) || _t("Мой круг"), kind };
   save(addCircle(me, ref));
   pushMeta(me, ref);
   return code;
@@ -139,7 +140,7 @@ export async function joinCircle(name: string, code: string, title = '', kind?: 
   const ok = await rpc<boolean>('lm_join', { p_uid: me.uid, p_token: me.token, p_code: c });
   if (ok) {
     const old = me.circles?.find((x) => x.code === c);
-    const ref = { code: c, title: title.trim().slice(0, 40) || old?.title || 'Круг друзей', kind: kind ?? old?.kind };
+    const ref = { code: c, title: title.trim().slice(0, 40) || old?.title || _t("Круг друзей"), kind: kind ?? old?.kind };
     save(addCircle(me, ref));
     pushMeta(me, ref);
     try { sessionStorage.removeItem('lm.invite'); sessionStorage.removeItem('lm.inviteMeta'); } catch { /* */ }
@@ -255,7 +256,7 @@ export async function answerInvite(inv: Invite, accept: boolean): Promise<boolea
     if (!r?.ok) return false;
     if (accept && r.code) {
       const kind = CIRCLE_KINDS.some((k) => k.id === r.kind) ? (r.kind as CircleKind) : undefined;
-      save(addCircle(me, { code: r.code, title: r.title || 'Круг', kind }));
+      save(addCircle(me, { code: r.code, title: r.title || _t("Круг"), kind }));
       try { sessionStorage.setItem('lm.tab', 'circle'); sessionStorage.setItem('lm.autojoin', '1'); } catch { /* */ }
       location.reload();
     }
@@ -288,7 +289,7 @@ export async function claimByEmail(accessToken: string, authId: string, name: st
     for (const c of list ?? []) {
       const kind = CIRCLE_KINDS.some((k) => k.id === c.kind) ? (c.kind as CircleKind) : undefined;
       const i = merged.findIndex((x) => x.code === c.code);
-      if (i < 0) merged.push({ code: c.code, title: c.title || 'Круг', kind });
+      if (i < 0) merged.push({ code: c.code, title: c.title || _t("Круг"), kind });
       else if (!c.title) pushMeta({ uid: r.uid, token: r.token, name }, merged[i]);
     }
     const next: CloudId = { uid: r.uid, token: r.token, name: r.name || (r.same ? me?.name : '') || name, circles: merged, circle: (r.same && me?.circle) || merged[0]?.code };

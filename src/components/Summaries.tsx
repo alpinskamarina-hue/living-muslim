@@ -2,6 +2,7 @@ import { Fragment, useState, type ReactNode } from 'react';
 import type { AppState, Mark } from '../types';
 import { SUMMARY_BOOKS, type Summary } from '../summaries';
 import { dayKey } from '../dates';
+import { _t, _tj } from '../i18n';
 
 const key = (s: Summary) => `${s.book}:${s.n}`;
 
@@ -67,34 +68,34 @@ export function SummaryBook({ book, chapters, state, update, habitName, onClose,
     return (
       <div className="sess light-sess">
         <div className="sess-top">
-          <button type="button" className="icon-btn" onClick={() => { setOpen(null); setFinish(false); }} aria-label="К главам">‹</button>
-          <div><b>Глава {open.n}</b><small>{meta.title}</small></div>
-          <button type="button" className="done-btn" onClick={() => setFinish(true)}>Закончить</button>
+          <button type="button" className="icon-btn" onClick={() => { setOpen(null); setFinish(false); }} aria-label={_t("К главам")}>‹</button>
+          <div><b>{_tj("Глава {0}", open.n)}</b><small>{meta.title}</small></div>
+          <button type="button" className="done-btn" onClick={() => setFinish(true)}>{_t("Закончить")}</button>
         </div>
         <div className="b-read sum-read">
           <h2>{open.title}</h2>
           <Md text={open.md} />
           {(state.summaryNotes ?? []).filter((x) => x.key === key(open)).map((x, i) => (
-            <p key={i} className="sum-note">Твоя мысль ({x.date.split('-').reverse().join('.')}): {x.text}</p>
+            <p key={i} className="sum-note">{_tj("Твоя мысль ({0}): {1}", x.date.split('-').reverse().join('.'), x.text)}</p>
           ))}
-          {next && <button type="button" className="link-btn" onClick={() => { markRead(open); setOpen(next); }}>Следующая глава: {next.title} ›</button>}
+          {next && <button type="button" className="link-btn" onClick={() => { markRead(open); setOpen(next); }}>{_tj("Следующая глава: {0} ›", next.title)}</button>}
         </div>
         {finish && (
           <div className="finish-sheet">
-            <b>Глава {open.n} прочитана</b>
-            <p>Одна мысль, которую стоит запомнить:</p>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Например: каждое действие это голос за того, кем я хочу стать" />
+            <b>{_tj("Глава {0} прочитана", open.n)}</b>
+            <p>{_t("Одна мысль, которую стоит запомнить:")}</p>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={_t("Например: каждое действие это голос за того, кем я хочу стать")} />
             <div className="row2 light">
               {habitName ? (
                 <>
-                  <button type="button" onClick={() => { markRead(open); saveNote(open); onFinish('min'); }}>Минимум</button>
-                  <button type="button" className="pri-btn" onClick={() => { markRead(open); saveNote(open); onFinish('done'); }}>Сделано</button>
+                  <button type="button" onClick={() => { markRead(open); saveNote(open); onFinish('min'); }}>{_t("Минимум")}</button>
+                  <button type="button" className="pri-btn" onClick={() => { markRead(open); saveNote(open); onFinish('done'); }}>{_t("Сделано")}</button>
                 </>
               ) : (
-                <button type="button" className="pri-btn" onClick={() => { markRead(open); saveNote(open); setNote(''); setFinish(false); setOpen(null); }}>Сохранить</button>
+                <button type="button" className="pri-btn" onClick={() => { markRead(open); saveNote(open); setNote(''); setFinish(false); setOpen(null); }}>{_t("Сохранить")}</button>
               )}
             </div>
-            <button type="button" className="link-btn" onClick={() => setFinish(false)}>Читать дальше</button>
+            <button type="button" className="link-btn" onClick={() => setFinish(false)}>{_t("Читать дальше")}</button>
           </div>
         )}
       </div>
@@ -105,17 +106,17 @@ export function SummaryBook({ book, chapters, state, update, habitName, onClose,
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onClose} aria-label="К полке">‹</button>
-        <div><b>{meta.title}</b><small>Прочитано {done} из {chapters.length} · новая глава каждое утро</small></div>
+        <button type="button" className="icon-btn" onClick={onClose} aria-label={_t("К полке")}>‹</button>
+        <div><b>{meta.title}</b><small>{_tj("Прочитано {0} из {1} · новая глава каждое утро", done, chapters.length)}</small></div>
       </div>
       <div className="q-list">
         {chapters.map((c) => (
           <button type="button" key={key(c)} className={`q-row ch-item${read.has(key(c)) ? ' read' : ''}`} onClick={() => setOpen(c)}>
             <span className="q-n">{read.has(key(c)) ? '✓' : c.n}</span>
-            <span className="q-t"><b>Глава {c.n}. {c.title}</b><small>{c.date.split('-').reverse().join('.')}</small></span>
+            <span className="q-t"><b>{_tj("Глава {0}. {1}", c.n, c.title)}</b><small>{c.date.split('-').reverse().join('.')}</small></span>
           </button>
         ))}
-        <p className="q-msg">Это пересказ своими словами, а не текст книги.</p>
+        <p className="q-msg">{_t("Это пересказ своими словами, а не текст книги.")}</p>
       </div>
     </div>
   );

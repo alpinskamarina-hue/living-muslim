@@ -2,11 +2,12 @@ import { useState } from 'react';
 import type { AppState, UmrahState } from '../types';
 import { uid } from '../store';
 import { umrahOf } from './Umrah';
+import { _t, _tj, LOC } from '../i18n';
 
 // After the umrah: a picture to share, forty days to keep the state, and a diary that comes back in a year.
 
 const patch = (s: AppState, p: Partial<UmrahState>): AppState => ({ ...s, umrah: { ...umrahOf(s), ...p } });
-const dl = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+const dl = (d: string) => new Date(d).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' });
 type Props = { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string };
 
 /** Story picture, 1080×1920, drawn on a canvas so it works offline and needs no server. */
@@ -20,19 +21,19 @@ async function storyPng(u: UmrahState, from?: string, to?: string): Promise<Blob
   x.save(); x.translate(540, 700); x.rotate(Math.PI / 4); x.fillStyle = '#111'; x.fillRect(-100, -88, 200, 176); x.strokeStyle = '#c9a24a'; x.lineWidth = 10; x.strokeRect(-82, -70, 164, 140); x.restore();
   x.textAlign = 'center'; x.fillStyle = '#f1f6f0';
   x.font = '600 40px Manrope, sans-serif'; x.globalAlpha = .7; x.fillText('LIVING MUSLIM', 540, 150); x.globalAlpha = 1;
-  x.font = '700 120px "Cormorant Garamond", Georgia, serif'; x.fillText('Моя умра', 540, 1170);
+  x.font = '700 120px "Cormorant Garamond", Georgia, serif'; x.fillText(_t("Моя умра"), 540, 1170);
   const days = from && to ? Math.round((Date.parse(to) - Date.parse(from)) / 86400000) + 1 : 0;
   x.font = '500 44px Manrope, sans-serif'; x.globalAlpha = .85;
-  if (from) { const dm = (d: string) => new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }); x.fillText(`${dm(from)}${to ? ' — ' + dm(to) : ''} ${new Date(to ?? from).getFullYear()}`, 540, 1250); } x.globalAlpha = 1;
+  if (from) { const dm = (d: string) => new Date(d).toLocaleDateString(LOC, { day: 'numeric', month: 'long' }); x.fillText(`${dm(from)}${to ? ' — ' + dm(to) : ''} ${new Date(to ?? from).getFullYear()}`, 540, 1250); } x.globalAlpha = 1;
   const duas = u.duas.filter((d) => d.done).length + (u.asked?.length ?? 0);
-  const stats: [string, string][] = [[String(7), 'кругов тавафа'], [String(duas), 'дуа за близких'], [days ? String(days) : '—', 'дней']];
+  const stats: [string, string][] = [[String(7), _t("кругов тавафа")], [String(duas), _t("дуа за близких")], [days ? String(days) : '—', _t("дней")]];
   stats.forEach(([n, l], i) => {
     const cx = 220 + i * 320;
     x.fillStyle = '#d9ad55'; x.font = '700 110px "Cormorant Garamond", Georgia, serif'; x.fillText(n, cx, 1460);
     x.fillStyle = '#f1f6f0'; x.font = '500 36px Manrope, sans-serif'; x.fillText(l, cx, 1520);
   });
   x.fillStyle = '#d9ad55'; x.font = '64px Amiri, serif'; x.fillText('لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ', 540, 1700);
-  x.fillStyle = '#f1f6f0'; x.globalAlpha = .7; x.font = '500 34px Manrope, sans-serif'; x.fillText('Да примет Аллах', 540, 1780);
+  x.fillStyle = '#f1f6f0'; x.globalAlpha = .7; x.font = '500 34px Manrope, sans-serif'; x.fillText(_t("Да примет Аллах"), 540, 1780);
   return new Promise((r) => c.toBlob(r, 'image/png'));
 }
 
@@ -44,22 +45,22 @@ export function StoryButton({ state, from, to }: { state: AppState; from?: strin
       await document.fonts?.ready;
       const b = await storyPng(umrahOf(state), from, to); if (!b) return;
       const file = new File([b], 'moya-umra.png', { type: 'image/png' });
-      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: 'Моя умра' }).catch(() => {});
+      if (navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title: _t("Моя умра") }).catch(() => {});
       else { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = file.name; a.click(); }
     } finally { setBusy(false); }
   };
-  return <button type="button" className="gold-btn af-story" onClick={go} disabled={busy}>{busy ? 'Готовлю…' : '🕋 Картинка «Моя умра» для сторис'}</button>;
+  return <button type="button" className="gold-btn af-story" onClick={go} disabled={busy}>{busy ? _t("Готовлю…") : _t("🕋 Картинка «Моя умра» для сторис")}</button>;
 }
 
-const KEEP = ['Ночной намаз, хотя бы 2 ракаата', 'Коран после Фаджра', 'Дуа перед сном за тех, кто просил', 'Садака каждый день, хоть немного', 'Намаз в мечети, где можно'];
+const KEEP = [_t("Ночной намаз, хотя бы 2 ракаата"), _t("Коран после Фаджра"), _t("Дуа перед сном за тех, кто просил"), _t("Садака каждый день, хоть немного"), _t("Намаз в мечети, где можно")];
 
 export function FortyDays({ state, update, today }: Props) {
   const u = umrahOf(state);
   const k = u.keep;
   if (!k) return (
     <div className="pp-card">
-      <div className="pp-top"><b>40 дней после умры</b></div>
-      <small className="pp-tip">Выбери одну привычку из поездки и сохрани её 40 дней, чтобы состояние не ушло.</small>
+      <div className="pp-top"><b>{_t("40 дней после умры")}</b></div>
+      <small className="pp-tip">{_t("Выбери одну привычку из поездки и сохрани её 40 дней, чтобы состояние не ушло.")}</small>
       <div className="af-keep">{KEEP.map((t) => <button key={t} type="button" onClick={() => update((s) => patch(s, { keep: { what: t, start: today, days: [] } }))}>{t}</button>)}</div>
     </div>
   );
@@ -67,11 +68,11 @@ export function FortyDays({ state, update, today }: Props) {
   const done = k.days.includes(today);
   return (
     <div className="pp-card">
-      <div className="pp-top"><b>40 дней: {k.what}</b><small>день {n} из 40</small></div>
+      <div className="pp-top"><b>{_tj("40 дней: {0}", k.what)}</b><small>{_tj("день {0} из 40", n)}</small></div>
       <div className="af-grid">{Array.from({ length: 40 }, (_, i) => { const d = new Date(Date.parse(k.start) + i * 86400000).toISOString().slice(0, 10); return <i key={i} data-on={k.days.includes(d)} data-today={d === today} />; })}</div>
-      <small className="pp-tip">{k.days.length} из {n} дней сделано. Пропустил день? Не пропускай второй.</small>
-      <button type="button" className={`pp-btn${done ? ' on' : ''}`} onClick={() => update((s) => { const c = umrahOf(s).keep!; return patch(s, { keep: { ...c, days: done ? c.days.filter((x) => x !== today) : [...c.days, today] } }); })}>{done ? '✓ Сегодня сделано' : 'Сегодня сделал'}</button>
-      <button type="button" className="link-btn" onClick={() => update((s) => patch(s, { keep: undefined }))}>Выбрать другую</button>
+      <small className="pp-tip">{_tj("{0} из {1} дней сделано. Пропустил день? Не пропускай второй.", k.days.length, n)}</small>
+      <button type="button" className={`pp-btn${done ? ' on' : ''}`} onClick={() => update((s) => { const c = umrahOf(s).keep!; return patch(s, { keep: { ...c, days: done ? c.days.filter((x) => x !== today) : [...c.days, today] } }); })}>{done ? _t("✓ Сегодня сделано") : _t("Сегодня сделал")}</button>
+      <button type="button" className="link-btn" onClick={() => update((s) => patch(s, { keep: undefined }))}>{_t("Выбрать другую")}</button>
     </div>
   );
 }
@@ -83,11 +84,11 @@ export function Diary({ state, update, today, prompt }: Props & { prompt?: strin
   const add = () => { if (!text.trim()) return; update((s) => patch(s, { diary: [...(umrahOf(s).diary ?? []), { id: uid(), d: today, text: text.trim() }] })); setText(''); };
   return (
     <div className="pp-card">
-      <div className="pp-top"><b>Дневник паломника</b><small>{list.length} записей</small></div>
-      <textarea className="af-text" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={prompt ?? 'Что ты почувствовал сегодня? О чём просил? Пара строк, чтобы через год вспомнить.'} />
-      <button type="button" className="pp-btn" onClick={add} disabled={!text.trim()}>Записать</button>
+      <div className="pp-top"><b>{_t("Дневник паломника")}</b><small>{_tj("{0} записей", list.length)}</small></div>
+      <textarea className="af-text" rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder={prompt ?? _t("Что ты почувствовал сегодня? О чём просил? Пара строк, чтобы через год вспомнить.")} />
+      <button type="button" className="pp-btn" onClick={add} disabled={!text.trim()}>{_t("Записать")}</button>
       {list.slice(0, 5).map((e) => <div key={e.id} className="af-entry"><small>{dl(e.d)}</small><p>{e.text}</p></div>)}
-      <small className="pp-tip">Записи только на твоём телефоне. Через год приложение напомнит о них.</small>
+      <small className="pp-tip">{_t("Записи только на твоём телефоне. Через год приложение напомнит о них.")}</small>
     </div>
   );
 }
@@ -98,9 +99,9 @@ export function YearAgo({ state, today }: { state: AppState; today: string }) {
   if (!hit.length) return null;
   return (
     <div className="af-year">
-      <b>Год назад ты был в умре</b>
+      <b>{_t("Год назад ты был в умре")}</b>
       {hit.slice(0, 2).map((e) => <p key={e.id}>«{e.text}» <small>{dl(e.d)}</small></p>)}
-      <small>Сделай сегодня дуа, чтобы Аллах позвал тебя снова.</small>
+      <small>{_t("Сделай сегодня дуа, чтобы Аллах позвал тебя снова.")}</small>
     </div>
   );
 }

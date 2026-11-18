@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { _t } from './i18n';
 
 export interface KhatmDoc { title: string; due: string; dedicate?: string; created: string }
 export type KhatmMine = Record<string, { taken: number[]; done: number[] }>; // host -> my juz
@@ -42,7 +43,7 @@ export function useKhatm(): KhatmApi {
       db.current = d; user.current = u; setMe(id); setReady(true);
       const sub = (col: string, set: (m: any) => void) => unsubs.push(d.collection(col).onSnapshot(
         (snap: any) => { const m: any = {}; snap.docs.forEach((x: any) => { if (x.exists) m[x.id] = x.data() ?? {}; }); set(m); },
-        () => setError('Общий хатм сейчас недоступен.'),
+        () => setError(_t("Общий хатм сейчас недоступен.")),
       ));
       sub('khatm', setList);
       sub('khatmJuz', setJuz);
@@ -64,7 +65,7 @@ export function useKhatm(): KhatmApi {
     return () => { alive = false; };
   }, [idsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fail = () => setError('Не удалось сохранить. Нужен доступ «Участник».');
+  const fail = () => setError(_t("Не удалось сохранить. Нужен доступ «Участник»."));
   return {
     ready, me, list, juz, error, names,
     start: (k) => serial(async () => { if (!db.current || !me) return; try { await db.current.doc(`khatm/${me}`).set(JSON.parse(JSON.stringify(k))); } catch { fail(); } }),

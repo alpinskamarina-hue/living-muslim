@@ -1,15 +1,16 @@
 // Video lessons: curated YouTube courses by category, plus the user's own links.
 import { CATALOG } from './videos/catalog';
+import { _t } from './i18n';
 
 export type VideoCat = 'faith' | 'biz' | 'mind' | 'body' | 'food' | 'family' | 'lang';
 export const VIDEO_CATS: { id: VideoCat; ru: string; ic: string }[] = [
-  { id: 'faith', ru: 'Вера', ic: '🕌' },
-  { id: 'biz', ru: 'Бизнес', ic: '💼' },
-  { id: 'mind', ru: 'Развитие', ic: '🧠' },
-  { id: 'body', ru: 'Здоровье', ic: '💪' },
-  { id: 'food', ru: 'Питание', ic: '🥗' },
-  { id: 'family', ru: 'Семья', ic: '👨‍👩‍👧' },
-  { id: 'lang', ru: 'Языки', ic: '🗣' },
+  { id: 'faith', ru: _t("Вера"), ic: '🕌' },
+  { id: 'biz', ru: _t("Бизнес"), ic: '💼' },
+  { id: 'mind', ru: _t("Развитие"), ic: '🧠' },
+  { id: 'body', ru: _t("Здоровье"), ic: '💪' },
+  { id: 'food', ru: _t("Питание"), ic: '🥗' },
+  { id: 'family', ru: _t("Семья"), ic: '👨‍👩‍👧' },
+  { id: 'lang', ru: _t("Языки"), ic: '🗣' },
 ];
 export const catOf = (c: VideoCat) => VIDEO_CATS.find((x) => x.id === c)!;
 

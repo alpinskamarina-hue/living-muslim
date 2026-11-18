@@ -5,6 +5,7 @@ import type { AppState } from './types';
 import type { Member, Reacts } from './circle';
 import { isCloud, currentCircle } from './cloud';
 import { bizMarks } from './biz';
+import { _t } from './i18n';
 
 // The circle's week runs Saturday to Friday, so it closes on Jumu'ah.
 // Each member shares only weekly totals; the goal lives in the member docs of whoever set it (latest wins),
@@ -15,11 +16,11 @@ export interface WeekTotals { w: string; p: number; o: number; f: number; h: num
 export interface CGoal { w: string; k: GoalKind | 'none'; n: number; at: string }
 
 export const GOAL_KINDS: Record<GoalKind, { ic: string; label: string; unit: [string, string, string]; per: number; step: number }> = {
-  prayers: { ic: '🕌', label: 'Все намазы', unit: ['намаз вместе', 'намаза вместе', 'намазов вместе'], per: 30, step: 10 },
-  ontime: { ic: '⏰', label: 'Намаз вовремя', unit: ['намаз вовремя', 'намаза вовремя', 'намазов вовремя'], per: 21, step: 5 },
-  fajr: { ic: '🌅', label: 'Фаджр вовремя', unit: ['Фаджр вовремя', 'Фаджра вовремя', 'Фаджров вовремя'], per: 5, step: 1 },
-  habits: { ic: '🌱', label: 'Привычки', unit: ['отметка привычек', 'отметки привычек', 'отметок привычек'], per: 10, step: 5 },
-  biz: { ic: '💼', label: 'Дела у намазов', unit: ['деловая отметка', 'деловые отметки', 'деловых отметок'], per: 12, step: 5 },
+  prayers: { ic: '🕌', label: _t("Все намазы"), unit: [_t("намаз вместе"), _t("намаза вместе"), _t("намазов вместе")], per: 30, step: 10 },
+  ontime: { ic: '⏰', label: _t("Намаз вовремя"), unit: [_t("намаз вовремя"), _t("намаза вовремя"), _t("намазов вовремя")], per: 21, step: 5 },
+  fajr: { ic: '🌅', label: _t("Фаджр вовремя"), unit: [_t("Фаджр вовремя"), _t("Фаджра вовремя"), _t("Фаджров вовремя")], per: 5, step: 1 },
+  habits: { ic: '🌱', label: _t("Привычки"), unit: [_t("отметка привычек"), _t("отметки привычек"), _t("отметок привычек")], per: 10, step: 5 },
+  biz: { ic: '💼', label: _t("Дела у намазов"), unit: [_t("деловая отметка"), _t("деловые отметки"), _t("деловых отметок")], per: 12, step: 5 },
 };
 /** Goal kinds offered in a circle: business circles start with the business goal. */
 export const goalKindsFor = (biz: boolean): GoalKind[] => (biz ? ['biz', 'prayers', 'ontime', 'fajr'] : ['prayers', 'ontime', 'fajr', 'habits']);
@@ -90,7 +91,7 @@ export function supporters(reacts: Reacts, w: string): { id: string; n: number }
     .sort((a, b) => b.n - a.n);
 }
 
-const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const MONTHS = [_t("января"), _t("февраля"), _t("марта"), _t("апреля"), _t("мая"), _t("июня"), _t("июля"), _t("августа"), _t("сентября"), _t("октября"), _t("ноября"), _t("декабря")];
 export function rangeLabel(w: string) {
   const a = fromKey(w), b = fromKey(weekEnd(w));
   return a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${MONTHS[b.getMonth()]}` : `${a.getDate()} ${MONTHS[a.getMonth()]} – ${b.getDate()} ${MONTHS[b.getMonth()]}`;
@@ -139,9 +140,9 @@ export interface Challenge { id: string; to: string; k: ChKind; start: string; a
 export interface Amir { w: string; at: string; note: string }
 export const CH_DAYS = 7;
 export const CH_KINDS: Record<ChKind, { ic: string; label: string; short: string }> = {
-  fajr: { ic: '🌅', label: '7 дней Фаджр вовремя', short: 'Фаджр вовремя' },
-  five: { ic: '🕌', label: '7 дней все 5 намазов', short: 'все 5 намазов' },
-  active: { ic: '🌱', label: '7 дней без пропуска привычек', short: 'хотя бы одна привычка' },
+  fajr: { ic: '🌅', label: _t("7 дней Фаджр вовремя"), short: _t("Фаджр вовремя") },
+  five: { ic: '🕌', label: _t("7 дней все 5 намазов"), short: _t("все 5 намазов") },
+  active: { ic: '🌱', label: _t("7 дней без пропуска привычек"), short: _t("хотя бы одна привычка") },
 };
 /** Days (last 14) that count for each kind of challenge, shared in my member doc. */
 export function chDays(s: AppState, today: string): { fj: string[]; p5: string[] } {
