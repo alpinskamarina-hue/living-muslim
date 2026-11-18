@@ -22,8 +22,8 @@ function toRamadan(today: string): number | null {
   } catch { return null; }
 }
 
-export function UmrahBanner({ api, names, today, family, myReady, unread, onOpen, onEvent }: {
-  api: UmrahApi; names: CircleApi['names']; today: string; family: boolean; myReady: number; unread: (host: string) => number;
+export function UmrahBanner({ api, names, reacts, today, family, myReady, unread, onOpen, onEvent }: {
+  api: UmrahApi; names: CircleApi['names']; reacts: CircleApi['reacts']; today: string; family: boolean; myReady: number; unread: (host: string) => number;
   onOpen: (tab: HubTab) => void; onEvent: (host: string, text: string) => void;
 }) {
   const [hidden, setHidden] = useState(() => { try { return (localStorage.getItem(KEY) || '') > today; } catch { return false; } });
@@ -101,18 +101,19 @@ export function UmrahBanner({ api, names, today, family, myReady, unread, onOpen
     );
   }
 
-  if (hidden) return null;
-
-  // 2: someone is gathering a trip and I have not said «go».
-  const open = hosts.find((h) => st(me, h) !== 'no');
+  // 2: someone is gathering a trip and I have not said «go». A personal call («Позвать в поездку») comes first and is never hidden.
+  const callers = Object.keys(reacts).filter((from) => from !== me && reacts[from]?.[`u:${me}`] && diff(reacts[from][`u:${me}`].day, today) <= 30);
+  const calledTo = callers.map((c) => ({ c, h: hosts.find((h) => h === c ? st(c, h) !== 'no' : st(c, h) === 'go') })).find((x) => x.h && st(me, x.h) !== 'no');
+  if (hidden && !calledTo) return null;
+  const open = calledTo?.h ?? hosts.find((h) => st(me, h) !== 'no');
   if (open) {
     const t = trips[open]; const g = goingOf(open);
     const answer = (s: UStatus) => { api.respond(open, { s, ready: myReady }); onEvent(open, s === 'go' ? _t("едет") : _t("пока думает")); if (s === 'go') onOpen('trip'); };
     return (
       <div className="ub">
-        <button type="button" className="ub-x" onClick={hide} aria-label={_t("Скрыть на месяц")}>✕</button>
-        <em>{_t("Умра")}</em>
-        <b>{_tj("{0} собирает умру", nm(open))}</b>
+        {!calledTo && <button type="button" className="ub-x" onClick={hide} aria-label={_t("Скрыть на месяц")}>✕</button>}
+        <em>{calledTo ? _t("Умра · тебя позвали") : _t("Умра")}</em>
+        <b>{calledTo ? _tj("{0} зовёт тебя на умру", nm(calledTo.c)) : _tj("{0} собирает умру", nm(open))}</b>
         <p>{_tj("«{0}» · {1}{2} · едут {3}", t.title, t.month, t.city ? _t(" · из {0}", t.city) : '', g.length)}</p>
         {faces(g)}
         <div className="ub-btns">

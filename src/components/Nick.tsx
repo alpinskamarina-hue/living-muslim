@@ -177,7 +177,10 @@ const SEND_ERR: Record<string, string> = {
 };
 
 /** Circle → «+ Пригласить»: type the first letters of a nick, tap a person, pick a circle, send. Or share the link. */
-export function InviteByNick({ code, onBack }: { code: string; onBack: () => void }) {
+/** trip: calling someone into an umrah trip. The circle is fixed to the trip's one; someone already in it gets a personal call to the trip. */
+export interface TripCall { title: string; url: string; text: string; called: string[]; onCall: (uid: string, name: string) => void }
+
+export function InviteByNick({ code, onBack, trip }: { code: string; onBack: () => void; trip?: TripCall }) {
   const circles = myCircles();
   const cur = circles.find((c) => c.code === code);
   const [q, setQ] = useState('');
@@ -196,6 +199,7 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
 
   const pick = (r: Found) => {
     setFound(r);
+    if (trip) { setTo(code); return; }
     setTo(circles.find((c) => c.code === code && !r.shared.includes(c.code))?.code ?? circles.find((c) => !r.shared.includes(c.code))?.code ?? code);
   };
 
@@ -230,6 +234,7 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
     setBusy(true);
     const r = await sendInvite(to, f.uid);
     setBusy(false);
+    if (trip && r === 'ok') trip.onCall(f.uid, f.name);
     setSent((s) => ({ ...s, [f.uid]: { ...s[f.uid], [to]: r } }));
   };
 
@@ -243,14 +248,15 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
     <button key={x.uid} type="button" className="nk-hit" onClick={() => pick(x)}>
       <Ava pick={x.avatar} color={x.color} photo={x.photo} name={x.name} size={42} />
       <span className="nk-hit-t"><b>{x.name || _t("Без имени")}</b><small>@{x.nick}{x.shared.length > 0 ? _t(" · с тобой в «{0}»{1}", title(x.shared[0]), x.shared.length > 1 ? _t(" и ещё {0}", x.shared.length - 1) : '') : ''}</small></span>
-      {sentTo(x) ? <em className="ok">✓</em> : x.can !== 'ok' ? <em>🔒</em> : <em>{_t("Позвать")}</em>}
+      {sentTo(x) || trip?.called.includes(x.uid) ? <em className="ok">✓</em> : trip && x.shared.includes(code) ? <em>{_t("Позвать")}</em> : x.can !== 'ok' ? <em>🔒</em> : <em>{_t("Позвать")}</em>}
     </button>
   );
 
   return (
     <div className="page">
       <button type="button" className="link-btn pro-back" onClick={f ? () => setFound(null) : onBack}>← {f ? _t("К поиску") : cur?.title || _t("Круг")}</button>
-      <h1 className="page-h">{_t("Позвать в круг")}</h1>
+      <h1 className="page-h">{trip ? _t("Позвать в поездку") : _t("Позвать в круг")}</h1>
+      {trip && !f && <p className="page-sub">{_tj("«{0}». Кто уже в Круге, получит личное приглашение в поездку. Кого нет, сначала получит приглашение в Круг «{1}».", trip.title, title(code))}</p>}
       {!f && (
         <form className="nk-search" onSubmit={(e) => { e.preventDefault(); search(); }}>
           <span aria-hidden="true">@</span>
@@ -278,20 +284,26 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
           <b>{f.name || _t("Без имени")}</b>
           <span className="nk-at">@{f.nick}</span>
           {(f.bio || f.shared.length > 0) && <p>{f.bio}{f.bio && f.shared.length > 0 && <br />}{f.shared.length > 0 && <>{_tj("С тобой уже в {0}  {1}", f.shared.length > 1 ? _t("кругах") : _t("круге"), f.shared.map((c) => `«${title(c)}»`).join(', '))}</>}</p>}
-          {f.can !== 'ok' ? (
+          {trip && f.shared.includes(code) ? (
+            trip.called.includes(f.uid) ? (
+              <div className="nk-done">{_tj("✓ {0} позван в поездку. Он увидит приглашение в Круге, а в чате поездки появится запись.", f.name || _t("Человек"))}</div>
+            ) : (
+              <button type="button" className="pri-btn big-btn" onClick={() => trip.onCall(f.uid, f.name)}>{_t("🕋 Позвать в поездку")}</button>
+            )
+          ) : f.can !== 'ok' ? (
             <div className="nk-none">{f.can === 'closed' ? _t("{0} сейчас не принимает приглашения в круги.", f.name || _t("Этот человек")) : _t("{0} принимает приглашения только от людей из своих кругов. Отправь ссылку.", f.name || _t("Этот человек"))}</div>
           ) : (
             <>
-              <div className="nk-pick">
+              {trip ? <p className="tiny">{_tj("{0} пока не в Круге «{1}». Придёт приглашение в Круг, после вступления он сразу увидит поездку.", f.name || _t("Человек"), title(code))}</p> : <div className="nk-pick">
                 {circles.map((c) => {
                   const already = f.shared.includes(c.code);
                   return <button key={c.code} type="button" disabled={already} aria-pressed={to === c.code} onClick={() => setTo(c.code)}>{kindOf(c.kind)?.ic ?? '👥'} {c.title}{already ? ' ✓' : ''}</button>;
                 })}
-              </div>
+              </div>}
               {r === 'ok' ? (
                 <div className="nk-done">{_tj("✓ Приглашение в «{0}» отправлено. {1} увидит его сразу в приложении и сам решит, вступать или нет.", title(to), f.name || _t("Человек"))}</div>
               ) : (
-                <button type="button" className="pri-btn big-btn" disabled={busy || f.shared.includes(to)} onClick={() => send(f)}>{busy ? _t("Отправляю…") : _t("Отправить приглашение")}</button>
+                <button type="button" className="pri-btn big-btn" disabled={busy || f.shared.includes(to)} onClick={() => send(f)}>{busy ? _t("Отправляю…") : trip ? _t("🕋 Позвать в Круг и в поездку") : _t("Отправить приглашение")}</button>
               )}
               {r && r !== 'ok' && <p className="nk-msg">{SEND_ERR[r] ?? SEND_ERR.error}</p>}
             </>
@@ -303,7 +315,7 @@ export function InviteByNick({ code, onBack }: { code: string; onBack: () => voi
       {!mine?.nick && <p className="tiny nk-note">{_t("У тебя пока нет ника. Его можно задать в Профиле → Мой профиль, тогда тебя тоже смогут найти.")}</p>}
 
       <div className="nk-sec">{_t("Или по ссылке")}</div>
-      <ShareRow {...inviteText(to || code)} />
+      <ShareRow {...(trip ? { url: trip.url, text: trip.text } : inviteText(to || code))} />
     </div>
   );
 }

@@ -71,6 +71,18 @@ async function signup(pg, name, email) {
     const jb = B.locator('button', { hasText: /Вступить|Присоединиться/ });
     if (await jb.count()) { await jb.first().click(); await wait(3000); }
     say('B opened umrah app:', await B.locator('.um-app').count(), 'title:', await B.locator('.um-title h1').allInnerTexts());
+    // A calls B into the trip by nick (B is already in the circle): a personal call, not a circle invite
+    await L.q(`update users set nick = 'yusuf' where name = 'Юсуф'`).catch(() => {});
+    await A.reload(); await wait(3000); await A.goto(BASE + '/app/?umrah'); await wait(2500);
+    await A.locator('.um-av.add').click(); await wait(500);
+    await A.locator('.um-nick').click(); await wait(2500);
+    say('A nick screen:', (await A.locator('.um-app').innerText()).slice(0, 260).replace(/\n+/g, ' | '));
+    if (!(await A.locator('.nk-hit', { hasText: 'Юсуф' }).count())) { await A.locator('.nk-search input').fill('yus'); await wait(1500); }
+    await A.locator('.nk-hit', { hasText: 'Юсуф' }).first().click(); await wait(600);
+    await A.locator('.nk-card .pri-btn').click(); await wait(1500);
+    say('A after call:', await A.locator('.nk-card').innerText().then((x) => x.replace(/\n+/g, ' | ')));
+    await shot(A, 'um-1d-call');
+    await B.reload(); await wait(3000);
     // B leaves and sees the banner «Насим собирает умру», answers «Еду» from it
     await B.locator('.um-out').click(); await wait(1200);
     say('banner 2:', await B.locator('.ub').innerText().then((x) => x.replace(/\n+/g, ' | ')));

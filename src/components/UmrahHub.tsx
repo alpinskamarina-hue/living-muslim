@@ -153,7 +153,22 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} /></div>;
   if (lost) return <LostCard state={state} onClose={() => setLost(false)} />;
   if (miqat) return <div className={`um-app${dark ? ' um-dk' : ''}`}><MiqatView state={state} update={update} onBack={() => setMiqat(false)} /></div>;
-  if (inviting === 'nick' && chatCode) return <div className={`um-app${dark ? ' um-dk' : ''}`}><InviteByNick code={chatCode} onBack={() => { setInviting(''); window.scrollTo(0, 0); }} /></div>;
+  if (inviting === 'nick' && chatCode) {
+    const t = tripHost ? trips[tripHost] : null;
+    const url = `${inviteLink(chatCode)}&umrah=group`;
+    const called = me && circle ? Object.keys(circle.reacts[me] ?? {}).filter((k) => k.startsWith('u:')).map((k) => k.slice(2)) : [];
+    return (
+      <div className={`um-app${dark ? ' um-dk' : ''}`}>
+        <InviteByNick code={chatCode} onBack={() => { setInviting(''); window.scrollTo(0, 0); }}
+          trip={{ title: t?.title ?? _t("Умра"), url, called,
+            text: _tj("Ассаляму алейкум! Собираемся на умру вместе: «{0}». Присоединяйся, там даты, задачи и наш чат:", t?.title ?? _t("Умра")),
+            onCall: (uid, name) => {
+              circle?.react(`u:${uid}`, '🕋', today);
+              if (tripHost) emit(tripHost, _tj("позвал в поездку: {0}", name || _t("Участник")));
+            } }} />
+      </div>
+    );
+  }
   if (qibla) return <QiblaScreen state={state} update={update} today={today} start="qibla" onClose={() => setQibla(false)} />;
 
   // The rite in progress on site: tawaf until 7, then sa'i.

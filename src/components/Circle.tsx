@@ -274,7 +274,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
 
       {joined && (
-        <UmrahBanner api={umrah} names={names} today={today} family={Boolean(familyKind)} myReady={myReady}
+        <UmrahBanner api={umrah} names={names} reacts={reacts} today={today} family={Boolean(familyKind)} myReady={myReady}
           unread={(h) => chat.msgs.filter((m) => m.ref?.tr === h && m.uid !== me && m.id > chat.seen).length}
           onOpen={(t) => { setUmra(t); window.scrollTo(0, 0); }}
           onEvent={(h, text) => { if (chatOn) chat.send(text, { tr: h }, 'event'); }} />
