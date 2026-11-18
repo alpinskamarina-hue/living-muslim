@@ -14,6 +14,8 @@ import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { ShareRow } from './ShareRow';
 import { RamadanPushFields } from './Ramadan';
+import { AdhanSettings, tryAdhan } from './Adhan';
+import { adhanOf, reciterName } from '../adhan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
 import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
@@ -57,6 +59,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'gift') return <Sub title={_t("Садака")} onBack={back}><GiftPass /></Sub>;
   if (page === 'prayer') return <Sub title={_t("Намазы")} onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
   if (page === 'habits') return <Sub title={_t("Мои привычки")} onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
+  if (page === 'adhan') return <Sub title={_t("Азан")} onBack={back}><AdhanSettings s={s} set={set} times={times} onTry={tryAdhan} /></Sub>;
   if (page === 'remind') return <Sub title={_t("Напоминания")} onBack={back}><RemindPage s={s} set={set} times={times} /></Sub>;
   if (page === 'words') return <Sub title={_t("Фразы и напоминания")} onBack={back}><WordsSettings s={s} set={set} /></Sub>;
   if (page === 'lang') return <Sub title="Язык · Language" onBack={back}><LangSettings s={s} set={set} /></Sub>;
@@ -129,6 +132,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         {onClaude && <Row icon="👤" title={_t("Имя")} sub={name} onClick={() => go('account')} />}
         <Row icon="🌙" title={_t("Новый путь")} sub={state.newpath?.on ? _t("День {0} из 40 · учитель намаза, суры", pathNow(state, dayKey(new Date())).day) : _t("Для тех, кто недавно принял ислам")} onClick={() => openPath({ v: 'list' })} />
         <Row icon="🕌" title={_t("Намазы")} sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
+        <Row icon="📢" title={_t("Азан")} sub={adhanOf(s).on ? _tj("Включён · {0}", reciterName(adhanOf(s).reciter)) : _t("Выключен · выбери чтеца")} onClick={() => go('adhan')} />
         {isCloud && <Row icon="🔔" title={_t("Напоминания")} sub={s.reminders?.on ? _t("Включены · {0} из 5 намазов", s.reminders.prayers.length) : (isStandalone() ? _t("Выключены") : _t("Установить на телефон, напоминания"))} onClick={() => go('remind')} />}
         <Row icon="🌱" title={_t("Мои привычки")} sub={_t("{0} из {1} мест занято", used, activeLimit())} onClick={() => go('habits')} />
         <Row icon="🤲" title={_t("Фразы и напоминания")} sub={`${s.me === 'f' ? _t("Я сестра") : s.me === 'm' ? _t("Я брат") : _t("Брат или сестра?")} · ${(s.words ?? 'calm') === 'normal' ? _t("обычно") : (s.words ?? 'calm') === 'calm' ? _t("спокойно") : _t("только фразы")}`} onClick={() => go('words')} />
@@ -144,7 +148,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

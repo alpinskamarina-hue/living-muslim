@@ -5,10 +5,12 @@ import { todayTrigger, useWordsWatch } from './wordsWatch';
 import { say } from './words';
 import { isCloud, currentCircle, myCircles, switchCircle } from './cloud';
 import { useChatUnread } from './chat';
-import type { Anchor, Habit } from './types';
+import type { Anchor, AppState, Habit } from './types';
 import { useAppState } from './store';
 import { dayKey, addDays, fromKey, plural } from './dates';
 import { prayerTimes, windowState } from './prayer';
+import { AdhanPlayer, AdhanToast, useAdhanClock } from './components/Adhan';
+import { adhanServer } from './adhan';
 import { Today } from './components/Today';
 import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
@@ -109,7 +111,9 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const offKey = JSON.stringify(state.settings.offsets ?? {});
   const times = useMemo(() => prayerTimes({ ...place, offsets: state.settings.offsets }, now), [today, lat, lng, method, madhab, offKey]);
-  const remKey = JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '');
+  const adhan = useAdhanClock(state.settings, times, today, now);
+  const setSettings = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
+  const remKey = JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings));
   useEffect(() => {
     if (state.settings.reminders?.on) syncPush(state.settings, state.settings.reminders);
   }, [lat, lng, method, madhab, offKey, remKey]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -372,6 +376,8 @@ export function App() {
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
+      {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}
+      {adhan.toast && <AdhanToast a={adhan.toast} onClose={adhan.closeToast} />}
       {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}
       {qiblaOpen && <QiblaScreen state={state} update={update} today={today} start={qiblaOpen} onClose={() => setQiblaOpen(null)} />}
 

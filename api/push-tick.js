@@ -100,14 +100,20 @@ export function events(prefs, now) {
   // adhan reads the calendar date from the Date's local fields; the server runs in UTC.
   const t = new PrayerTimes(coords, new Date(day.y, day.m - 1, day.d, 12), params);
   const before = Number(prefs.before) || 0;
+  // Adhan chosen in the app: the notification names the reciter and a tap opens the app playing it.
+  const adhan = prefs.adhan && !prefs.quiet && Array.isArray(prefs.adhan.p) ? prefs.adhan : null;
   for (const a of prefs.prayers || []) {
     if (!t[a]) continue;
     const at = t[a].getTime() - before * 60000;
+    const withAdhan = adhan && adhan.p.includes(a);
+    const who = withAdhan ? String((a === 'fajr' ? adhan.fajr : adhan.name) || '').slice(0, 40) : '';
+    const tap = !withAdhan ? '' : prefs.lang === 'en' ? ` Tap to play the adhan${who ? ` (${who})` : ''}.` : ` Нажми, чтобы включить азан${who ? ` (${who})` : ''}.`;
     out.push({
       key: `${day.key}:${a}`, at,
       title: prefs.lang === 'en' ? (before ? `${NAMES_EN[a]} in ${before} min` : `Time for ${NAMES_EN[a]}`) : before ? `Через ${before} мин ${NAMES[a]}` : `Время намаза ${NAMES[a]}`,
-      body: prefs.lang === 'en' ? `${NAMES_EN[a]} at ${hhmm(t[a].getTime(), tz)}. Your small deeds are waiting after ${NAMES_EN[a]}.` : `${NAMES[a]} в ${hhmm(t[a].getTime(), tz)}. После ${AFTER[a]} тебя ждут твои маленькие дела.`,
+      body: (prefs.lang === 'en' ? `${NAMES_EN[a]} at ${hhmm(t[a].getTime(), tz)}.` : `${NAMES[a]} в ${hhmm(t[a].getTime(), tz)}.`) + (tap || (prefs.lang === 'en' ? ` Your small deeds are waiting after ${NAMES_EN[a]}.` : ` После ${AFTER[a]} тебя ждут твои маленькие дела.`)),
       tag: `prayer-${a}`,
+      url: withAdhan ? `/app/?adhan=${a}` : '/app/',
     });
   }
   out.push(...ramadanEvents(prefs, day, tz, t, params, coords));
@@ -182,7 +188,7 @@ export default async function handler(req, res) {
     for (const e of due) {
       const q = quietText(prefs, e);
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: q.title, body: q.body, tag: e.tag, url: '/app/' }), { TTL: 900 });
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: q.title, body: q.body, tag: e.tag, url: prefs.quiet ? '/app/' : e.url || '/app/' }), { TTL: 900 });
         sent++;
       } catch (err) {
         if (err.statusCode === 404 || err.statusCode === 410) { dropped++; await rpc('lm_push_delete', { p_endpoint: s.endpoint }).catch(() => {}); return; }

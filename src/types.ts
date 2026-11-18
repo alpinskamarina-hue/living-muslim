@@ -54,6 +54,21 @@ export interface Settings {
   path?: 'new' | 'steady' | 'back';
   /** Quiet mode: notifications without religious words («Время для себя»). */
   quiet?: boolean;
+  /** Adhan: reciter, Fajr reciter, what plays at each prayer, volume. */
+  adhan?: AdhanPrefs;
+}
+
+export type AdhanMode = 'full' | 'short' | 'off';
+export interface AdhanPrefs {
+  /** Plays at the start of each prayer while the app is open. */
+  on: boolean;
+  reciter: string;
+  /** Reciter for Fajr; '' = the same as the others. */
+  fajr: string;
+  /** Missing means a full adhan. */
+  mode: Partial<Record<Anchor, AdhanMode>>;
+  /** 0..1 */
+  vol: number;
 }
 
 export interface ReminderPrefs {
