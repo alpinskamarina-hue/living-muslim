@@ -41,6 +41,7 @@ import { activeLimit, slotsUsed } from './store';
 import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays, chDays, useMyChallenges, useMyAmir, CH_KINDS } from './cweek';
 import type { GoTo } from './guide';
 import { usePlan, dueSheet, PRO_EVENT } from './plan';
+import { dayPlan, goalsWaiting } from './dayplan';
 import { TrialDial, PlanSheet } from './components/Plan';
 import { useIsAdmin } from './components/Admin';
 import { _t } from './i18n';
@@ -269,6 +270,9 @@ export function App() {
   // Tariff: 7 days of Pro from the first day, then Free «по 3». Re-check the limits when the plan changes,
   // show the reminder sheets on day 5, day 7 and day 8, and open the Pro screen from anywhere.
   const plan = usePlan();
+  // Gold numbers on Practice and Goals: what is planned for today and not started yet.
+  const planN = useMemo(() => dayPlan(state, today).length, [state, today]);
+  const goalsN = useMemo(() => goalsWaiting(state, today).length, [state, today]);
   useIsAdmin(); // marks the owner, who never sees a tariff
   const [planSheet, setPlanSheet] = useState<5 | 7 | 8 | null>(null);
   useEffect(() => { update((s) => s); }, [plan.pro]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -322,7 +326,7 @@ export function App() {
       <nav className="nav" aria-label={_t("Разделы")}>
         {(Object.keys(LABELS) as Tab[]).map((t) => (
           <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? _t("{0}, приглашений: {1}", LABELS[t], invites.length) : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
-            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
+            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'practice' && planN > 0 && <i className="nav-badge gold">{planN}</i>}{t === 'progress' && goalsN > 0 && <i className="nav-badge gold">{goalsN}</i>}{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
             <small>{LABELS[t]}</small>
           </button>
         ))}

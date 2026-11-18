@@ -90,6 +90,8 @@ export interface AppState {
   videos?: import('./videos').VideoState;
   /** Practice ids pinned to the top of Practice (up to 4). */
   practiceFav?: string[];
+  /** started[day] = keys of today's practice items the person already started (h:<habitId>, g:<goalId>). */
+  started?: Record<string, string[]>;
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number };

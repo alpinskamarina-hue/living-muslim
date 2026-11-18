@@ -21,6 +21,7 @@ import { Videos } from './Videos';
 import { isCloud } from '../cloud';
 import { catalog as catalogItems } from '../videos';
 import { _t, _tj, isEn } from '../i18n';
+import { dayPlan, markStarted, startedOf, type PlanItem } from '../dayplan';
 
 interface Props {
   state: AppState;
@@ -44,6 +45,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const markHabit = (m: Mark) => habitId && update((s) => setMark(s, today, habitId, m));
   const [editFav, setEditFav] = useState(false);
   const [special, setSpecial] = useState(false);
+  const [vref, setVref] = useState<string | undefined>(start?.mode === 'videos' ? start.ref : undefined);
 
   // Opening a section greets once a day with one fitting ayah or hadith (the sections are full-screen sheets).
   const OPEN: Partial<Record<Mode, Trigger>> = { quran: 'quran_open', langs: 'langs_open', books: 'books_open', health: 'health_open', sadaqa: 'sadaqa_open', food: 'food_open', umrah: 'umrah_open' };
@@ -57,7 +59,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
-  if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={start?.mode === 'videos' ? start.ref : undefined} onExit={() => setMode('home')} onFinish={markHabit} />;
+  if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={vref} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'body') return (
     <div className="page">
       <button type="button" className="link-btn pro-back" onClick={() => setMode('home')}>{_t("← Практика")}</button>
@@ -114,6 +116,15 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const picks = order.map((k) => cand[k]).filter(Boolean) as Now[];
   const now = picks[0], alt = picks[1];
 
+  // «На сегодня»: start opens the practice (and remembers it was started); «2 минуты» also ticks the habit's minimum.
+  const plan = dayPlan(state, today);
+  const go = (it: PlanItem, min?: boolean) => {
+    update((s) => { const x = markStarted(s, today, it.key); return min && it.habitId ? setMark(x, today, it.habitId, 'min') : x; });
+    if (it.habitId) setHabitId(it.habitId);
+    setVref(it.ref);
+    setMode(it.mode === 'focus' ? 'focus' : it.mode);
+  };
+
   const season = rDay || (rm.state === 'next' && rm.daysTo <= 30);
   const row = (id: string) => { const it = P[id]; return it && (
     <button key={id} type="button" className="prow" onClick={editFav ? () => toggleFav(id) : it.open}>
@@ -128,6 +139,8 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
       <h1 className="page-h">{_t("Практика")}</h1>
       <p className="page-sub">{_t("Сделай привычку здесь. Когда закончишь, она отметится сама.")}</p>
       <Hint id="practice" />
+
+      <TodayPlan items={plan} startedN={startedOf(state, today).length} go={go} />
 
       {now && (
         <div className="pnow">
@@ -186,6 +199,27 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
           {['umrah', 'safar'].map(row)}
         </div>
       )}
+    </div>
+  );
+}
+
+function TodayPlan({ items, startedN, go }: { items: PlanItem[]; startedN: number; go: (it: PlanItem, min?: boolean) => void }) {
+  if (!items.length) return startedN ? <div className="dp dp-done">{_t("✓ На сегодня всё начато. МашаАллах, продолжай в том же духе.")}</div> : null;
+  return (
+    <div className="dp">
+      <div className="dp-h"><b>{_t("На сегодня")}</b><i>{items.length}</i></div>
+      {items.slice(0, 4).map((it) => (
+        <div key={it.key} className="dp-row">
+          <span className="dp-ic">{it.ic}</span>
+          <span className="dp-t"><b>{it.title}</b><small>{it.sub}</small></span>
+          <span className="dp-btns">
+            <button type="button" className="dp-go" onClick={() => go(it)}>{_t("Начать")}</button>
+            {it.habitId && <button type="button" className="dp-min" onClick={() => go(it, true)}>{_t("2 минуты")}</button>}
+          </span>
+        </div>
+      ))}
+      {items.length > 4 && <small className="dp-more">{_t("и ещё {0}", items.length - 4)}</small>}
+      <small className="dp-note">{_t("Нет сил? Нажми «2 минуты»: начать хватит, минимум засчитается.")}</small>
     </div>
   );
 }

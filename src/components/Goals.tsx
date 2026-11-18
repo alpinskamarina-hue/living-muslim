@@ -7,6 +7,7 @@ import {
   goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, HIFZ, surahAyahs, hifzName, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
 } from '../goals';
+import { markStarted } from '../dayplan';
 import { ramadanMonth } from '../ramadan';
 import { catalog, lessons, emptyVideos } from '../videos';
 import { isCloud, myCircles, kindOf } from '../cloud';
@@ -58,6 +59,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
   const done = goals.filter((g) => g.status === 'done');
   const open = goals.find((g) => g.id === openId);
   const act = (g: Goal, st: Step) => {
+    update((s) => markStarted(s, today, `g:${g.id}`));
     if (st.action !== 'add') return onDo(st);
     if (g.source === 'hifz') update((s) => patchGoal(s, g.id, { manual: Math.min(g.target, g.manual + 1) }));
     else setOpenId(g.id);
