@@ -14,7 +14,7 @@ import type { IftarApi } from '../iftar';
 import { IftarSection } from './Iftar';
 import { CloudSetup, CloudInvite } from './CloudCircle';
 import { InviteByNick, InviteInbox } from './Nick';
-import { nicksReady } from '../cloud';
+import { nicksReady, meRpc, serverHas, leaveCircle } from '../cloud';
 import { shareInvite } from './CloudCircle';
 import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite } from '../cloud';
 import { useEffect, useState } from 'react';
@@ -92,6 +92,31 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     if (!joined) return;
     try { if (sessionStorage.getItem('lm.umrahGo')) { sessionStorage.removeItem('lm.umrahGo'); setUmra('trip'); window.scrollTo(0, 0); } } catch { /* */ }
   }, [joined]);
+  // Owner removes a member; a removed person sees why the circle is gone.
+  const [kickOn, setKickOn] = useState(false);
+  const [gone, setGone] = useState<string[]>([]);
+  const [removed, setRemoved] = useState<{ uid: string; name: string }[]>([]);
+  const [kicked, setKicked] = useState(false);
+  const loadRemoved = () => { if (chatCode) meRpc<{ uid: string; name: string }[] | boolean>('lm_kicked', { p_code: chatCode }).then((r) => setRemoved(Array.isArray(r) ? r : [])).catch(() => {}); };
+  useEffect(() => {
+    if (!isCloud || !isOwner || !joined) return;
+    serverHas('lm_kick', { p_uid: null, p_token: null, p_code: null, p_other: null }).then((on) => { setKickOn(on); if (on) loadRemoved(); });
+  }, [isOwner, joined, chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!isCloud || !chatCode || status !== 'ready' || (joined && !circle.error && !circle.stale)) return;
+    meRpc<boolean>('lm_kicked', { p_code: chatCode }).then((r) => setKicked(r === true)).catch(() => {});
+  }, [circle.error, circle.stale, joined, status, chatCode]);
+  const kick = async (id: string, name: string) => {
+    if (!chatCode || !confirm(_t("Убрать {0} из круга? Его отметки и сообщения в этом круге удалятся. Вернуться по ссылке он не сможет, пока ты не разрешишь.", name))) return;
+    const r = await meRpc<string>('lm_kick', { p_code: chatCode, p_other: id }).catch(() => 'error');
+    if (r === 'ok') { setGone((g) => [...g, id]); loadRemoved(); } else alert(_t("Не получилось убрать. Попробуй ещё раз."));
+  };
+  const unkick = async (id: string) => {
+    if (!chatCode) return;
+    await meRpc<boolean>('lm_unkick', { p_code: chatCode, p_other: id }).catch(() => false);
+    setGone((g) => g.filter((x) => x !== id));
+    loadRemoved();
+  };
   const invite = () => { if (!nicks) { if (isCloud && currentCircle()) shareInvite(currentCircle()!.code); return; } setInviting(true); window.scrollTo(0, 0); };
   const famKindOwner = isCloud && currentCircle()?.kind === 'family' && isOwner && !famOf(state).on;
   useEffect(() => { if (famKindOwner) update((s) => patchF(s, () => ({ on: true }))); }, [famKindOwner]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -115,7 +140,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       </div>
     );
 
-  const sorted = [...members].sort((a, b) => (a.id === me ? -1 : b.id === me ? 1 : (b.day === today ? 1 : 0) - (a.day === today ? 1 : 0)));
+  const sorted = members.filter((m) => !gone.includes(m.id)).sort((a, b) => (a.id === me ? -1 : b.id === me ? 1 : (b.day === today ? 1 : 0) - (a.day === today ? 1 : 0)));
   const activeToday = members.filter((m) => m.day === today && (m.done > 0 || m.prayers > 0)).length;
   const received = (to: string) => {
     const out: Record<string, number> = {};
@@ -218,10 +243,16 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} />
       ) : (<>
       {isCloud && nicks && <InviteInbox />}
-      {circle.error && <div className="warn">{circle.error}</div>}
-      {circle.stale && <p className="tiny">{_t("Данные круга пока не загрузились, могут быть устаревшими.")}</p>}
+      {kicked ? (
+        <div className="warn kicked">
+          <b>{_t("Владелец убрал тебя из круга «{0}».", cur?.title || _t("Круг"))}</b>
+          <p>{_t("Твои привычки и отметки остались у тебя. Можно создать свой круг или вступить в другой.")}</p>
+          <button type="button" className="pri-btn" onClick={async () => { await leaveCircle(); location.reload(); }}>{_t("Понятно")}</button>
+        </div>
+      ) : circle.error && <div className="warn">{circle.error}</div>}
+      {circle.stale && !kicked && <p className="tiny">{_t("Данные круга пока не загрузились, могут быть устаревшими.")}</p>}
 
-      {!joined ? (
+      {kicked ? null : !joined ? (
         <div className="join">
           <b>{_t("Присоединиться к кругу")}</b>
           <p>{_t("Остальные увидят: сколько привычек и намазов ты отметил сегодня. Названия привычек, заметки и мухасаба остаются только у тебя.")}</p>
@@ -337,6 +368,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                         return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
                       })}
                       {chatOn && <button type="button" aria-label={_t("Написать {0} в чате", p?.name || _t("участнику"))} onClick={() => openChat({ text: `${(p?.name || '').split(' ')[0]}, `, ref: null })}>💬</button>}
+                      {kickOn && <button type="button" className="kick" onClick={() => kick(m.id, p?.name || _t("участника"))}>{_t("Убрать из круга")}</button>}
                       {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? _t("👋 Отправлено") : _t("👋 Подтолкнуть")}</button>}
                     </div>
                   )}
@@ -367,7 +399,15 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
 
       <p className="ch-priv">{_tj("🔒 В круге видят только итог дня{0}.", biz ? _t(" и то, чем ты сам поделился в шуре. Суммы денег не видны никогда") : _t(". Названия привычек, заметки и мухасаба остаются у тебя"))}</p>
-      {isCloud && <CloudInvite isOwner={isOwner} />}
+      {kickOn && removed.length > 0 && (
+        <div className="ch-removed">
+          <small>{_t("Убраны из круга:")}</small>
+          {removed.map((r) => (
+            <span key={r.uid}>{r.name || _t("Участник")} <button type="button" className="link-btn" onClick={() => { if (confirm(_t("Разрешить {0} снова вступить в круг? Он сможет вернуться по ссылке или приглашению.", r.name || _t("участнику")))) unkick(r.uid); }}>{_t("Разрешить вернуться")}</button></span>
+          ))}
+        </div>
+      )}
+      {isCloud && !kicked && <CloudInvite isOwner={isOwner} />}
       {!isCloud && isOwner && (
         <div className="invite">
           <b>{_t("Как пригласить")}</b>

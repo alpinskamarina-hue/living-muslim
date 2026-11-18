@@ -4302,4 +4302,12 @@ export const EN: Record<string, string> = {
   "{0} {1} · по {2}": "{0} {1} · {2} each",
   "Поездки собираются внутри Круга. Сейчас открыт «{0}», здесь поездок нет.": "Trips live inside a Circle. «{0}» is open now and has no trips.",
   "Если поездка в другом круге, открой его:": "If your trip is in another circle, open it:",
+  "Убрать {0} из круга? Его отметки и сообщения в этом круге удалятся. Вернуться по ссылке он не сможет, пока ты не разрешишь.": "Remove {0} from the circle? Their check-ins and messages in this circle will be deleted. They can't come back by the link until you allow it.",
+  "Не получилось убрать. Попробуй ещё раз.": "Couldn't remove. Please try again.",
+  "Владелец убрал тебя из круга «{0}».": "The owner removed you from the circle «{0}».",
+  "Твои привычки и отметки остались у тебя. Можно создать свой круг или вступить в другой.": "Your habits and check-ins are still yours. You can create your own circle or join another one.",
+  "Убрать из круга": "Remove from circle",
+  "Убраны из круга:": "Removed from the circle:",
+  "Разрешить {0} снова вступить в круг? Он сможет вернуться по ссылке или приглашению.": "Allow {0} to join the circle again? They'll be able to come back by link or invite.",
+  "Разрешить вернуться": "Allow back",
 };

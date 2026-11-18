@@ -1048,6 +1048,10 @@ button:disabled { opacity: .5; cursor: default; }
 .ch-acts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0 48px; }
 .ch-acts button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; font-weight: 600; color: var(--ink); }
 .ch-acts button[aria-pressed="true"] { background: var(--green-soft); border-color: var(--green-soft); color: var(--green-2); }
+.ch-acts .kick { color: var(--danger); border-color: var(--line); background: none; font-weight: 500; }
+.ch-removed { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 10px 2px 0; font-size: 13px; color: var(--ink-2); }
+.ch-removed span { color: var(--ink); }
+.warn.kicked p { margin: 6px 0 10px; }
 .ch-acts .nd { color: var(--gold); border-color: var(--gold-soft); background: var(--gold-soft); }
 .ch-new { width: 100%; border: 1.5px dashed var(--line); background: none; border-radius: 16px; padding: 13px; color: var(--green-2); font-weight: 700; font-size: 14px; }
 .ch-priv { margin: 18px 0 6px; color: var(--ink-2); font-size: 12px; text-align: center; }
