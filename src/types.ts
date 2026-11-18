@@ -96,6 +96,8 @@ export interface AppState {
   azkar?: { m: string[]; e: string[]; short?: boolean; tr?: boolean };
   /** «Хочу оставить»: bad habits the person is leaving (private, device only). */
   quits?: import('./quit').Quit[];
+  /** «Моя мечеть», jamaat times, the Today card switch, Friday sunnah ticks. Position and search results stay on the phone. */
+  mosque?: import('./mosques').MosqueSettings;
   quran?: { surah: number; ayah: number; translation: boolean; size: number; lang?: 'ru' | 'en' | 'tr' };
   langs?: LangState;
   course?: { learned: string[]; done: number[]; day: number };

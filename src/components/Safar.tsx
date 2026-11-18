@@ -162,7 +162,7 @@ function TripView({ state, update, today, trip }: { state: AppState; update: Pro
   );
 }
 
-function Qibla({ lat, lng, place }: { lat: number; lng: number; place: string }) {
+export function Qibla({ lat, lng, place }: { lat: number; lng: number; place: string }) {
   const bearing = qibla(lat, lng);
   const [heading, setHeading] = useState<number | null>(null);
   const [msg, setMsg] = useState('');
@@ -185,6 +185,8 @@ function Qibla({ lat, lng, place }: { lat: number; lng: number; place: string })
 
   const rot = heading === null ? bearing : bearing - heading;
   const aligned = heading !== null && Math.abs(((rot % 360) + 540) % 360 - 180) < 5;
+  // A short buzz the moment the phone lines up, so the person can look up from the screen.
+  useEffect(() => { if (aligned) try { navigator.vibrate?.(60); } catch { /* not supported */ } }, [aligned]);
   return (
     <>
       <div className={`qibla${aligned ? ' ok' : ''}`}>

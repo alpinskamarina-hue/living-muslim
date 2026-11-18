@@ -16,6 +16,7 @@ import { isReviewDay } from './Goals';
 import { RamadanToday } from './Ramadan';
 import { ramadanHidden, ramadanMode } from '../rplan';
 import { _t, _tj, LOC } from '../i18n';
+import { MosqueCard, QiblaChip, type QiblaTab } from './Mosques';
 
 interface Props {
   state: AppState;
@@ -37,9 +38,10 @@ interface Props {
   /** «Хочу оставить» lines under the plan, and the evening question next to the muhasaba. */
   quits?: React.ReactNode;
   quitCheck?: React.ReactNode;
+  onQibla: (tab: QiblaTab) => void;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck, onQibla }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -120,7 +122,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <div className="row">
           <div className="top-main">
             {next ? <Countdown to={times[next]} label={ANCHOR_LABEL[next].after.replace(_t("После"), _t("До"))} /> : <b>{title}</b>}
-            <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? _t("🧭 в пути") : _t("🧭 Сафар")}</button></small>
+            <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? _t("🧭 в пути") : _t("🧭 Сафар")}</button><QiblaChip state={state} today={today} onOpen={() => onQibla('qibla')} /></small>
           </div>
           <button type="button" className="ring light" onClick={onGarden} aria-label={_t("Свет дня: {0}%. Открыть мой сад", Math.round(light.total * 100))}>
             <svg viewBox="0 0 62 62" aria-hidden="true">
@@ -141,6 +143,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
       </header>
 
       <div className="scroll">
+        <MosqueCard state={state} update={update} today={today} now={now} times={times} next={next} onOpen={onQibla} />
         {plan}
         {quits}
         {(j.streak > 0 || j.lit > 0) && (
