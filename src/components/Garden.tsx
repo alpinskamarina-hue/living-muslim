@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { AppState } from '../types';
 import { garden, journey, milestones } from '../gamify';
 import { plural } from '../dates';
+import { _t, _tj } from '../i18n';
 
 export const BRANCHES = [
   'M177 205 C155 192 135 178 116 158',
@@ -39,7 +40,7 @@ export function Garden({ state, today }: { state: AppState; today: string }) {
   return (
     <>
       <div className="garden-box">
-        <svg viewBox="0 0 354 290" role="img" aria-label={`Сад: ${g.leaves} ${plural(g.leaves, 'лист', 'листа', 'листьев')}, ${g.branches} ${plural(g.branches, 'ветка', 'ветки', 'веток')}, ${g.fruits} ${plural(g.fruits, 'плод', 'плода', 'плодов')}`}>
+        <svg viewBox="0 0 354 290" role="img" aria-label={_t("Сад: {0} {1}, {2} {3}, {4} {5}", g.leaves, plural(g.leaves, _t("лист"), _t("листа"), _t("листьев")), g.branches, plural(g.branches, _t("ветка"), _t("ветки"), _t("веток")), g.fruits, plural(g.fruits, _t("плод"), _t("плода"), _t("плодов")))}>
           <rect x="0" y="250" width="354" height="40" fill="var(--green-soft)" />
           <path d={`M177 252 C175 225 179 ${trunkTop + 40} 177 ${trunkTop}`} stroke="#7a5a3a" strokeWidth={g.leaves < 7 ? 5 : 10} fill="none" strokeLinecap="round" />
           {BRANCHES.slice(0, g.branches).map((d, i) => <path key={i} d={d} stroke="#7a5a3a" strokeWidth={i < 4 ? 6 : 5} fill="none" strokeLinecap="round" />)}
@@ -49,25 +50,25 @@ export function Garden({ state, today }: { state: AppState; today: string }) {
           {FRUITS.slice(0, g.fruits).map(([x, y], i) => <circle key={i} cx={x} cy={y} r="8" fill="#d9822b" stroke="#fff" strokeWidth="2" />)}
         </svg>
         <div className="garden-tag">
-          <b>{g.leaves} {plural(g.leaves, 'лист', 'листа', 'листьев')}{g.branches ? ` · ${g.branches} ${plural(g.branches, 'ветка', 'ветки', 'веток')}` : ''}{g.fruits ? ` · ${g.fruits} ${plural(g.fruits, 'плод', 'плода', 'плодов')}` : ''}</b>
-          <small>До {g.fruits ? 'следующего' : 'первого'} плода {g.toFruit} {plural(g.toFruit, 'день', 'дня', 'дней')}</small>
+          <b>{g.leaves} {plural(g.leaves, _t("лист"), _t("листа"), _t("листьев"))}{g.branches ? ` · ${g.branches} ${plural(g.branches, _t("ветка"), _t("ветки"), _t("веток"))}` : ''}{g.fruits ? ` · ${g.fruits} ${plural(g.fruits, _t("плод"), _t("плода"), _t("плодов"))}` : ''}</b>
+          <small>{_tj("До {0} плода {1}  {2}", g.fruits ? _t("следующего") : _t("первого"), g.toFruit, plural(g.toFruit, _t("день"), _t("дня"), _t("дней")))}</small>
         </div>
       </div>
       <p className="garden-note">
-        Каждый засчитанный день даёт лист, неделя даёт ветку, 40 дней дают плод. Пропуск не отнимает листья, сад просто не растёт в этот день. Сад видишь только ты.
+        {_t("Каждый засчитанный день даёт лист, неделя даёт ветку, 40 дней дают плод. Пропуск не отнимает листья, сад просто не растёт в этот день. Сад видишь только ты.")}
       </p>
       <p className="garden-note">
-        День засчитан, когда свет дня наполнен хотя бы наполовину (намазы и привычки) или все привычки отмечены. Минимальная версия считается полностью. Серия: сейчас {j.streak}, лучшая {j.best}.
+        {_tj("День засчитан, когда свет дня наполнен хотя бы наполовину (намазы и привычки) или все привычки отмечены. Минимальная версия считается полностью. Серия: сейчас {0}, лучшая {1}.", j.streak, j.best)}
       </p>
 
-      <h2 className="sub-h">Вехи</h2>
+      <h2 className="sub-h">{_t("Вехи")}</h2>
       {ms.map((m) => (
         <div key={m.id} className={`ms${m.got ? '' : ' off'}`}>
           <span className="ms-n" aria-hidden="true">{m.of > 1 ? m.of : '✓'}</span>
           <div className="ms-x">
             <b>{m.title}</b>
             {!m.got && m.of > 1 && <span className="bar2"><i style={{ width: `${(m.now / m.of) * 100}%` }} /></span>}
-            <small>{m.got ? `«${m.quote}» (${m.src})` : m.of > 1 ? `${m.now} из ${m.of}` : 'впереди'}</small>
+            <small>{m.got ? `«${m.quote}» (${m.src})` : m.of > 1 ? _t("{0} из {1}", m.now, m.of) : _t("впереди")}</small>
           </div>
         </div>
       ))}

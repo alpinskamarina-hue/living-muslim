@@ -2,6 +2,7 @@ import type { AppState } from '../types';
 import { ANCHORS, ANCHOR_LABEL, sphereName } from '../types';
 import { consistency, isCounted, streak } from '../store';
 import { addDays, fromKey, plural } from '../dates';
+import { _t, _tj, LOC } from '../i18n';
 
 export function Progress({ state, today }: { state: AppState; today: string }) {
   const habits = state.habits.filter((h) => h.status === 'active');
@@ -25,12 +26,12 @@ export function Progress({ state, today }: { state: AppState; today: string }) {
   const pOn = pDays.reduce((a, d) => a + Object.values(state.prayers[d] ?? {}).filter((m) => m === 'ontime').length, 0);
   const prayerBlock = firstPrayer ? (
     <>
-      <h2 className="sub-h">Намазы <small>с {fromKey(firstPrayer).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</small></h2>
+      <h2 className="sub-h">{_t("Намазы ")}<small>{_tj("с {0}", fromKey(firstPrayer).toLocaleDateString(LOC, { day: 'numeric', month: 'long' }))}</small></h2>
       <div className="stat-card">
         <div className="big">{pTotal ? Math.round((pDone / pTotal) * 100) : 0}%</div>
         <div>
-          <b>Отмечено {pDone} из {pTotal}</b>
-          <small>из них вовремя {pOn}</small>
+          <b>{_tj("Отмечено {0} из {1}", pDone, pTotal)}</b>
+          <small>{_tj("из них вовремя {0}", pOn)}</small>
         </div>
       </div>
       <div className="hlist" style={{ marginTop: 10 }}>
@@ -52,23 +53,23 @@ export function Progress({ state, today }: { state: AppState; today: string }) {
   if (!habits.length)
     return (
       <div className="prog">
-        <p className="page-sub">Здесь появится постоянство по намазам и по каждой привычке.</p>
+        <p className="page-sub">{_t("Здесь появится постоянство по намазам и по каждой привычке.")}</p>
         {prayerBlock}
       </div>
     );
 
   return (
     <div className="prog">
-      <p className="page-sub">Считаем постоянство, а не идеальные серии. Один пропуск не обнуляет серию, два подряд — да.</p>
+      <p className="page-sub">{_t("Считаем постоянство, а не идеальные серии. Один пропуск не обнуляет серию, два подряд — да.")}</p>
 
       <div className="stat-card">
         <div className="big">{avg}%</div>
         <div>
-          <b>Постоянство за 4 недели</b>
-          <small>доля отмеченных привычек по дням</small>
+          <b>{_t("Постоянство за 4 недели")}</b>
+          <small>{_t("доля отмеченных привычек по дням")}</small>
         </div>
       </div>
-      <div className="heat" aria-label="Последние 28 дней">
+      <div className="heat" aria-label={_t("Последние 28 дней")}>
         {daily.map((x) => (
           <i key={x.d} title={x.d} style={{ opacity: x.rate < 0 ? 0.15 : 0.2 + x.rate * 0.8 }} data-today={x.d === today || undefined}>
             {fromKey(x.d).getDate()}
@@ -78,7 +79,7 @@ export function Progress({ state, today }: { state: AppState; today: string }) {
 
       {prayerBlock}
 
-      <h2 className="sub-h">По привычкам</h2>
+      <h2 className="sub-h">{_t("По привычкам")}</h2>
       <div className="hlist">
         {habits.map((h) => {
           const c = consistency(state, h, today);
@@ -88,9 +89,9 @@ export function Progress({ state, today }: { state: AppState; today: string }) {
               <div className="hrow-top">
                 <div>
                   <b>{h.action}</b>
-                  <small>{sphereName(h.sphere)} · {ANCHOR_LABEL[h.anchor].after.replace('После', 'после')}{h.formed ? ' · закреплена' : ''}</small>
+                  <small>{sphereName(h.sphere)} · {ANCHOR_LABEL[h.anchor].after.replace(_t("После"), _t("после"))}{h.formed ? _t(" · закреплена") : ''}</small>
                 </div>
-                <div className="pct">{Math.round(c.rate * 100)}%<small>{st} {plural(st, 'день', 'дня', 'дней')}</small></div>
+                <div className="pct">{Math.round(c.rate * 100)}%<small>{st} {plural(st, _t("день"), _t("дня"), _t("дней"))}</small></div>
               </div>
               <div className="strip">
                 {days.map((d) => {
@@ -105,10 +106,10 @@ export function Progress({ state, today }: { state: AppState; today: string }) {
 
       {notes.length > 0 && (
         <>
-          <h2 className="sub-h">Мухасаба</h2>
+          <h2 className="sub-h">{_t("Мухасаба")}</h2>
           <div className="notes-list">
             {notes.map(([d, v]) => (
-              <div key={d}><small>{fromKey(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</small><p>{v}</p></div>
+              <div key={d}><small>{fromKey(d).toLocaleDateString(LOC, { day: 'numeric', month: 'long' })}</small><p>{v}</p></div>
             ))}
           </div>
         </>

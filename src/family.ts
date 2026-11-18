@@ -3,6 +3,7 @@ import type { KidSummary, Member } from './circle';
 import { addDays } from './dates';
 import { dayLight } from './gamify';
 import { uid } from './store';
+import { _t } from './i18n';
 
 export const famOf = (s: AppState): FamilyState => ({ kids: [], together: {}, ...(s.family ?? {}) });
 export const patchF = (s: AppState, fn: (f: FamilyState) => Partial<FamilyState>): AppState => {
@@ -13,27 +14,27 @@ export const patchF = (s: AppState, fn: (f: FamilyState) => Partial<FamilyState>
 /** Starter tasks by age; the parent picks up to five. */
 export const KID_TASKS: { max: number; list: { t: string; icon: string }[] }[] = [
   { max: 6, list: [
-    { t: 'Бисмиллях перед едой', icon: '🍽️' }, { t: 'Салям при встрече', icon: '👋' }, { t: 'Убрать игрушки', icon: '🧸' },
-    { t: 'Дуа перед сном', icon: '🌙' }, { t: 'Помочь маме', icon: '❤️' }, { t: 'Послушать суру', icon: '🎧' },
+    { t: _t("Бисмиллях перед едой"), icon: '🍽️' }, { t: _t("Салям при встрече"), icon: '👋' }, { t: _t("Убрать игрушки"), icon: '🧸' },
+    { t: _t("Дуа перед сном"), icon: '🌙' }, { t: _t("Помочь маме"), icon: '❤️' }, { t: _t("Послушать суру"), icon: '🎧' },
   ] },
   { max: 10, list: [
-    { t: 'Намаз вместе', icon: '🕌' }, { t: 'Выучить аят', icon: '📖' }, { t: 'Помочь дома', icon: '🧹' },
-    { t: 'Дуа перед сном', icon: '🌙' }, { t: 'Доброе дело другу', icon: '🤝' }, { t: 'Почитать книгу', icon: '📚' },
+    { t: _t("Намаз вместе"), icon: '🕌' }, { t: _t("Выучить аят"), icon: '📖' }, { t: _t("Помочь дома"), icon: '🧹' },
+    { t: _t("Дуа перед сном"), icon: '🌙' }, { t: _t("Доброе дело другу"), icon: '🤝' }, { t: _t("Почитать книгу"), icon: '📚' },
   ] },
   { max: 99, list: [
-    { t: 'Пять намазов', icon: '🕌' }, { t: 'Коран: 1 страница', icon: '📖' }, { t: 'Помочь родителям', icon: '🤲' },
-    { t: 'Час без телефона', icon: '📵' }, { t: 'Садака или доброе дело', icon: '💝' }, { t: 'Утренние азкары', icon: '☀️' },
+    { t: _t("Пять намазов"), icon: '🕌' }, { t: _t("Коран: 1 страница"), icon: '📖' }, { t: _t("Помочь родителям"), icon: '🤲' },
+    { t: _t("Час без телефона"), icon: '📵' }, { t: _t("Садака или доброе дело"), icon: '💝' }, { t: _t("Утренние азкары"), icon: '☀️' },
   ] },
 ];
 export const tasksFor = (age: number) => KID_TASKS.find((g) => age <= g.max)!.list;
 
 /** Sticker album: one sticker for every 3 tasks done. Stories every child can be told. */
 export const STICKERS: { icon: string; t: string }[] = [
-  { icon: '🐋', t: 'Юнус и кит' }, { icon: '🚢', t: 'Ковчег Нуха' }, { icon: '🐜', t: 'Сулейман и муравей' },
-  { icon: '🕷️', t: 'Паук у пещеры Саур' }, { icon: '🐪', t: 'Верблюдица Салиха' }, { icon: '🐦', t: 'Удод Сулеймана' },
-  { icon: '🔥', t: 'Огонь стал прохладой для Ибрахима' }, { icon: '🐺', t: 'Юсуф и братья' }, { icon: '🐄', t: 'Корова Мусы' },
-  { icon: '🐶', t: 'Собака людей пещеры' }, { icon: '🌊', t: 'Море расступилось перед Мусой' }, { icon: '⭐', t: 'Ибрахим и звёзды' },
-  { icon: '🌴', t: 'Марьям и финиковая пальма' }, { icon: '🐘', t: 'Год слона' }, { icon: '🌙', t: 'Ночь могущества' },
+  { icon: '🐋', t: _t("Юнус и кит") }, { icon: '🚢', t: _t("Ковчег Нуха") }, { icon: '🐜', t: _t("Сулейман и муравей") },
+  { icon: '🕷️', t: _t("Паук у пещеры Саур") }, { icon: '🐪', t: _t("Верблюдица Салиха") }, { icon: '🐦', t: _t("Удод Сулеймана") },
+  { icon: '🔥', t: _t("Огонь стал прохладой для Ибрахима") }, { icon: '🐺', t: _t("Юсуф и братья") }, { icon: '🐄', t: _t("Корова Мусы") },
+  { icon: '🐶', t: _t("Собака людей пещеры") }, { icon: '🌊', t: _t("Море расступилось перед Мусой") }, { icon: '⭐', t: _t("Ибрахим и звёзды") },
+  { icon: '🌴', t: _t("Марьям и финиковая пальма") }, { icon: '🐘', t: _t("Год слона") }, { icon: '🌙', t: _t("Ночь могущества") },
 ];
 export const KID_COLORS = ['#e3a23c', '#4a86c5', '#8fc46a', '#b06ad0', '#e0705a', '#3fa7a0'];
 

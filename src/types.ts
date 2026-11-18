@@ -1,3 +1,4 @@
+import { _t } from './i18n';
 export type Anchor = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 export type Sphere = 'faith' | 'body' | 'food' | 'mind' | 'biz' | 'family';
 export type Mark = 'done' | 'min' | 'later';
@@ -139,20 +140,20 @@ export interface BookMeta {
 export const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
 export const ANCHOR_LABEL: Record<Anchor, { ru: string; after: string; ar: string }> = {
-  fajr: { ru: 'Фаджр', after: 'После Фаджра', ar: 'الفجر' },
-  dhuhr: { ru: 'Зухр', after: 'После Зухра', ar: 'الظهر' },
-  asr: { ru: 'Аср', after: 'После Асра', ar: 'العصر' },
-  maghrib: { ru: 'Магриб', after: 'После Магриба', ar: 'المغرب' },
-  isha: { ru: 'Иша', after: 'После Иша', ar: 'العشاء' },
+  fajr: { ru: _t("Фаджр"), after: _t("После Фаджра"), ar: 'الفجر' },
+  dhuhr: { ru: _t("Зухр"), after: _t("После Зухра"), ar: 'الظهر' },
+  asr: { ru: _t("Аср"), after: _t("После Асра"), ar: 'العصر' },
+  maghrib: { ru: _t("Магриб"), after: _t("После Магриба"), ar: 'المغرب' },
+  isha: { ru: _t("Иша"), after: _t("После Иша"), ar: 'العشاء' },
 };
 
 export const SPHERES: { id: Sphere; ru: string }[] = [
-  { id: 'faith', ru: 'Вера' },
-  { id: 'body', ru: 'Тело' },
-  { id: 'food', ru: 'Еда' },
-  { id: 'mind', ru: 'Знания' },
-  { id: 'biz', ru: 'Бизнес' },
-  { id: 'family', ru: 'Семья' },
+  { id: 'faith', ru: _t("Вера") },
+  { id: 'body', ru: _t("Тело") },
+  { id: 'food', ru: _t("Еда") },
+  { id: 'mind', ru: _t("Знания") },
+  { id: 'biz', ru: _t("Бизнес") },
+  { id: 'family', ru: _t("Семья") },
 ];
 
 export const sphereName = (s: Sphere) => SPHERES.find((x) => x.id === s)?.ru ?? '';

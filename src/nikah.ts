@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isCloud, meRpc, serverHas, cloudMe } from './cloud';
+import { _t } from './i18n';
 
 // «Никах через свои круги»: a short profile without photo or contacts, seen only by chosen circles and trusted people;
 // proposals come through someone who knows a family and asked them first; families talk through the wali.
@@ -19,36 +20,36 @@ export interface NkCard { uid: string; name: string; color: string; gender: 'm' 
 export interface NkPerson { uid: string; name: string; nick: string | null; color: string }
 
 export const FIELDS: { k: keyof NkData; label: string; opts?: string[]; ph?: string }[] = [
-  { k: 'age', label: 'Возраст', ph: '27' },
-  { k: 'city', label: 'Город', ph: 'Амстердам' },
-  { k: 'prayer', label: 'Намаз', opts: ['5 раз в день', 'стараюсь 5 раз', 'начинаю'] },
-  { k: 'madhab', label: 'Мазхаб', opts: ['ханафи', 'шафии', 'малики', 'ханбали', 'не важно'] },
-  { k: 'kids', label: 'Дети', opts: ['хочу', 'есть, хочу ещё', 'есть', 'обсудим'] },
-  { k: 'move', label: 'Переезд', opts: ['возможен', 'только в своём городе', 'обсудим'] },
-  { k: 'work', label: 'Дело или учёба', ph: 'IT, своё дело' },
+  { k: 'age', label: _t("Возраст"), ph: '27' },
+  { k: 'city', label: _t("Город"), ph: _t("Амстердам") },
+  { k: 'prayer', label: _t("Намаз"), opts: [_t("5 раз в день"), _t("стараюсь 5 раз"), _t("начинаю")] },
+  { k: 'madhab', label: _t("Мазхаб"), opts: [_t("ханафи"), _t("шафии"), _t("малики"), _t("ханбали"), _t("не важно")] },
+  { k: 'kids', label: _t("Дети"), opts: [_t("хочу"), _t("есть, хочу ещё"), _t("есть"), _t("обсудим")] },
+  { k: 'move', label: _t("Переезд"), opts: [_t("возможен"), _t("только в своём городе"), _t("обсудим")] },
+  { k: 'work', label: _t("Дело или учёба"), ph: _t("IT, своё дело") },
 ];
 export const STEPS: { s: NkStatus; title: string; sub: string }[] = [
-  { s: 'new', title: 'Анкета пришла', sub: 'Вали и ты смотрите, подходит ли' },
-  { s: 'interested', title: 'Истихара', sub: 'Два ракаата и дуа истихары (Бухари, 1162). Обычно до трёх ночей' },
-  { s: 'contacts', title: 'Контакт вали', sub: 'Связаться с семьёй, договориться о встрече' },
-  { s: 'meet', title: 'Встреча семей', sub: 'При махраме, с вопросами для встречи' },
-  { s: 'done', title: 'Решение', sub: 'Если да, дальше никах: дата, имам, свидетели, валима' },
+  { s: 'new', title: _t("Анкета пришла"), sub: _t("Вали и ты смотрите, подходит ли") },
+  { s: 'interested', title: _t("Истихара"), sub: _t("Два ракаата и дуа истихары (Бухари, 1162). Обычно до трёх ночей") },
+  { s: 'contacts', title: _t("Контакт вали"), sub: _t("Связаться с семьёй, договориться о встрече") },
+  { s: 'meet', title: _t("Встреча семей"), sub: _t("При махраме, с вопросами для встречи") },
+  { s: 'done', title: _t("Решение"), sub: _t("Если да, дальше никах: дата, имам, свидетели, валима") },
 ];
 export const NEXT: Partial<Record<NkStatus, { to: NkStatus; label: string }>> = {
-  new: { to: 'interested', label: '✓ Интересно' },
-  interested: { to: 'contacts', label: '✓ Истихара сделана, открыть контакт' },
-  contacts: { to: 'meet', label: '✓ Семьи договорились о встрече' },
-  meet: { to: 'done', label: '✓ Решение принято' },
+  new: { to: 'interested', label: _t("✓ Интересно") },
+  interested: { to: 'contacts', label: _t("✓ Истихара сделана, открыть контакт") },
+  contacts: { to: 'meet', label: _t("✓ Семьи договорились о встрече") },
+  meet: { to: 'done', label: _t("✓ Решение принято") },
 };
 export const MEET_QUESTIONS = [
-  'Какое место в жизни занимают намаз и Коран?',
-  'Где будем жить и как смотришь на переезд?',
-  'Работа, учёба и как делим заботы по дому',
-  'Дети: когда и сколько, как воспитывать',
-  'Отношения с родителями обеих сторон',
-  'Что для тебя важно в муже или жене?',
+  _t("Какое место в жизни занимают намаз и Коран?"),
+  _t("Где будем жить и как смотришь на переезд?"),
+  _t("Работа, учёба и как делим заботы по дому"),
+  _t("Дети: когда и сколько, как воспитывать"),
+  _t("Отношения с родителями обеих сторон"),
+  _t("Что для тебя важно в муже или жене?"),
 ];
-export const brief = (d: NkData) => [d.age && `${d.age} лет`, d.city, d.prayer && `намаз ${d.prayer}`, d.madhab, d.kids && `дети: ${d.kids}`, d.move && `переезд: ${d.move}`, d.work].filter(Boolean).join(' · ');
+export const brief = (d: NkData) => [d.age && _t("{0} лет", d.age), d.city, d.prayer && _t("намаз {0}", d.prayer), d.madhab, d.kids && _t("дети: {0}", d.kids), d.move && _t("переезд: {0}", d.move), d.work].filter(Boolean).join(' · ');
 
 let readyP: Promise<boolean> | null = null;
 export function nikahReady(): Promise<boolean> {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { AppState, SadaqaState, ZakatState } from '../types';
 import { addDays, fromKey } from '../dates';
-import { type Lang, tr } from '../i18n';
+import { type Lang, tr, _t } from '../i18n';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 const zOf = (s: AppState): ZakatState => ({ basis: s.settings.madhab === 'hanafi' ? 'silver' : 'gold', gold: 0, silver: 0, items: {}, paid: [], ...(s.sadaqa?.zakat ?? {}) });
@@ -12,14 +12,14 @@ const patchZ = (s: AppState, fn: (z: ZakatState) => Partial<ZakatState>): AppSta
 };
 
 const ITEMS: { id: string; t: [string, string]; minus?: boolean }[] = [
-  { id: 'cash', t: ['Наличные', 'Cash'] },
-  { id: 'bank', t: ['На счетах и картах', 'Bank accounts and cards'] },
-  { id: 'gold', t: ['Золото (стоимость)', 'Gold (value)'] },
-  { id: 'silver', t: ['Серебро (стоимость)', 'Silver (value)'] },
-  { id: 'invest', t: ['Акции, фонды, крипто', 'Shares, funds, crypto'] },
-  { id: 'goods', t: ['Товар для продажи', 'Goods for sale'] },
-  { id: 'owed', t: ['Тебе должны и вернут', 'Money owed to you that will be repaid'] },
-  { id: 'debts', t: ['Твои долги к оплате сейчас', 'Your debts due now'], minus: true },
+  { id: 'cash', t: [_t("Наличные"), 'Cash'] },
+  { id: 'bank', t: [_t("На счетах и картах"), 'Bank accounts and cards'] },
+  { id: 'gold', t: [_t("Золото (стоимость)"), 'Gold (value)'] },
+  { id: 'silver', t: [_t("Серебро (стоимость)"), 'Silver (value)'] },
+  { id: 'invest', t: [_t("Акции, фонды, крипто"), 'Shares, funds, crypto'] },
+  { id: 'goods', t: [_t("Товар для продажи"), 'Goods for sale'] },
+  { id: 'owed', t: [_t("Тебе должны и вернут"), 'Money owed to you that will be repaid'] },
+  { id: 'debts', t: [_t("Твои долги к оплате сейчас"), 'Your debts due now'], minus: true },
 ];
 export const NISAB_G = { gold: 85, silver: 595 };
 

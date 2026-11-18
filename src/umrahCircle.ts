@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { _t } from './i18n';
 
 export interface UTask { id: string; text: string; who?: string }
 /** A date option the group votes for: departure and return days (YYYY-MM-DD). */
@@ -87,7 +88,7 @@ export function useUmrahCircle(): UmrahApi {
       db.current = d; user.current = u; setMe(id); setReady(true);
       const sub = (col: string, set: (m: any) => void) => unsubs.push(d.collection(col).onSnapshot(
         (snap: any) => { const m: any = {}; snap.docs.forEach((x: any) => { if (x.exists) m[x.id] = x.data() ?? {}; }); set(m); },
-        () => setError('Совместная умра сейчас недоступна.'),
+        () => setError(_t("Совместная умра сейчас недоступна.")),
       ));
       sub('umrahTrip', setTrips);
       sub('umrahRsvp', setRsvp);
@@ -112,7 +113,7 @@ export function useUmrahCircle(): UmrahApi {
     return () => { alive = false; };
   }, [idsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fail = (e: any) => setError(e?.code === 'invalid_argument' || e?.code === 'permission_denied' ? 'Нет права писать. Попроси владельца дать доступ «Участник».' : 'Не удалось сохранить, попробуй ещё раз.');
+  const fail = (e: any) => setError(e?.code === 'invalid_argument' || e?.code === 'permission_denied' ? _t("Нет права писать. Попроси владельца дать доступ «Участник».") : _t("Не удалось сохранить, попробуй ещё раз."));
 
   return {
     ready, me, trips, rsvp, duas, names, error, funds, locs,

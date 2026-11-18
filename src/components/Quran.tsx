@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
+import { _t, _tj } from '../i18n';
 
 // [arabic name, transliteration, russian name, meccan|medinan, [[arabic, russian], ...]]
 type Surah = [string, string, string, string, [string, string][]];
 
 export type QLang = 'ru' | 'en' | 'tr';
 export const Q_LANGS: { id: QLang; label: string; src: string }[] = [
-  { id: 'ru', label: 'Русский', src: 'перевод смыслов Э. Кулиева' },
+  { id: 'ru', label: _t("Русский"), src: _t("перевод смыслов Э. Кулиева") },
   { id: 'en', label: 'English', src: 'Saheeh International' },
-  { id: 'tr', label: 'Türkçe', src: 'перевод на турецкий' },
+  { id: 'tr', label: 'Türkçe', src: _t("перевод на турецкий") },
 ];
 
 const cache: Partial<Record<QLang, Promise<Surah[]>>> = {};
@@ -59,42 +60,42 @@ export function Quran({ state, update, habitName, onExit, onFinish }: Props) {
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={view === 'read' ? () => setView('list') : onExit} aria-label={view === 'read' ? 'К списку сур' : 'Выйти'}>
+        <button type="button" className="icon-btn" onClick={view === 'read' ? () => setView('list') : onExit} aria-label={view === 'read' ? _t("К списку сур") : _t("Выйти")}>
           {view === 'read' ? '‹' : '✕'}
         </button>
         <div>
-          <b>{view === 'read' && data ? `${surah}. ${data[surah - 1][1]}` : 'Коран'}</b>
-          <small>{view === 'read' && data ? `${data[surah - 1][2]} · ${data[surah - 1][4].length} аятов` : habitName ?? 'Чтение с переводом смыслов'}</small>
+          <b>{view === 'read' && data ? `${surah}. ${data[surah - 1][1]}` : _t("Коран")}</b>
+          <small>{view === 'read' && data ? _t("{0} · {1} аятов", data[surah - 1][2], data[surah - 1][4].length) : habitName ?? _t("Чтение с переводом смыслов")}</small>
         </div>
         {view === 'read' && (
-          <button type="button" className="done-btn" onClick={() => setFinish(true)}>Закончить</button>
+          <button type="button" className="done-btn" onClick={() => setFinish(true)}>{_t("Закончить")}</button>
         )}
       </div>
 
-      {err && <p className="q-msg">Не удалось загрузить текст Корана. Проверь интернет и открой ещё раз.</p>}
-      {!data && !err && <p className="q-msg">Загружаю текст…</p>}
+      {err && <p className="q-msg">{_t("Не удалось загрузить текст Корана. Проверь интернет и открой ещё раз.")}</p>}
+      {!data && !err && <p className="q-msg">{_t("Загружаю текст…")}</p>}
 
       {data && view === 'list' && (
         <div className="q-list">
           <button type="button" className="q-continue" onClick={() => open(q.surah)}>
-            <small>Продолжить</small>
-            <b>{q.surah}. {data[q.surah - 1][1]}, аят {q.ayah}</b>
+            <small>{_t("Продолжить")}</small>
+            <b>{_tj("{0}. {1}, аят {2}", q.surah, data[q.surah - 1][1], q.ayah)}</b>
             <span className="ar">{data[q.surah - 1][0]}</span>
           </button>
-          <div className="langs" role="group" aria-label="Язык перевода">
+          <div className="langs" role="group" aria-label={_t("Язык перевода")}>
             {Q_LANGS.map((l) => (
               <button key={l.id} type="button" aria-pressed={q.lang === l.id} onClick={() => setQ({ lang: l.id })}>{l.label}</button>
             ))}
           </div>
-          <input className="q-find" value={find} onChange={(e) => setFind(e.target.value)} placeholder="Найти суру: номер или название" />
+          <input className="q-find" value={find} onChange={(e) => setFind(e.target.value)} placeholder={_t("Найти суру: номер или название")} />
           {list.map(({ s, n }) => (
             <button key={n} type="button" className="q-row" onClick={() => open(n)}>
               <span className="q-n">{n}</span>
-              <span className="q-t"><b>{s[1]}</b><small>{s[2]} · {s[4].length} аятов · {s[3] === 'meccan' ? 'мекканская' : 'мединская'}</small></span>
+              <span className="q-t"><b>{s[1]}</b><small>{_tj("{0} · {1} аятов · {2}", s[2], s[4].length, s[3] === 'meccan' ? _t("мекканская") : _t("мединская"))}</small></span>
               <span className="ar">{s[0]}</span>
             </button>
           ))}
-          <p className="q-src">Арабский текст и перевод ({Q_LANGS.find((l) => l.id === q.lang)?.src}): «Энциклопедия Корана» (quranenc.com), через проект quran-json.</p>
+          <p className="q-src">{_tj("Арабский текст и перевод ({0}): «Энциклопедия Корана» (quranenc.com), через проект quran-json.", Q_LANGS.find((l) => l.id === q.lang)?.src)}</p>
         </div>
       )}
 
@@ -115,19 +116,19 @@ export function Quran({ state, update, habitName, onExit, onFinish }: Props) {
 
       {finish && (
         <div className="finish-sheet">
-          <b>Прочитано аятов: {seenCount}</b>
-          <p>{habitName ? `Отметить «${habitName}»?` : 'Закладка сохранена.'}</p>
+          <b>{_tj("Прочитано аятов: {0}", seenCount)}</b>
+          <p>{habitName ? _t("Отметить «{0}»?", habitName) : _t("Закладка сохранена.")}</p>
           <div className="row2 light">
             {habitName ? (
               <>
-                <button type="button" onClick={() => { onFinish('min'); onExit(); }}>Минимум</button>
-                <button type="button" className="pri-btn" onClick={() => { onFinish('done'); onExit(); }}>Сделано</button>
+                <button type="button" onClick={() => { onFinish('min'); onExit(); }}>{_t("Минимум")}</button>
+                <button type="button" className="pri-btn" onClick={() => { onFinish('done'); onExit(); }}>{_t("Сделано")}</button>
               </>
             ) : (
-              <button type="button" className="pri-btn" onClick={onExit}>Закрыть</button>
+              <button type="button" className="pri-btn" onClick={onExit}>{_t("Закрыть")}</button>
             )}
           </div>
-          <button type="button" className="link-btn" onClick={() => setFinish(false)}>Читать дальше</button>
+          <button type="button" className="link-btn" onClick={() => setFinish(false)}>{_t("Читать дальше")}</button>
         </div>
       )}
     </div>
@@ -171,12 +172,12 @@ function Reader(props: {
   return (
     <>
       <div className="q-tools">
-        <button type="button" aria-pressed={translation} onClick={() => setQ({ translation: !translation })}>Перевод</button>
-        <select value={lang} onChange={(e) => setQ({ lang: e.target.value as QLang })} aria-label="Язык перевода">
+        <button type="button" aria-pressed={translation} onClick={() => setQ({ translation: !translation })}>{_t("Перевод")}</button>
+        <select value={lang} onChange={(e) => setQ({ lang: e.target.value as QLang })} aria-label={_t("Язык перевода")}>
           {Q_LANGS.map((l) => <option key={l.id} value={l.id}>{l.id.toUpperCase()}</option>)}
         </select>
-        <button type="button" onClick={() => setQ({ size: Math.max(20, size - 2) })} aria-label="Мельче">A−</button>
-        <button type="button" onClick={() => setQ({ size: Math.min(40, size + 2) })} aria-label="Крупнее">A+</button>
+        <button type="button" onClick={() => setQ({ size: Math.max(20, size - 2) })} aria-label={_t("Мельче")}>A−</button>
+        <button type="button" onClick={() => setQ({ size: Math.min(40, size + 2) })} aria-label={_t("Крупнее")}>A+</button>
       </div>
       <div className="q-read" ref={box}>
         {n !== 1 && n !== 9 && <p className="basmala">بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ</p>}
@@ -188,7 +189,7 @@ function Reader(props: {
             {translation && <p className="ayah-ru" lang={lang}><span>{n}:{i + 1}</span> {ru}</p>}
           </div>
         ))}
-        {onNext && <button type="button" className="pri-btn next-surah" onClick={onNext}>Следующая сура</button>}
+        {onNext && <button type="button" className="pri-btn next-surah" onClick={onNext}>{_t("Следующая сура")}</button>}
       </div>
     </>
   );

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import bundled from './summaries/atomic.json';
 import { cloudSummaries, isCloud } from './cloud';
+import { _t } from './i18n';
 
 export interface Summary { book: string; n: number; title: string; md: string; date: string }
 
 export const SUMMARY_BOOKS: Record<string, { title: string; author: string }> = {
-  'atomic-habits': { title: 'Атомные привычки', author: 'Джеймс Клир · пересказ по главам' },
+  'atomic-habits': { title: _t("Атомные привычки"), author: _t("Джеймс Клир · пересказ по главам") },
 };
 
 /** Bundled chapters plus any new ones written to the artifact db collection "summaries". */

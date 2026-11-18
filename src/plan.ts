@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { _t } from './i18n';
 
 // Living Muslim plans: 7 days of Pro from the first day in the app, then Free with «по 3»:
 // 3 habits, 3 circles, 3 goals, 3 books, 3 video courses. Everything about worship stays free for ever.
@@ -12,9 +13,9 @@ export const PRO = { habits: 5, circles: 20, goals: 5, books: 100, courses: 100 
 export type LimitKey = keyof typeof FREE;
 
 export const PRICES = {
-  year: { price: '€29.99', per: 'в год', month: '€2.50', note: 'первый год со скидкой −37%: выходит €2.50 в месяц' },
-  month: { price: '€3.99', per: 'в месяц', month: '€3.99', note: 'можно отменить в любой момент' },
-  family: { price: '€44.99', per: 'в год', month: '€0.75', note: 'до 5 человек в одной семье, €0.75 в месяц на каждого' },
+  year: { price: '€29.99', per: _t("в год"), month: '€2.50', note: _t("первый год со скидкой −37%: выходит €2.50 в месяц") },
+  month: { price: '€3.99', per: _t("в месяц"), month: '€3.99', note: _t("можно отменить в любой момент") },
+  family: { price: '€44.99', per: _t("в год"), month: '€0.75', note: _t("до 5 человек в одной семье, €0.75 в месяц на каждого") },
 } as const;
 export type PlanId = keyof typeof PRICES;
 
@@ -99,11 +100,11 @@ export function dueSheet(): 5 | 7 | 8 | null {
 export function markSheet(k: number) { set({ seen: [...new Set([...(get().seen ?? []), ...[5, 7, 8].filter((x) => x <= k)])] }); }
 
 export const LIMIT_RU: Record<LimitKey, [string, string]> = {
-  habits: ['активные привычки', 'привычки'],
-  circles: ['круги', 'круга'],
-  goals: ['активные цели', 'цели'],
-  books: ['книги в библиотеке', 'книги'],
-  courses: ['видеокурсы', 'видеокурса'],
+  habits: [_t("активные привычки"), _t("привычки")],
+  circles: [_t("круги"), _t("круга")],
+  goals: [_t("активные цели"), _t("цели")],
+  books: [_t("книги в библиотеке"), _t("книги")],
+  courses: [_t("видеокурсы"), _t("видеокурса")],
 };
 
 /** Opens the Pro screen from anywhere (App listens). */
@@ -113,7 +114,7 @@ export function openPro() { try { window.dispatchEvent(new Event(PRO_EVENT)); } 
 /** Invite a friend: the plain landing link, no rewards. ref=share shows up in the owner's analytics. */
 export const SHARE_URL = 'https://living-muslim.vercel.app/?ref=share';
 export async function inviteFriend(): Promise<'shared' | 'copied' | 'cancel'> {
-  const text = 'Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй, первые 7 дней Pro бесплатно:';
+  const text = _t("Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй, первые 7 дней Pro бесплатно:");
   try {
     if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url: SHARE_URL }); return 'shared'; }
   } catch { return 'cancel'; }
@@ -125,5 +126,5 @@ export function leftLabel(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
   const p = (n: number) => String(n).padStart(2, '0');
-  return `${d ? `${d} д ` : ''}${p(h)}:${p(m)}:${p(x)}`;
+  return `${d ? _t("{0} д ", d) : ''}${p(h)}:${p(m)}:${p(x)}`;
 }

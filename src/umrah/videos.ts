@@ -1,3 +1,4 @@
+import { _t } from '../i18n';
 // Video lessons on how to perform umrah, shown in the umrah screen. Lesson titles are short versions of the originals.
 
 export interface ULesson { id: string; t: string; s: number; step?: string }
@@ -5,16 +6,16 @@ export interface UCourse { lang: 'ru' | 'en'; title: string; by: string; list: s
 
 export const UMRAH_VIDEOS: UCourse[] = [
   {
-    lang: 'ru', title: 'Инструкция по умре', by: 'Абу Ясин Руслан Маликов', list: 'PLK_aw3CMJI1LqQKzMRQ0zv34wUP8PM-Qg',
+    lang: 'ru', title: _t("Инструкция по умре"), by: _t("Абу Ясин Руслан Маликов"), list: 'PLK_aw3CMJI1LqQKzMRQ0zv34wUP8PM-Qg',
     lessons: [
-      { id: 'Z1yhTDdKWZM', t: 'Этикет паломника, намерение, микаты', s: 870 },
-      { id: 'e09LVvYMGL0', t: 'Что нельзя в ихраме, как в него войти', s: 462, step: 'ihram' },
-      { id: '_zBAsdBwX14', t: 'Как надеть ихрам, идтыба и рамль', s: 377 },
-      { id: '30s77AT6ZJs', t: 'Тальбия', s: 687, step: 'talbiya' },
-      { id: 'tAmGvE9gKmk', t: 'Таваф и дуа «Раббана аатина»', s: 638, step: 'tawaf' },
-      { id: '61vh-4dGRgE', t: 'Саи между Сафой и Марвой', s: 480, step: 'saee' },
-      { id: 'jU_j-sjXeF4', t: 'Дуа на Сафе и Марве', s: 553 },
-      { id: '6C7jEo5DgFI', t: 'Вся умра коротко, от начала до конца', s: 738 },
+      { id: 'Z1yhTDdKWZM', t: _t("Этикет паломника, намерение, микаты"), s: 870 },
+      { id: 'e09LVvYMGL0', t: _t("Что нельзя в ихраме, как в него войти"), s: 462, step: 'ihram' },
+      { id: '_zBAsdBwX14', t: _t("Как надеть ихрам, идтыба и рамль"), s: 377 },
+      { id: '30s77AT6ZJs', t: _t("Тальбия"), s: 687, step: 'talbiya' },
+      { id: 'tAmGvE9gKmk', t: _t("Таваф и дуа «Раббана аатина»"), s: 638, step: 'tawaf' },
+      { id: '61vh-4dGRgE', t: _t("Саи между Сафой и Марвой"), s: 480, step: 'saee' },
+      { id: 'jU_j-sjXeF4', t: _t("Дуа на Сафе и Марве"), s: 553 },
+      { id: '6C7jEo5DgFI', t: _t("Вся умра коротко, от начала до конца"), s: 738 },
     ],
   },
   {
@@ -35,5 +36,5 @@ export const UMRAH_VIDEOS: UCourse[] = [
   },
 ];
 
-export const mins = (s: number) => `${Math.max(1, Math.round(s / 60))} мин`;
+export const mins = (s: number) => _t("{0} мин", Math.max(1, Math.round(s / 60)));
 export const embed = (id: string, auto = true) => `https://www.youtube-nocookie.com/embed/${id}?${auto ? 'autoplay=1&' : ''}rel=0&playsinline=1`;

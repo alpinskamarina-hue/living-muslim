@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
 import { cardOfDay, g, pick, type Card, type Mode, type SayDetail, type Sex, type Trigger } from '../words';
 import { shareCard, SITE } from '../share';
+import { _t } from '../i18n';
 
 export const modeOf = (s: AppState): Mode => s.settings.words ?? 'calm';
 export const sexOf = (s: AppState): Sex => s.settings.me ?? '';
 
-const KIND: Record<Card['kind'], string> = { phrase: '', ayah: 'Аят', hadith: 'Хадис', athar: 'Слова сподвижника', dua: 'Дуа' };
+const KIND: Record<Card['kind'], string> = { phrase: '', ayah: _t("Аят"), hadith: _t("Хадис"), athar: _t("Слова сподвижника"), dua: _t("Дуа") };
 
 /** One short phrase or one ayah/hadith at a time, at the bottom of the screen, gone by itself. */
 export function WordsLayer({ state, today }: { state: AppState; today: string }) {
@@ -63,7 +64,7 @@ export function WordCard({ t, state, today, className }: { t: Trigger; state: Ap
   const hide = () => { setHidden(true); try { localStorage.setItem(key, '1'); } catch { /* */ } };
   return (
     <div className={`wc ${className ?? ''}`}>
-      <div className="wc-top"><em>{KIND[c.kind] || 'Напоминание'}</em><span><button type="button" className="wc-share" onClick={() => shareWord(c, sex)} aria-label="Поделиться картинкой">↗</button><button type="button" onClick={hide} aria-label="Скрыть на сегодня">×</button></span></div>
+      <div className="wc-top"><em>{KIND[c.kind] || _t("Напоминание")}</em><span><button type="button" className="wc-share" onClick={() => shareWord(c, sex)} aria-label={_t("Поделиться картинкой")}>↗</button><button type="button" onClick={hide} aria-label={_t("Скрыть на сегодня")}>×</button></span></div>
       {c.head && c.kind !== 'phrase' && <b>{g(c.head, sex)}</b>}
       {c.ar && <span className="wd-ar" lang="ar">{c.ar}</span>}
       <p>{c.kind === 'phrase' ? `${g(c.head ?? '', sex)}. ` : ''}{g(c.ru, sex)}</p>
@@ -77,5 +78,5 @@ function shareWord(c: Card, sex: Sex) {
   const body = c.kind === 'phrase' ? `${g(c.head ?? '', sex)}. ${g(c.ru, sex)}` : g(c.ru, sex);
   const head = c.kind !== 'phrase' && c.head ? g(c.head, sex) : undefined;
   const text = [head, `«${body}»`, c.src ? `— ${c.src}` : '', '', `Living Muslim: https://${SITE}`].filter((x) => x !== undefined).join('\n');
-  shareCard({ theme: c.kind === 'dua' ? 'night' : c.kind === 'phrase' ? 'sand' : 'green', kicker: KIND[c.kind] || 'Напоминание', title: head, ar: c.ar, body, src: c.src }, `living-muslim-${c.id}`, text);
+  shareCard({ theme: c.kind === 'dua' ? 'night' : c.kind === 'phrase' ? 'sand' : 'green', kicker: KIND[c.kind] || _t("Напоминание"), title: head, ar: c.ar, body, src: c.src }, `living-muslim-${c.id}`, text);
 }

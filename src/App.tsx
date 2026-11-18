@@ -43,6 +43,7 @@ import type { GoTo } from './guide';
 import { usePlan, dueSheet, PRO_EVENT } from './plan';
 import { TrialDial, PlanSheet } from './components/Plan';
 import { useIsAdmin } from './components/Admin';
+import { _t } from './i18n';
 
 type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
 
@@ -53,7 +54,7 @@ const ICONS: Record<Tab, JSX.Element> = {
   progress: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></>,
   profile: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0116 0" /></>,
 };
-const LABELS: Record<Tab, string> = { today: 'Сегодня', practice: 'Практика', circle: 'Круг', progress: 'Цели', profile: 'Профиль' };
+const LABELS: Record<Tab, string> = { today: _t("Сегодня"), practice: _t("Практика"), circle: _t("Круг"), progress: _t("Цели"), profile: _t("Профиль") };
 
 export function App() {
   const [state, update, replace] = useAppState();
@@ -207,21 +208,21 @@ export function App() {
   // Support from the circle for me today: who made dua and who nudged me.
   const support: { text: string; onOpen: () => void; cls?: string }[] = [];
   const nkTodo = nikahTodo(nk);
-  if (nkTodo.wali.length) support.push({ cls: 'invite', text: `💍 ${nkTodo.wali[0].name} просит тебя быть вали в поиске пары`, onOpen: () => go({ profile: 'nikah' }) });
-  if (nkTodo.props) support.push({ cls: 'invite', text: `💍 ${nkTodo.props === 1 ? 'Новое предложение' : `${nkTodo.props} новых предложения`} для никаха`, onOpen: () => go({ profile: 'nikah' }) });
+  if (nkTodo.wali.length) support.push({ cls: 'invite', text: _t("💍 {0} просит тебя быть вали в поиске пары", nkTodo.wali[0].name), onOpen: () => go({ profile: 'nikah' }) });
+  if (nkTodo.props) support.push({ cls: 'invite', text: _t("💍 {0} для никаха", nkTodo.props === 1 ? _t("Новое предложение") : _t("{0} новых предложения", nkTodo.props)), onOpen: () => go({ profile: 'nikah' }) });
   if (invites.length) {
     const f = invites[0];
     support.push({ cls: 'invite', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); },
-      text: invites.length === 1 ? `🔔 ${f.from.name || 'Кто-то'} зовёт тебя в круг «${f.title || 'Круг'}»` : `🔔 ${invites.length} приглашения в круги ждут ответа` });
+      text: invites.length === 1 ? _t("🔔 {0} зовёт тебя в круг «{1}»", f.from.name || _t("Кто-то"), f.title || _t("Круг")) : _t("🔔 {0} приглашения в круги ждут ответа", invites.length) });
   }
   if (chatTotal > 0) {
     const codes = Object.keys(chatUnread);
     const title = codes.length === 1 ? myCircles().find((c) => c.code === codes[0])?.title : '';
     support.push({ cls: 'invite', onOpen: () => { window.scrollTo(0, 0); try { if (codes.length === 1) sessionStorage.setItem('lm.chat', codes[0]); } catch { /* */ } if (codes.length === 1 && currentCircle()?.code !== codes[0]) { switchCircle(codes[0]); return; } setTab('circle'); window.dispatchEvent(new Event('lm-open-chat')); },
-      text: `💬 ${chatTotal} ${plural(chatTotal, 'новое сообщение', 'новых сообщения', 'новых сообщений')} в ${title ? `круге «${title}»` : 'кругах'}` });
+      text: _t("💬 {0} {1} в {2}", chatTotal, plural(chatTotal, _t("новое сообщение"), _t("новых сообщения"), _t("новых сообщений")), title ? _t("круге «{0}»", title) : _t("кругах")) });
   }
   if (joined && circle.me) {
-    const name = (id: string) => circle.names[id]?.name || 'Друг';
+    const name = (id: string) => circle.names[id]?.name || _t("Друг");
     const duaFrom: string[] = [], nudgeFrom: string[] = [];
     for (const [from, map] of Object.entries(circle.reacts)) {
       if (from === circle.me) continue;
@@ -229,28 +230,28 @@ export function App() {
       if (map?.[`n:${circle.me}`]?.day === today) nudgeFrom.push(name(from));
     }
     const open = () => setTab('circle');
-    if (nudgeFrom.length && summary.done === 0 && summary.prayers === 0) support.push({ text: `${nudgeFrom.join(', ')} ${nudgeFrom.length > 1 ? 'напоминают' : 'напоминает'}: даже минимум считается`, onOpen: open });
-    if (duaFrom.length) support.push({ text: `🤲 ${duaFrom.join(', ')} ${duaFrom.length > 1 ? 'сделали' : 'сделал(а)'} за тебя дуа`, onOpen: open });
+    if (nudgeFrom.length && summary.done === 0 && summary.prayers === 0) support.push({ text: _t("{0} {1}: даже минимум считается", nudgeFrom.join(', '), nudgeFrom.length > 1 ? _t("напоминают") : _t("напоминает")), onOpen: open });
+    if (duaFrom.length) support.push({ text: _t("🤲 {0} {1} за тебя дуа", duaFrom.join(', '), duaFrom.length > 1 ? _t("сделали") : _t("сделал(а)")), onOpen: open });
   }
 
   if (joined && circle.me) {
     for (const m of circle.members) {
       if (m.id === circle.me || !askLive(m.ask, today)) continue;
       if ((circle.reacts[circle.me]?.[`a:${m.id}`]?.day ?? '') >= m.ask.d) continue;
-      support.push({ cls: 'invite', text: `🤲 ${circle.names[m.id]?.name || 'Брат из круга'} просит дуа: «${m.ask.t}»`, onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+      support.push({ cls: 'invite', text: _t("🤲 {0} просит дуа: «{1}»", circle.names[m.id]?.name || _t("Брат из круга"), m.ask.t), onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
     }
   }
   if (joined && circle.me) {
     for (const m of circle.members) for (const c of m.chs ?? []) {
       if (c.to !== circle.me || myCh.acc.includes(c.id) || addDays(c.start, 2) < today) continue;
-      support.push({ cls: 'invite', text: `⚔️ ${circle.names[m.id]?.name || 'Брат'} бросает тебе вызов: ${CH_KINDS[c.k].label}`, onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+      support.push({ cls: 'invite', text: _t("⚔️ {0} бросает тебе вызов: {1}", circle.names[m.id]?.name || _t("Брат"), CH_KINDS[c.k].label), onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
     }
   }
   if (joined && bizOn && circle.members.length > 1 && fromKey(today).getDay() === 4 && !(myShura && myShura.w === weekStart(today))) {
-    support.push({ cls: 'invite', text: '🧭 Сегодня шура круга: что сделал, где застрял, о чём спросить братьев', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+    support.push({ cls: 'invite', text: _t("🧭 Сегодня шура круга: что сделал, где застрял, о чём спросить братьев"), onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
   }
   if (joined && circle.members.length > 1 && isFriday(today) && now.getHours() >= 14) {
-    support.push({ text: '📊 Итог недели круга готов: посмотри и отправь братьям', onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
+    support.push({ text: _t("📊 Итог недели круга готов: посмотри и отправь братьям"), onOpen: () => { window.scrollTo(0, 0); setTab('circle'); } });
   }
 
   // Guide buttons: open any part of the app.
@@ -286,7 +287,7 @@ export function App() {
         {tab === 'today' && <UmrahMadeCard state={state} update={update} api={umrah} />}
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
-            circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || 'Участник'), onOpen: () => setTab('circle') } : undefined}
+            circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
             onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />} firstWeek={<FirstWeek state={state} joined={joined} go={go} />}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
@@ -312,15 +313,15 @@ export function App() {
       </main>
 
       {tab === 'today' && (
-        <button type="button" className="fab" onClick={() => setSheet({ anchor: current })} aria-label="Добавить привычку">
+        <button type="button" className="fab" onClick={() => setSheet({ anchor: current })} aria-label={_t("Добавить привычку")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 5v14M5 12h14" /></svg>
-          Добавить
+          {_t("Добавить")}
         </button>
       )}
 
-      <nav className="nav" aria-label="Разделы">
+      <nav className="nav" aria-label={_t("Разделы")}>
         {(Object.keys(LABELS) as Tab[]).map((t) => (
-          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? `${LABELS[t]}, приглашений: ${invites.length}` : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
+          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? _t("{0}, приглашений: {1}", LABELS[t], invites.length) : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
             <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
             <small>{LABELS[t]}</small>
           </button>

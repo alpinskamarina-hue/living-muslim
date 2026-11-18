@@ -18,6 +18,7 @@ import { PassCard } from './UmrahPlan';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
+import { _t, _tj } from '../i18n';
 
 // One place for the whole umrah: what matters today, the heart, my duas, the rites and the trip.
 // Both Practice and the Circle open this screen.
@@ -39,7 +40,7 @@ const HEART = ['niyya', 'tawba', 'debts', 'learn', 'talbiya', 'duas', 'farewell'
 const daysOf = (when: string) => Number(when.split(' ')[0]) || 0;
 const patch = (s: AppState, p: Partial<UmrahState>): AppState => ({ ...s, umrah: { ...umrahOf(s), ...p } });
 const diff = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
-const dLabel = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day} ${['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][m - 1]}`; };
+const dLabel = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day} ${[_t("янв"), _t("фев"), _t("мар"), _t("апр"), _t("мая"), _t("июн"), _t("июл"), _t("авг"), _t("сен"), _t("окт"), _t("ноя"), _t("дек")][m - 1]}`; };
 
 export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel, start }: Props) {
   const [tab, setTab] = useState<HubTab>(start ?? 'heart');
@@ -93,11 +94,11 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
       <button type="button" className="link-btn um-back" onClick={onExit}>← {backLabel}</button>
       <div className="um-hero">
         <span>🕋</span>
-        <h1 className="page-h">Умра</h1>
+        <h1 className="page-h">{_t("Умра")}</h1>
         <div className="um-ready">
-          <span><b>{pct(heart)}%</b><small>сердце</small></span>
-          <span><b>{pct(deeds)}%</b><small>дела</small></span>
-          <span><b>{from ? (left! > 0 ? left : '—') : '—'}</b><small>{from && left! > 0 ? plural(left!, 'день до вылета', 'дня до вылета', 'дней до вылета') : 'дней до вылета'}</small></span>
+          <span><b>{pct(heart)}%</b><small>{_t("сердце")}</small></span>
+          <span><b>{pct(deeds)}%</b><small>{_t("дела")}</small></span>
+          <span><b>{from ? (left! > 0 ? left : '—') : '—'}</b><small>{from && left! > 0 ? plural(left!, _t("день до вылета"), _t("дня до вылета"), _t("дней до вылета")) : _t("дней до вылета")}</small></span>
         </div>
       </div>
 
@@ -107,7 +108,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
       {u.ihram && (
         <button type="button" className="um-ihram" onClick={() => setMiqat(true)}>
-          <b>Ты в ихраме</b><small>тальбия и запреты ›</small>
+          <b>{_t("Ты в ихраме")}</b><small>{_t("тальбия и запреты ›")}</small>
         </button>
       )}
 
@@ -115,84 +116,84 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
 
       {/* Now: changes by the days left, so the person sees only what matters today. */}
       <div className="um-now">
-        <em>Сейчас</em>
+        <em>{_t("Сейчас")}</em>
         {phase === 'none' && (
           <>
-            <b>Копилка на умру</b>
+            <b>{_t("Копилка на умру")}</b>
             <UmrahSavings state={state} update={update} today={today} compact onOpen={() => setTab('trip')} />
-            <b>Когда едешь?</b>
-            <p>Укажи дни, и экран будет подсказывать, что делать сейчас. Если едешь группой из Круга, даты возьмутся из поездки.</p>
+            <b>{_t("Когда едешь?")}</b>
+            <p>{_t("Укажи дни, и экран будет подсказывать, что делать сейчас. Если едешь группой из Круга, даты возьмутся из поездки.")}</p>
             <div className="up-add">
-              <input type="date" defaultValue={u.from} onChange={(e) => update((s) => patch(s, { from: e.target.value || undefined }))} aria-label="Вылет" />
-              <input type="date" defaultValue={u.to} onChange={(e) => update((s) => patch(s, { to: e.target.value || undefined }))} aria-label="Возвращение" />
+              <input type="date" defaultValue={u.from} onChange={(e) => update((s) => patch(s, { from: e.target.value || undefined }))} aria-label={_t("Вылет")} />
+              <input type="date" defaultValue={u.to} onChange={(e) => update((s) => patch(s, { to: e.target.value || undefined }))} aria-label={_t("Возвращение")} />
             </div>
-            <p className="tiny">Пока дат нет, начни с сердца: намерение и покаяние не зависят от билетов.</p>
+            <p className="tiny">{_t("Пока дат нет, начни с сердца: намерение и покаяние не зависят от билетов.")}</p>
           </>
         )}
-        {phase === 'far' && <><b>Время намерения</b><p>До вылета {left} {plural(left!, 'день', 'дня', 'дней')}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.</p>{(u.funds ?? []).some((f) => !f.for) && <UmrahSavings state={state} update={update} today={today} compact />}</>}
-        {phase === 'month' && <><b>Месяц до умры</b><p>Прививка, разрешение в Nusuk, запись в Равду, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.</p>{left! <= 28 && <WalkPlan state={state} update={update} today={today} left={left} compact />}<UmrahBook state={state} update={update} from={from} to={to} compact /></>}
-        {phase === 'week' && <><b>Последняя неделя</b><p>Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте: указать рейс</button><UmrahBook state={state} update={update} from={from} to={to} compact /></>}
+        {phase === 'far' && <><b>{_t("Время намерения")}</b><p>{_tj("До вылета {0}  {1}. Самое важное сейчас не билеты, а сердце: ради кого ты едешь. Обнови намерение, попроси прощения, начни учить тальбию.", left, plural(left!, _t("день"), _t("дня"), _t("дней")))}</p>{(u.funds ?? []).some((f) => !f.for) && <UmrahSavings state={state} update={update} today={today} compact />}</>}
+        {phase === 'month' && <><b>{_t("Месяц до умры")}</b><p>{_t("Прививка, разрешение в Nusuk, запись в Равду, билеты. И по одному шагу гида в день, чтобы на месте всё было знакомо.")}</p>{left! <= 28 && <WalkPlan state={state} update={update} today={today} left={left} compact />}<UmrahBook state={state} update={update} from={from} to={to} compact /></>}
+        {phase === 'week' && <><b>{_t("Последняя неделя")}</b><p>{_t("Вещи, список дуа, договорённости с семьёй и работой. Попрощайся с близкими и оставь садака.")}</p><button type="button" className="pri-btn" onClick={() => setMiqat(true)}>{_t("✈ Микат в самолёте: указать рейс")}</button><UmrahBook state={state} update={update} from={from} to={to} compact /></>}
         {phase === 'there' && (
           <>
-            <b>Ты в пути. Ляббайк, Аллахумма ляббайк</b>
-            <p>Гид работает без интернета. Таваф {u.tawaf}/7, саи {u.saee}/7.</p>
+            <b>{_t("Ты в пути. Ляббайк, Аллахумма ляббайк")}</b>
+            <p>{_tj("Гид работает без интернета. Таваф {0}/7, саи {1}/7.", u.tawaf, u.saee)}</p>
             <LeaveForPrayer state={state} />
             {groupHost && me && <GroupRadar state={state} update={update} api={api} host={groupHost} members={groupMembers} nameOf={nameOf} />}
             <Diary state={state} update={update} today={today} />
             <div className="os-row">
-              <button type="button" onClick={() => setLost(true)}>🆘 Я потерялся</button>
-              <button type="button" onClick={() => setTab('trip')}>📍 {u.site?.meet ? u.site.meet : 'Точка встречи'}</button>
+              <button type="button" onClick={() => setLost(true)}>{_t("🆘 Я потерялся")}</button>
+              <button type="button" onClick={() => setTab('trip')}>📍 {u.site?.meet ? u.site.meet : _t("Точка встречи")}</button>
             </div>
-            {!u.ihram && <button type="button" className="pri-btn" onClick={() => setMiqat(true)}>✈ Микат в самолёте</button>}
-            <button type="button" className="pri-btn" onClick={() => setTab('rites')}>Открыть обряды</button>
+            {!u.ihram && <button type="button" className="pri-btn" onClick={() => setMiqat(true)}>{_t("✈ Микат в самолёте")}</button>}
+            <button type="button" className="pri-btn" onClick={() => setTab('rites')}>{_t("Открыть обряды")}</button>
           </>
         )}
         {phase === 'after' && (
           <>
-            <b>Умра позади. Да примет Аллах</b>
-            <p>Сохрани это состояние: оставь одну привычку из поездки и не возвращайся к тому, от чего покаялся.</p>
+            <b>{_t("Умра позади. Да примет Аллах")}</b>
+            <p>{_t("Сохрани это состояние: оставь одну привычку из поездки и не возвращайся к тому, от чего покаялся.")}</p>
             <StoryButton state={state} from={from} to={to} />
             <FortyDays state={state} update={update} today={today} />
-            <Diary state={state} update={update} today={today} prompt="Что ты привёз из умры? Что хочешь сохранить?" />
+            <Diary state={state} update={update} today={today} prompt={_t("Что ты привёз из умры? Что хочешь сохранить?")} />
           </>
         )}
-        {phase === 'done' && <><b>Да примет Аллах твою умру</b><p>Если собираешься снова, укажи новые даты в «Поездке».</p></>}
+        {phase === 'done' && <><b>{_t("Да примет Аллах твою умру")}</b><p>{_t("Если собираешься снова, укажи новые даты в «Поездке».")}</p></>}
         {due.length > 0 && phase !== 'there' && phase !== 'after' && (
           <div className="um-due">
             {due.map((p) => (
               <label key={p.id} className="chk">
                 <input type="checkbox" checked={false} onChange={() => togglePrep(p.id)} />
-                <span><b>{p.text}</b><small>{HEART.includes(p.id) ? 'сердце' : 'дела'} · за {p.when}</small></span>
+                <span><b>{p.text}</b><small>{_tj("{0} · за {1}", HEART.includes(p.id) ? _t("сердце") : _t("дела"), p.when)}</small></span>
               </label>
             ))}
           </div>
         )}
-        {from && phase !== 'none' && <small className="um-dates">{groupDates ? 'Даты группы' : 'Мои даты'}: {dLabel(from)}{to ? ` – ${dLabel(to)}` : ''}</small>}
+        {from && phase !== 'none' && <small className="um-dates">{groupDates ? _t("Даты группы") : _t("Мои даты")}: {dLabel(from)}{to ? ` – ${dLabel(to)}` : ''}</small>}
       </div>
 
       <div className="seg um-seg">
-        {([['heart', 'Сердце'], ['duas', 'Дуа'], ['rites', 'Обряды'], ['trip', 'Поездка']] as const).map(([k, l]) => (
+        {([['heart', _t("Сердце")], ['duas', _t("Дуа")], ['rites', _t("Обряды")], ['trip', _t("Поездка")]] as const).map(([k, l]) => (
           <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
 
       {tab === 'heart' && (
         <div className="um-sec">
-          <p className="tiny">Умра начинается задолго до самолёта. Главная подготовка внутри.</p>
+          <p className="tiny">{_t("Умра начинается задолго до самолёта. Главная подготовка внутри.")}</p>
           <UmrahVideos u={u} update={update} />
           {heart.map((p) => (
-            <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>за {p.when} до поездки</small></span></label>
+            <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>{_tj("за {0} до поездки", p.when)}</small></span></label>
           ))}
           <TalbiyaLearn state={state} update={update} />
-          <h3>Дела</h3>
+          <h3>{_t("Дела")}</h3>
           {deeds.map((p) => (
             <div key={p.id} className="pp-deed">
-              <label className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}{p.must && <em className="pp-must">обязательно</em>}</b><small>за {p.when} до поездки</small></span></label>
-              {p.how && <details><summary>Как это сделать</summary><p>{p.how}</p></details>}
+              <label className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}{p.must && <em className="pp-must">{_t("обязательно")}</em>}</b><small>{_tj("за {0} до поездки", p.when)}</small></span></label>
+              {p.how && <details><summary>{_t("Как это сделать")}</summary><p>{p.how}</p></details>}
             </div>
           ))}
           <WalkPlan state={state} update={update} today={today} left={left} />
-          <p className="tiny">Готовность видна группе только процентом, сами пункты нет.</p>
+          <p className="tiny">{_t("Готовность видна группе только процентом, сами пункты нет.")}</p>
         </div>
       )}
 
@@ -200,14 +201,14 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
         <div className="um-sec">
           {asks.length > 0 && (
             <>
-              <h3>Просят из Круга <small>{asks.filter((a) => u.asked?.includes(a.key)).length} из {asks.length}</small></h3>
+              <h3>{_t("Просят из Круга ")}<small>{_tj("{0} из {1}", asks.filter((a) => u.asked?.includes(a.key)).length, asks.length)}</small></h3>
               {asks.map((a) => (
                 <label key={a.key} className="chk">
                   <input type="checkbox" checked={Boolean(u.asked?.includes(a.key))} onChange={() => toggleAsk(a.key)} />
                   <span><b style={u.asked?.includes(a.key) ? { textDecoration: 'line-through', opacity: 0.6 } : undefined}>{a.text}</b><small>{nameOf(a.who)}</small></span>
                 </label>
               ))}
-              <h3>Мои</h3>
+              <h3>{_t("Мои")}</h3>
             </>
           )}
           <DuaList state={state} update={update} />
@@ -218,7 +219,7 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
         <div className="um-sec">
           <button type="button" className="q-row" onClick={() => setMiqat(true)}>
             <span className="q-n">✈</span>
-            <span className="q-t"><b>{u.ihram ? 'Я в ихраме' : 'Микат в самолёте'}</b><small>{u.ihram ? 'Тальбия и запреты' : 'Таймер до намерения по времени посадки'}</small></span>
+            <span className="q-t"><b>{u.ihram ? _t("Я в ихраме") : _t("Микат в самолёте")}</b><small>{u.ihram ? _t("Тальбия и запреты") : _t("Таймер до намерения по времени посадки")}</small></span>
           </button>
           {STEPS.map((s, i) => (
             <button type="button" key={s.id} className="q-row" onClick={() => setStep(s)}>
@@ -227,11 +228,11 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
             </button>
           ))}
           <Badal />
-          <h3>Медина</h3>
+          <h3>{_t("Медина")}</h3>
           <MadinahGuide />
-          <h3>Запреты в ихраме</h3>
+          <h3>{_t("Запреты в ихраме")}</h3>
           <ul className="rules">{IHRAM_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
-          <p className="tiny">Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.</p>
+          <p className="tiny">{_t("Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.")}</p>
         </div>
       )}
 
@@ -245,16 +246,16 @@ export function UmrahHub({ state, update, today, api, nameOf, onExit, backLabel,
           {api.me ? (
             <UmrahTrips api={api} myReady={prepPct(state)} nameOf={nameOf} embedded />
           ) : (
-            <p className="tiny">Чтобы поехать группой, войди в Круг: там собираются поездки, даты, жильё и общая касса.</p>
+            <p className="tiny">{_t("Чтобы поехать группой, войди в Круг: там собираются поездки, даты, жильё и общая касса.")}</p>
           )}
           {myTrips.length === 0 && <PassCard isHost going={1} />}
           {myTrips.length === 0 && (
             <div className="um-solo">
-              <b>Едешь один или с агентством?</b>
-              <p className="tiny">Укажи свои даты, и «Сейчас» будет подсказывать по дням.</p>
+              <b>{_t("Едешь один или с агентством?")}</b>
+              <p className="tiny">{_t("Укажи свои даты, и «Сейчас» будет подсказывать по дням.")}</p>
               <div className="up-add">
-                <input type="date" defaultValue={u.from} onChange={(e) => update((s) => patch(s, { from: e.target.value || undefined }))} aria-label="Вылет" />
-                <input type="date" defaultValue={u.to} onChange={(e) => update((s) => patch(s, { to: e.target.value || undefined }))} aria-label="Возвращение" />
+                <input type="date" defaultValue={u.from} onChange={(e) => update((s) => patch(s, { from: e.target.value || undefined }))} aria-label={_t("Вылет")} />
+                <input type="date" defaultValue={u.to} onChange={(e) => update((s) => patch(s, { to: e.target.value || undefined }))} aria-label={_t("Возвращение")} />
               </div>
             </div>
           )}
@@ -276,12 +277,12 @@ function UmrahVideos({ u, update }: { u: UmrahState; update: Props['update'] }) 
   return (
     <div className="um-vid">
       <div className="um-vid-top">
-        <span><b>▶ Как совершить умру</b><small>{c.by} · {done} из {c.lessons.length}</small></span>
+        <span><b>{_t("▶ Как совершить умру")}</b><small>{_tj("{0} · {1} из {2}", c.by, done, c.lessons.length)}</small></span>
         <div className="um-lang">{(['ru', 'en'] as const).map((l) => <button key={l} type="button" aria-pressed={lang === l} onClick={() => pick(l)}>{l.toUpperCase()}</button>)}</div>
       </div>
       {play && (
         <div className="um-player">
-          <iframe src={embed(play)} title="Видеоурок" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+          <iframe src={embed(play)} title={_t("Видеоурок")} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
         </div>
       )}
       <div className="um-lessons">
@@ -293,7 +294,7 @@ function UmrahVideos({ u, update }: { u: UmrahState; update: Props['update'] }) 
           </button>
         ))}
       </div>
-      <small className="um-vid-src">Видео с YouTube, канал автора. Детали различаются по мазхабам, уточняй у своего имама.</small>
+      <small className="um-vid-src">{_t("Видео с YouTube, канал автора. Детали различаются по мазхабам, уточняй у своего имама.")}</small>
     </div>
   );
 }
@@ -301,16 +302,16 @@ function UmrahVideos({ u, update }: { u: UmrahState; update: Props['update'] }) 
 /** «Еду на умру»: a picture for family and friends, inviting them to send what to ask for at the Kaaba. */
 function UmrahShareBtn({ left, group }: { left: number; group: boolean }) {
   const [st, setSt] = useState('');
-  const days = `${left} ${plural(left, 'день', 'дня', 'дней')}`;
+  const days = `${left} ${plural(left, _t("день"), _t("дня"), _t("дней"))}`;
   const go = async () => {
-    setSt('Готовлю…');
-    const text = `${group ? 'Мы едем' : 'Я еду'} на умру, иншаАллах, через ${days} 🕋\nНапиши, о чём сделать за тебя дуа у Каабы 🤲\n\nГотовимся в Living Muslim: https://${SITE}`;
+    setSt(_t("Готовлю…"));
+    const text = _t("{0} на умру, иншаАллах, через {1} 🕋\nНапиши, о чём сделать за тебя дуа у Каабы 🤲\n\nГотовимся в Living Muslim: https://{2}", group ? _t("Мы едем") : _t("Я еду"), days, SITE);
     const r = await shareCard({
-      theme: 'night', kicker: 'Умра · иншаАллах', title: group ? 'Мы едем на умру' : 'Я еду на умру',
-      ar: 'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ', stats: [[String(left), plural(left, 'день до вылета', 'дня до вылета', 'дней до вылета')]],
-      note: 'Напиши, о чём сделать за тебя дуа у Каабы\u00a0🤲',
+      theme: 'night', kicker: _t("Умра · иншаАллах"), title: group ? _t("Мы едем на умру") : _t("Я еду на умру"),
+      ar: 'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ', stats: [[String(left), plural(left, _t("день до вылета"), _t("дня до вылета"), _t("дней до вылета"))]],
+      note: _t("Напиши, о чём сделать за тебя дуа у Каабы 🤲"),
     }, 'umra', text);
-    setSt(r === 'saved' ? '✓ Картинка сохранена, текст скопирован' : r === 'shared' ? '✓ Отправлено' : '');
+    setSt(r === 'saved' ? _t("✓ Картинка сохранена, текст скопирован") : r === 'shared' ? _t("✓ Отправлено") : '');
   };
-  return <button type="button" className="um-share" onClick={go}>{st || '🕋 Рассказать близким и собрать просьбы о дуа'}</button>;
+  return <button type="button" className="um-share" onClick={go}>{st || _t("🕋 Рассказать близким и собрать просьбы о дуа")}</button>;
 }

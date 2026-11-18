@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { Habit, Mark } from '../types';
 import { sphereName } from '../types';
 import { plural } from '../dates';
+import { _t } from '../i18n';
 
 const Ticks = () => (
   <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
@@ -33,10 +34,10 @@ export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMi
     <div className="sw">
       <div className="acts">
         <button type="button" className="mn" onClick={() => { onMark('min'); close(); }}>
-          ½<span>Минимум</span>
+          ½<span>{_t("Минимум")}</span>
         </button>
         <button type="button" className="lt" onClick={() => { onMark(mark === 'later' ? null : 'later'); close(); }}>
-          ⏱<span>{mark === 'later' ? 'Вернуть' : 'Позже'}</span>
+          ⏱<span>{mark === 'later' ? _t("Вернуть") : _t("Позже")}</span>
         </button>
       </div>
       <div
@@ -76,7 +77,7 @@ export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMi
         <button
           type="button"
           className="chk"
-          aria-label={state === 'done' ? 'Снять отметку' : 'Отметить выполненной'}
+          aria-label={state === 'done' ? _t("Снять отметку") : _t("Отметить выполненной")}
           onClick={() => onMark(state === 'done' ? null : 'done')}
         >
           <Ticks />
@@ -85,18 +86,18 @@ export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMi
           <div className="nm">{habit.action}</div>
           <div className="mt">
             <span className="sp">{sphereName(habit.sphere)}</span>
-            {habit.min && <span className="minl">{ramadanMin ? '🌙 в Рамадан хватит: ' : 'минимум: '}{habit.min}</span>}
-            {state === 'later' && <span className="later-tag">отложено</span>}
+            {habit.min && <span className="minl">{ramadanMin ? _t("🌙 в Рамадан хватит: ") : _t("минимум: ")}{habit.min}</span>}
+            {state === 'later' && <span className="later-tag">{_t("отложено")}</span>}
           </div>
-          {risk && <div className="risk">Вчера пропуск. Сегодня хватит и минимума</div>}
+          {risk && <div className="risk">{_t("Вчера пропуск. Сегодня хватит и минимума")}</div>}
         </div>
         <div className="st">
           {habit.formed ? (
-            <span className="formed" title="Закреплена">✓</span>
+            <span className="formed" title={_t("Закреплена")}>✓</span>
           ) : (
             <>
               {streak}
-              <small>{plural(streak, 'день', 'дня', 'дней')}</small>
+              <small>{plural(streak, _t("день"), _t("дня"), _t("дней"))}</small>
             </>
           )}
         </div>

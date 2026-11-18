@@ -1,3 +1,4 @@
+import { _t } from '../i18n';
 // The lap counter drawn as the place itself: the Kaaba seen from above with seven lanes of tawaf around it,
 // or the corridor between Safa and Marwa with seven passes. Finished laps turn gold, the newest one draws
 // itself counterclockwise from the Black Stone, as the pilgrim walked it.
@@ -37,10 +38,10 @@ export function TawafScene({ n }: { n: number }) {
       </g>
       <circle cx={C + 40} cy={C} r={3.2} className="sc-stone" />
       {n < 7 && <circle cx={C + lane(n)} cy={C} r={6} className="sc-me" />}
-      <text x={C + 154} y={C + 18} className="sc-lbl" textAnchor="end">Чёрный камень</text>
-      <text x={C} y={C + 62} className="sc-lbl" textAnchor="middle">Йеменский угол</text>
-      <text x={C - 64} y={C - 52} className="sc-lbl" textAnchor="middle">Хиджр</text>
-      <text x={C + 50} y={C - 44} className="sc-lbl" textAnchor="start">Макам</text>
+      <text x={C + 154} y={C + 18} className="sc-lbl" textAnchor="end">{_t("Чёрный камень")}</text>
+      <text x={C} y={C + 62} className="sc-lbl" textAnchor="middle">{_t("Йеменский угол")}</text>
+      <text x={C - 64} y={C - 52} className="sc-lbl" textAnchor="middle">{_t("Хиджр")}</text>
+      <text x={C + 50} y={C - 44} className="sc-lbl" textAnchor="start">{_t("Макам")}</text>
       <text x={C + 58} y={C + 24} className="sc-dir">↺</text>
     </svg>
   );
@@ -52,11 +53,11 @@ export function SaeeScene({ n }: { n: number }) {
     <svg viewBox="0 0 320 320" className="scene" aria-hidden="true">
       <rect x={20} y={8} width={280} height={304} rx={22} className="sc-floor" />
       <rect x={20} y={128} width={280} height={44} className="sc-green" />
-      <text x={160} y={122} className="sc-lbl" textAnchor="middle">зелёные огни: братья ускоряют шаг</text>
+      <text x={160} y={122} className="sc-lbl" textAnchor="middle">{_t("зелёные огни: братья ускоряют шаг")}</text>
       <path d="M 40 30 Q 160 -6 280 30 L 280 44 L 40 44 Z" className="sc-hill" />
       <path d="M 40 290 Q 160 326 280 290 L 280 276 L 40 276 Z" className="sc-hill" />
-      <text x={160} y={30} className="sc-name" textAnchor="middle">Марва</text>
-      <text x={160} y={302} className="sc-name" textAnchor="middle">Сафа</text>
+      <text x={160} y={30} className="sc-name" textAnchor="middle">{_t("Марва")}</text>
+      <text x={160} y={302} className="sc-name" textAnchor="middle">{_t("Сафа")}</text>
       {Array.from({ length: 7 }, (_, i) => {
         const up = i % 2 === 0; // odd passes (1, 3, 5, 7) go from Safa to Marwa
         const d = up ? `M ${x(i)} 268 L ${x(i)} 52` : `M ${x(i)} 52 L ${x(i)} 268`;

@@ -13,7 +13,7 @@ import { RAMADAN_30 } from '../ramadan30';
 import { FAST_FAQ } from '../fiqh';
 import { Zakat } from './Zakat';
 import { Itikaf, Mosques, RamadanStory, SleepPlan } from './RamadanExtra';
-import { type Lang, durL, langOf, nw, tr } from '../i18n';
+import { type Lang, durL, langOf, nw, tr, _t } from '../i18n';
 import { loadQuran } from './Quran';
 import { rpushOf } from '../push';
 import { isCloud } from '../cloud';
@@ -168,7 +168,7 @@ export function Ramadan({ state, update, today, onClose, start }: { state: AppSt
   const h = hOf(today);
   const [tab, setTab] = useState<Tab>(start ?? (h?.month === 10 ? 'eid' : mon.state === 'next' ? 'prep' : mon.state === 'now' ? 'day' : 'fast'));
   const sub = mon.state === 'now' ? t(`День ${ramadanDay(today)} из ${mon.days.length}`, `Day ${ramadanDay(today)} of ${mon.days.length}`) : mon.state === 'past' ? t(`Рамадан ${mon.year} прошёл`, `Ramadan ${mon.year} has ended`) : t(`До Рамадана ${mon.daysTo} дн.`, `${nw(l, mon.daysTo, ['', '', ''], ['day', 'days'])} to Ramadan`);
-  const setLang = (x: Lang) => update((s) => ({ ...s, settings: { ...s.settings, lang: x } }));
+  const setLang = (x: Lang) => { if (x === l) return; update((s) => ({ ...s, settings: { ...s.settings, lang: x } })); setTimeout(() => location.reload(), 200); };
   const tabs: [Tab, string][] = [['prep', t('Старт', 'Prep')], ['day', t('День', 'Today')], ['fast', t('Пост', 'Fast')], ['quran', t('Коран', 'Quran')], ['nights', t('Ночи', 'Nights')], ['eid', t('Ид', 'Eid')]];
   return (
     <div className="sess light-sess">
@@ -339,7 +339,7 @@ function QadaPlan({ state, update, today, l, left }: { state: AppState; update: 
   const end = per ? addDays(today, Math.ceil(left / per) * 7) : null;
   const inTime = end && next ? end < next : true;
   const setPer = (n: number) => update((s) => patchR(s, () => ({ qadaPlan: n ? { perWeek: n, from: today } : null })));
-  const days: Record<number, [string, string]> = { 1: ['по понедельникам', 'on Mondays'], 2: ['по понедельникам и четвергам (сунна)', 'on Mondays and Thursdays (sunnah)'], 3: ['пн, чт и в выходной', 'Mon, Thu and one weekend day'], 7: ['подряд, каждый день', 'every day in a row'] };
+  const days: Record<number, [string, string]> = { 1: [_t("по понедельникам"), 'on Mondays'], 2: [_t("по понедельникам и четвергам (сунна)"), 'on Mondays and Thursdays (sunnah)'], 3: [_t("пн, чт и в выходной"), 'Mon, Thu and one weekend day'], 7: [_t("подряд, каждый день"), 'every day in a row'] };
   return (
     <div className="h-card">
       <div className="meal-h"><b>{t('План возмещения', 'Make-up plan')}</b>{next && <small>{t('Рамадан', 'Ramadan')} ~{fromKey(next).toLocaleDateString(l === 'en' ? 'en-GB' : 'ru-RU', { month: 'short', year: 'numeric' })}</small>}</div>
@@ -398,7 +398,7 @@ function Khatm({ state, update, today, mon, l }: P) {
   const kp = khatmProgress(state, r, day);
   const k = r.khatm;
   const set = (rate: number) => update((s) => patchR(s, (x) => ({ khatm: { rate, startDay: x.khatm?.year === mon.year ? x.khatm.startDay ?? 1 : Math.max(1, day), startIdx: x.khatm?.year === mon.year ? x.khatm.startIdx : (s.quran ? ayahIdx(s) : 0), rounds: x.khatm?.year === mon.year ? x.khatm.rounds : 0, year: mon.year } })));
-  const juz = (n: number) => (l === 'en' ? `${n} juz` : `${n} ${n === 1 ? 'джуз' : 'джуза'}`);
+  const juz = (n: number) => (l === 'en' ? `${n} juz` : `${n} ${n === 1 ? _t("джуз") : _t("джуза")}`);
   return (
     <>
       <p className="q-msg left">{t('Выбери план на месяц. Норма делится на пять частей, после каждого намаза. Прогресс считается по закладке в разделе Коран.', 'Choose a plan for the month. The daily portion is split into five parts, one after each prayer. Progress follows your bookmark in the Quran section.')}</p>
@@ -434,14 +434,14 @@ const ayahIdx = (s: AppState) => (s.quran ? ayahIndex(s.quran.surah, s.quran.aya
 
 /** Night plan steps. tarawih and tahajjud share their marks with the nights grid. */
 const PLAN: { id: string; night?: 'tarawih' | 'tahajjud'; t: [string, string]; at?: 'isha' | 'third' | 'fajr' }[] = [
-  { id: 'tarawih', night: 'tarawih', t: ['Иша и таравих, в мечети или дома', 'Isha and tarawih, at the mosque or at home'], at: 'isha' },
-  { id: 'quran', t: ['Коран: свой джуз или сура аль-Кадр с тафсиром', 'Quran: your juz, or Surat al-Qadr with tafsir'] },
-  { id: 'dhikr', t: ['Зикр: 100 раз «Астагфируллах» и 100 раз «Субханаллахи ва бихамдихи»', 'Dhikr: "Astaghfirullah" 100 times and "Subhanallahi wa bihamdihi" 100 times'] },
-  { id: 'sadaqa', t: ['Садака этой ночью, хоть немного', 'Sadaqah tonight, even a little'] },
-  { id: 'rest', t: ['Короткий сон с намерением встать', 'A short sleep with the intention to wake'] },
-  { id: 'tahajjud', night: 'tahajjud', t: ['Тахаджуд в последнюю треть ночи', 'Tahajjud in the last third of the night'], at: 'third' },
-  { id: 'duas', t: ['Свой список дуа и «Аллахумма иннака ‘афуввун…»', 'Your du‘a list and "Allahumma innaka ‘afuwwun…"'] },
-  { id: 'suhoor', t: ['Сухур и истигфар перед рассветом', 'Suhoor and seeking forgiveness before dawn'], at: 'fajr' },
+  { id: 'tarawih', night: 'tarawih', t: [_t("Иша и таравих, в мечети или дома"), 'Isha and tarawih, at the mosque or at home'], at: 'isha' },
+  { id: 'quran', t: [_t("Коран: свой джуз или сура аль-Кадр с тафсиром"), 'Quran: your juz, or Surat al-Qadr with tafsir'] },
+  { id: 'dhikr', t: [_t("Зикр: 100 раз «Астагфируллах» и 100 раз «Субханаллахи ва бихамдихи»"), 'Dhikr: "Astaghfirullah" 100 times and "Subhanallahi wa bihamdihi" 100 times'] },
+  { id: 'sadaqa', t: [_t("Садака этой ночью, хоть немного"), 'Sadaqah tonight, even a little'] },
+  { id: 'rest', t: [_t("Короткий сон с намерением встать"), 'A short sleep with the intention to wake'] },
+  { id: 'tahajjud', night: 'tahajjud', t: [_t("Тахаджуд в последнюю треть ночи"), 'Tahajjud in the last third of the night'], at: 'third' },
+  { id: 'duas', t: [_t("Свой список дуа и «Аллахумма иннака ‘афуввун…»"), 'Your du‘a list and "Allahumma innaka ‘afuwwun…"'] },
+  { id: 'suhoor', t: [_t("Сухур и истигфар перед рассветом"), 'Suhoor and seeking forgiveness before dawn'], at: 'fajr' },
 ];
 
 function NightPlan({ state, update, today, l, evening, n }: { state: AppState; update: Update; today: string; l: Lang; evening: string; n: number }) {
@@ -556,7 +556,7 @@ function Nights({ state, update, today, mon, l }: P) {
         const pd = (r.qadr?.[e] ?? []).length + ln.filter((x) => x !== 'itikaf').length;
         return (
           <div key={e} className={`h-card rm-night${n % 2 ? ' odd' : ''}${tonight === n ? ' now' : ''}`}>
-            <div className="meal-h"><b>{t(`${n}-я ночь${n % 2 ? ' · нечётная' : ''}`, `Night ${n}${n % 2 ? ' · odd' : ''}`)}</b><small>{t('вечер', 'evening of')} {fmtDay(l, e)}</small></div>
+            <div className="meal-h"><b>{t(`${n}-я ночь${n % 2 ? _t(" · нечётная") : ''}`, `Night ${n}${n % 2 ? ' · odd' : ''}`)}</b><small>{t('вечер', 'evening of')} {fmtDay(l, e)}</small></div>
             <div className="choices">
               {[['tarawih', t('Таравих', 'Tarawih')], ['tahajjud', t('Тахаджуд', 'Tahajjud')], ['itikaf', t('Иʼтикаф', 'I‘tikaf')]].map(([w, lb]) => (
                 <button type="button" key={w} disabled={e > today} aria-pressed={ln.includes(w)} onClick={() => update(toggleNight(e, w))}>{lb}</button>
@@ -645,16 +645,16 @@ function ZakatCard({ state, update, l }: { state: AppState; update: Update; l: L
 }
 
 export const PREP: { id: string; t: [string, string]; why?: [string, string] }[] = [
-  { id: 'qada', t: ['Возместить долги постов', 'Make up missed fasts'], why: ['Отметка ставится сама, когда долгов нет', 'Ticks itself when nothing is left to make up'] },
-  { id: 'shaban', t: ['Поститься в Шаабан, хотя бы по понедельникам и четвергам', 'Fast in Sha‘ban, at least on Mondays and Thursdays'], why: ['«Я не видела, чтобы он постился в каком-то месяце больше, чем в Шаабан». аль-Бухари, 1969; Муслим, 1156', '"I never saw him fast more in any month than in Sha‘ban." al-Bukhari, 1969; Muslim, 1156'] },
-  { id: 'khatm', t: ['Выбрать план хатма', 'Choose a khatm plan'], why: ['Вкладка «Коран»', 'Quran tab'] },
-  { id: 'read', t: ['Разогнать чтение Корана: каждый день хотя бы страница', 'Build up your Quran reading: at least a page a day'] },
-  { id: 'sleep', t: ['Сдвигать сон: раньше ложиться, раз в неделю вставать на тахаджуд', 'Shift your sleep: go to bed earlier and wake for tahajjud once a week'] },
-  { id: 'coffee', t: ['Постепенно меньше кофе и сладкого, чтобы первые дни поста дались легче', 'Gradually cut down on coffee and sweets so the first fasts are easier'] },
-  { id: 'habits', t: ['Решить, какие привычки на минимум, а какие взять на 30 дней', 'Decide which habits go to minimum and which to take on for 30 days'], why: ['Ниже на этом экране', 'Below on this screen'] },
-  { id: 'sadaqa', t: ['Составить план садаки на последние 10 ночей', 'Plan your sadaqah for the last ten nights'], why: ['Практика → Садака → Рамадан', 'Practice → Sadaqah → Ramadan'] },
-  { id: 'duas', t: ['Записать свой список дуа на Рамадан', 'Write your du‘a list for Ramadan'], why: ['Вкладка «Ночи». Отметка ставится сама, когда в списке три дуа', 'Nights tab. Ticks itself once the list has three du‘as'] },
-  { id: 'iftar', t: ['Договориться об ифтаре с братьями или сёстрами', 'Arrange an iftar with brothers or sisters'], why: ['Вкладка «Круг»', 'Circle tab'] },
+  { id: 'qada', t: [_t("Возместить долги постов"), 'Make up missed fasts'], why: [_t("Отметка ставится сама, когда долгов нет"), 'Ticks itself when nothing is left to make up'] },
+  { id: 'shaban', t: [_t("Поститься в Шаабан, хотя бы по понедельникам и четвергам"), 'Fast in Sha‘ban, at least on Mondays and Thursdays'], why: [_t("«Я не видела, чтобы он постился в каком-то месяце больше, чем в Шаабан». аль-Бухари, 1969; Муслим, 1156"), '"I never saw him fast more in any month than in Sha‘ban." al-Bukhari, 1969; Muslim, 1156'] },
+  { id: 'khatm', t: [_t("Выбрать план хатма"), 'Choose a khatm plan'], why: [_t("Вкладка «Коран»"), 'Quran tab'] },
+  { id: 'read', t: [_t("Разогнать чтение Корана: каждый день хотя бы страница"), 'Build up your Quran reading: at least a page a day'] },
+  { id: 'sleep', t: [_t("Сдвигать сон: раньше ложиться, раз в неделю вставать на тахаджуд"), 'Shift your sleep: go to bed earlier and wake for tahajjud once a week'] },
+  { id: 'coffee', t: [_t("Постепенно меньше кофе и сладкого, чтобы первые дни поста дались легче"), 'Gradually cut down on coffee and sweets so the first fasts are easier'] },
+  { id: 'habits', t: [_t("Решить, какие привычки на минимум, а какие взять на 30 дней"), 'Decide which habits go to minimum and which to take on for 30 days'], why: [_t("Ниже на этом экране"), 'Below on this screen'] },
+  { id: 'sadaqa', t: [_t("Составить план садаки на последние 10 ночей"), 'Plan your sadaqah for the last ten nights'], why: [_t("Практика → Садака → Рамадан"), 'Practice → Sadaqah → Ramadan'] },
+  { id: 'duas', t: [_t("Записать свой список дуа на Рамадан"), 'Write your du‘a list for Ramadan'], why: [_t("Вкладка «Ночи». Отметка ставится сама, когда в списке три дуа"), 'Nights tab. Ticks itself once the list has three du‘as'] },
+  { id: 'iftar', t: [_t("Договориться об ифтаре с братьями или сёстрами"), 'Arrange an iftar with brothers or sisters'], why: [_t("Вкладка «Круг»"), 'Circle tab'] },
 ];
 const AUTO = ['qada', 'khatm', 'habits', 'sadaqa', 'shaban', 'duas'];
 
@@ -675,10 +675,10 @@ export function prepDone(s: AppState, year: number): string[] {
 }
 
 const RAMADAN_HABITS: { action: [string, string]; min: [string, string]; anchor: Anchor; sphere: Sphere }[] = [
-  { action: ['Утренние азкары', 'Morning adhkar'], min: ['3 зикра', '3 adhkar'], anchor: 'fajr', sphere: 'faith' },
-  { action: ['Садака каждый день', 'Sadaqah every day'], min: ['монета или доброе слово', 'a coin or a kind word'], anchor: 'dhuhr', sphere: 'faith' },
-  { action: ['Дуа перед ифтаром', 'Du‘a before iftar'], min: ['одно дуа', 'one du‘a'], anchor: 'asr', sphere: 'faith' },
-  { action: ['Тафсир одного аята с семьёй', 'Tafsir of one ayah with family'], min: ['1 аят', '1 ayah'], anchor: 'isha', sphere: 'family' },
+  { action: [_t("Утренние азкары"), 'Morning adhkar'], min: [_t("3 зикра"), '3 adhkar'], anchor: 'fajr', sphere: 'faith' },
+  { action: [_t("Садака каждый день"), 'Sadaqah every day'], min: [_t("монета или доброе слово"), 'a coin or a kind word'], anchor: 'dhuhr', sphere: 'faith' },
+  { action: [_t("Дуа перед ифтаром"), 'Du‘a before iftar'], min: [_t("одно дуа"), 'one du‘a'], anchor: 'asr', sphere: 'faith' },
+  { action: [_t("Тафсир одного аята с семьёй"), 'Tafsir of one ayah with family'], min: [_t("1 аят"), '1 ayah'], anchor: 'isha', sphere: 'family' },
 ];
 
 /** Ramadan reminder settings; shared by the Ramadan screen and Profile → Reminders. */

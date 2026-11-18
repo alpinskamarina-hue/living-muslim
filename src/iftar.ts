@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { _t } from './i18n';
 
 export interface Iftar { date: string; time: string; place: string; note: string; bring: string[]; created: string }
 export interface IRsvp { s: 'go' | 'no'; bring?: string }
@@ -42,7 +43,7 @@ export function useIftar(): IftarApi {
       db.current = d; user.current = u; setMe(id); setReady(true);
       const sub = (col: string, set: (m: any) => void) => unsubs.push(d.collection(col).onSnapshot(
         (snap: any) => { const m: any = {}; snap.docs.forEach((x: any) => { if (x.exists) m[x.id] = x.data() ?? {}; }); set(m); },
-        () => setError('Ифтары сейчас недоступны.'),
+        () => setError(_t("Ифтары сейчас недоступны.")),
       ));
       sub('iftar', setEvents);
       sub('iftarRsvp', setRsvp);
@@ -64,7 +65,7 @@ export function useIftar(): IftarApi {
     return () => { alive = false; };
   }, [idsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fail = (e: any) => setError(e?.code === 'invalid_argument' || e?.code === 'permission_denied' ? 'Нет права писать. Попроси владельца дать доступ «Участник».' : 'Не удалось сохранить, попробуй ещё раз.');
+  const fail = (e: any) => setError(e?.code === 'invalid_argument' || e?.code === 'permission_denied' ? _t("Нет права писать. Попроси владельца дать доступ «Участник».") : _t("Не удалось сохранить, попробуй ещё раз."));
 
   return {
     ready, me, events, rsvp, names, error,

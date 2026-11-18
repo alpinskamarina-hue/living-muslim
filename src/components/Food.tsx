@@ -4,6 +4,7 @@ import { addDays, fromKey, hhmm } from '../dates';
 import { prayerTimes } from '../prayer';
 import { here } from '../safar';
 import { health, hijri, sunnahFast } from '../health';
+import { _t, _tj, LOC } from '../i18n';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void }
 
@@ -11,33 +12,33 @@ export const foodOf = (s: AppState): FoodState => ({ meals: {}, rules: ['sweet']
 const patch = (s: AppState, fn: (f: FoodState) => Partial<FoodState>): AppState => { const f = foodOf(s); return { ...s, food: { ...f, ...fn(f) } }; };
 
 const MEALS: { id: Meal; l: string; when: string }[] = [
-  { id: 'b', l: 'Завтрак', when: 'после Фаджра' },
-  { id: 'l', l: 'Обед', when: 'после Зухра' },
-  { id: 'd', l: 'Ужин', when: 'после Магриба' },
+  { id: 'b', l: _t("Завтрак"), when: _t("после Фаджра") },
+  { id: 'l', l: _t("Обед"), when: _t("после Зухра") },
+  { id: 'd', l: _t("Ужин"), when: _t("после Магриба") },
 ];
-const FEEL: { v: 1 | 2 | 3; l: string }[] = [{ v: 1, l: 'Легко' }, { v: 2, l: 'Нормально' }, { v: 3, l: 'Переел' }];
+const FEEL: { v: 1 | 2 | 3; l: string }[] = [{ v: 1, l: _t("Легко") }, { v: 2, l: _t("Нормально") }, { v: 3, l: _t("Переел") }];
 export const RULES: { id: string; l: string }[] = [
-  { id: 'sweet', l: 'Без сладкого' },
-  { id: 'soda', l: 'Без газировки' },
-  { id: 'fast', l: 'Без фастфуда' },
-  { id: 'late', l: 'Без еды после Иши' },
-  { id: 'snack', l: 'Без перекусов между едой' },
+  { id: 'sweet', l: _t("Без сладкого") },
+  { id: 'soda', l: _t("Без газировки") },
+  { id: 'fast', l: _t("Без фастфуда") },
+  { id: 'late', l: _t("Без еды после Иши") },
+  { id: 'snack', l: _t("Без перекусов между едой") },
 ];
 const SUNNA: { id: string; l: string; ar: string; why: string; src: string }[] = [
-  { id: 'dates', l: 'Финики', ar: 'تمر', why: 'Кто утром съест семь фиников аджва, тому в тот день не повредит ни яд, ни колдовство.', src: 'аль-Бухари, 5445; Муслим, 2047' },
-  { id: 'honey', l: 'Мёд', ar: 'عسل', why: '«…в нём исцеление для людей».', src: 'Коран, 16:69' },
-  { id: 'olive', l: 'Оливковое масло', ar: 'زيت', why: 'Ешьте оливковое масло и умащайтесь им: оно от благословенного дерева.', src: 'ат-Тирмизи, 1851' },
-  { id: 'seed', l: 'Чёрный тмин', ar: 'حبة سوداء', why: 'В чёрном тмине исцеление от всякой болезни, кроме смерти.', src: 'аль-Бухари, 5688; Муслим, 2215' },
-  { id: 'milk', l: 'Молоко', ar: 'لبن', why: 'Выпив молока, Пророк ﷺ говорил: «О Аллах, благослови нас в нём и дай нам больше».', src: 'ат-Тирмизи, 3455' },
-  { id: 'talbina', l: 'Тальбина (ячменная каша)', ar: 'تلبينة', why: 'Тальбина успокаивает сердце больного и уменьшает печаль.', src: 'аль-Бухари, 5417' },
+  { id: 'dates', l: _t("Финики"), ar: 'تمر', why: _t("Кто утром съест семь фиников аджва, тому в тот день не повредит ни яд, ни колдовство."), src: _t("аль-Бухари, 5445; Муслим, 2047") },
+  { id: 'honey', l: _t("Мёд"), ar: 'عسل', why: _t("«…в нём исцеление для людей»."), src: _t("Коран, 16:69") },
+  { id: 'olive', l: _t("Оливковое масло"), ar: 'زيت', why: _t("Ешьте оливковое масло и умащайтесь им: оно от благословенного дерева."), src: _t("ат-Тирмизи, 1851") },
+  { id: 'seed', l: _t("Чёрный тмин"), ar: 'حبة سوداء', why: _t("В чёрном тмине исцеление от всякой болезни, кроме смерти."), src: _t("аль-Бухари, 5688; Муслим, 2215") },
+  { id: 'milk', l: _t("Молоко"), ar: 'لبن', why: _t("Выпив молока, Пророк ﷺ говорил: «О Аллах, благослови нас в нём и дай нам больше»."), src: _t("ат-Тирмизи, 3455") },
+  { id: 'talbina', l: _t("Тальбина (ячменная каша)"), ar: 'تلبينة', why: _t("Тальбина успокаивает сердце больного и уменьшает печаль."), src: _t("аль-Бухари, 5417") },
 ];
 const DUAS = [
-  { t: 'Перед едой', ar: 'بِسْمِ اللَّهِ', tr: 'Бисмиллях.', ru: 'С именем Аллаха. Ешь правой рукой и с того, что ближе к тебе.', src: 'аль-Бухари, 5376' },
-  { t: 'Если забыл в начале', ar: 'بِسْمِ اللَّهِ أَوَّلَهُ وَآخِرَهُ', tr: 'Бисмилляхи аввалаху ва ахырах.', ru: 'С именем Аллаха в начале и в конце.', src: 'Абу Дауд, 3767' },
-  { t: 'После еды', ar: 'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا، وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ', tr: 'Аль-хамду лилляхи-ллязи ат’амани хаза ва разаканихи мин гайри хаулин минни ва ля куввах.', ru: 'Хвала Аллаху, Который накормил меня этим и наделил этим без какой-либо силы и мощи с моей стороны.', src: 'Абу Дауд, 4023; ат-Тирмизи, 3458' },
+  { t: _t("Перед едой"), ar: 'بِسْمِ اللَّهِ', tr: _t("Бисмиллях."), ru: _t("С именем Аллаха. Ешь правой рукой и с того, что ближе к тебе."), src: _t("аль-Бухари, 5376") },
+  { t: _t("Если забыл в начале"), ar: 'بِسْمِ اللَّهِ أَوَّلَهُ وَآخِرَهُ', tr: _t("Бисмилляхи аввалаху ва ахырах."), ru: _t("С именем Аллаха в начале и в конце."), src: _t("Абу Дауд, 3767") },
+  { t: _t("После еды"), ar: 'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا، وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ', tr: _t("Аль-хамду лилляхи-ллязи ат’амани хаза ва разаканихи мин гайри хаулин минни ва ля куввах."), ru: _t("Хвала Аллаху, Который накормил меня этим и наделил этим без какой-либо силы и мощи с моей стороны."), src: _t("Абу Дауд, 4023; ат-Тирмизи, 3458") },
 ];
-const THIRD = { ar: 'فَثُلُثٌ لِطَعَامِهِ، وَثُلُثٌ لِشَرَابِهِ، وَثُلُثٌ لِنَفَسِهِ', ru: 'Не наполнял человек сосуда хуже, чем желудок. Достаточно сыну Адама нескольких кусков, чтобы поддержать спину. А если без этого никак, то треть для еды, треть для питья и треть для дыхания.', src: 'ат-Тирмизи, 2380' };
-const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const THIRD = { ar: 'فَثُلُثٌ لِطَعَامِهِ، وَثُلُثٌ لِشَرَابِهِ، وَثُلُثٌ لِنَفَسِهِ', ru: _t("Не наполнял человек сосуда хуже, чем желудок. Достаточно сыну Адама нескольких кусков, чтобы поддержать спину. А если без этого никак, то треть для еды, треть для питья и треть для дыхания."), src: _t("ат-Тирмизи, 2380") };
+const WD = [_t("вс"), _t("пн"), _t("вт"), _t("ср"), _t("чт"), _t("пт"), _t("сб")];
 
 /** Consecutive days a rule was kept, "never miss twice" style; today counts only when marked. */
 function ruleStreak(f: FoodState, rule: string, today: string) {
@@ -58,7 +59,7 @@ export function fastingInfo(state: AppState, today: string) {
   const tomorrow = addDays(today, 1);
   const ht = hijri(fromKey(tomorrow));
   const fastTomorrow = ht?.month === 9 || Boolean(sunnahFast(fromKey(tomorrow)));
-  return { ramadan, fastToday, fastTomorrow, why: ramadan ? 'Рамадан' : sunnahFast(t), whyTomorrow: ht?.month === 9 ? 'Рамадан' : sunnahFast(fromKey(tomorrow)) };
+  return { ramadan, fastToday, fastTomorrow, why: ramadan ? _t("Рамадан") : sunnahFast(t), whyTomorrow: ht?.month === 9 ? _t("Рамадан") : sunnahFast(fromKey(tomorrow)) };
 }
 
 export function Food({ state, update, today, onExit }: Props) {
@@ -80,11 +81,11 @@ export function Food({ state, update, today, onExit }: Props) {
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onExit} aria-label="Выйти">✕</button>
-        <div><b>Питание</b><small>Мера, сунна и простые отметки, без калорий</small></div>
+        <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
+        <div><b>{_t("Питание")}</b><small>{_t("Мера, сунна и простые отметки, без калорий")}</small></div>
       </div>
       <div className="seg">
-        {([['day', 'День'], ['clean', 'Без'], ['sunna', 'Сунна'], ['weight', 'Вес']] as const).map(([k, l]) => (
+        {([['day', _t("День")], ['clean', _t("Без")], ['sunna', _t("Сунна")], ['weight', _t("Вес")]] as const).map(([k, l]) => (
           <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
@@ -95,15 +96,15 @@ export function Food({ state, update, today, onExit }: Props) {
               <div className="h-card fast-card">
                 {fi.fastToday ? (
                   <>
-                    <b>🌙 Сегодня {fi.why === 'Рамадан' ? 'Рамадан' : `желательный пост: ${String(fi.why).toLowerCase()}`}</b>
-                    <small>Сухур до Фаджра ({hhmm(t.fajr)}), ифтар на Магрибе ({hhmm(t.maghrib)}). Разговляйся свежими финиками, а если их нет, сухими или водой.</small>
+                    <b>{_tj("🌙 Сегодня {0}", fi.why === _t("Рамадан") ? _t("Рамадан") : _t("желательный пост: {0}", String(fi.why).toLowerCase()))}</b>
+                    <small>{_tj("Сухур до Фаджра ({0}), ифтар на Магрибе ({1}). Разговляйся свежими финиками, а если их нет, сухими или водой.", hhmm(t.fajr), hhmm(t.maghrib))}</small>
                     <p className="ar-dua" lang="ar" dir="rtl">ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ</p>
-                    <small>Захаба-з-зама'у ва-бталляти-ль-'урук ва сабата-ль-аджру ин ша'а-Ллах. «Ушла жажда, увлажнились жилы, и награда утвердилась, если пожелает Аллах». Абу Дауд, 2357; ат-Тирмизи, 696</small>
+                    <small>{_t("Захаба-з-зама'у ва-бталляти-ль-'урук ва сабата-ль-аджру ин ша'а-Ллах. «Ушла жажда, увлажнились жилы, и награда утвердилась, если пожелает Аллах». Абу Дауд, 2357; ат-Тирмизи, 696")}</small>
                   </>
                 ) : (
                   <>
-                    <b>🌙 Завтра {fi.whyTomorrow === 'Рамадан' ? 'Рамадан' : `желательный пост: ${String(fi.whyTomorrow).toLowerCase()}`}</b>
-                    <small>Сухур до {hhmm(t2.fajr)}. «Ешьте сухур, ведь в сухуре баракат» (аль-Бухари, 1923).</small>
+                    <b>{_tj("🌙 Завтра {0}", fi.whyTomorrow === _t("Рамадан") ? _t("Рамадан") : _t("желательный пост: {0}", String(fi.whyTomorrow).toLowerCase()))}</b>
+                    <small>{_tj("Сухур до {0}. «Ешьте сухур, ведь в сухуре баракат» (аль-Бухари, 1923).", hhmm(t2.fajr))}</small>
                   </>
                 )}
               </div>
@@ -119,11 +120,11 @@ export function Food({ state, update, today, onExit }: Props) {
               </div>
             ))}
             <div className="h-card third">
-              <b>Правило трети</b>
+              <b>{_t("Правило трети")}</b>
               <p className="ar-dua" lang="ar" dir="rtl">{THIRD.ar}</p>
               <small>{THIRD.ru} ({THIRD.src})</small>
             </div>
-            <h2 className="sub-h">Неделя</h2>
+            <h2 className="sub-h">{_t("Неделя")}</h2>
             <div className="meal-grid">
               <span />{week.map((d) => <small key={d}>{WD[fromKey(d).getDay()]}</small>)}
               {MEALS.map((m) => (
@@ -133,8 +134,8 @@ export function Food({ state, update, today, onExit }: Props) {
                 </Fragment>
               ))}
             </div>
-            <p className="q-msg left">{over.length ? `За неделю переедал ${over.length} раз, чаще всего: ${worst.m.l.toLowerCase()}. Попробуй там правило трети.` : 'Зелёный: легко, светлый: нормально, золотой: переел.'}</p>
-            <h2 className="sub-h">Адаб еды</h2>
+            <p className="q-msg left">{over.length ? _t("За неделю переедал {0} раз, чаще всего: {1}. Попробуй там правило трети.", over.length, worst.m.l.toLowerCase()) : _t("Зелёный: легко, светлый: нормально, золотой: переел.")}</p>
+            <h2 className="sub-h">{_t("Адаб еды")}</h2>
             {DUAS.map((d) => (
               <div key={d.t} className="h-card dua">
                 <b>{d.t}</b>
@@ -144,13 +145,13 @@ export function Food({ state, update, today, onExit }: Props) {
                 <small className="src">{d.src}</small>
               </div>
             ))}
-            <ul className="rules"><li>Ешь правой рукой и сидя.</li><li>Бери с того, что ближе к тебе.</li><li>Не порицай еду: нравится, ешь, не нравится, оставь.</li><li>Ешь вместе с семьёй: в совместной еде баракат.</li></ul>
+            <ul className="rules"><li>{_t("Ешь правой рукой и сидя.")}</li><li>{_t("Бери с того, что ближе к тебе.")}</li><li>{_t("Не порицай еду: нравится, ешь, не нравится, оставь.")}</li><li>{_t("Ешь вместе с семьёй: в совместной еде баракат.")}</li></ul>
           </>
         )}
 
         {tab === 'clean' && (
           <>
-            <p className="q-msg left">Выбери, от чего отказываешься, и отмечай чистые дни. Как и с привычками, один пропуск не обнуляет серию, два подряд обнуляют.</p>
+            <p className="q-msg left">{_t("Выбери, от чего отказываешься, и отмечай чистые дни. Как и с привычками, один пропуск не обнуляет серию, два подряд обнуляют.")}</p>
             <div className="choices">
               {RULES.map((r) => (
                 <button type="button" key={r.id} aria-pressed={f.rules.includes(r.id)} onClick={() => update((s) => patch(s, (x) => ({ rules: x.rules.includes(r.id) ? x.rules.filter((y) => y !== r.id) : [...x.rules, r.id] })))}>{r.l}</button>
@@ -162,12 +163,12 @@ export function Food({ state, update, today, onExit }: Props) {
               const kept = f.clean[today]?.includes(id);
               return (
                 <div key={id} className="h-card">
-                  <div className="meal-h"><b>{r.l}</b><small>серия {ruleStreak(f, id, today)} дн.</small></div>
+                  <div className="meal-h"><b>{r.l}</b><small>{_tj("серия {0} дн.", ruleStreak(f, id, today))}</small></div>
                   <div className="dots7">{week.map((d) => <i key={d} data-on={Boolean(f.clean[d]?.includes(id))} title={d} />)}</div>
                   <button type="button" className={kept ? 'pri-btn' : 'gold-btn'} onClick={() => update((s) => patch(s, (x) => {
                     const l = x.clean[today] ?? [];
                     return { clean: { ...x.clean, [today]: l.includes(id) ? l.filter((y) => y !== id) : [...l, id] } };
-                  }))}>{kept ? 'Сегодня чисто ✓' : 'Сегодня чисто'}</button>
+                  }))}>{kept ? _t("Сегодня чисто ✓") : _t("Сегодня чисто")}</button>
                 </div>
               );
             })}
@@ -176,7 +177,7 @@ export function Food({ state, update, today, onExit }: Props) {
 
         {tab === 'sunna' && (
           <>
-            <p className="q-msg left">Отмечай, что из продуктов, которые любил Пророк ﷺ, было сегодня.</p>
+            <p className="q-msg left">{_t("Отмечай, что из продуктов, которые любил Пророк ﷺ, было сегодня.")}</p>
             {SUNNA.map((x) => {
               const on = f.sunna[today]?.includes(x.id);
               const n = week.filter((d) => f.sunna[d]?.includes(x.id)).length;
@@ -185,13 +186,13 @@ export function Food({ state, update, today, onExit }: Props) {
                   const l = y.sunna[today] ?? [];
                   return { sunna: { ...y.sunna, [today]: l.includes(x.id) ? l.filter((z) => z !== x.id) : [...l, x.id] } };
                 }))}>
-                  <span className="meal-h"><b>{on ? '✓ ' : ''}{x.l} <span className="ar-s">{x.ar}</span></b><small>{n} из 7 дней</small></span>
+                  <span className="meal-h"><b>{on ? '✓ ' : ''}{x.l} <span className="ar-s">{x.ar}</span></b><small>{_tj("{0} из 7 дней", n)}</small></span>
                   <small>{x.why}</small>
                   <small className="src">{x.src}</small>
                 </button>
               );
             })}
-            <p className="q-msg left tiny-note">Если есть болезни или аллергия, посоветуйся с врачом: например, мёд и чёрный тмин подходят не всем.</p>
+            <p className="q-msg left tiny-note">{_t("Если есть болезни или аллергия, посоветуйся с врачом: например, мёд и чёрный тмин подходят не всем.")}</p>
           </>
         )}
 
@@ -214,18 +215,18 @@ function Weight({ state, update, today }: { state: AppState; update: Props['upda
   const first = entries[0];
   return (
     <>
-      <p className="q-msg left">Раз в неделю, утром после туалета, до еды. Ежедневные колебания только сбивают.</p>
+      <p className="q-msg left">{_t("Раз в неделю, утром после туалета, до еды. Ежедневные колебания только сбивают.")}</p>
       <div className="h-card h-hero">
-        <small>{last ? `Последний раз ${fromKey(last[0]).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}` : 'Ещё нет записей'}</small>
-        <b className="h-big sm">{last ? `${String(last[1]).replace('.', ',')} кг` : '—'}</b>
-        {first && last && first !== last && <small>С начала: {(last[1] - first[1] > 0 ? '+' : '') + (last[1] - first[1]).toFixed(1).replace('.', ',')} кг</small>}
+        <small>{last ? _t("Последний раз {0}", fromKey(last[0]).toLocaleDateString(LOC, { day: 'numeric', month: 'long' })) : _t("Ещё нет записей")}</small>
+        <b className="h-big sm">{last ? _t("{0} кг", String(last[1]).replace('.', ',')) : '—'}</b>
+        {first && last && first !== last && <small>{_tj("С начала: {0} кг", (last[1] - first[1] > 0 ? '+' : '') + (last[1] - first[1]).toFixed(1).replace('.', ','))}</small>}
       </div>
       <div className="task-add">
-        <input type="number" inputMode="decimal" step="0.1" value={v} onChange={(e) => setV(e.target.value)} placeholder="кг" />
-        <button type="button" className="pri-btn" disabled={!Number(v)} onClick={() => update((s) => patch(s, (x) => ({ weight: { ...x.weight, [today]: Math.round(Number(v) * 10) / 10 } })))}>{due ? 'Записать' : 'Обновить сегодня'}</button>
+        <input type="number" inputMode="decimal" step="0.1" value={v} onChange={(e) => setV(e.target.value)} placeholder={_t("кг")} />
+        <button type="button" className="pri-btn" disabled={!Number(v)} onClick={() => update((s) => patch(s, (x) => ({ weight: { ...x.weight, [today]: Math.round(Number(v) * 10) / 10 } })))}>{due ? _t("Записать") : _t("Обновить сегодня")}</button>
       </div>
       {recent.length > 1 && (
-        <svg className="w-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Вес по неделям">
+        <svg className="w-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={_t("Вес по неделям")}>
           <line x1={pad} x2={W - pad} y1={H - pad} y2={H - pad} stroke="var(--line)" />
           <polyline fill="none" stroke="var(--green-2)" strokeWidth="2.5" points={pts.map((p) => p.join(',')).join(' ')} />
           {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r={i === pts.length - 1 ? 4.5 : 3} fill={i === pts.length - 1 ? 'var(--gold)' : 'var(--green-2)'} />)}

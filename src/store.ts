@@ -8,6 +8,7 @@ import { ramadanHidden } from './rplan';
 const KEY = 'qadam.v1';
 const OLD_KEYS = ['istiqama.v1'];
 import { limitOf } from './plan';
+import { _t } from './i18n';
 /** Active habit slots: 5 in Pro, 3 in Free (see plan.ts). */
 export const activeLimit = () => limitOf('habits');
 const FORM_DAYS = 21;
@@ -20,7 +21,7 @@ export const initialState = (): AppState => ({
   hard: {},
   notes: {},
   prayers: {},
-  settings: { place: 'Амстердам', lat: 52.3676, lng: 4.9041, method: 'MuslimWorldLeague', madhab: 'shafi', name: signupName() },
+  settings: { place: _t("Амстердам"), lat: 52.3676, lng: 4.9041, method: 'MuslimWorldLeague', madhab: 'shafi', name: signupName() },
 });
 
 function load(): AppState {

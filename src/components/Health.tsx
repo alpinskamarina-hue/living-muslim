@@ -5,6 +5,7 @@ import { prayerTimes } from '../prayer';
 import { addDays, fromKey, hhmm, durationLabel } from '../dates';
 import { here } from '../safar';
 import { WORKOUTS, health, patchHealth, sunnahFast, type Workout } from '../health';
+import { _t, _tj } from '../i18n';
 
 interface Props {
   state: AppState;
@@ -19,7 +20,7 @@ type View = 'home' | 'sleep' | 'water' | 'fasts' | 'workouts';
 
 const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 const sleepMin = (l: SleepLog) => { const d = toMin(l.wake) - toMin(l.bed); return d <= 0 ? d + 1440 : d; };
-const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const WD = [_t("вс"), _t("пн"), _t("вт"), _t("ср"), _t("чт"), _t("пт"), _t("сб")];
 
 export function Health({ state, update, today, habitName, onExit, onFinish }: Props) {
   const [view, setView] = useState<View>('home');
@@ -38,17 +39,17 @@ export function Health({ state, update, today, habitName, onExit, onFinish }: Pr
 
   const top = (title: string, sub: string, back: () => void) => (
     <div className="sess-top">
-      <button type="button" className="icon-btn" onClick={back} aria-label="Назад">‹</button>
+      <button type="button" className="icon-btn" onClick={back} aria-label={_t("Назад")}>‹</button>
       <div><b>{title}</b><small>{sub}</small></div>
     </div>
   );
 
-  if (view === 'sleep') return <div className="sess light-sess">{top('Сон от Фаджра', 'Режим строится от утреннего намаза', () => setView('home'))}<Sleep state={state} update={update} today={today} bedAt={bedAt} wakeAt={wakeAt} fajr={fajrTomorrow} /></div>;
-  if (view === 'water') return <div className="sess light-sess">{top('Вода', 'Стакан после каждого намаза и между ними', () => setView('home'))}<Water state={state} update={update} today={today} /></div>;
-  if (view === 'fasts') return <div className="sess light-sess">{top('Посты сунны', 'Понедельник, четверг, белые дни', () => setView('home'))}<Fasts state={state} update={update} today={today} /></div>;
+  if (view === 'sleep') return <div className="sess light-sess">{top(_t("Сон от Фаджра"), _t("Режим строится от утреннего намаза"), () => setView('home'))}<Sleep state={state} update={update} today={today} bedAt={bedAt} wakeAt={wakeAt} fajr={fajrTomorrow} /></div>;
+  if (view === 'water') return <div className="sess light-sess">{top(_t("Вода"), _t("Стакан после каждого намаза и между ними"), () => setView('home'))}<Water state={state} update={update} today={today} /></div>;
+  if (view === 'fasts') return <div className="sess light-sess">{top(_t("Посты сунны"), _t("Понедельник, четверг, белые дни"), () => setView('home'))}<Fasts state={state} update={update} today={today} /></div>;
   if (view === 'workouts') return (
     <div className="sess light-sess">
-      {top('Тренировки', 'Без инвентаря, таймер ведёт сам', () => setView('home'))}
+      {top(_t("Тренировки"), _t("Без инвентаря, таймер ведёт сам"), () => setView('home'))}
       <div className="h-wrap">
         {WORKOUTS.map((w) => {
           const total = w.rounds * w.ex.reduce((a, e) => a + e.sec + w.rest, 0);
@@ -56,12 +57,12 @@ export function Health({ state, update, today, habitName, onExit, onFinish }: Pr
           return (
             <button type="button" key={w.id} className="h-card" onClick={() => setRun(w)}>
               <b>{doneToday ? '✓ ' : ''}{w.title}</b>
-              <small>{w.sub} · {w.ex.length} упражнений{w.rounds > 1 ? ` × ${w.rounds}` : ''} · ~{Math.round(total / 60)} мин</small>
+              <small>{_tj("{0} · {1} упражнений{2} · ~{3} мин", w.sub, w.ex.length, w.rounds > 1 ? ` × ${w.rounds}` : '', Math.round(total / 60))}</small>
               <span className="h-ex">{w.ex.map((e) => e.n).join(' · ')}</span>
             </button>
           );
         })}
-        <p className="q-msg">Если есть боль или проблемы со здоровьем, сначала посоветуйся с врачом.</p>
+        <p className="q-msg">{_t("Если есть боль или проблемы со здоровьем, сначала посоветуйся с врачом.")}</p>
       </div>
     </div>
   );
@@ -70,44 +71,44 @@ export function Health({ state, update, today, habitName, onExit, onFinish }: Pr
   return (
     <div className="sess light-sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn" onClick={onExit} aria-label="Выйти">✕</button>
-        <div><b>Здоровье</b><small>«Твоё тело имеет на тебя право» (аль-Бухари)</small></div>
+        <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
+        <div><b>{_t("Здоровье")}</b><small>{_t("«Твоё тело имеет на тебя право» (аль-Бухари)")}</small></div>
       </div>
       <div className="h-wrap">
         {inRamadan(today) && (
           <div className="h-card fast-card">
-            <b>🌙 Рамадан</b>
-            <small>Воду пей между ифтаром и сухуром: 2 стакана на ифтаре, 2 после Магриба, 2 после таравиха, 2 на сухуре. Тренировку делай через 1–2 часа после ифтара и легче обычного. Короткую зарядку после Фаджра можно оставить.</small>
+            <b>{_t("🌙 Рамадан")}</b>
+            <small>{_t("Воду пей между ифтаром и сухуром: 2 стакана на ифтаре, 2 после Магриба, 2 после таравиха, 2 на сухуре. Тренировку делай через 1–2 часа после ифтара и легче обычного. Короткую зарядку после Фаджра можно оставить.")}</small>
           </div>
         )}
         <button type="button" className="h-card" onClick={() => setView('sleep')}>
           <span className="h-ic">🌙</span>
-          <b>Сон</b>
-          <small>Сегодня ложись до <em>{hhmm(bedAt)}</em>, чтобы спать {h.sleepHours} ч и встать к Фаджру ({hhmm(fajrTomorrow)})</small>
-          {lastNight ? <span className="h-ex">Прошлой ночью: {durationLabel(sleepMin(lastNight) * 60000)}</span> : <span className="h-ex">Отметь, как спал этой ночью</span>}
+          <b>{_t("Сон")}</b>
+          <small>{_t("Сегодня ложись до ")}<em>{hhmm(bedAt)}</em>{_tj(", чтобы спать {0} ч и встать к Фаджру ({1})", h.sleepHours, hhmm(fajrTomorrow))}</small>
+          {lastNight ? <span className="h-ex">{_tj("Прошлой ночью: {0}", durationLabel(sleepMin(lastNight) * 60000))}</span> : <span className="h-ex">{_t("Отметь, как спал этой ночью")}</span>}
         </button>
         <div className="h-card">
           <button type="button" className="h-head" onClick={() => setView('water')}>
-            <span className="h-ic">💧</span><b>Вода</b><small>{water} из {h.waterGoal} стаканов</small>
+            <span className="h-ic">💧</span><b>{_t("Вода")}</b><small>{_tj("{0} из {1} стаканов", water, h.waterGoal)}</small>
           </button>
           <div className="glasses" style={{ gridTemplateColumns: `repeat(${Math.min(h.waterGoal, 8)}, 1fr)` }}>
             {Array.from({ length: h.waterGoal }, (_, i) => (
-              <button type="button" key={i} aria-label={`Стакан ${i + 1}`} aria-pressed={i < water}
+              <button type="button" key={i} aria-label={_t("Стакан {0}", i + 1)} aria-pressed={i < water}
                 onClick={() => update((s) => patchHealth(s, (x) => ({ water: { ...x.water, [today]: i < (x.water[today] ?? 0) ? i : i + 1 } })))} />
             ))}
           </div>
         </div>
         <button type="button" className="h-card" onClick={() => setView('workouts')}>
           <span className="h-ic">💪</span>
-          <b>Тренировки</b>
-          <small>Зарядка после Фаджра, спина и шея, сила без инвентаря</small>
-          {h.workouts[today]?.length ? <span className="h-ex">Сегодня: {h.workouts[today].length} ✓</span> : null}
+          <b>{_t("Тренировки")}</b>
+          <small>{_t("Зарядка после Фаджра, спина и шея, сила без инвентаря")}</small>
+          {h.workouts[today]?.length ? <span className="h-ex">{_tj("Сегодня: {0} ✓", h.workouts[today].length)}</span> : null}
         </button>
         <button type="button" className="h-card" onClick={() => setView('fasts')}>
           <span className="h-ic">🌅</span>
-          <b>Посты сунны</b>
-          <small>{fastToday ? `Сегодня: ${fastToday.toLowerCase()}, желательный пост` : nextFastLabel(today)}</small>
-          {h.fasts[today] ? <span className="h-ex">Сегодня постишься ✓</span> : null}
+          <b>{_t("Посты сунны")}</b>
+          <small>{fastToday ? _t("Сегодня: {0}, желательный пост", fastToday.toLowerCase()) : nextFastLabel(today)}</small>
+          {h.fasts[today] ? <span className="h-ex">{_t("Сегодня постишься ✓")}</span> : null}
         </button>
       </div>
     </div>
@@ -118,7 +119,7 @@ function nextFastLabel(today: string) {
   for (let i = 1; i < 30; i++) {
     const k = addDays(today, i);
     const why = sunnahFast(fromKey(k));
-    if (why) return `Ближайший: ${i === 1 ? 'завтра' : fmtDay(k)}, ${why.toLowerCase()}`;
+    if (why) return _t("Ближайший: {0}, {1}", i === 1 ? _t("завтра") : fmtDay(k), why.toLowerCase());
   }
   return '';
 }
@@ -137,36 +138,36 @@ function Sleep({ state, update, today, bedAt, wakeAt, fajr }: { state: AppState;
   return (
     <div className="h-wrap">
       <div className="h-card h-hero">
-        <small>Сегодня ложись до</small>
+        <small>{_t("Сегодня ложись до")}</small>
         <b className="h-big">{hhmm(bedAt)}</b>
-        <small>Подъём {hhmm(wakeAt)} · Фаджр {hhmm(fajr)}</small>
+        <small>{_tj("Подъём {0} · Фаджр {1}", hhmm(wakeAt), hhmm(fajr))}</small>
       </div>
       <div className="h-row">
-        <label className="field"><span>Сколько спать</span>
+        <label className="field"><span>{_t("Сколько спать")}</span>
           <select value={h.sleepHours} onChange={(e) => update((s) => patchHealth(s, () => ({ sleepHours: Number(e.target.value) })))}>
-            {[6, 6.5, 7, 7.5, 8, 8.5, 9].map((v) => <option key={v} value={v}>{String(v).replace('.5', ',5')} ч</option>)}
+            {[6, 6.5, 7, 7.5, 8, 8.5, 9].map((v) => <option key={v} value={v}>{_tj("{0} ч", String(v).replace('.5', ',5'))}</option>)}
           </select>
         </label>
-        <label className="field"><span>Встать до Фаджра за</span>
+        <label className="field"><span>{_t("Встать до Фаджра за")}</span>
           <select value={h.wakeBefore} onChange={(e) => update((s) => patchHealth(s, () => ({ wakeBefore: Number(e.target.value) })))}>
-            {[0, 10, 20, 30, 45, 60].map((v) => <option key={v} value={v}>{v} мин</option>)}
+            {[0, 10, 20, 30, 45, 60].map((v) => <option key={v} value={v}>{_tj("{0} мин", v)}</option>)}
           </select>
         </label>
       </div>
 
-      <h2 className="sub-h">Как спал этой ночью</h2>
+      <h2 className="sub-h">{_t("Как спал этой ночью")}</h2>
       <div className="h-row">
-        <label className="field"><span>Лёг</span><input type="time" value={bed} onChange={(e) => setBed(e.target.value)} /></label>
-        <label className="field"><span>Встал</span><input type="time" value={wake} onChange={(e) => setWake(e.target.value)} /></label>
+        <label className="field"><span>{_t("Лёг")}</span><input type="time" value={bed} onChange={(e) => setBed(e.target.value)} /></label>
+        <label className="field"><span>{_t("Встал")}</span><input type="time" value={wake} onChange={(e) => setWake(e.target.value)} /></label>
       </div>
       <div className="h-q">
-        {([[1, 'Плохо'], [2, 'Нормально'], [3, 'Хорошо']] as const).map(([q, l]) => (
+        {([[1, _t("Плохо")], [2, _t("Нормально")], [3, _t("Хорошо")]] as const).map(([q, l]) => (
           <button type="button" key={q} aria-pressed={prev?.q === q} onClick={() => save(q)}>{l}</button>
         ))}
       </div>
-      {prev && <p className="q-msg">Записано: {durationLabel(sleepMin(prev) * 60000)}</p>}
+      {prev && <p className="q-msg">{_tj("Записано: {0}", durationLabel(sleepMin(prev) * 60000))}</p>}
 
-      <h2 className="sub-h">Неделя {avg ? <small>в среднем {durationLabel(avg * 60000)}</small> : null}</h2>
+      <h2 className="sub-h">{_t("Неделя ")}{avg ? <small>{_tj("в среднем {0}", durationLabel(avg * 60000))}</small> : null}</h2>
       <div className="h-bars">
         {week.map((k) => {
           const l = h.sleep[k];
@@ -191,20 +192,20 @@ function Water({ state, update, today }: { state: AppState; update: Props['updat
   return (
     <div className="h-wrap">
       <div className="h-card h-hero">
-        <small>Сегодня</small>
+        <small>{_t("Сегодня")}</small>
         <b className="h-big">{n} / {h.waterGoal}</b>
         <div className="h-q">
-          <button type="button" onClick={() => set(n - 1)}>− стакан</button>
-          <button type="button" aria-pressed onClick={() => set(n + 1)}>+ стакан</button>
+          <button type="button" onClick={() => set(n - 1)}>{_t("− стакан")}</button>
+          <button type="button" aria-pressed onClick={() => set(n + 1)}>{_t("+ стакан")}</button>
         </div>
       </div>
-      <label className="field"><span>Цель в день</span>
+      <label className="field"><span>{_t("Цель в день")}</span>
         <select value={h.waterGoal} onChange={(e) => update((s) => patchHealth(s, () => ({ waterGoal: Number(e.target.value) })))}>
-          {[5, 6, 7, 8, 9, 10, 12].map((v) => <option key={v} value={v}>{v} стаканов</option>)}
+          {[5, 6, 7, 8, 9, 10, 12].map((v) => <option key={v} value={v}>{_tj("{0} стаканов", v)}</option>)}
         </select>
       </label>
-      <p className="q-msg">Простое правило: стакан после каждого намаза, и ещё несколько между ними. Пей сидя, в три глотка, как в сунне.</p>
-      <h2 className="sub-h">Неделя</h2>
+      <p className="q-msg">{_t("Простое правило: стакан после каждого намаза, и ещё несколько между ними. Пей сидя, в три глотка, как в сунне.")}</p>
+      <h2 className="sub-h">{_t("Неделя")}</h2>
       <div className="h-bars">
         {week.map((k) => (
           <div key={k} className="h-bar">
@@ -229,20 +230,20 @@ function Fasts({ state, update, today }: { state: AppState; update: Props['updat
   }));
   return (
     <div className="h-wrap">
-      <div className="stat-card"><div className="big">{count}</div><div><b>постов в этом месяце</b><small>отмечай после ифтара</small></div></div>
+      <div className="stat-card"><div className="big">{count}</div><div><b>{_t("постов в этом месяце")}</b><small>{_t("отмечай после ифтара")}</small></div></div>
       <div className="fast-list">
         {days.map((k) => {
           const future = k > today;
           return (
             <button type="button" key={k} className={`fast${k === today ? ' now' : ''}`} disabled={future} aria-pressed={Boolean(h.fasts[k])} onClick={() => toggle(k)}>
-              <b>{k === today ? 'Сегодня' : fmtDay(k)}</b>
+              <b>{k === today ? _t("Сегодня") : fmtDay(k)}</b>
               <small>{sunnahFast(fromKey(k))}</small>
               <span>{h.fasts[k] ? '✓' : future ? '' : '○'}</span>
             </button>
           );
         })}
       </div>
-      <p className="q-msg">Даты хиджры по календарю Умм аль-Кура. В твоей общине начало месяца может отличаться на день.</p>
+      <p className="q-msg">{_t("Даты хиджры по календарю Умм аль-Кура. В твоей общине начало месяца может отличаться на день.")}</p>
     </div>
   );
 }
@@ -285,31 +286,31 @@ function Runner({ w, habitName, onClose, onDone }: { w: Workout; habitName?: str
   return (
     <div className="sess">
       <div className="sess-top">
-        <button type="button" className="icon-btn light" onClick={onClose} aria-label="Выйти">✕</button>
-        <div><b>{w.title}</b><small>{finished ? 'Готово' : idx < 0 ? w.sub : `${step.kind === 'work' ? 'Упражнение' : 'Отдых'} · ${Math.min(steps.filter((s, j) => s.kind === 'work' && j <= idx).length, w.ex.length * w.rounds)} из ${w.ex.length * w.rounds}`}</small></div>
+        <button type="button" className="icon-btn light" onClick={onClose} aria-label={_t("Выйти")}>✕</button>
+        <div><b>{w.title}</b><small>{finished ? _t("Готово") : idx < 0 ? w.sub : _t("{0} · {1} из {2}", step.kind === 'work' ? _t("Упражнение") : _t("Отдых"), Math.min(steps.filter((s, j) => s.kind === 'work' && j <= idx).length, w.ex.length * w.rounds), w.ex.length * w.rounds)}</small></div>
       </div>
       {idx < 0 ? (
         <>
-          <ol className="w-list">{w.ex.map((e) => <li key={e.n}><b>{e.n}</b> <small>{e.sec} сек</small><br /><small>{e.hint}</small></li>)}</ol>
-          <button type="button" className="gold-btn" onClick={() => go(0)}>Начать</button>
+          <ol className="w-list">{w.ex.map((e) => <li key={e.n}><b>{e.n}</b> <small>{_tj("{0} сек", e.sec)}</small><br /><small>{e.hint}</small></li>)}</ol>
+          <button type="button" className="gold-btn" onClick={() => go(0)}>{_t("Начать")}</button>
         </>
       ) : finished ? (
         <div className="finish">
-          <b>Готово, машаАллах</b>
-          <p>{habitName ? 'Как отметить привычку?' : 'Тренировка записана.'}</p>
+          <b>{_t("Готово, машаАллах")}</b>
+          <p>{habitName ? _t("Как отметить привычку?") : _t("Тренировка записана.")}</p>
           <div className="row2">
             {habitName ? (
               <>
-                <button type="button" onClick={() => onDone('min')}>Минимум</button>
-                <button type="button" className="gold-btn" onClick={() => onDone('done')}>Сделано</button>
+                <button type="button" onClick={() => onDone('min')}>{_t("Минимум")}</button>
+                <button type="button" className="gold-btn" onClick={() => onDone('done')}>{_t("Сделано")}</button>
               </>
-            ) : <button type="button" className="gold-btn" onClick={() => onDone(null)}>Закрыть</button>}
+            ) : <button type="button" className="gold-btn" onClick={() => onDone(null)}>{_t("Закрыть")}</button>}
           </div>
         </div>
       ) : (
         <>
           <div className="w-now">
-            <small>{step.kind === 'rest' ? 'Отдых. Дальше:' : w.rounds > 1 ? `Круг ${step.r + 1}` : ''}</small>
+            <small>{step.kind === 'rest' ? _t("Отдых. Дальше:") : w.rounds > 1 ? _t("Круг {0}", step.r + 1) : ''}</small>
             <b>{step.e.n}</b>
             <span>{step.e.hint}</span>
           </div>
@@ -322,8 +323,8 @@ function Runner({ w, habitName, onClose, onDone }: { w: Workout; habitName?: str
             <span>{left}</span>
           </div>
           <div className="row2">
-            <button type="button" onClick={() => { if (paused) endAt.current = Date.now() + left * 1000; setPaused(!paused); }}>{paused ? 'Продолжить' : 'Пауза'}</button>
-            <button type="button" onClick={() => go(idx + 1)}>Пропустить ›</button>
+            <button type="button" onClick={() => { if (paused) endAt.current = Date.now() + left * 1000; setPaused(!paused); }}>{paused ? _t("Продолжить") : _t("Пауза")}</button>
+            <button type="button" onClick={() => go(idx + 1)}>{_t("Пропустить ›")}</button>
           </div>
         </>
       )}

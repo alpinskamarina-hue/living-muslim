@@ -6,6 +6,7 @@ import {
   catalog, catOf, dur, emptyVideos, lessons, loadCourses, lookup, parseYouTube, thumb, VIDEO_CATS,
   type Lesson, type VideoCat, type VideoItem, type VideoState,
 } from '../videos';
+import { _t, _tj } from '../i18n';
 
 interface Props {
   state: AppState;
@@ -59,9 +60,9 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
 
   return (
     <div className="page vids">
-      <button type="button" className="link-btn pro-back" onClick={onExit}>← Практика</button>
-      <h1 className="page-h">Видеоуроки</h1>
-      <p className="page-sub">Только то, что ты выбрал. Без ленты рекомендаций.</p>
+      <button type="button" className="link-btn pro-back" onClick={onExit}>{_t("← Практика")}</button>
+      <h1 className="page-h">{_t("Видеоуроки")}</h1>
+      <p className="page-sub">{_t("Только то, что ты выбрал. Без ленты рекомендаций.")}</p>
 
       {[MAIN, VIDEO_CATS.map((c) => c.id).filter((id) => !MAIN.includes(id))].map((ids, row) => (row === 1 && !more && !ids.includes(cat as VideoCat)) ? null : (
         <div key={row} className={`vtopics${row ? ' sm' : ''}`}>
@@ -69,16 +70,16 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
             const n = all.filter((x) => x.cat === c.id).length;
             return (
               <button key={c.id} type="button" className="vtopic" aria-pressed={cat === c.id} onClick={() => setCat(cat === c.id ? 'all' : c.id)}>
-                <i>{c.ic}</i><b>{c.ru}</b><small>{n} {n === 1 ? 'курс' : n < 5 ? 'курса' : 'курсов'}</small>
+                <i>{c.ic}</i><b>{c.ru}</b><small>{n} {n === 1 ? _t("курс") : n < 5 ? _t("курса") : _t("курсов")}</small>
               </button>
             );
           })}
         </div>
       ))}
       <button type="button" className="vmore" onClick={() => setMore(!more)} aria-expanded={more}>
-        {more ? 'Свернуть темы ▴' : `Ещё темы: ${VIDEO_CATS.filter((c) => !MAIN.includes(c.id)).map((c) => c.ru.toLowerCase()).join(', ')} ▾`}
+        {more ? _t("Свернуть темы ▴") : _t("Ещё темы: {0} ▾", VIDEO_CATS.filter((c) => !MAIN.includes(c.id)).map((c) => c.ru.toLowerCase()).join(', '))}
       </button>
-      {cat !== 'all' && <button type="button" className="link-btn vall" onClick={() => setCat('all')}>Показать все темы</button>}
+      {cat !== 'all' && <button type="button" className="link-btn vall" onClick={() => setCat('all')}>{_t("Показать все темы")}</button>}
 
       {last && vs.last && (
         <button type="button" className="vcont" onClick={() => {
@@ -89,23 +90,23 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
             <i className="vplay">▶</i>
             {lastPos?.d ? <i className="vbar" style={{ width: `${Math.min(100, (lastPos.t / lastPos.d) * 100)}%` }} /> : null}
           </span>
-          <span className="vci"><small>Продолжить</small><b>{last.title}</b>{last.channel && <em>{last.channel}</em>}</span>
+          <span className="vci"><small>{_t("Продолжить")}</small><b>{last.title}</b>{last.channel && <em>{last.channel}</em>}</span>
         </button>
       )}
 
-      {courses.length > 0 && <h3 className="vh">Курсы</h3>}
+      {courses.length > 0 && <h3 className="vh">{_t("Курсы")}</h3>}
       <div className="vgrid">{courses.map((x) => <Card key={x.id} item={x} vs={vs} onClick={() => go({ page: 'item', item: x })} />)}</div>
 
-      {singles.length > 0 && <h3 className="vh">Отдельные видео</h3>}
+      {singles.length > 0 && <h3 className="vh">{_t("Отдельные видео")}</h3>}
       <div className="vgrid">{singles.map((x) => <Card key={x.id} item={x} vs={vs} onClick={() => go({ page: 'play', item: x, idx: 0 })} />)}</div>
 
-      <h3 className="vh">Моё <button type="button" className="link-btn" onClick={() => go({ page: 'add' })}>+ Добавить</button></h3>
+      <h3 className="vh">{_t("Моё ")}<button type="button" className="link-btn" onClick={() => go({ page: 'add' })}>{_t("+ Добавить")}</button></h3>
       {mine.length ? (
         <div className="vgrid">{mine.map((x) => <Card key={x.id} item={x} vs={vs} onClick={() => go(x.kind === 'list' ? { page: 'item', item: x } : { page: 'play', item: x, idx: 0 })} />)}</div>
       ) : (
-        <button type="button" className="vempty" onClick={() => go({ page: 'add' })}>Вставь ссылку на видео или плейлист YouTube, который уже смотришь. Он появится здесь, с прогрессом и заметками.</button>
+        <button type="button" className="vempty" onClick={() => go({ page: 'add' })}>{_t("Вставь ссылку на видео или плейлист YouTube, который уже смотришь. Он появится здесь, с прогрессом и заметками.")}</button>
       )}
-      <p className="tiny">Видео с YouTube принадлежат их авторам. Мы только собираем их в курсы и помогаем смотреть понемногу.</p>
+      <p className="tiny">{_t("Видео с YouTube принадлежат их авторам. Мы только собираем их в курсы и помогаем смотреть понемногу.")}</p>
     </div>
   );
 }
@@ -127,7 +128,7 @@ function Card({ item, vs, onClick }: { item: VideoItem; vs: VideoState; onClick:
   return (
     <button type="button" className="vcard" onClick={onClick}>
       <span className="vth" style={first ? { backgroundImage: `url(${thumb(first)})` } : undefined}>
-        {item.kind === 'list' && count > 0 && <i className="vdur">{count} {count === 1 ? 'урок' : count < 5 ? 'урока' : 'уроков'}</i>}
+        {item.kind === 'list' && count > 0 && <i className="vdur">{count} {count === 1 ? _t("урок") : count < 5 ? _t("урока") : _t("уроков")}</i>}
         {done > 0 && count > 0 && <i className="vbar" style={{ width: `${(done / count) * 100}%` }} />}
       </span>
       <b>{item.title}{item.pro && <span className="pro-badge sm">PRO</span>}</b>
@@ -165,30 +166,30 @@ function Course({ item, vs, setVs, onBack, onPlay }: { item: VideoItem; vs: Vide
   };
   return (
     <div className="page vids">
-      <button type="button" className="link-btn pro-back" onClick={onBack}>← Видеоуроки</button>
-      {items[0] && <div className="vth big" style={{ backgroundImage: `url(${thumb(items[0].id)})` }}><i className="vdur">{items.length} уроков{total ? ` · ${dur(total)}` : ''}</i></div>}
+      <button type="button" className="link-btn pro-back" onClick={onBack}>{_t("← Видеоуроки")}</button>
+      {items[0] && <div className="vth big" style={{ backgroundImage: `url(${thumb(items[0].id)})` }}><i className="vdur">{_tj("{0} уроков{1}", items.length, total ? ` · ${dur(total)}` : '')}</i></div>}
       <h1 className="page-h">{item.mine ? data?.title || item.title : item.title}</h1>
       {items.length > 0 && <div className="vprog"><i style={{ width: `${(done / items.length) * 100}%` }} /></div>}
-      <p className="page-sub">{items.length ? `${done} из ${items.length} уроков · ` : ''}{catOf(item.cat).ic} {catOf(item.cat).ru}{data?.channel ? ` · ${data.channel}` : ''}</p>
+      <p className="page-sub">{items.length ? _t("{0} из {1} уроков · ", done, items.length) : ''}{catOf(item.cat).ic} {catOf(item.cat).ru}{data?.channel ? ` · ${data.channel}` : ''}</p>
       {item.note && <p className="tiny">{item.note}</p>}
       {(gate || (locked && !done)) && <ProGate k="courses" have={started.size} />}
-      {items.length > 0 && <button type="button" className="pri-btn big-btn" onClick={() => play(next)}>{done ? (done === items.length ? 'Пересмотреть' : `Продолжить: урок ${next + 1}`) : 'Начать курс'}</button>}
-      <p className="tiny">Чтобы урок стал привычкой, выбери привычку в Практике, например «Один урок после Иши». Просмотренный урок отметит её сам.</p>
-      {err && <p className="warn">Не получилось загрузить уроки. Проверь интернет и открой курс ещё раз.</p>}
-      {!data && !err && <p className="tiny">Загружаю уроки…</p>}
+      {items.length > 0 && <button type="button" className="pri-btn big-btn" onClick={() => play(next)}>{done ? (done === items.length ? _t("Пересмотреть") : _t("Продолжить: урок {0}", next + 1)) : _t("Начать курс")}</button>}
+      <p className="tiny">{_t("Чтобы урок стал привычкой, выбери привычку в Практике, например «Один урок после Иши». Просмотренный урок отметит её сам.")}</p>
+      {err && <p className="warn">{_t("Не получилось загрузить уроки. Проверь интернет и открой курс ещё раз.")}</p>}
+      {!data && !err && <p className="tiny">{_t("Загружаю уроки…")}</p>}
       <div className="vls">
         {items.map((x, i) => {
           const p = vs.pos[x.id];
           return (
             <button key={x.id} type="button" className={`vl${p?.done ? ' d' : ''}${i === next && !p?.done ? ' n' : ''}`} onClick={() => play(i)}>
               <i>{p?.done ? '✓' : i + 1}</i>
-              <span><b>{x.title}</b><small>{x.seconds ? dur(x.seconds) : ''}{p && !p.done && p.t > 5 ? ` · остановился на ${dur(Math.floor(p.t))}` : ''}</small></span>
+              <span><b>{x.title}</b><small>{x.seconds ? dur(x.seconds) : ''}{p && !p.done && p.t > 5 ? _t(" · остановился на {0}", dur(Math.floor(p.t))) : ''}</small></span>
             </button>
           );
         })}
       </div>
       {item.mine && (
-        <button type="button" className="link-btn" onClick={() => { if (confirm('Убрать этот курс из «Моё»? Прогресс просмотра сохранится.')) { setVs((v) => ({ ...v, mine: v.mine.filter((m) => m.id !== item.id) })); onBack(); } }}>Убрать из «Моё»</button>
+        <button type="button" className="link-btn" onClick={() => { if (confirm(_t("Убрать этот курс из «Моё»? Прогресс просмотра сохранится."))) { setVs((v) => ({ ...v, mine: v.mine.filter((m) => m.id !== item.id) })); onBack(); } }}>{_t("Убрать из «Моё»")}</button>
       )}
     </div>
   );
@@ -272,23 +273,23 @@ function Player({ item, idx, vs, setVs, habitName, onBack, onIdx, onWatched }: {
 
   return (
     <div className="page vids vplayer">
-      <div className="vframe"><div ref={host} />{!lesson && <span className="vload">{err ? 'Не получилось загрузить видео' : 'Загружаю…'}</span>}</div>
-      <button type="button" className="link-btn pro-back" onClick={onBack}>← {item.kind === 'list' ? item.title : 'Видеоуроки'}</button>
-      {lesson && <h1 className="page-h sm">{items.length > 1 ? `Урок ${idx + 1}. ` : ''}{lesson.title}</h1>}
+      <div className="vframe"><div ref={host} />{!lesson && <span className="vload">{err ? _t("Не получилось загрузить видео") : _t("Загружаю…")}</span>}</div>
+      <button type="button" className="link-btn pro-back" onClick={onBack}>← {item.kind === 'list' ? item.title : _t("Видеоуроки")}</button>
+      {lesson && <h1 className="page-h sm">{items.length > 1 ? _t("Урок {0}. ", idx + 1) : ''}{lesson.title}</h1>}
       <div className="vspeed">
         {[1, 1.25, 1.5, 2].map((r) => <button key={r} type="button" aria-pressed={rate === r} onClick={() => setSpeed(r)}>{r}×</button>)}
       </div>
       {done ? (
-        <p className="vdone">✓ Урок просмотрен{habitName ? ` · привычка «${habitName}» отмечена` : ''}</p>
+        <p className="vdone">{_tj("✓ Урок просмотрен{0}", habitName ? _t(" · привычка «{0}» отмечена", habitName) : '')}</p>
       ) : (
-        <button type="button" className="pri-btn big-btn" onClick={markDone} disabled={!lesson}>✓ Отметить урок просмотренным</button>
+        <button type="button" className="pri-btn big-btn" onClick={markDone} disabled={!lesson}>{_t("✓ Отметить урок просмотренным")}</button>
       )}
       <label className="field">
-        <span>Мои заметки</span>
-        <textarea className="io" rows={4} value={note} onChange={(e) => saveNote(e.target.value)} placeholder="Главная мысль урока, что сделаю сегодня…" />
+        <span>{_t("Мои заметки")}</span>
+        <textarea className="io" rows={4} value={note} onChange={(e) => saveNote(e.target.value)} placeholder={_t("Главная мысль урока, что сделаю сегодня…")} />
       </label>
-      {idx + 1 < items.length && <button type="button" className="ghost-btn" onClick={() => onIdx(idx + 1)}>Следующий урок →</button>}
-      {idx > 0 && <button type="button" className="link-btn" onClick={() => onIdx(idx - 1)}>← Предыдущий урок</button>}
+      {idx + 1 < items.length && <button type="button" className="ghost-btn" onClick={() => onIdx(idx + 1)}>{_t("Следующий урок →")}</button>}
+      {idx > 0 && <button type="button" className="link-btn" onClick={() => onIdx(idx - 1)}>{_t("← Предыдущий урок")}</button>}
     </div>
   );
 }
@@ -303,35 +304,35 @@ function AddVideo({ onBack, onAdd }: { onBack: () => void; onAdd: (it: VideoItem
   const check = async () => {
     const p = parseYouTube(link);
     setFound(null); setErr('');
-    if (!p) return setErr('Это не похоже на ссылку YouTube. Скопируй адрес видео или плейлиста.');
+    if (!p) return setErr(_t("Это не похоже на ссылку YouTube. Скопируй адрес видео или плейлиста."));
     setBusy(true);
-    try { setFound({ ...p, ...(await lookup(p)) }); } catch { setErr('Не нашёл такое видео. Возможно, оно закрыто или удалено.'); }
+    try { setFound({ ...p, ...(await lookup(p)) }); } catch { setErr(_t("Не нашёл такое видео. Возможно, оно закрыто или удалено.")); }
     setBusy(false);
   };
 
   return (
     <div className="page vids">
-      <button type="button" className="link-btn pro-back" onClick={onBack}>← Видеоуроки</button>
-      <h1 className="page-h">Добавить своё видео</h1>
-      <p className="page-sub">Видео или целый плейлист с YouTube. Видно только тебе.</p>
+      <button type="button" className="link-btn pro-back" onClick={onBack}>{_t("← Видеоуроки")}</button>
+      <h1 className="page-h">{_t("Добавить своё видео")}</h1>
+      <p className="page-sub">{_t("Видео или целый плейлист с YouTube. Видно только тебе.")}</p>
       <label className="field">
-        <span>Ссылка</span>
-        <input value={link} onChange={(e) => { setLink(e.target.value); setFound(null); }} onBlur={() => link.trim() && !found && check()} placeholder="youtube.com/playlist?list=… или youtu.be/…" inputMode="url" />
+        <span>{_t("Ссылка")}</span>
+        <input value={link} onChange={(e) => { setLink(e.target.value); setFound(null); }} onBlur={() => link.trim() && !found && check()} placeholder={_t("youtube.com/playlist?list=… или youtu.be/…")} inputMode="url" />
       </label>
-      {!found && <button type="button" className="ghost-btn" disabled={busy || !link.trim()} onClick={check}>{busy ? 'Ищу…' : 'Найти'}</button>}
+      {!found && <button type="button" className="ghost-btn" disabled={busy || !link.trim()} onClick={check}>{busy ? _t("Ищу…") : _t("Найти")}</button>}
       {err && <p className="warn">{err}</p>}
       {found && (
         <>
           <div className="vcont static">
-            <span className="vth" style={found.first ? { backgroundImage: `url(${thumb(found.first)})` } : undefined}>{found.kind === 'list' && <i className="vdur">{found.count} видео</i>}</span>
-            <span className="vci"><small>Найдено на YouTube</small><b>{found.title}</b><em>{found.kind === 'list' ? `Плейлист · ${found.count} видео` : 'Видео'}{found.channel ? ` · ${found.channel}` : ''}</em></span>
+            <span className="vth" style={found.first ? { backgroundImage: `url(${thumb(found.first)})` } : undefined}>{found.kind === 'list' && <i className="vdur">{_tj("{0} видео", found.count)}</i>}</span>
+            <span className="vci"><small>{_t("Найдено на YouTube")}</small><b>{found.title}</b><em>{found.kind === 'list' ? _t("Плейлист · {0} видео", found.count) : _t("Видео")}{found.channel ? ` · ${found.channel}` : ''}</em></span>
           </div>
-          <div className="field"><span>Вкладка</span></div>
+          <div className="field"><span>{_t("Вкладка")}</span></div>
           <div className="vchips">
             {VIDEO_CATS.map((c) => <button key={c.id} type="button" aria-pressed={cat === c.id} onClick={() => setCat(c.id)}>{c.ic} {c.ru}</button>)}
           </div>
           <button type="button" className="pri-btn big-btn" onClick={() => onAdd({ kind: found.kind, id: found.id, cat, title: found.title, channel: found.channel, count: found.count, mine: true })}>
-            {found.kind === 'list' ? 'Добавить как курс' : 'Добавить видео'}
+            {found.kind === 'list' ? _t("Добавить как курс") : _t("Добавить видео")}
           </button>
         </>
       )}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { _t } from './i18n';
 
 // Minimal typings for the claude.ai page runtime; it is absent when the app is opened as a plain file.
 declare global {
@@ -100,7 +101,7 @@ export function useCircle(): CircleApi {
             if (!snap.metadata.fromCache) { clearTimeout(slow); setStale(false); }
             setMembers(snap.docs.filter((x: any) => x.exists).map((x: any) => ({ id: x.id, ...(x.data() as object) }) as Member));
           },
-          () => { clearTimeout(slow); setError('Круг сейчас недоступен. Открой позже.'); },
+          () => { clearTimeout(slow); setError(_t("Круг сейчас недоступен. Открой позже.")); },
         ),
         d.collection('reacts').onSnapshot(
           (snap: any) => {
@@ -143,7 +144,7 @@ export function useCircle(): CircleApi {
       try { await db.current.doc(`circle/${me}`).set({ ...m, updated: new Date().toISOString() }); setError(''); }
       catch (e: any) {
         lastPushed.current = '';
-        setError(e?.code === 'invalid_argument' ? 'Нет права писать в круг. Попроси владельца дать доступ «Участник».' : 'Не удалось обновить итог.');
+        setError(e?.code === 'invalid_argument' ? _t("Нет права писать в круг. Попроси владельца дать доступ «Участник».") : _t("Не удалось обновить итог."));
       }
     });
   };
@@ -153,7 +154,7 @@ export function useCircle(): CircleApi {
     join: (m) => { lastPushed.current = ''; return push(m); },
     leave: () => serial(async () => {
       if (!db.current || !me) return;
-      try { await db.current.doc(`circle/${me}`).delete(); lastPushed.current = ''; } catch { setError('Не удалось выйти из круга.'); }
+      try { await db.current.doc(`circle/${me}`).delete(); lastPushed.current = ''; } catch { setError(_t("Не удалось выйти из круга.")); }
     }),
     praise: (kidId, day) => serial(async () => {
       if (!db.current || !me) return;
@@ -161,7 +162,7 @@ export function useCircle(): CircleApi {
       const k = `p:${kidId}`;
       if (mine[k]?.day === day) delete mine[k];
       else mine[k] = { e: 'praise', day };
-      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError('Не удалось отправить похвалу.'); }
+      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError(_t("Не удалось отправить похвалу.")); }
     }),
     nudge: (to, day) => serial(async () => {
       if (!db.current || !me) return;
@@ -169,14 +170,14 @@ export function useCircle(): CircleApi {
       const k = `n:${to}`;
       if (mine[k]?.day === day) delete mine[k];
       else mine[k] = { e: 'nudge', day };
-      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError('Не удалось подтолкнуть.'); }
+      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError(_t("Не удалось подтолкнуть.")); }
     }),
     react: (to, e, day) => serial(async () => {
       if (!db.current || !me) return;
       const mine = { ...(reacts[me] ?? {}) };
       if (mine[to]?.e === e && mine[to]?.day === day) delete mine[to];
       else mine[to] = { e, day };
-      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError('Не удалось отправить реакцию.'); }
+      try { await db.current.doc(`reacts/${me}`).set(mine); } catch { setError(_t("Не удалось отправить реакцию.")); }
     }),
   };
 }
