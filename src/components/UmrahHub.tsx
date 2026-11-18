@@ -21,6 +21,8 @@ import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
 import { Badal, MadinahGuide, WhenToGo } from './UmrahExtra';
 import { UmrahBook } from './UmrahBook';
 import { PassCard } from './UmrahPlan';
+import { GroupDash, GroupPass, RollCall, DayPlan, activeRoll } from './UmrahDash';
+import { UmrahDocs } from './UmrahDocs';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
@@ -179,6 +181,11 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   // A group trip without dates yet: the first steps are the brothers and the dates, not my own dates.
   const going = groupHost ? groupMembers.filter((id) => rsvp[id]?.[groupHost]?.s === 'go' || id === groupHost).length : 0;
   const openTrip = () => { setGsub('trip'); go('group'); };
+  const goingIds = groupHost ? groupMembers.filter((id) => rsvp[id]?.[groupHost]?.s === 'go' || id === groupHost) : [];
+  const canCall = Boolean(me && groupHost && (me === groupHost || trips[groupHost]?.amir === me));
+  const openStep = (i: number) => { try { sessionStorage.setItem('lm.upStep', String(i)); } catch { /* */ } if (groupHost) setPick(groupHost); openTrip(); };
+  const roll = groupHost ? activeRoll(rawApi, groupHost) : null;
+  const rollCall = groupHost ? <RollCall api={rawApi} host={groupHost} going={goingIds} me={me} nameOf={nameOf} canCall={canCall} emit={(t) => emit(groupHost, t)} /> : null;
   const tripFirst = groupHost && !groupDates && phase === 'none'
     ? going <= 1 ? { k: _t("Следующий шаг"), t: _t("Позвать братьев в поездку"), go: () => setInviting('sheet') } : { k: _t("Следующий шаг"), t: _t("Предложить даты поездки"), go: openTrip }
     : null;
@@ -194,8 +201,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     : null;
 
   const NAV: { k: UTab | 'lost' | 'qibla'; ic: string; l: string }[] = onSite
-    ? [{ k: 'rite', ic: '🕋', l: _t("Обряд") }, { k: 'group', ic: '📡', l: _t("Группа") }, { k: 'lost', ic: '!', l: _t("Потерялся") }, { k: 'duas', ic: '🤲', l: _t("Дуа") }, { k: 'qibla', ic: '🧭', l: _t("Кибла") }]
-    : [{ k: 'now', ic: '🕋', l: _t("Сейчас") }, { k: 'prep', ic: '✓', l: _t("Подготовка") }, { k: 'group', ic: '👥', l: _t("Группа") }, { k: 'duas', ic: '🤲', l: _t("Дуа") }, { k: 'money', ic: '💰', l: phase === 'after' || phase === 'done' ? _t("Поездка") : _t("Копилка") }];
+    ? [{ k: 'rite', ic: '🕋', l: _t("Обряд") }, { k: 'group', ic: '📡', l: _t("Группа") }, { k: 'lost', ic: '!', l: _t("Потерялся") }, { k: 'docs', ic: '📁', l: _t("Документы") }, { k: 'qibla', ic: '🧭', l: _t("Кибла") }]
+    : [{ k: 'now', ic: '🕋', l: _t("Сейчас") }, { k: 'prep', ic: '✓', l: _t("Подготовка") }, { k: 'group', ic: '👥', l: _t("Группа") }, { k: 'docs', ic: '📁', l: _t("Документы") }, { k: 'money', ic: '💰', l: phase === 'after' || phase === 'done' ? _t("Поездка") : _t("Копилка") }];
   const unread = chatOn && tab !== 'group' ? chat.msgs.filter((m) => m.ref?.tr === tripHost && m.id > chat.seen && m.uid !== me).length : 0;
 
   const trip = tripHost ? trips[tripHost] : null;
@@ -235,7 +242,9 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
         </span>
       </div>
 
-      {tab !== 'group' && tab !== 'rite' && (
+      {roll && me !== roll.by && tab !== 'group' && rollCall}
+
+      {tab !== 'group' && tab !== 'rite' && tab !== 'docs' && (
         <div className="um-title">
           <h1>{title}</h1>
           {sub && <small>{sub}</small>}
@@ -246,11 +255,17 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
         <div className="um-sec">
           {people}
           {unread > 0 && <button type="button" className="um-card um-unread" onClick={() => go('group')}><b>💬 {_tj("Новых в чате группы: {0}", unread)}</b><small>{_t("Открыть ›")}</small></button>}
-          <div className="um-ready">
+          {groupHost && <GroupDash api={rawApi} host={groupHost} going={goingIds} me={me} nameOf={nameOf} onStep={openStep} onDocs={() => go('docs')} />}
+          {groupHost && <GroupPass going={goingIds} me={me} nameOf={nameOf} />}
+          {!groupHost && <div className="um-ready">
             <span><b>{pct(heart)}%</b><small>{_t("сердце")}</small></span>
             <span><b>{pct(deeds)}%</b><small>{_t("дела")}</small></span>
             <span><b>{from ? (left! > 0 ? left : '—') : '—'}</b><small>{from && left! > 0 ? plural(left!, _t("день до вылета"), _t("дня до вылета"), _t("дней до вылета")) : _t("дней до вылета")}</small></span>
-          </div>
+          </div>}
+          <button type="button" className="um-card um-duas" onClick={() => go('duas')}>
+            <b>🤲 {_t("Дуа")}</b>
+            <small>{_tj("мои: {0}{1} ›", u.duas.length, asks.length ? _t(" · просят из Круга: {0}", asks.length) : '')}</small>
+          </button>
           {u.ihram && (
             <button type="button" className="um-ihram" onClick={() => setMiqat(true)}>
               <b>{_t("Ты в ихраме")}</b><small>{_t("тальбия и запреты ›")}</small>
@@ -297,7 +312,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
               </>
             )}
             {phase === 'done' && <><b>{_t("Да примет Аллах твою умру")}</b><p>{_t("Если собираешься снова, укажи новые даты в «Поездке».")}</p></>}
-            {due.length > 0 && !onSite && phase !== 'after' && (
+            {due.length > 0 && !onSite && phase !== 'after' && !groupHost && (
               <div className="um-due">
                 {due.map((p) => (
                   <label key={p.id} className="chk">
@@ -331,7 +346,10 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
             <div className="um-rite"><b className="um-rite-done">{_t("Таваф и саи завершены. Да примет Аллах")}</b><p className="tiny">{_t("Дальше бритьё или укорачивание волос, и ты выходишь из ихрама.")}</p></div>
           )}
           <WakeLock />
+          {canCall && rollCall}
           <LeaveForPrayer state={state} />
+          <DayPlan state={state} update={update} today={today} />
+          <button type="button" className="um-card um-duas" onClick={() => go('duas')}><b>🤲 {_t("Дуа и просьбы из Круга")}</b><small>{asks.length ? _tj("{0} из {1} сделано ›", asks.filter((a) => u.asked?.includes(a.key)).length, asks.length) : _t("мой список ›")}</small></button>
           <div className="os-row">
             <button type="button" onClick={() => setLost(true)}>{_t("🆘 Я потерялся")}</button>
             <button type="button" onClick={() => go('money')}>📍 {u.site?.meet ? u.site.meet : _t("Точка встречи")}</button>
@@ -360,6 +378,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
           ))}
           <WalkPlan state={state} update={update} today={today} left={left} />
           <p className="tiny">{_t("Готовность видна группе только процентом, сами пункты нет.")}</p>
+          <h3>{_t("План дня на месте")}</h3>
+          <DayPlan state={state} update={update} today={today} />
           <h3>{_t("Обряды по шагам")}</h3>
           {ritesList}
         </div>
@@ -383,6 +403,10 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
         </div>
       )}
 
+      {tab === 'docs' && (
+        <UmrahDocs state={state} update={update} today={today} api={rawApi} hosts={myTrips} host={groupHost ?? null} going={goingIds} canSee={canCall} nameOf={nameOf} to={to} />
+      )}
+
       {tab === 'money' && (
         <div className="um-sec">
           {(phase === 'none' || phase === 'done') && <WhenToGo today={today} />}
@@ -404,7 +428,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       )}
 
       {tab === 'group' && (
-        <GroupTab sub={gsub} setSub={setGsub} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick} people={people} myReady={prepPct(state)} nameOf={nameOf}
+        <GroupTab sub={gsub} setSub={setGsub} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick} people={<>{people}{rollCall}</>} myReady={prepPct(state)} nameOf={nameOf}
           onSite={onSite} radar={onSite && groupHost && me ? <GroupRadar state={state} update={update} api={rawApi} host={groupHost} members={groupMembers} nameOf={nameOf} /> : null}
           chat={chatOn && tripHost && circle?.me ? (
             <CircleChat chat={chat} me={circle.me} names={circle.names} members={circle.members} reacts={circle.reacts} today={today} isOwner={circle.isOwner} state={state} update={update}
@@ -414,7 +438,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
           noChat={!me ? _t("Чтобы поехать группой, войди в Круг: там собираются поездки, даты, жильё и общая касса.") : !chatCode ? _t("Чат поездки работает в Круге на сайте Living Muslim.") : ''} />
       )}
 
-      {next && tab !== 'group' && !(tab === 'rite' && onSite) && (
+      {next && tab !== 'group' && tab !== 'docs' && !(tab === 'rite' && onSite) && (
         <button type="button" className="um-next" onClick={next.go}><span><em>{next.k}</em><b>{next.t}</b></span><i>›</i></button>
       )}
 
@@ -433,7 +457,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   );
 }
 
-type UTab = 'now' | 'prep' | 'group' | 'duas' | 'money' | 'rite';
+type UTab = 'now' | 'prep' | 'group' | 'duas' | 'money' | 'rite' | 'docs';
 
 /** The tawaf or sa'i ring: 7 arcs, the done ones gold. */
 function Ring({ n }: { n: number }) {

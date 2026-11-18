@@ -240,6 +240,10 @@ export interface UmrahState {
   shareLoc?: boolean;
   /** Trip pieces ready: visa, flight, hotel, esim, insure. */
   booked?: string[];
+  /** My umrah documents: the files stay on this phone (IndexedDB), only this list is in the state. */
+  docs?: { id: string; kind: string; name: string; type: string; size: number; added: string; until?: string }[];
+  /** My plan for days on site: time (HH:MM) and what, by day (YYYY-MM-DD). */
+  dayPlan?: { id: string; d: string; t: string; text: string }[];
   /** Talbiya phrases I know by heart (indexes 0..3). */
   talbiyaKnown?: number[];
   funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];

@@ -31,6 +31,9 @@ export interface URsvp {
   paid?: UPaid[];
   settled?: Record<string, number>; // money I already returned, by person
   made?: string[]; // dua requests I made in Makkah: `${from}:${host}:${i}`
+  roll?: { id: string; at: number }; // a roll call I started («Все на месте?»)
+  here?: string; // my answer to the latest roll call: its id, or `${id}!` if I need help
+  hotel?: boolean; // I have my hotel booking in my documents
 }
 
 /** A savings box for someone's umrah that several people fill (a mother, a father). */

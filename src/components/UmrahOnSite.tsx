@@ -14,6 +14,13 @@ const EARLY = 20; // the Haram fills up: be inside 20 minutes before the adhan
 const sa = (d: Date) => d.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh' });
 const patch = (s: AppState, p: Partial<UmrahState>): AppState => ({ ...s, umrah: { ...umrahOf(s), ...p } });
 
+/** Today's five prayers in Makkah or Madinah with when to leave the hotel (walk + time to find a place). */
+export function prayersToday(city: 'makkah' | 'madinah', walk: number, now: Date) {
+  const t = new PrayerTimes(CITY[city].c, now, CalculationMethod.UmmAlQura());
+  return (['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const).map((k) => ({ k, name: NAMES[k], at: t[k], leave: new Date(t[k].getTime() - (walk + EARLY) * 60000), time: sa(t[k]), leaveTime: sa(new Date(t[k].getTime() - (walk + EARLY) * 60000)) }));
+}
+export const cityName = (c: 'makkah' | 'madinah') => CITY[c].name;
+
 function nextPrayer(city: keyof typeof CITY, now: Date) {
   const p = (d: Date) => new PrayerTimes(CITY[city].c, d, CalculationMethod.UmmAlQura());
   for (const day of [now, new Date(now.getTime() + 86400000)]) {

@@ -10,7 +10,7 @@ import { _t, _tj, LOC } from '../i18n';
 
 interface Props { host: string; trip: UTrip; api: UmrahApi; nameOf: (id: string) => string; going: string[]; onOpenGuide?: () => void }
 
-const DOCS: { id: string; t: string; sub?: string }[] = [
+export const DOCS: { id: string; t: string; sub?: string }[] = [
   { id: 'passport', t: _t("Загранпаспорт"), sub: _t("действует ещё 6 месяцев после возвращения") },
   { id: 'visa', t: _t("Виза"), sub: _t("туристическая eVisa онлайн или виза на умру через агента") },
   { id: 'insurance', t: _t("Страховка"), sub: _t("часто входит в eVisa, проверь") },
@@ -66,7 +66,8 @@ export function settle(b: Record<string, number>) {
 export function UmrahPlan({ host, trip, api, nameOf, going, onOpenGuide }: Props) {
   const { me, rsvp } = api;
   const isHost = me === host;
-  const [open, setOpen] = useState<number | null>(null);
+  // The umrah dashboard opens a step directly (tickets, stay, documents…).
+  const [open, setOpen] = useState<number | null>(() => { try { const v = sessionStorage.getItem('lm.upStep'); sessionStorage.removeItem('lm.upStep'); return v ? Number(v) : null; } catch { return null; } });
   // Form fields live here, not in the step bodies, so a cloud refresh does not wipe what is being typed.
   const [f, setF] = useState<Record<string, string>>({ city: 'mecca', beds: '4' });
   const fv = (k: string) => f[k] ?? '';

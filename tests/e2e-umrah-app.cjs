@@ -121,6 +121,31 @@ async function signup(pg, name, email) {
     await nav(A, 'Сегодня'); say('today tile:', await A.locator('.um-tile').allInnerTexts());
     await shot(A, 'um-6-today');
 
+    // Flagship: dashboard, pass, documents (on the phone, ticks for the group), roll call
+    await A.goto(BASE + '/app/?umrah'); await wait(3000);
+    say('dash:', await A.locator('.ud').innerText().then((x) => x.replace(/\n+/g, ' | ')));
+    say('pass:', await A.locator('.ud-pass-h').innerText().then((x) => x.replace(/\n+/g, ' | ')));
+    await shot(A, 'um-8-dash', true);
+    await unav(A, 'Документы'); await wait(800);
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    for (const k of ['Виза', 'Билеты']) {
+      const [fc] = await Promise.all([A.waitForEvent('filechooser'), A.locator('.udoc-k', { hasText: k }).locator('.udoc-h button').click()]);
+      await fc.setFiles({ name: k === 'Виза' ? 'visa.png' : 'ticket.png', mimeType: 'image/png', buffer: png }); await wait(1500);
+    }
+    say('docs:', await A.locator('.udoc-k.has').allInnerTexts().then((l) => l.map((x) => x.replace(/\n+/g, ' '))));
+    say('group table:', await A.locator('.udoc-tbl').innerText().then((x) => x.replace(/\n+/g, ' ')).catch(() => 'none'));
+    await shot(A, 'um-9-docs', true);
+    await unav(A, 'Группа'); await wait(1500);
+    await A.locator('.ud-roll-go').click(); await wait(2000);
+    await B.goto(BASE + '/app/?umrah'); await wait(3500);
+    say('B roll:', await B.locator('.ud-roll').first().innerText().then((x) => x.replace(/\n+/g, ' | ')).catch(() => 'none'));
+    await shot(B, 'um-10-roll-b');
+    await B.locator('.ud-roll button', { hasText: 'Я здесь' }).click(); await wait(2500);
+    await A.reload(); await wait(3500); await unav(A, 'Группа'); await wait(1500);
+    say('A roll:', await A.locator('.ud-roll').first().innerText().then((x) => x.replace(/\n+/g, ' | ')).catch(() => 'none'));
+    await unav(A, 'Сейчас'); await wait(800);
+    say('dash after:', await A.locator('.ud-tiles').innerText().then((x) => x.replace(/\n+/g, ' ')));
+
     // On site: set dates to today for A (solo dates) and look at the rite screen
     const C = await L.phone(br, 'C');
     await C.goto(BASE + '/app/?umrah'); await wait(2000);
@@ -130,7 +155,8 @@ async function signup(pg, name, email) {
     say('C on site nav:', await C.locator('nav.um-nav button').allInnerTexts());
     await C.locator('.um-rite-go').click(); await wait(300);
     say('ring:', await C.locator('.um-ring').innerText());
-    await shot(C, 'um-7-rite');
+    await shot(C, 'um-7-rite', true);
+    say('day plan:', await C.locator('.ud-day').innerText().then((x) => x.replace(/\n+/g, ' | ')));
   } finally {
     say('errors:', L.errors.slice(0, 10));
     await br.close(); srv.close(); await L.db.end();
