@@ -6,8 +6,9 @@ import { _t } from './i18n';
 // No payments yet: «Оформить» puts the person on the list of first buyers and keeps Pro open until payment starts.
 
 export const TRIAL_DAYS = 7;
-/** Free limits switch on after the trial. Turn off to keep everything open (e.g. while payments are not ready). */
-export const LIMITS_ON = true;
+/** The tariff (7-day Pro countdown, reminder sheets, Free «по 3»). Off since 18.11.2026 (Nasim: «нам нужны пользователи»):
+ *  everything is open, no countdown, no Pro row. When switching back on, start a fresh trial for everyone (see read()). */
+export const LIMITS_ON = false;
 export const FREE = { habits: 3, circles: 3, goals: 3, books: 3, courses: 3, quits: 1 } as const;
 export const PRO = { habits: 5, circles: 20, goals: 5, books: 100, courses: 100, quits: 3 } as const;
 export type LimitKey = keyof typeof FREE;
@@ -76,7 +77,7 @@ export function planInfo(now = Date.now()): PlanInfo {
   const giftEnds = s.gift ? new Date(s.gift + GIFT_DAYS * DAY) : null;
   const gift = Boolean(giftEnds && giftEnds.getTime() > now);
   const pro = owner || trial || early || gift || !LIMITS_ON;
-  return { owner, gift, giftEnds, pro, trial: trial && !owner && !gift, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
+  return { owner, gift, giftEnds, pro, trial: trial && !owner && !gift && LIMITS_ON, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
 }
 export const limitOf = (k: LimitKey) => planInfo().limits[k];
 export function usePlan(): PlanInfo {
@@ -123,7 +124,7 @@ export function openPro() { try { window.dispatchEvent(new Event(PRO_EVENT)); } 
 /** Invite a friend: the plain landing link, no rewards. ref=share shows up in the owner's analytics. */
 export const SHARE_URL = 'https://living-muslim.vercel.app/?ref=share';
 export async function inviteFriend(): Promise<'shared' | 'copied' | 'cancel'> {
-  const text = _t("Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй, первые 7 дней Pro бесплатно:");
+  const text = LIMITS_ON ? _t("Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй, первые 7 дней Pro бесплатно:") : _t("Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй:");
   try {
     if (navigator.share) { await navigator.share({ title: 'Living Muslim', text, url: SHARE_URL }); return 'shared'; }
   } catch { return 'cancel'; }

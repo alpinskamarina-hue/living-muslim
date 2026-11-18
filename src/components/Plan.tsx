@@ -3,7 +3,7 @@ import type { AppState } from '../types';
 import { plural, addDays, dayKey } from '../dates';
 import { isCounted, wouldQueue } from '../store';
 import { myCircles } from '../cloud';
-import { FREE, PRO, PRICES, LIMIT_RU, TRIAL_DAYS, usePlan, openPro, inviteFriend, leftLabel, markSheet, type LimitKey } from '../plan';
+import { FREE, PRO, PRICES, LIMIT_RU, TRIAL_DAYS, LIMITS_ON, usePlan, openPro, inviteFriend, leftLabel, markSheet, type LimitKey } from '../plan';
 import { _t, _tj } from '../i18n';
 
 // Trial dial on Today, the reminder sheets on day 5, day 7 and day 8, and the «это в Pro» gate.
@@ -35,7 +35,7 @@ function Dial({ left, size = 62 }: { left: number; size?: number }) {
 export function TrialDial() {
   const p = usePlan();
   const now = useNow(1000);
-  if (p.early || p.owner || p.gift) return null;
+  if (p.early || p.owner || p.gift || !LIMITS_ON) return null;
   if (!p.trial) {
     return (
       <button type="button" className="pl-free" onClick={openPro}>

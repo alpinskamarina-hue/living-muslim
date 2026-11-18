@@ -4337,4 +4337,5 @@ export const EN: Record<string, string> = {
   "Арабский A1, карточки слов": "Arabic A1, word flashcards",
   "Курсы английского и арабского, карточки слов": "English and Arabic courses, word flashcards",
   "Арабский: день {0}": "Arabic: day {0}",
+  "Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй:": "I keep my prayers and habits in Living Muslim, and brothers in my circle help me not to give up. Try it:",
 };

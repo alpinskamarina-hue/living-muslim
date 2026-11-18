@@ -4,7 +4,7 @@ import type { GoTo } from '../guide';
 import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
-import { usePlan } from '../plan';
+import { LIMITS_ON, usePlan } from '../plan';
 import { openPath } from './NewPath';
 import { pathNow } from '../newpath';
 import { GiftPass } from './GiftPass';
@@ -106,11 +106,13 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         </button>
       )}
 
+      {LIMITS_ON && (
       <button type="button" className="pro-entry" onClick={() => go('pro')}>
         <span className="pro-badge">PRO</span>
         <span><b>Living Muslim Pro</b><small>{plan.owner ? _t("Ты владелец: всё открыто, без тарифа") : plan.gift ? _t("Pro в подарок на первый год") : plan.early ? _t("Ты в списке первых: Pro открыт") : plan.trial ? _t("Pro открыт ещё {0} {1}. Потом по 3", plan.daysLeft, plural(plan.daysLeft, _t("день"), _t("дня"), _t("дней"))) : _t("Сейчас бесплатный: по 3. Первый год Pro −37%")}</small></span>
         <i aria-hidden="true">›</i>
       </button>
+      )}
 
       <button type="button" className="pro-entry gp-pentry" onClick={() => go('gift')}>
         <span className="pro-badge gp-badge">€10</span>
