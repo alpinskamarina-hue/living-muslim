@@ -54,6 +54,8 @@ export interface ChatApi {
   msgs: Msg[];
   /** Last message id I had seen when the chat was opened (for the «new» line). */
   seenAtOpen: number;
+  /** Last message id marked as seen for this circle. */
+  seen: number;
   unread: number;
   voiceOn: boolean;
   owner: string;
@@ -256,7 +258,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     return url;
   };
 
-  return { ready, filesOn, msgs, seenAtOpen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
+  return { ready, filesOn, msgs, seenAtOpen, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
 }
 
 /** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */

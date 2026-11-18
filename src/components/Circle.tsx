@@ -6,6 +6,8 @@ import { plural } from '../dates';
 import type { UmrahApi } from '../umrahCircle';
 import { lazyNamed } from '../lazy';
 const UmrahHub = lazyNamed(() => import('./UmrahHub').then((m) => m.UmrahHub));
+import type { HubTab } from './UmrahHub';
+import { UmrahBanner } from './UmrahBanner';
 import type { KhatmApi } from '../khatm';
 import { KhatmSection } from './Khatm';
 import type { IftarApi } from '../iftar';
@@ -67,7 +69,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
-  const [umra, setUmra] = useState(false);
+  const [umra, setUmra] = useState<false | HubTab>(false);
   const [adding, setAdding] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [nicks, setNicks] = useState(false);
@@ -88,7 +90,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   // Came by «Позвать в поездку»: once in the circle, open the umrah group.
   useEffect(() => {
     if (!joined) return;
-    try { if (sessionStorage.getItem('lm.umrahGo')) { sessionStorage.removeItem('lm.umrahGo'); setUmra(true); window.scrollTo(0, 0); } } catch { /* */ }
+    try { if (sessionStorage.getItem('lm.umrahGo')) { sessionStorage.removeItem('lm.umrahGo'); setUmra('trip'); window.scrollTo(0, 0); } } catch { /* */ }
   }, [joined]);
   const invite = () => { if (!nicks) { if (isCloud && currentCircle()) shareInvite(currentCircle()!.code); return; } setInviting(true); window.scrollTo(0, 0); };
   const famKindOwner = isCloud && currentCircle()?.kind === 'family' && isOwner && !famOf(state).on;
@@ -182,7 +184,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const umraGoing = Boolean(me && Object.entries(umrah.rsvp[me] ?? {}).some(([h, r]) => r.s === 'go' && umrah.trips[h]));
 
   const umraName = (id: string) => names[id]?.name || umrah.names[id] || khatm.names[id] || _t("Участник");
-  if (umra) return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={umraName} start="trip" circle={circle} joined={joined} backLabel={_t("Круг")} onExit={() => { setUmra(false); window.scrollTo(0, 0); }} />;
+  if (umra) return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={umraName} start={umra} circle={circle} joined={joined} backLabel={_t("Круг")} onExit={() => { setUmra(false); window.scrollTo(0, 0); }} />;
   if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
   if (inviting && cur) return <InviteByNick code={cur.code} onBack={() => { setInviting(false); window.scrollTo(0, 0); }} />;
 
@@ -271,6 +273,13 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </>
       )}
 
+      {joined && (
+        <UmrahBanner api={umrah} names={names} today={today} family={Boolean(familyKind)} myReady={myReady}
+          unread={(h) => chat.msgs.filter((m) => m.ref?.tr === h && m.uid !== me && m.id > chat.seen).length}
+          onOpen={(t) => { setUmra(t); window.scrollTo(0, 0); }}
+          onEvent={(h, text) => { if (chatOn) chat.send(text, { tr: h }, 'event'); }} />
+      )}
+
       {joined && feed.length > 0 && (
         <>
           <h3 className="ch-h">{_t("Что нового")}</h3>
@@ -341,7 +350,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       {joined && (
         <>
           <h3 className="ch-h">{_t("Общие дела")}</h3>
-          <button type="button" className="um-entry" onClick={() => { setUmra(true); window.scrollTo(0, 0); }}>
+          <button type="button" className="um-entry" onClick={() => { setUmra('trip'); window.scrollTo(0, 0); }}>
             <span className="um-ic">🕋</span>
             <span><b>{_t("Умра")}</b><small>{umraCount ? `${umraCount} ${plural(umraCount, _t("поездка"), _t("поездки"), _t("поездок"))} · ${umraGoing ? _t("ты едешь") : _t("открой, чтобы присоединиться")}` : _t("Собрать группу, сэкономить и поехать вместе")}</small></span>
             <i aria-hidden="true">›</i>

@@ -38,18 +38,31 @@ async function signup(pg, name, email) {
     const code = JSON.parse(await A.evaluate(() => localStorage.getItem('lm.cloud'))).circle;
     say('circle', code);
 
-    // A opens the umrah app from Practice
-    await nav(A, 'Практика');
-    await A.locator('button', { hasText: 'Умра' }).first().click(); await wait(400);
-    await A.locator('button', { hasText: 'Умра' }).last().click(); await wait(1500);
-    say('main nav hidden:', !(await A.locator('nav.nav').isVisible()), 'um-nav:', await A.locator('nav.um-nav button').allInnerTexts());
-    await shot(A, 'um-1-now');
-    await unav(A, 'Подготовка'); await shot(A, 'um-2-prep');
-    await unav(A, 'Группа');
+    // Circle: the umrah banner, no trip yet
+    await A.reload(); await wait(3000); await nav(A, 'Круг');
+    say('banner 1:', await A.locator('.ub').innerText().then((x) => x.replace(/\n+/g, ' | ')));
+    await A.locator('.ub').scrollIntoViewIfNeeded(); await shot(A, 'um-0-banner1');
+    await A.locator('.ub button', { hasText: 'Собрать поездку' }).click(); await wait(1500);
+    say('main nav hidden:', !(await A.locator('nav.nav').isVisible()), 'um-nav:', await A.locator('nav.um-nav button').allInnerTexts().then((a) => a.map((x) => x.replace(/\n/g, ' '))));
     await A.locator('button', { hasText: 'Собрать поездку на умру' }).click(); await wait(300);
     await A.locator('.join input').nth(1).fill('декабрь 2026');
     await A.locator('.join .pri-btn').click(); await wait(2500);
     say('A group seg:', await A.locator('.um-gseg button').allInnerTexts(), 'people:', await A.locator('.um-av small').allInnerTexts());
+    await unav(A, 'Сейчас');
+    say('A now:', await A.locator('.um-now').innerText().then((x) => x.replace(/\n+/g, ' | ')), 'next:', await A.locator('.um-next').innerText().catch(() => '-'));
+    await shot(A, 'um-1-now');
+    await A.locator('.um-steps button').first().click(); await wait(800);
+    say('sheet:', await A.locator('.um-sheet').innerText().then((x) => x.replace(/\n+/g, ' | ')), 'wa:', await A.locator('.um-sgrid a.wa').getAttribute('href').then((h) => h.slice(0, 60)));
+    await shot(A, 'um-1b-sheet');
+    await A.locator('.um-nick').click(); await wait(1200);
+    say('nick screen:', (await A.locator('.um-app').innerText()).slice(0, 80).replace(/\n+/g, ' | '));
+    await A.locator('.um-app button', { hasText: /Назад|←/ }).first().click(); await wait(800);
+    // theme switch
+    const th0 = await A.locator('.um-app').getAttribute('class');
+    await A.locator('.um-theme').click(); await wait(500);
+    say('theme:', th0, '->', await A.locator('.um-app').getAttribute('class'));
+    await shot(A, 'um-1c-other-theme');
+    await A.locator('.um-theme').click(); await wait(300);
 
     // B joins by «Позвать в поездку» link
     const B = await L.phone(br, 'B');
@@ -58,13 +71,18 @@ async function signup(pg, name, email) {
     const jb = B.locator('button', { hasText: /Вступить|Присоединиться/ });
     if (await jb.count()) { await jb.first().click(); await wait(3000); }
     say('B opened umrah app:', await B.locator('.um-app').count(), 'title:', await B.locator('.um-title h1').allInnerTexts());
-    // B says «Еду» → event in the trip chat
-    await B.locator('.um-gseg button', { hasText: 'Поездка' }).click(); await wait(500);
-    await B.locator('.trip-body .h-q button', { hasText: 'Еду' }).click(); await wait(2000);
+    // B leaves and sees the banner «Насим собирает умру», answers «Еду» from it
+    await B.locator('.um-out').click(); await wait(1200);
+    say('banner 2:', await B.locator('.ub').innerText().then((x) => x.replace(/\n+/g, ' | ')));
+    await B.locator('.ub').scrollIntoViewIfNeeded(); await shot(B, 'um-2-banner2');
+    await B.locator('.ub-btns button', { hasText: 'Еду' }).click(); await wait(2000);
+    say('B after Еду in app:', await B.locator('.um-app').count());
     await B.locator('.um-gseg button', { hasText: 'Чат' }).click(); await wait(800);
     await B.locator('.cc-in textarea').fill('Братья, я купил билет. Рейс SV 226 🙌');
     await B.locator('.cc-send').click(); await wait(1500);
     await shot(B, 'um-3-group-chat');
+    await B.locator('.um-out').click(); await wait(1200);
+    say('banner 3:', await B.locator('.ub').innerText().then((x) => x.replace(/\n+/g, ' | ')));
 
     // A: sees B, the event and the message; the general circle chat does not show them
     await A.reload(); await wait(3500);

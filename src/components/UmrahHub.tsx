@@ -9,7 +9,8 @@ import { UmrahTrips, TripCard } from './UmrahTrips';
 import { CircleChat } from './CircleChat';
 import { useChat } from '../chat';
 import type { CircleApi } from '../circle';
-import { isCloud, currentCircle, inviteLink } from '../cloud';
+import { isCloud, currentCircle, inviteLink, nicksReady } from '../cloud';
+import { InviteByNick } from './Nick';
 import { QiblaScreen } from './Mosques';
 import { MiqatView } from './Miqat';
 import { UmrahSavings } from './UmrahSavings';
@@ -28,7 +29,7 @@ import { _t, _tj } from '../i18n';
 // One place for the whole umrah: what matters today, the heart, my duas, the rites and the trip.
 // Both Practice and the Circle open this screen.
 
-export type HubTab = 'heart' | 'duas' | 'rites' | 'trip' | 'group';
+export type HubTab = 'now' | 'heart' | 'duas' | 'rites' | 'trip' | 'group';
 
 interface Props {
   state: AppState;
@@ -55,6 +56,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const [miqat, setMiqat] = useState(false);
   const [lost, setLost] = useState(false);
   const [qibla, setQibla] = useState(false);
+  const [inviting, setInviting] = useState<'' | 'sheet' | 'nick'>('');
+  const [gsub, setGsub] = useState<'chat' | 'trip' | null>(null);
   const u = umrahOf(state);
   const { me, trips, rsvp, duas } = rawApi;
 
@@ -70,11 +73,24 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const [tab, setTab] = useState<UTab>(() => (start === 'trip' || start === 'group' ? 'group' : start === 'duas' ? 'duas' : start === 'heart' ? 'prep' : start === 'rites' ? (onSite ? 'rite' : 'prep') : onSite ? 'rite' : 'now'));
   const go = (t: UTab) => { setTab(t); window.scrollTo(0, 0); };
 
+  // Light or dark like the whole app (auto follows the phone); the moon/sun switches it for the whole app.
+  const theme = state.settings.theme ?? 'auto';
+  const [sysDark, setSysDark] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches);
+  useEffect(() => {
+    const m = matchMedia('(prefers-color-scheme: dark)');
+    const f = () => setSysDark(m.matches);
+    m.addEventListener?.('change', f);
+    return () => m.removeEventListener?.('change', f);
+  }, []);
+  const dark = theme === 'dark' || (theme === 'auto' && sysDark);
+  const flipTheme = () => update((s) => ({ ...s, settings: { ...s.settings, theme: dark ? 'light' : 'dark' } }));
+
   // The umrah is its own app: the main tabs hide while it is open.
   useEffect(() => {
     document.body.classList.add('um-on');
-    return () => document.body.classList.remove('um-on');
+    return () => document.body.classList.remove('um-on', 'um-dark');
   }, []);
+  useEffect(() => { document.body.classList.toggle('um-dark', dark); }, [dark]);
 
   // The trip I look at in «Группа»: the one I go on, else one I answered, else the newest.
   const answered = me ? Object.keys(rsvp[me] ?? {}).filter((h) => trips[h]) : [];
@@ -133,10 +149,11 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   }, [askedKey, phase, me, myTrips.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggleAsk = (k: string) => update((s) => { const a = umrahOf(s).asked ?? []; return patch(s, { asked: a.includes(k) ? a.filter((x) => x !== k) : [...a, k] }); });
 
-  if (step) return <div className="um-app"><StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
+  if (step) return <div className={`um-app${dark ? ' um-dk' : ''}`}><StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} /></div>;
   if (lost) return <LostCard state={state} onClose={() => setLost(false)} />;
-  if (miqat) return <div className="um-app"><MiqatView state={state} update={update} onBack={() => setMiqat(false)} /></div>;
+  if (miqat) return <div className={`um-app${dark ? ' um-dk' : ''}`}><MiqatView state={state} update={update} onBack={() => setMiqat(false)} /></div>;
+  if (inviting === 'nick' && chatCode) return <div className={`um-app${dark ? ' um-dk' : ''}`}><InviteByNick code={chatCode} onBack={() => { setInviting(''); window.scrollTo(0, 0); }} /></div>;
   if (qibla) return <QiblaScreen state={state} update={update} today={today} start="qibla" onClose={() => setQibla(false)} />;
 
   // The rite in progress on site: tawaf until 7, then sa'i.
@@ -144,11 +161,18 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const riteN = riteStep?.counter ? u[riteStep.counter] : 7;
   const lap = (d: number) => riteStep?.counter && update((s) => patch(s, { [riteStep.counter!]: Math.max(0, Math.min(7, umrahOf(s)[riteStep.counter!] + d)) }));
 
+  // A group trip without dates yet: the first steps are the brothers and the dates, not my own dates.
+  const going = groupHost ? groupMembers.filter((id) => rsvp[id]?.[groupHost]?.s === 'go' || id === groupHost).length : 0;
+  const openTrip = () => { setGsub('trip'); go('group'); };
+  const tripFirst = groupHost && !groupDates && phase === 'none'
+    ? going <= 1 ? { k: _t("Следующий шаг"), t: _t("Позвать братьев в поездку"), go: () => setInviting('sheet') } : { k: _t("Следующий шаг"), t: _t("Предложить даты поездки"), go: openTrip }
+    : null;
   // The gold bar: always the one next step.
   const book = u.booked ?? [];
   const next: { k: string; t: string; go: () => void } | null =
     onSite ? (riteStep ? { k: _t("Сейчас"), t: _tj("{0}: круг {1} из 7", riteStep.title, riteN + 1), go: () => go('rite') } : null)
     : phase === 'after' ? { k: _t("Сейчас"), t: _t("Сохрани умру: картинка и 40 дней"), go: () => go('now') }
+    : tripFirst ? tripFirst
     : due[0] ? { k: _t("Следующий шаг"), t: due[0].text, go: () => go('prep') }
     : !from ? { k: _t("Следующий шаг"), t: _t("Выбери, когда едешь"), go: () => go(tripHost ? 'group' : 'money') }
     : (phase === 'month' || phase === 'week') && book.length < 5 ? { k: _t("Следующий шаг"), t: _tj("Собрать поездку: {0} из 5", book.length), go: () => go('money') }
@@ -157,13 +181,13 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const NAV: { k: UTab | 'lost' | 'qibla'; ic: string; l: string }[] = onSite
     ? [{ k: 'rite', ic: '🕋', l: _t("Обряд") }, { k: 'group', ic: '📡', l: _t("Группа") }, { k: 'lost', ic: '!', l: _t("Потерялся") }, { k: 'duas', ic: '🤲', l: _t("Дуа") }, { k: 'qibla', ic: '🧭', l: _t("Кибла") }]
     : [{ k: 'now', ic: '🕋', l: _t("Сейчас") }, { k: 'prep', ic: '✓', l: _t("Подготовка") }, { k: 'group', ic: '👥', l: _t("Группа") }, { k: 'duas', ic: '🤲', l: _t("Дуа") }, { k: 'money', ic: '💰', l: phase === 'after' || phase === 'done' ? _t("Поездка") : _t("Копилка") }];
-  const unread = chatOn && tab !== 'group' ? chat.msgs.filter((m) => m.ref?.tr === tripHost && m.id > chat.seenAtOpen && m.uid !== me).length : 0;
+  const unread = chatOn && tab !== 'group' ? chat.msgs.filter((m) => m.ref?.tr === tripHost && m.id > chat.seen && m.uid !== me).length : 0;
 
   const trip = tripHost ? trips[tripHost] : null;
   const title = tab === 'now' && trip && myTrips.includes(tripHost!) ? trip.title : _t("Умра");
   const sub = onSite ? _t("Ляббайк, Аллахумма ляббайк") : from && left! > 0 ? _tj("Вылет через {0} {1} · {2}{3}", left, plural(left!, _t("день"), _t("дня"), _t("дней")), dLabel(from), to ? ` – ${dLabel(to)}` : '') : '';
 
-  const people = tripHost ? <People host={tripHost} api={api} names={circle?.names} nameOf={nameOf} onInvite={chatCode ? () => inviteToTrip(chatCode) : undefined} onOpen={() => go('group')} /> : null;
+  const people = tripHost ? <People host={tripHost} api={api} names={circle?.names} nameOf={nameOf} onInvite={chatCode ? () => setInviting('sheet') : undefined} onOpen={() => go('group')} /> : null;
 
   const ritesList = (
     <>
@@ -187,10 +211,13 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   );
 
   return (
-    <div className={`um-app${tab === 'group' && chatOn ? ' um-chat' : ''}`}>
+    <div className={`um-app${dark ? ' um-dk' : ''}${tab === 'group' && chatOn ? ' um-chat' : ''}`}>
       <div className="um-top">
         <button type="button" className="um-out" onClick={onExit}>← {backLabel === _t("Круг") ? _t("Круг") : 'Living Muslim'}</button>
-        <span className="um-badge">{onSite ? _t("Умра · на месте") : _t("Умра")}</span>
+        <span className="um-top-r">
+          <button type="button" className="um-theme" onClick={flipTheme} aria-label={dark ? _t("Светлая тема") : _t("Тёмная тема")}>{dark ? '☀' : '🌙'}</button>
+          <span className="um-badge">{onSite ? _t("Умра · на месте") : _t("Умра")}</span>
+        </span>
       </div>
 
       {tab !== 'group' && tab !== 'rite' && (
@@ -217,7 +244,18 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
           <Hint id="umrah" />
           <div className="um-now">
             <em>{_t("Сейчас")}</em>
-            {phase === 'none' && (
+            {phase === 'none' && groupHost && (
+              <>
+                <b>{_tj("Поездка «{0}» собрана", trips[groupHost].title)}</b>
+                <p>{_t("Дальше три шага. Даты возьмутся из поездки, когда группа их выберет.")}</p>
+                <div className="um-steps">
+                  <button type="button" onClick={() => setInviting('sheet')}><i>1</i><span><b>{_t("Позови братьев")}</b><small>{_tj("Сейчас едут: {0}", going)}</small></span><em>›</em></button>
+                  <button type="button" onClick={openTrip}><i>2</i><span><b>{_t("Предложите даты и выберите лучшие")}</b><small>{trips[groupHost].dates?.length ? _tj("Вариантов: {0}, голосуем", trips[groupHost].dates!.length) : _t("Пока вариантов нет")}</small></span><em>›</em></button>
+                  <button type="button" onClick={() => go('money')}><i>3</i><span><b>{_t("Начни копилку")}</b><small>{_t("Сумма и сколько откладывать в неделю")}</small></span><em>›</em></button>
+                </div>
+              </>
+            )}
+            {phase === 'none' && !groupHost && (
               <>
                 <b>{_t("Копилка на умру")}</b>
                 <UmrahSavings state={state} update={update} today={today} compact onOpen={() => go('money')} />
@@ -351,7 +389,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       )}
 
       {tab === 'group' && (
-        <GroupTab api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick} people={people} myReady={prepPct(state)} nameOf={nameOf}
+        <GroupTab sub={gsub} setSub={setGsub} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick} people={people} myReady={prepPct(state)} nameOf={nameOf}
           onSite={onSite} radar={onSite && groupHost && me ? <GroupRadar state={state} update={update} api={rawApi} host={groupHost} members={groupMembers} nameOf={nameOf} /> : null}
           chat={chatOn && tripHost && circle?.me ? (
             <CircleChat chat={chat} me={circle.me} names={circle.names} members={circle.members} reacts={circle.reacts} today={today} isOwner={circle.isOwner} state={state} update={update}
@@ -364,6 +402,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       {next && tab !== 'group' && !(tab === 'rite' && onSite) && (
         <button type="button" className="um-next" onClick={next.go}><span><em>{next.k}</em><b>{next.t}</b></span><i>›</i></button>
       )}
+
+      {inviting === 'sheet' && chatCode && <InviteSheet code={chatCode} title={trip?.title ?? _t("Умра")} onNick={() => setInviting('nick')} onClose={() => setInviting('')} />}
 
       <nav className="um-nav" aria-label={_t("Умра")}>
         {NAV.map((n) => (
@@ -435,22 +475,40 @@ function People({ host, api, names, nameOf, onInvite, onOpen }: { host: string; 
   );
 }
 
-/** «Позвать в поездку»: the Circle's invite link that, once joined, opens this umrah's group. */
-async function inviteToTrip(code: string) {
+/** «Позвать в поездку»: send the link to WhatsApp, Telegram or anywhere, or invite by nick inside the app.
+ *  The link joins the Circle and opens this umrah's group. */
+function InviteSheet({ code, title, onNick, onClose }: { code: string; title: string; onNick: () => void; onClose: () => void }) {
+  const [nicks, setNicks] = useState(false);
+  const [note, setNote] = useState('');
+  useEffect(() => { nicksReady().then(setNicks); }, []);
   const url = `${inviteLink(code)}&umrah=group`;
-  const text = _t("Ассаляму алейкум! Собираемся на умру вместе. Присоединяйся к поездке, там даты, задачи и наш чат:\n{0}", url);
-  try {
-    if (navigator.share) { await navigator.share({ title: _t("Умра вместе"), text, url }); return; }
-    await navigator.clipboard.writeText(text); alert(_t("Ссылка скопирована. Отправь её братьям."));
-  } catch { /* cancelled */ }
+  const text = _tj("Ассаляму алейкум! Собираемся на умру вместе: «{0}». Присоединяйся, там даты, задачи и наш чат:", title);
+  const full = `${text}\n${url}`;
+  const more = async () => { try { if (navigator.share) await navigator.share({ title: _t("Умра вместе"), text, url }); else { await navigator.clipboard.writeText(full); setNote(_t("Ссылка скопирована")); } } catch { /* cancelled */ } };
+  const copy = async () => { try { await navigator.clipboard.writeText(full); setNote(_t("Ссылка скопирована")); } catch { setNote(url); } };
+  return (
+    <div className="um-sheet-bg" onClick={onClose}>
+      <div className="um-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={_t("Позвать в поездку")}>
+        <div className="um-sheet-h"><b>{_t("Позвать в поездку")}</b><button type="button" onClick={onClose} aria-label={_t("Закрыть")}>✕</button></div>
+        <p className="tiny">{_t("Человек откроет ссылку, вступит в Круг и сразу попадёт в группу поездки.")}</p>
+        <div className="um-sgrid">
+          <a href={`https://wa.me/?text=${encodeURIComponent(full)}`} target="_blank" rel="noopener noreferrer" className="wa"><i>🟢</i>WhatsApp</a>
+          <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" className="tg"><i>✈️</i>Telegram</a>
+          <button type="button" onClick={more}><i>↗</i>{_t("Другое")}</button>
+          <button type="button" onClick={copy}><i>🔗</i>{_t("Копировать")}</button>
+        </div>
+        {nicks && <button type="button" className="um-nick" onClick={onNick}><b>@ {_t("Найти по нику в Living Muslim")}</b><small>{_t("Приглашение придёт ему в приложение, в Круг")}</small></button>}
+        {note && <p className="tiny um-note">{note}</p>}
+      </div>
+    </div>
+  );
 }
 
-function GroupTab({ api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onSite }: {
-  api: UmrahApi; me: string | null; tripHost: string | null; hosts: string[]; onPick: (h: string) => void; people: React.ReactNode; myReady: number;
+function GroupTab({ sub: sub0, setSub, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onSite }: {
+  sub: 'chat' | 'trip' | null; setSub: (v: 'chat' | 'trip') => void; api: UmrahApi; me: string | null; tripHost: string | null; hosts: string[]; onPick: (h: string) => void; people: React.ReactNode; myReady: number;
   nameOf: (id: string) => string; chat: React.ReactNode; noChat: string; radar: React.ReactNode; onSite: boolean;
 }) {
-  const [sub, setSub] = useState<'chat' | 'trip'>(chat ? 'chat' : 'trip');
-  useEffect(() => { if (!chat && sub === 'chat') setSub('trip'); }, [Boolean(chat)]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sub = !chat ? 'trip' : sub0 ?? 'chat';
   if (!me) return <div className="um-sec"><p className="tiny">{noChat}</p></div>;
   if (!tripHost) return <div className="um-sec"><UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded /></div>;
   const trip = api.trips[tripHost];
