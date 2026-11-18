@@ -320,33 +320,40 @@ function Teacher({ state, update, today, start, onClose, f }: { state: AppState;
 
       {phase === 'go' && (
         <>
-          <div className="np-rk" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }} aria-label={_t("Ракаат {0} из {1}", r, total)}>
-            {Array.from({ length: total }, (_, i) => {
-              const n = i + 1;
-              const got = n < r ? 2 : n === r ? s : 0;
-              return (
-                <span key={n} className={n === r ? 'cur' : n < r ? 'past' : ''}>
-                  <span>{[0, 1].map((k) => <i key={k} className={k < got ? 'on' : ''} />)}</span>{n}
-                </span>
-              );
-            })}
-          </div>
-          <button type="button" className={`np-tap${step.last ? ' fin' : ''}`} onClick={tap} aria-label={_t("Отметить земной поклон")}>
-            <small>{_t("Ракаат")}</small>
-            <b>{r}</b>
-            <em>{s === 0 ? _t("коснись после поклона") : s === 1 ? _t("один поклон из двух") : _t("оба поклона сделаны")}</em>
-          </button>
-          <span className="np-hint">{_t("Касайся экрана лбом или рукой после каждого земного поклона")}</span>
+          {(() => {
+            const tash = s === 2 && (r === 2 || step.last);
+            const dr = s === 2 && !tash ? r + 1 : r; // after both prostrations the person already stands in the next rak'ah
+            const ph = s === 2 && !tash ? 0 : s; // 0 standing → 1st sujud, 1 sitting → 2nd sujud, 2 tashahhud
+            const items = [_t("Стояние"), _t("Руку‘"), _t("Суджуд"), _t("Сидение"), _t("Суджуд")];
+            if (dr === total || (dr === 2 && total > 2)) items.push(_t("Ташаххуд"));
+            const grp = ph === 0 ? [0, 2] : ph === 1 ? [3, 4] : [5, 5];
+            return (
+              <div className="np-rk2">
+                <b>{_tj("Ракаат {0} из {1}", dr, total)}</b>
+                <div className="np-rk2-bar" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}>
+                  {Array.from({ length: total }, (_, i) => <i key={i} className={i + 1 < dr ? 'done' : i + 1 === dr ? 'cur' : ''}><span style={{ width: i + 1 < dr ? '100%' : i + 1 === dr ? ph === 0 ? '15%' : ph === 1 ? '55%' : '90%' : '0' }} /></i>)}
+                </div>
+                <ol className="np-chain">
+                  {items.map((t, k) => <li key={k} className={k < grp[0] ? 'done' : k <= grp[1] ? 'now' : ''}>{k < grp[0] ? '✓ ' : ''}{t}</li>)}
+                </ol>
+              </div>
+            );
+          })()}
+          <RakahPlayer frames={stepFrames(step.pose, r, s)} f={f} />
+          {!step.last && (
+            <button type="button" className="np-tap2" onClick={tap} aria-label={_t("Отметить земной поклон")}>
+              <b>{s === 1 ? _t("Коснись после 2-го суджуда") : s === 2 && r === 2 ? _t("Встань на 3-й ракаат, коснись после 1-го суджуда") : _t("Коснись после 1-го суджуда")}</b>
+              <small>{_t("лбом или рукой, телефон лежит на полу")}</small>
+            </button>
+          )}
           <div className="np-now">
             <small>{_t("Теперь")}</small>
             <b>{step.title}</b>
             <span>{gx(step.text, f)}</span>
             <div className="np-row">
               <button type="button" className={show === 'text' ? 'on' : ''} onClick={() => setShow(show === 'text' ? '' : 'text')}>{show === 'text' ? _t("Скрыть текст") : _t("Показать текст")}</button>
-              <button type="button" className={show === 'pose' ? 'on' : ''} onClick={() => setShow(show === 'pose' ? '' : 'pose')}>{_t("Показать движения")}</button>
             </div>
             {show === 'text' && step.dhikr.map((d) => <DhikrCard key={d} id={d} />)}
-            {show === 'pose' && <RakahPlayer frames={stepFrames(step.pose, r, s)} f={f} />}
             {step.last && <button type="button" className="pri-btn" onClick={() => setPhase('end')}>{f ? _t("Я завершила намаз") : _t("Я завершил намаз")}</button>}
           </div>
           <div className="np-under">

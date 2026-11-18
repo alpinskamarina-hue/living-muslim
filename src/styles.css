@@ -2630,6 +2630,26 @@ button:disabled { opacity: .5; cursor: default; }
 .np-tap b { font-size: 76px; line-height: 1; font-variant-numeric: tabular-nums; }
 .np-tap em { font-style: normal; font-size: 13px; color: var(--gold-light, #e3b964); font-weight: 700; }
 .np-tap.fin { opacity: .6; }
+.np-rk2 { display: flex; flex-direction: column; gap: 10px; }
+.np-rk2 > b { font-size: 22px; text-align: center; }
+.np-rk2-bar { display: grid; gap: 6px; }
+.np-rk2-bar i { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.np-rk2-bar i span { display: block; height: 100%; background: var(--gold-light, #e3b964); border-radius: 99px; transition: width .4s ease; }
+.np-rk2-bar i.done span { background: rgba(227, 185, 100, .55); }
+.np-chain { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.np-chain li { font-size: 13px; padding: 5px 10px; border-radius: 99px; background: rgba(255, 255, 255, .07); color: var(--on-dark-2); }
+.np-chain li.done { color: rgba(241, 246, 240, .75); }
+.np-chain li.now { background: var(--gold-light, #e3b964); color: #14261c; font-weight: 700; }
+.np-pr > .np-film { background: #fff; border-color: transparent; color: #14261c; }
+.np-pr > .np-film .np-film-pic { aspect-ratio: auto; height: min(62vw, 34vh, 320px); }
+.np-pr > .np-film .np-film-cap small { color: #5a6d61; }
+.np-pr > .np-film .np-film-ctl i { background: #dfe8e0; }
+.np-pr > .np-film .np-film-ctl i.on { background: #1f7a4d; }
+.np-pr > .np-film .np-film-ctl button { border-color: #dfe8e0; }
+.np-tap2 { border: 0; border-radius: 20px; padding: 22px 16px; min-height: 110px; background: rgba(255, 255, 255, .08); box-shadow: inset 0 0 0 2px rgba(227, 185, 100, .7); color: var(--on-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.np-tap2:active { background: rgba(227, 185, 100, .25); }
+.np-tap2 b { font-size: 19px; }
+.np-tap2 small { font-size: 13px; color: var(--on-dark-2); }
 .np-hint { font-size: 12.5px; color: var(--on-dark-2); text-align: center; }
 .np-now { background: #f1f6f0; color: #14261c; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
 .np-now > small { font-size: 11.5px; color: #5a6d61; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
