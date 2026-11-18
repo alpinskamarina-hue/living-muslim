@@ -19,7 +19,6 @@ import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
 import { UmrahMadeCard } from './components/UmrahMade';
-import { UmrahTile } from './components/UmrahTile';
 import { GiftNudge } from './components/GiftPass';
 import { prepPct } from './components/Umrah';
 import { Goals } from './components/Goals';
@@ -324,7 +323,6 @@ export function App() {
     <div className="app">
       <main className="screen" data-tab={tab}>
         {tab === 'today' && <UmrahMadeCard state={state} update={update} api={umrah} />}
-        {tab === 'today' && <UmrahTile state={state} api={umrah} today={today} onOpen={() => go({ practice: 'umrah' })} />}
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
