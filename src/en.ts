@@ -4339,8 +4339,6 @@ export const EN: Record<string, string> = {
   "Арабский: день {0}": "Arabic: day {0}",
   "Я держу намазы и привычки в Living Muslim, а братья в круге помогают не бросать. Попробуй:": "I keep my prayers and habits in Living Muslim, and brothers in my circle help me not to give up. Try it:",
   "Спокойный, чистый голос": "A calm, clear voice",
-  "Мечеть Хасана II": "Hassan II Mosque",
-  "Касабланка, марокканский напев, запись с улицы": "Casablanca, Moroccan style, recorded outdoors",
   "Мекка, Масджид аль-Харам": "Makkah, Masjid al-Haram",
   "Азан фаджра (Мальмё)": "Fajr adhan (Malmö)",
   "Свой азан": "My own adhan",

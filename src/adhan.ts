@@ -24,12 +24,6 @@ export const RECITERS: Reciter[] = [
     credit: 'Aaqib Azeez · Atcovi, Wikimedia Commons, CC BY-SA 4.0',
     page: 'https://commons.wikimedia.org/wiki/File:The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3',
   },
-  {
-    id: 'casa', name: _t("Мечеть Хасана II"), place: _t("Касабланка, марокканский напев, запись с улицы"), secs: 176,
-    url: `${C}/transcoded/9/9c/Llamada_a_oraci%C3%B3n_Mezquita_Hassan_II.wav/Llamada_a_oraci%C3%B3n_Mezquita_Hassan_II.wav.mp3`,
-    credit: 'Fraguando, Wikimedia Commons, CC BY-SA 4.0',
-    page: 'https://commons.wikimedia.org/wiki/File:Llamada_a_oraci%C3%B3n_Mezquita_Hassan_II.wav',
-  },
 ];
 export const OWN = 'own';
 export const OWN_FAJR = 'own-fajr';
@@ -37,7 +31,12 @@ export const OWN_FAJR = 'own-fajr';
 export const SOON = [_t("Мекка, Масджид аль-Харам"), _t("Стамбул"), _t("Азан фаджра (Мальмё)")];
 
 export const ADHAN_DEFAULT: AdhanPrefs = { on: false, reciter: 'azeez', fajr: '', mode: {}, vol: 0.8 };
-export const adhanOf = (s: Settings): AdhanPrefs => ({ ...ADHAN_DEFAULT, ...(s.adhan ?? {}) });
+const known = (id: string) => id === OWN || id === OWN_FAJR || RECITERS.some((r) => r.id === id);
+/** A reciter that was removed from the list falls back to the first one. */
+export const adhanOf = (s: Settings): AdhanPrefs => {
+  const p = { ...ADHAN_DEFAULT, ...(s.adhan ?? {}) };
+  return { ...p, reciter: known(p.reciter) ? p.reciter : ADHAN_DEFAULT.reciter, fajr: !p.fajr || known(p.fajr) ? p.fajr : '' };
+};
 export const modeOf = (p: AdhanPrefs, a: Anchor): AdhanMode => p.mode[a] ?? 'full';
 export const reciterFor = (p: AdhanPrefs, a: Anchor) => (a === 'fajr' && p.fajr ? p.fajr : p.reciter);
 
