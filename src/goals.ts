@@ -31,6 +31,7 @@ export const SOURCES: SourceDef[] = [
   { id: 'habits', label: _t("Образ себя по привычкам"), hint: _t("доля дней за 30 дней"), unit: '%', target: 100, counter: false, identity: true },
   { id: 'manual', label: _t("Своё число"), hint: _t("ввожу сам: деньги, вес, шаги"), unit: '', target: 100, counter: false },
   { id: 'video', label: _t("Видеокурс"), hint: _t("просмотренные уроки"), unit: _t("уроков"), target: 20, counter: false },
+  { id: 'steps', label: _t("Мечта или жизненная цель"), hint: _t("переезд, поездка, свадьба: шаги отмечаю сам"), unit: _t("шагов"), target: 1, counter: false },
   { id: 'hifz', label: _t("Выучить суры"), hint: _t("выбираю суры, отмечаю выученные аяты"), unit: _t("аятов"), target: 30, counter: false },
 ];
 
@@ -70,6 +71,15 @@ export function hifzStep(g: Goal, d: number, n?: number): Partial<Goal> {
   m[at] = Math.max(0, Math.min(hifzAyahs(at), (m[at] ?? 0) + d));
   return { hifz: m, manual: Math.min(g.target, Object.values(m).reduce((a, x) => a + x, 0)) };
 }
+/** Ticks the next undone step of a life goal (or marks a goal without steps as reached). */
+export function stepsTick(g: Goal, today: string, id?: string): Partial<Goal> {
+  const st = g.steps ?? [];
+  if (!st.length) return { manual: g.manual ? 0 : 1, target: 1 };
+  const at = id ?? st.find((x) => !x.done)?.id;
+  const steps = st.map((x) => (x.id === at ? { ...x, done: x.done ? undefined : today } : x));
+  return { steps, target: steps.length };
+}
+
 /** Ready-made sets for the picker. */
 export const HIFZ_SETS: { id: string; ru: string; refs: number[] }[] = [
   { id: 'last10', ru: _t("Последние 10 сур"), refs: [105, 106, 107, 108, 109, 110, 111, 112, 113, 114] },
@@ -107,6 +117,7 @@ export function rawValue(s: AppState, g: Pick<Goal, 'source' | 'habitIds' | 'man
       return Math.round((hs.reduce((a, h) => a + consistency(s, h, today, 30).rate, 0) / hs.length) * 100);
     }
     case 'manual': case 'hifz': return g.manual;
+    case 'steps': { const st = (g as Goal).steps ?? []; return st.length ? st.filter((x) => x.done).length : g.manual; }
     case 'video': return (s.videos?.byCourse?.[(g as Goal).ref ?? ''] ?? []).length;
   }
 }
@@ -137,6 +148,7 @@ export function progressLabel(s: AppState, g: Goal, today: string) {
   }
   if (g.source === 'video') return _t("урок {0} из {1}", p.value, g.target);
   if (g.source === 'hifz') return _t("{0} из {1} аятов · {2}", p.value, g.target, hifzName(g.ref));
+  if (g.source === 'steps') return g.steps?.length ? _t("{0} из {1} шагов", p.value, g.steps.length) : p.value ? _t("цель достигнута") : _t("шаги не добавлены");
   const def = sourceDef(g.source);
   if (def.unit === '%') return _t("{0}% из {1}%", p.value, g.target);
   return _t("{0} из {1}{2}", p.value, g.target, g.unit ? ' ' + g.unit : '');
@@ -233,6 +245,13 @@ export function todayStep(s: AppState, g: Goal, today: string): Step {
       return { text: next, sub: _t("{0} из {1} постов{2}", p.value, g.target, DAYS[wd] ? '' : ''), btn: _t("Отметить"), action: 'health' };
     }
     case 'workouts': return { text: _t("Тренировка 10–20 минут"), sub: _t("{0} из {1} тренировок", p.value, g.target), btn: _t("▶ Начать"), action: 'health' };
+    case 'steps': {
+      const st = g.steps ?? [];
+      const next = st.find((x) => !x.done);
+      if (!st.length) return { text: g.manual ? _t("Цель достигнута, альхамдулиллях") : _t("Раздели цель на шаги"), sub: _t("Добавь шаги ниже или отметь, когда цель сбудется"), btn: _t("✓ Цель достигнута"), action: 'add' };
+      if (!next) return { text: _t("Все шаги сделаны, альхамдулиллях"), sub: _t("{0} из {0} шагов", st.length), btn: _t("✓ Цель достигнута"), action: 'add' };
+      return { text: next.text, sub: _t("Следующий шаг · {0} из {1} сделано", p.value, st.length), btn: _t("✓ Сделано"), action: 'add' };
+    }
     case 'umrah': return { text: _t("Подготовка: {0}%", p.value), sub: _t("следующий пункт из списка умры"), btn: _t("Открыть"), action: 'umrah' };
     case 'hifz': {
       const n = Math.max(1, Math.ceil(perDay || 1));
@@ -255,6 +274,7 @@ const pl = (n: number, a: string, b: string, c: string) => { const m = n % 10, h
 /** Four milestones in the goal's own units. */
 export function milestones(s: AppState, g: Goal, today: string) {
   const p = progress(s, g, today);
+  if (g.source === 'steps') return [];
   const fr = g.source === 'quran' ? [1 / 3, 0.5, 2 / 3, 1] : [0.25, 0.5, 0.75, 1];
   return fr.map((f) => {
     const when = g.due ? addDays(g.createdAt, Math.round(daysBetween(g.createdAt, g.due) * f)) : null;

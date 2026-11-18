@@ -266,7 +266,9 @@ export interface UmrahState {
   funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];
 }
 
-export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz';
+export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz' | 'steps';
+export interface GoalStepItem { id: string; text: string; done?: string }
+
 export interface Goal {
   id: string;
   title: string;
@@ -289,6 +291,8 @@ export interface Goal {
   ref?: string;
   /** hifz: learned ayahs per surah. */
   hifz?: Record<string, number>;
+  /** steps: a life goal (move, trip, wedding) as a list of steps; done = the day it was ticked. */
+  steps?: GoalStepItem[];
   doneAt?: string;
 }
 

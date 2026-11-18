@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import type { AppState, Goal, Habit } from '../types';
+import type { AppState, Goal, GoalStepItem, Habit } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { activeLimit, isCounted, slotsUsed, streak, uid } from '../store';
 import { addDays, daysBetween, fromKey } from '../dates';
 import {
-  goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, hifzName, hifzRefs, hifzStep, hifzTotal, hifzMap, hifzAyahs, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
+  goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, hifzName, hifzRefs, hifzStep, hifzTotal, hifzMap, hifzAyahs, stepsTick, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
 } from '../goals';
 import { markStarted } from '../dayplan';
@@ -63,6 +63,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
     update((s) => markStarted(s, today, `g:${g.id}`));
     if (st.action !== 'add') return onDo(st);
     if (g.source === 'hifz') update((s) => patchGoal(s, g.id, hifzStep(g, 1)));
+    else if (g.source === 'steps') update((s) => patchGoal(s, g.id, g.steps?.length && g.steps.every((x) => x.done) ? { status: 'done', doneAt: today } : stepsTick(g, today)));
     else setOpenId(g.id);
   };
 
@@ -221,7 +222,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
 
       <div className="g-big"><b>{def.identity ? `${dayDots(state, g, today).filter((x) => x === 2).length}/30` : `${p.pct}%`}</b><span>{def.identity ? (g.source === 'prayers' ? _t("дней, когда все 5 намазов вовремя") : _t("дней, когда всё сделано")) : `${progressLabel(state, g, today)}${g.due ? ` · ${p.behind ? _t("отстаю на {0} дн.", p.behind) : _t("в графике")}` : ''}`}</span></div>
       {def.identity ? <Dots state={state} g={g} today={today} /> : <div className="pbar"><i style={{ width: `${p.pct}%` }} /></div>}
-      {!def.identity && (
+      {!def.identity && miles.length > 0 && (
         <div className="g-ms">
           {miles.map((x, i) => (
             <div key={i} className={`g-m${x.ok ? ' ok' : x === next ? ' now' : ''}`}><i>{x.ok ? '✓' : ''}</i><b>{x.label}</b><small>{x.ok ? _t("есть") : x.when ? _t("к {0}", fromKey(x.when).toLocaleDateString(LOC, { day: 'numeric', month: 'short' })) : ''}</small></div>
@@ -229,6 +230,12 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
         </div>
       )}
       {def.counter && <p className="tiny">{_t("Считается с момента создания цели.")}</p>}
+      {g.source === 'steps' && (
+        <>
+          <div className="g-sec">{_t("Шаги к цели")}</div>
+          <StepsEditor steps={g.steps ?? []} today={today} onChange={(steps) => update((s) => patchGoal(s, g.id, { steps, target: steps.length || 1 }))} />
+        </>
+      )}
       {g.source === 'hifz' && (
         <SurahProgress g={g}
           onStep={(n, d) => update((s) => patchGoal(s, g.id, hifzStep(g, d, n)))}
@@ -317,6 +324,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
   const [pick, setPick] = useState<string[]>([]);
   const [newHabits, setNewHabits] = useState<Template['habits']>([]);
   const [seed, setSeed] = useState<string[]>([]);
+  const [steps, setSteps] = useState<GoalStepItem[]>([]);
   const def = sourceDef(source);
   const activeCount = (state.goals ?? []).filter((g) => g.status === 'active').length;
   const rm = ramadanMonth(today);
@@ -363,6 +371,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
         id, title: title.trim(), source, identity: identity.trim(), niyya: niyya.trim(), target, unit, start: 0, manual: 0,
         due: due || undefined, habitIds: [...pick, ...created.map((h) => h.id)], ref: ref || undefined,
         status: activeCount < goalLimit() ? 'active' : 'later', createdAt: today,
+        ...(source === 'steps' ? { steps, target: steps.length || 1, unit: '' } : {}),
       };
       let next: AppState = { ...s, habits: [...s.habits, ...created] };
       if (source === 'video' && ref && seed.length) {
@@ -379,6 +388,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
   const hasSystem = pick.length + newHabits.length > 0 || !def.identity;
   const existing = state.habits.filter((h) => h.status === 'active' || h.status === 'queued');
   const own: Template = { group: 'life', ic: '✨', sub: '', title: _t("Своя цель"), source: 'habits', identity: '', habits: [] };
+  const mine = !tpl || tpl === own;
 
   return (
     <div className="g-view">
@@ -407,7 +417,10 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
             </button>
           ))}
           <div className="g-sec">{_t("Своя цель")}</div>
-          <p className="tiny" style={{ margin: 0 }}>{_t("Как считать?")}</p>
+          <button type="button" className="g-tp g-dream" onClick={() => choose(own, 'steps')}>
+            <i>🌍</i><span><b>{_t("Мечта или жизненная цель")}</b><small>{_t("Переехать, поехать отдохнуть, свадьба, свой дом. Без привычек и чисел: просто шаги, которые отмечаешь сам")}</small></span>
+          </button>
+          <p className="tiny" style={{ margin: 0 }}>{_t("Или посчитать цель числом:")}</p>
           <div className="g-how">
             <button type="button" onClick={() => choose(own, 'manual', _t("раз"))}>{_t("Отмечаю сам")}</button>
             <button type="button" onClick={() => choose(own, 'habits')}>{_t("По привычкам")}</button>
@@ -435,7 +448,12 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
               </select>
             </label>
           )}
-          <label className="field"><span>{_t("Название")}</span><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={_t("Например: пробежать 5 км")} /></label>
+          <label className="field"><span>{_t("Название")}</span><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={source === 'steps' ? _t("Например: переехать в Стамбул") : _t("Например: пробежать 5 км")} /></label>
+          {source === 'steps' && (
+            <div className="field"><span>{_t("Шаги (необязательно)")}</span>
+              <StepsEditor steps={steps} today={today} onChange={setSteps} draft />
+            </div>
+          )}
           {(source === 'manual' || source === 'pages' || source === 'chapters' || source === 'fasts' || source === 'workouts') && (
             <div className="h-row">
               <label className="field"><span>{_t("Сколько")}</span><input type="number" inputMode="numeric" value={target} onChange={(e) => setTarget(Number(e.target.value))} /></label>
@@ -452,15 +470,16 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
             </>
           )}
           <button type="button" className="pri-btn" disabled={!ok1} onClick={() => setStep(2)}>{_t("Дальше")}</button>
+          {source === 'steps' && <button type="button" className="ghost-btn" disabled={!ok1} onClick={finish}>{_t("Сохранить цель сразу")}</button>}
         </>
       )}
 
       {step === 2 && (
         <>
           <p className="q">{_t("Зачем и кем ты станешь?")}</p>
-          <label className="field"><span>{_t("Намерение: зачем мне это ради Аллаха и ради себя")}</span><textarea rows={2} value={niyya} onChange={(e) => setNiyya(e.target.value)} placeholder={_t("Хочу, чтобы Коран был со мной каждый день, а не только в Рамадан")} /></label>
-          <label className="field"><span>{_t("Я тот, кто…")}</span><input value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder={_t("Я тот, кто читает Коран каждый день")} /></label>
-          <div className="g-sec">{_t("Привычки, которые ведут к цели")}</div>
+          <label className="field"><span>{_t("Намерение: зачем мне это ради Аллаха и ради себя")}</span><textarea rows={2} value={niyya} onChange={(e) => setNiyya(e.target.value)} placeholder={mine ? _t("Например: чтобы семья жила спокойнее, ради довольства Аллаха") : _t("Хочу, чтобы Коран был со мной каждый день, а не только в Рамадан")} /></label>
+          <label className="field"><span>{_t("Я тот, кто… (необязательно)")}</span><input value={identity} onChange={(e) => setIdentity(e.target.value)} placeholder={mine ? _t("Я тот, кто доводит начатое до конца") : _t("Я тот, кто читает Коран каждый день")} /></label>
+          <div className="g-sec">{def.identity ? _t("Привычки, которые ведут к цели") : _t("Привычки, которые ведут к цели (необязательно)")}</div>
           {newHabits.map((h, i) => (
             <label key={h.action} className="chk">
               <input type="checkbox" checked onChange={() => setNewHabits(newHabits.filter((_, j) => j !== i))} />
@@ -482,7 +501,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
           <QuickHabit onAdd={(h) => setNewHabits([...newHabits, h])} />
           {slotsUsed(state) + newHabits.length > activeLimit() && <p className="tiny">{_tj("Лимит {0} активных привычек: лишние встанут в очередь «Скоро».", activeLimit())}</p>}
           {!hasSystem && <p className="tiny">{_t("Эта цель считается по привычкам: выбери хотя бы одну.")}</p>}
-          <button type="button" className="pri-btn" disabled={!identity.trim() || !hasSystem} onClick={finish}>{_t("Сохранить цель")}</button>
+          <button type="button" className="pri-btn" disabled={!hasSystem} onClick={finish}>{_t("Сохранить цель")}</button>
         </>
       )}
     </div>
@@ -547,6 +566,27 @@ function Review({ state, update, today, onClose }: { state: AppState; update: Pr
       })}
       <label className="field"><span>{_t("Одна мысль недели (уйдёт в мухасабу)")}</span><textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={_t("Лучше всего получалось, когда…")} /></label>
       <button type="button" className="pri-btn" onClick={save}>{_t("Готово")}</button>
+    </div>
+  );
+}
+
+/** Steps of a life goal: tick, remove, add. */
+function StepsEditor({ steps, today, onChange, draft }: { steps: GoalStepItem[]; today: string; onChange: (s: GoalStepItem[]) => void; draft?: boolean }) {
+  const [text, setText] = useState('');
+  const add = () => { const t = text.trim(); if (!t) return; onChange([...steps, { id: uid(), text: t }]); setText(''); };
+  return (
+    <div className="st-list">
+      {steps.map((x) => (
+        <div key={x.id} className={`st-row${x.done ? ' done' : ''}`}>
+          {!draft && <input type="checkbox" checked={Boolean(x.done)} onChange={() => onChange(steps.map((y) => (y.id === x.id ? { ...y, done: y.done ? undefined : today } : y)))} aria-label={x.text} />}
+          <span>{x.text}{x.done && <small>{_tj(" · {0}", fmt(x.done))}</small>}</span>
+          <button type="button" className="st-del" onClick={() => onChange(steps.filter((y) => y.id !== x.id))} aria-label={_t("Убрать шаг")}>✕</button>
+        </div>
+      ))}
+      <div className="task-add">
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder={steps.length ? _t("Ещё шаг") : _t("Первый шаг, например: накопить на билеты")} />
+        <button type="button" className="pri-btn" disabled={!text.trim()} onClick={add}>+</button>
+      </div>
     </div>
   );
 }
