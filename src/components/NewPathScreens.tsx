@@ -169,33 +169,79 @@ function DhikrCard({ id, dark }: { id: DhikrId; dark?: boolean }) {
 
 // ─── Poses ──────────────────────────────────────────────────────────────────
 
-const POSE_NAME: Record<Pose, string> = { stand: _t("Стояние (кыям)"), ruku: _t("Поясной поклон (руку‘)"), sujud: _t("Земной поклон (суджуд)"), sit: _t("Сидение") };
-const POSE_TEXT: Record<Pose, string> = {
-  stand: _t("Прямо, лицом к кибле, взгляд на место поклона. Правая рука поверх левой."),
-  ruku: _t("Спина ровная, параллельно полу, ладони на коленях."),
-  sujud: _t("Лоб и нос, ладони, колени и пальцы ног касаются пола. Локти не лежат на полу."),
-  sit: _t("На коленях, руки на бёдрах. Между поклонами и в ташаххуде."),
+// Real photos of one rak'ah, frame by frame (public/app/salah/m-*.webp). The player cross-fades through them
+// like a slow film; the teacher shows only the frames of the current step.
+type Frame = 'takbir' | 'qiyam' | 'ruku' | 'itidal' | 'sujud' | 'jalsa' | 'sujud2' | 'tash';
+const FRAME_ORDER: Frame[] = ['takbir', 'qiyam', 'ruku', 'itidal', 'sujud', 'jalsa', 'sujud2', 'tash'];
+const FRAME_IMG: Record<Frame, string> = { takbir: 'takbir', qiyam: 'qiyam', ruku: 'ruku', itidal: 'itidal', sujud: 'sujud', jalsa: 'jalsa', sujud2: 'sujud', tash: 'tash' };
+const FRAME_NAME: Record<Frame, string> = {
+  takbir: _t("Такбир: «Аллаху акбар»"),
+  qiyam: _t("Стояние: Фатиха и сура"),
+  ruku: _t("Поясной поклон (руку‘)"),
+  itidal: _t("Выпрямиться"),
+  sujud: _t("Земной поклон (суджуд)"),
+  jalsa: _t("Сидение между поклонами"),
+  sujud2: _t("Второй земной поклон"),
+  tash: _t("Сидение: ташаххуд"),
 };
+const FRAME_TEXT: Record<Frame, string> = {
+  takbir: _t("Руки подняты к ушам, ладони к кибле. Только в начале намаза."),
+  qiyam: _t("Правая рука поверх левой, взгляд на место поклона."),
+  ruku: _t("Спина ровная, параллельно полу, ладони на коленях. «Субхана Раббияль-‘азым» 3 раза."),
+  itidal: _t("«Сами‘а Ллаху лиман хамидах», выпрямившись: «Раббана ва лякаль-хамд»."),
+  sujud: _t("Лоб и нос, ладони, колени и пальцы ног на полу. Локти не лежат. «Субхана Раббияль-а‘ля» 3 раза."),
+  jalsa: _t("Сядь ненадолго, руки на бёдрах: «Рабби-гфир ли»."),
+  sujud2: _t("Так же, как первый. После него ракаат завершён."),
+  tash: _t("После второго ракаата и в конце намаза. Указательный палец правой руки показывает вперёд."),
+};
+const frameSrc = (fr: Frame) => `/app/salah/m-${FRAME_IMG[fr]}.webp`;
 
-export function PoseFig({ p }: { p: Pose }) {
-  const st = { fill: 'none', stroke: 'currentColor', strokeWidth: 5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+/** Which frames show the current teacher step. */
+function stepFrames(pose: Pose, r: number, s: number): Frame[] {
+  if (pose === 'stand') return r === 1 && s === 0 ? ['takbir', 'qiyam', 'ruku', 'itidal', 'sujud'] : ['qiyam', 'ruku', 'itidal', 'sujud'];
+  if (s === 1) return ['jalsa', 'sujud2'];
+  return ['tash'];
+}
+
+function RakahPlayer({ frames, dark }: { frames: Frame[]; dark?: boolean }) {
+  const [i, setI] = useState(0);
+  const [play, setPlay] = useState(frames.length > 1);
+  const key = frames.join();
+  useEffect(() => { setI(0); setPlay(frames.length > 1); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!play || frames.length < 2) return;
+    const t = window.setTimeout(() => setI((x) => (x + 1) % frames.length), 2800);
+    return () => window.clearTimeout(t);
+  }, [play, i, key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fr = frames[Math.min(i, frames.length - 1)];
+  const go = (d: number) => { setPlay(false); setI((x) => (x + d + frames.length) % frames.length); };
   return (
-    <svg className="np-pose" viewBox="0 0 120 90" aria-hidden="true">
-      <path d="M8 85h104" stroke="currentColor" strokeOpacity=".3" strokeWidth="2" />
-      {p === 'stand' && <><circle cx="60" cy="14" r="8" fill="currentColor" /><path {...st} d="M60 25v30M60 55l-5 28M60 55l5 28M60 32l-8 9 10 2" /></>}
-      {p === 'ruku' && <><circle cx="30" cy="40" r="8" fill="currentColor" /><path {...st} d="M40 44h32M72 44l-2 39M72 44l4 39M46 45l20 14" /></>}
-      {p === 'sujud' && <><circle cx="30" cy="76" r="8" fill="currentColor" /><path {...st} d="M40 72l34-18M74 54l6 28M80 82h22M44 70l-8 13" /></>}
-      {p === 'sit' && <><circle cx="56" cy="24" r="8" fill="currentColor" /><path {...st} d="M56 35v30M56 65h26M82 65l-4 18M78 83H54M56 44l20 18" /></>}
-    </svg>
+    <div className={`np-film${dark ? ' dark' : ''}`}>
+      <div className="np-film-pic" onClick={() => frames.length > 1 && setPlay(!play)}>
+        {frames.map((f, k) => <img key={f} src={frameSrc(f)} alt={k === i ? FRAME_NAME[f] : ''} className={k === i ? 'on' : ''} loading={k === 0 ? 'eager' : 'lazy'} decoding="async" />)}
+        {frames.length > 1 && <span className="np-film-n">{i + 1} / {frames.length}</span>}
+      </div>
+      <div className="np-film-cap">
+        <b>{FRAME_NAME[fr]}</b>
+        <small>{FRAME_TEXT[fr]}</small>
+      </div>
+      {frames.length > 1 && (
+        <div className="np-film-ctl">
+          <button type="button" onClick={() => go(-1)} aria-label={_t("Назад")}>‹</button>
+          <span>{frames.map((f, k) => <i key={f} className={k === i ? 'on' : ''} onClick={() => { setPlay(false); setI(k); }} />)}</span>
+          <button type="button" onClick={() => setPlay(!play)} aria-label={play ? _t("Пауза") : _t("Смотреть")}>{play ? '❚❚' : '▶'}</button>
+          <button type="button" onClick={() => go(1)} aria-label={_t("Дальше")}>›</button>
+        </div>
+      )}
+    </div>
   );
 }
 
 function Poses() {
   return (
     <div className="np-poses">
-      {(['stand', 'ruku', 'sujud', 'sit'] as Pose[]).map((p) => (
-        <div key={p} className="np-posec"><PoseFig p={p} /><span><b>{POSE_NAME[p]}</b><small>{POSE_TEXT[p]}</small></span></div>
-      ))}
+      <p className="np-poses-h">{_t("Один ракаат от начала до конца. Листается сам, можно остановить и листать руками.")}</p>
+      <RakahPlayer frames={FRAME_ORDER} />
     </div>
   );
 }
@@ -209,7 +255,7 @@ function Teacher({ state, update, today, start, onClose, f }: { state: AppState;
   const [r, setR] = useState(1);
   const [s, setS] = useState(0);
   const [hist, setHist] = useState<[number, number][]>([]);
-  const [show, setShow] = useState<'' | 'text' | 'pose' | 'lost'>('');
+  const [show, setShow] = useState<'' | 'text' | 'pose' | 'lost'>('pose');
   const last = useRef(0);
   const sn = prayerSura(state);
   const step = teacherStep(total, r, s, sn ? SURAS[sn].name : null);
@@ -233,11 +279,11 @@ function Teacher({ state, update, today, start, onClose, f }: { state: AppState;
     last.current = t;
     setHist((h) => [...h, [r, s]]);
     if (s < 2) setS(s + 1); else { setR(r + 1); setS(1); }
-    setShow('');
+    setShow('pose');
     try { navigator.vibrate?.(s + 1 >= 2 ? [40, 60, 40] : 40); } catch { /* */ }
   };
   const undo = () => { const p = hist[hist.length - 1]; if (!p) return; setR(p[0]); setS(p[1]); setHist((h) => h.slice(0, -1)); };
-  const begin = () => { setR(1); setS(0); setHist([]); setShow(''); setPhase('go'); };
+  const begin = () => { setR(1); setS(0); setHist([]); setShow('pose'); setPhase('go'); };
   const name = ANCHOR_LABEL[a].ru;
   const rk = (n: number) => (n === 2 ? _t("2 ракаата") : n === 3 ? _t("3 ракаата") : _t("4 ракаата"));
 
@@ -292,10 +338,10 @@ function Teacher({ state, update, today, start, onClose, f }: { state: AppState;
             <span>{gx(step.text, f)}</span>
             <div className="np-row">
               <button type="button" className={show === 'text' ? 'on' : ''} onClick={() => setShow(show === 'text' ? '' : 'text')}>{show === 'text' ? _t("Скрыть текст") : _t("Показать текст")}</button>
-              <button type="button" className={show === 'pose' ? 'on' : ''} onClick={() => setShow(show === 'pose' ? '' : 'pose')}>{_t("Показать позу")}</button>
+              <button type="button" className={show === 'pose' ? 'on' : ''} onClick={() => setShow(show === 'pose' ? '' : 'pose')}>{_t("Показать движения")}</button>
             </div>
             {show === 'text' && step.dhikr.map((d) => <DhikrCard key={d} id={d} />)}
-            {show === 'pose' && <div className="np-posec"><PoseFig p={step.pose} /><span><b>{POSE_NAME[step.pose]}</b><small>{POSE_TEXT[step.pose]}</small></span></div>}
+            {show === 'pose' && <RakahPlayer frames={stepFrames(step.pose, r, s)} />}
             {step.last && <button type="button" className="pri-btn" onClick={() => setPhase('end')}>{f ? _t("Я завершила намаз") : _t("Я завершил намаз")}</button>}
           </div>
           <div className="np-under">
