@@ -33,6 +33,7 @@ export function Md({ text }: { text: string }) {
     flush();
     if (!line || line === '---') continue;
     if (line.startsWith('## ')) out.push(<h3 key={out.length}>{line.slice(3)}</h3>);
+    else if (line.startsWith('> ')) out.push(<blockquote key={out.length}>{inline(line.slice(2))}</blockquote>);
     else out.push(<p key={out.length}>{inline(line)}</p>);
   }
   flush();
@@ -113,7 +114,7 @@ export function SummaryBook({ book, chapters, state, update, habitName, onClose,
         {chapters.map((c) => (
           <button type="button" key={key(c)} className={`q-row ch-item${read.has(key(c)) ? ' read' : ''}`} onClick={() => setOpen(c)}>
             <span className="q-n">{read.has(key(c)) ? '✓' : c.n}</span>
-            <span className="q-t"><b>{_tj("Глава {0}. {1}", c.n, c.title)}</b><small>{c.date.split('-').reverse().join('.')}</small></span>
+            <span className="q-t"><b>{/^Заключение/.test(c.title) ? c.title : _tj("Глава {0}. {1}", c.n, c.title)}</b><small>{c.date.split('-').reverse().join('.')}</small></span>
           </button>
         ))}
         <p className="q-msg">{_t("Это пересказ своими словами, а не текст книги.")}</p>
