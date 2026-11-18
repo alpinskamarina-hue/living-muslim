@@ -212,6 +212,30 @@ button:disabled { opacity: .5; cursor: default; }
 .strip i[data-m="min"] { background: var(--cc); opacity: .45; }
 .strip i[data-m="none"] { background: transparent; }
 .strip i[data-today] { box-shadow: inset 0 -3px 0 var(--gold); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: 12px; color: var(--ink-2); --cc: var(--green-2); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; background: var(--line); }
+.legend i[data-m="done"] { background: var(--cc); }
+.legend i[data-m="min"] { background: var(--cc); opacity: .45; }
+.legend i[data-today] { background: var(--line); box-shadow: inset 0 -3px 0 var(--gold); }
+.stat-card small.cmp { margin-top: 4px; font-weight: 600; }
+.stat-card small.cmp[data-d="up"] { color: var(--green-2); }
+.stat-card small.cmp[data-d="down"] { color: #b4532a; }
+.finds { padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: var(--surface-2); display: grid; gap: 8px; margin-top: 4px; }
+.finds b { font-size: 14.5px; }
+.finds p { margin: 0; font-size: 13.5px; line-height: 1.45; display: flex; gap: 8px; }
+.finds p span { flex: none; }
+.gtr-list { display: grid; gap: 8px; }
+.gtr { text-align: left; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); color: inherit; font: inherit; display: grid; gap: 6px; width: 100%; }
+.gtr-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.gtr-top b { font-size: 14.5px; }
+.gtr .pct { font-weight: 700; color: var(--green-2); font-variant-numeric: tabular-nums; }
+.gtr small { color: var(--ink-2); font-size: 12px; }
+.gtr small[data-up] { color: var(--green-2); }
+.gtr small[data-late] { color: #b4532a; }
+.spark { width: 100%; height: 28px; display: block; overflow: visible; }
+.spark polyline { fill: none; stroke: var(--green-2); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.spark circle { fill: var(--gold); }
 .notes-list { display: flex; flex-direction: column; gap: 8px; }
 .notes-list div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
 .notes-list small { color: var(--ink-2); font-size: 12px; }

@@ -345,7 +345,7 @@ export function App() {
         {tab === 'progress' && (
           <div className="page">
             {!goalOpen && !reviewOpen && <Hint id="goals" />}
-            <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} />}
+            <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} onOpenGoal={setGoalOpen} />}
               onDo={(st) => { window.scrollTo(0, 0); if (st.action === 'today') { setTab('today'); return; } setPracticeStart((x) => ({ n: x.n + 1, mode: st.action, ref: st.ref })); setTab('practice'); }}
               onCircle={() => { window.scrollTo(0, 0); setTab('circle'); }} />
             {!goalOpen && !reviewOpen && <WordCard t="goals_open" state={state} today={today} />}
