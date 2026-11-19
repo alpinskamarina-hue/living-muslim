@@ -32,6 +32,7 @@ import { isCounted } from './store';
 import { here, tripOn } from './safar';
 import { Safar } from './components/Safar';
 import { Assistant, AssistantFab } from './components/Assistant';
+import { buildContext } from './aiContext';
 import { QiblaScreen, type QiblaTab } from './components/Mosques';
 import { Ramadan } from './components/Ramadan';
 import { ramadanHidden } from './rplan';
@@ -399,7 +400,7 @@ export function App() {
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
-      {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} />}
+      {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={() => buildContext(state, today, new Date(), times, circle)} />}
       {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}
       {adhan.toast && <AdhanToast a={adhan.toast} onClose={adhan.closeToast} />}
       {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}

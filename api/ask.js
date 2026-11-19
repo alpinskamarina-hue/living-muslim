@@ -3,6 +3,7 @@
 // The Claude API key (ANTHROPIC_API_KEY) lives only here, in Vercel settings, never in the browser.
 // Nothing of the conversation is stored on the server.
 import Anthropic from '@anthropic-ai/sdk';
+import { APP_GUIDE } from './_appguide.js';
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
@@ -56,14 +57,16 @@ function systemPrompt(cfg, b) {
     b.len === 'short' ? 'The person prefers short answers: 2 to 5 sentences unless they ask for more.' : b.len === 'long' ? 'The person prefers fuller, detailed answers, with steps when useful.' : '',
     b.tone === 'soft' ? 'Tone the person chose: especially gentle and encouraging.' : b.tone === 'warm' ? 'Tone the person chose: warm and friendly.' : b.tone === 'direct' ? 'Tone the person chose: direct and to the point, without extra words.' : '',
   ].filter(Boolean).join('\n');
-  const parts = [{ type: 'text', text: BASE }];
+  const parts = [{ type: 'text', text: BASE }, { type: 'text', text: `<app_guide>\n${APP_GUIDE}\n</app_guide>` }];
   const owner = [
     cfg?.instructions?.trim() && `<owner_instructions>\n${cfg.instructions.trim()}\n</owner_instructions>`,
     cfg?.knowledge?.trim() && `<owner_knowledge>\nFacts and texts the app's owner gave you. Prefer them over your own memory when they apply.\n${cfg.knowledge.trim()}\n</owner_knowledge>`,
   ].filter(Boolean).join('\n\n');
   if (owner) parts.push({ type: 'text', text: owner, cache_control: { type: 'ephemeral' } });
-  else parts[0].cache_control = { type: 'ephemeral' };
+  else parts[1].cache_control = { type: 'ephemeral' };
   parts.push({ type: 'text', text: `<about_this_person>\n${about}\n</about_this_person>` });
+  const data = str(b.ctx, 12000).trim();
+  if (data) parts.push({ type: 'text', text: `<person_data>\nThe person's own data from the app right now, built on their phone. Use it to answer questions about their habits, goals, prayers, plans and circles: be specific, name their goals and numbers. Do not recite all of it unasked. Circle members' names and totals are visible to the person anyway; still mention others only when asked.\n${data}\n</person_data>` });
   return parts;
 }
 

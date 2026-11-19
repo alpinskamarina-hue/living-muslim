@@ -5135,4 +5135,7 @@ export const EN: Record<string, string> = {
   "Открыть помощника: {0}": "Open the assistant: {0}",
   "Аватар, имя, как говорит и обучение": "Avatar, name, manner and training",
   "Аватар, имя и как он говорит": "Avatar, name and how it talks",
+  "Что у меня сегодня?": "What's on for me today?",
+  "Как идут мои цели?": "How are my goals going?",
+  "Переписка хранится только на этом телефоне. Чтобы ответить про твои цели, привычки и круги, вместе с вопросом на сервер уходит их краткая сводка; там ничего не сохраняется. Ответы готовит ИИ (Claude, Anthropic): это не фетва, важное уточняй у имама.": "The conversation stays on this phone only. To answer about your goals, habits and circles, a short summary of them goes to the server with your question; nothing is stored there. Answers are made by AI (Claude, Anthropic): this is not a fatwa, check important things with an imam.",
 };

@@ -21,7 +21,7 @@ export const aiName = (s: Settings) => s.aiName?.trim() || _t("Помощник"
 
 export type AskResult = { text: string; left?: number | null } | { error: 'signin' | 'limit' | 'nokey' | 'refused' | 'net' | 'busy' };
 
-export async function ask(history: AiMsg[], s: Settings): Promise<AskResult> {
+export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskResult> {
   const t = await accessToken();
   if (!t) return { error: 'signin' };
   try {
@@ -30,7 +30,7 @@ export async function ask(history: AiMsg[], s: Settings): Promise<AskResult> {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       body: JSON.stringify({
         messages: history.map(({ role, content }) => ({ role, content })),
-        lang: LANG, name: s.aiName?.trim() || '', me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '',
+        lang: LANG, name: s.aiName?.trim() || '', me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '', ctx,
       }),
     });
     const j = await r.json().catch(() => ({}));
