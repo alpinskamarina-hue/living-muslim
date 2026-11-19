@@ -24,8 +24,11 @@ const UmrahHub = lazyNamed(() => import('./UmrahHub').then((m) => m.UmrahHub));
 const Videos = lazyNamed(() => import('./Videos').then((m) => m.Videos));
 const SelfTest = lazyNamed(() => import('./SelfTest').then((m) => m.SelfTest));
 const UmrahTest = lazyNamed(() => import('./UmrahTest').then((m) => m.UmrahTest));
+const SalahTest = lazyNamed(() => import('./SalahTest').then((m) => m.SalahTest));
 import { lastRun, repeatIn } from '../selftest';
 import { UMRAH_TEST, uTotal } from '../umrahTest';
+import { RUNGS, SALAH_REPEAT, SALAH_TEST, rungOf } from '../salahTest';
+import { daysBetween } from '../dates';
 import { isCloud } from '../cloud';
 import { catalog as catalogItems } from '../videos';
 import { _t, _tj, isEn } from '../i18n';
@@ -50,7 +53,7 @@ interface Props {
   onQuit?: () => void;
 }
 
-type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'course-ar' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body' | 'tests' | 'test-umrah';
+type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'course-ar' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body' | 'tests' | 'test-umrah' | 'test-salah';
 
 export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah, onQuit, circle, joined, umrahStart }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
@@ -89,6 +92,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     </div>
   );
   if (mode === 'test-umrah') return <UmrahTest state={state} update={update} today={today} onExit={() => setMode('home')} onUmrah={() => { setUStart('heart'); setMode('umrah'); }} />;
+  if (mode === 'test-salah') return <SalahTest state={state} update={update} today={today} onExit={() => setMode('home')} onOpen={(m) => setMode(m)} />;
   if (mode === 'tests') return <SelfTest state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'azkar') return <Azkar state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'tasbih') return <Tasbih onExit={() => setMode('home')} onFinish={() => markHabit('done')} habitName={habit?.action} />;
@@ -118,6 +122,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     quit: { ic: '🛡', title: _t("Хочу оставить"), sub: (() => { const a = activeQuits(state); return a.length ? a.map((q) => _t("{0}: {1} дн.", q.what, cleanDays(q, today))).join(' · ') : _t("Оставить вредную привычку, тайно"); })(), open: () => onQuit?.() },
     tests: { ic: '🌱', title: _t("Тест: что мне даётся труднее"), sub: (() => { const r = lastRun(state); if (!r) return _t("3 минуты · сильная сторона и план на месяц"); const l = repeatIn(r, today); return l <= 0 ? _t("Прошло 30 дней: пора пройти снова") : _t("Пройден {0} · повтор через {1} дн.", r.day.slice(8, 10) + '.' + r.day.slice(5, 7), l); })(), open: () => setMode('tests') },
     testUmrah: { ic: '🕋', title: _t("Тест: готовность к умре"), sub: (() => { const r = lastRun(state, UMRAH_TEST); if (!r) return _t("3 минуты · что осталось сделать до поездки"); const l = repeatIn(r, today); return l <= 0 ? _tj("{0} из 24 · пора пройти снова", uTotal(r.a)) : _tj("{0} из 24 · повтор через {1} дн.", uTotal(r.a), l); })(), open: () => setMode('test-umrah') },
+    testSalah: { ic: '📖', title: _t("Тест: намаз и Коран"), sub: (() => { const r = lastRun(state, SALAH_TEST); if (!r) return _t("2 минуты · твоя ступенька и следующий шаг"); const st = RUNGS[rungOf(r.a) - 1].title; const l = SALAH_REPEAT - daysBetween(r.day, today); return l <= 0 ? _tj("Ступень «{0}» · пора пройти снова", st) : _tj("Ступень «{0}» · повтор через {1} дн.", st, l); })(), open: () => setMode('test-salah') },
     safar: { ic: '🧭', title: _t("Сафар"), sub: state.trip ? _t("Поездка: {0}", state.trip.place) : _t("Поездка, кибла, дуа путника"), open: onSafar },
   };
   const favIds = (state.practiceFav ?? ['quran', 'videos', 'tasbih', 'langs']).filter((id) => P[id]).slice(0, 4);
@@ -216,7 +221,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
       <div className="pgl">{_t("Тело и время")}</div>
       <div className="pgrp">{['body', 'focus'].map(row)}</div>
       <div className="pgl">{_t("Тесты")}</div>
-      <div className="pgrp">{['tests', 'testUmrah'].map(row)}</div>
+      <div className="pgrp">{['tests', 'testUmrah', 'testSalah'].map(row)}</div>
       <div className="pgl">{_t("Работа над собой")}</div>
       <div className="pgrp">{['quit'].map(row)}</div>
 

@@ -3343,3 +3343,12 @@ button.ud-wait em { font-style: normal; }
 .um-left { display: flex; gap: 10px; align-items: center; }
 .um-left i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--late); flex: none; }
 .um-left i.half { background: linear-gradient(90deg, var(--late) 50%, transparent 50%); }
+.sl-ladder { display: grid; gap: 8px; margin: 14px 0; }
+.sl-rung { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+.sl-rung.here { border: 2px solid var(--gold); background: var(--gold-soft); }
+.sl-k { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--surface-2); color: var(--ink-2); flex: none; }
+.sl-rung.done .sl-k { background: var(--tick); color: #fff; }
+.sl-rung.here .sl-k { background: var(--gold); color: #fff; }
+.sl-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sl-t b { font-size: 14.5px; }
+.sl-t small { color: var(--ink-2); font-size: 12px; }
