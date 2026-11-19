@@ -4,7 +4,14 @@ import { accessToken } from './auth';
 import { _t, LANG } from './i18n';
 import type { Settings } from './types';
 
-export interface AiMsg { role: 'user' | 'assistant'; content: string; at: number; /** asked by voice */ voice?: boolean }
+export interface AiMsg {
+  role: 'user' | 'assistant'; content: string; at: number;
+  /** asked by voice */ voice?: boolean;
+  /** The API content of a tool round: the model's blocks, or the phone's tool results (then hidden). */
+  raw?: unknown[]; hidden?: boolean;
+  /** What the assistant did in the app, one line each. */
+  acts?: string[];
+}
 
 const LS = 'lm.ai.chat';
 const KEEP = 60;
@@ -19,7 +26,7 @@ export function saveChat(m: AiMsg[]) {
 /** The name people see: their own, or simply «Помощник». */
 export const aiName = (s: Settings) => s.aiName?.trim() || _t("Помощник");
 
-export type AskResult = { text: string; left?: number | null } | { error: 'signin' | 'limit' | 'nokey' | 'refused' | 'net' | 'busy' };
+export type AskResult = { text: string; left?: number | null; calls?: { id: string; name: string; input: Record<string, unknown> }[]; content?: unknown[] } | { error: 'signin' | 'limit' | 'nokey' | 'refused' | 'net' | 'busy' };
 
 export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskResult> {
   const t = await accessToken();
@@ -29,7 +36,7 @@ export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskR
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       body: JSON.stringify({
-        messages: history.map(({ role, content }) => ({ role, content })),
+        messages: history.map(({ role, content, raw }) => ({ role, content: raw ?? content })),
         lang: LANG, name: s.aiName?.trim() || '', me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '', ctx,
       }),
     });
@@ -38,8 +45,8 @@ export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskR
     if (r.status === 429) return { error: 'limit' };
     if (r.status === 503 && j.error === 'nokey') return { error: 'nokey' };
     if (!r.ok) return { error: 'busy' };
-    if (j.refused || !j.text) return { error: 'refused' };
-    return { text: j.text, left: j.left };
+    if (j.refused || (!j.text && !j.calls?.length)) return { error: 'refused' };
+    return { text: j.text || '', left: j.left, calls: j.calls, content: j.content };
   } catch { return { error: 'net' }; }
 }
 

@@ -37,11 +37,11 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
     for (const h of act) {
       let w = 0; for (let i = 0; i < 7; i++) if (isCounted(s.log[addDays(today, -i)]?.[h.id])) w++;
       const m = s.log[today]?.[h.id];
-      L.push(`- after ${ANCHOR_LABEL[h.anchor as Anchor].ru} · ${cut(h.action, 80)} · min: ${cut(h.min, 50)} · today: ${m === 'done' ? 'done' : m === 'min' ? 'minimum done' : m === 'later' ? 'postponed' : 'not yet'} · streak ${streak(s, h, today)} · ${w}/7${h.formed ? ' · formed' : ''}`);
+      L.push(`- [id:${h.id}] after ${ANCHOR_LABEL[h.anchor as Anchor].ru} · ${cut(h.action, 80)} · min: ${cut(h.min, 50)} · today: ${m === 'done' ? 'done' : m === 'min' ? 'minimum done' : m === 'later' ? 'postponed' : 'not yet'} · streak ${streak(s, h, today)} · ${w}/7${h.formed ? ' · formed' : ''}`);
     }
   } else L.push('', 'HABITS: none yet.');
   const queued = s.habits.filter((h) => h.status === 'queued');
-  if (queued.length) L.push(`Habits waiting in the queue: ${queued.map((h) => cut(h.action, 60)).join('; ')}.`);
+  if (queued.length) L.push(`Habits waiting in the queue: ${queued.map((h) => `[id:${h.id}] ${cut(h.action, 60)}`).join('; ')}.`);
 
   // Goals
   const goals = s.goals ?? [];
@@ -50,10 +50,10 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
     L.push('', 'GOALS:');
     for (const g of live) {
       const left = daysLeft(g, today);
-      L.push(`- «${cut(g.title, 90)}»${g.status === 'later' ? ' (postponed)' : ''} · progress: ${progressLabel(s, g, today)}${g.due ? ` · due ${g.due}${left != null ? ` (${left} days left)` : ''}` : ''}`);
+      L.push(`- [id:${g.id}] «${cut(g.title, 90)}» (${g.source === 'steps' ? 'tracked by steps' : `counted automatically: ${g.source}`})${g.status === 'later' ? ' (postponed)' : ''} · progress: ${progressLabel(s, g, today)}${g.due ? ` · due ${g.due}${left != null ? ` (${left} days left)` : ''}` : ''}`);
       if (g.niyya) L.push(`  niyya: ${cut(g.niyya)}`);
       if (g.identity) L.push(`  identity: «${cut(g.identity, 90)}»`);
-      if (g.steps?.length) L.push(`  steps: ${g.steps.map((x) => `${x.done ? '✓' : '○'} ${cut(x.text, 60)}`).join('; ')}`);
+      if (g.steps?.length) L.push(`  steps: ${g.steps.map((x) => `[id:${x.id}] ${x.done ? '✓' : '○'} ${cut(x.text, 60)}`).join('; ')}`);
       if (g.habitIds.length) L.push(`  linked habits: ${g.habitIds.map((id) => s.habits.find((h) => h.id === id)?.action).filter(Boolean).map((t) => cut(t!, 50)).join('; ')}`);
       if (g.status === 'active') { const t = todayStep(s, g, today); L.push(`  today's step: ${t.text}${t.sub ? ` (${t.sub})` : ''}`); }
       const notes = (g.notes ?? []).slice(-3);
@@ -61,7 +61,11 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
     }
   } else L.push('', 'GOALS: none yet.');
   const done = goals.filter((g) => g.status === 'done');
-  if (done.length) L.push(`Goals reached: ${done.map((g) => `«${cut(g.title, 60)}»${g.doneAt ? ` (${g.doneAt})` : ''}`).join('; ')}.`);
+  if (done.length) L.push(`Goals reached: ${done.map((g) => `[id:${g.id}] «${cut(g.title, 60)}»${g.doneAt ? ` (${g.doneAt})` : ''}`).join('; ')}.`);
+
+  // Ideas
+  const ideas = (s.ideas ?? []).slice(-15);
+  if (ideas.length) L.push('', `MY IDEAS (newest last): ${ideas.map((x) => `[id:${x.id}] ${new Date(x.at).toISOString().slice(0, 10)}: ${cut(x.text, 120)}`).join(' | ')}`);
 
   // Today's plan («На сегодня»)
   try {

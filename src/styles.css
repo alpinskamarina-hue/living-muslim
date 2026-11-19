@@ -3631,3 +3631,13 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .ai-say { flex: none; align-self: flex-end; border: 0; background: none; font-size: 15px; padding: 4px; opacity: .7; color: var(--ink-2); }
 .ai-say.on { opacity: 1; color: var(--green-2); }
 .ai-vo { opacity: .85; }
+/* Assistant actions and ideas */
+.ai-acts { margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: var(--green-soft); color: var(--green-2); font-size: 13.5px; font-weight: 600; display: flex; flex-direction: column; gap: 3px; }
+.ai-acts button { align-self: flex-start; margin-top: 4px; border: 1px solid var(--green-2); background: var(--surface); color: var(--green-2); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 12.5px; font-weight: 700; }
+.ai-idea-in { resize: vertical; margin-top: 8px; }
+.ai-ideas { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.ai-idea { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.ai-idea small { color: var(--ink-2); font-size: 12px; }
+.ai-idea p { margin: 4px 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-idea .link-btn { padding: 2px 0; font-size: 13px; color: var(--ink-2); }
+.ai-msg.it.ai-bare { padding: 0; border: 0; background: none; } .ai-bare .ai-acts { margin-top: 0; }

@@ -4,12 +4,13 @@
 // Nothing of the conversation is stored on the server.
 import Anthropic from '@anthropic-ai/sdk';
 import { APP_GUIDE } from './_appguide.js';
+import { TOOLS, TOOLS_PROMPT, cleanMessages } from './_tools.js';
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const MODEL = 'claude-sonnet-5-5';
 const DAILY_LIMIT = 30;
-const MAX_TURNS = 30;
+const MAX_TURNS = 40;
 const MAX_CHARS = 2000;
 
 const client = new Anthropic();
@@ -57,7 +58,7 @@ function systemPrompt(cfg, b) {
     b.len === 'short' ? 'The person prefers short answers: 2 to 5 sentences unless they ask for more.' : b.len === 'long' ? 'The person prefers fuller, detailed answers, with steps when useful.' : '',
     b.tone === 'soft' ? 'Tone the person chose: especially gentle and encouraging.' : b.tone === 'warm' ? 'Tone the person chose: warm and friendly.' : b.tone === 'direct' ? 'Tone the person chose: direct and to the point, without extra words.' : '',
   ].filter(Boolean).join('\n');
-  const parts = [{ type: 'text', text: BASE }, { type: 'text', text: `<app_guide>\n${APP_GUIDE}\n</app_guide>` }];
+  const parts = [{ type: 'text', text: BASE }, { type: 'text', text: `<app_guide>\n${APP_GUIDE}\n</app_guide>\n\n${TOOLS_PROMPT}` }];
   const owner = [
     cfg?.instructions?.trim() && `<owner_instructions>\n${cfg.instructions.trim()}\n</owner_instructions>`,
     cfg?.knowledge?.trim() && `<owner_knowledge>\nFacts and texts the app's owner gave you. Prefer them over your own memory when they apply.\n${cfg.knowledge.trim()}\n</owner_knowledge>`,
@@ -85,15 +86,14 @@ export default async function handler(req, res) {
   if (!user) return res.status(401).json({ error: 'signin' });
 
   // Conversation from the browser: alternating turns, last one from the person.
-  const msgs = (Array.isArray(b.messages) ? b.messages : [])
-    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
-    .slice(-MAX_TURNS)
-    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
-  while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+  const msgs = cleanMessages(b.messages, MAX_TURNS, MAX_CHARS);
+  while (msgs.length && (msgs[0].role !== 'user' || typeof msgs[0].content !== 'string')) msgs.shift();
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return res.status(400).json({ error: 'empty' });
+  // A tool round (the phone reporting what it did) continues the same question and is not counted again.
+  const toolRound = Array.isArray(msgs[msgs.length - 1].content);
 
   // Daily limit. If assistant.sql is not run yet, the check is skipped rather than blocking everyone.
-  const take = await rpc('lm_ai_take', { p_limit: DAILY_LIMIT }, token).catch(() => ({ status: 0 }));
+  const take = toolRound ? { status: 0 } : await rpc('lm_ai_take', { p_limit: DAILY_LIMIT }, token).catch(() => ({ status: 0 }));
   if (take.body && take.body.ok === false) return res.status(429).json({ error: take.body.reason || 'limit', limit: take.body.limit });
 
   const cfg = (await rpc('lm_ai_config_get', {}).catch(() => null))?.body || null;
@@ -106,10 +106,16 @@ export default async function handler(req, res) {
       fallbacks: 'default',
       output_config: { effort: 'low' },
       system: systemPrompt(cfg, b),
+      tools: TOOLS,
       messages: msgs,
     });
     const text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('').trim();
-    if (r.stop_reason === 'refusal' || !text) return res.status(200).json({ text: '', refused: true });
+    if (r.stop_reason === 'refusal') return res.status(200).json({ text: '', refused: true });
+    if (r.stop_reason === 'tool_use') {
+      const calls = r.content.filter((c) => c.type === 'tool_use').map((c) => ({ id: c.id, name: c.name, input: c.input }));
+      return res.status(200).json({ text, calls, content: r.content, left: take.body?.owner ? null : take.body?.limit ? Math.max(0, take.body.limit - take.body.n) : null });
+    }
+    if (!text) return res.status(200).json({ text: '', refused: true });
     return res.status(200).json({ text, left: take.body?.owner ? null : take.body?.limit ? Math.max(0, take.body.limit - take.body.n) : null });
   } catch (e) {
     const status = e?.status || 500;
