@@ -8,7 +8,7 @@ import {
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
   BOOK_HABIT,
 } from '../goals';
-import { markStarted } from '../dayplan';
+import { goalsWaiting, markStarted } from '../dayplan';
 import { SurahPicker, SurahProgress } from './HifzSurahs';
 import { ramadanMonth } from '../ramadan';
 import { catalog, lessons, emptyVideos } from '../videos';
@@ -60,6 +60,8 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
   const goals = state.goals ?? [];
   const active = goals.filter((g) => g.status === 'active');
   const later = goals.filter((g) => g.status === 'later');
+  const waiting = goalsWaiting(state, today);
+  const waitIds = new Set(waiting.map((g) => g.id));
   const done = goals.filter((g) => g.status === 'done');
   const open = goals.find((g) => g.id === openId);
   const act = (g: Goal, st: Step) => {
@@ -90,7 +92,13 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
             </button>
           )}
           {active.length === 0 && <p className="tiny">{_t("Пока целей нет. Начни с одной: например, хатм Корана к Рамадану. Цель держится на системе: намерение, образ себя и привычки.")}</p>}
-          {active.map((g) => <GoalCard key={g.id} g={g} state={state} today={today} onOpen={() => setOpenId(g.id)} onAct={(st) => act(g, st)} />)}
+          {waiting.length > 0 && (
+            <p className="g-wait">
+              <i>{waiting.length}</i>
+              <span><b>{_tj("Сегодня ждут шага: {0}", waiting.map((g) => `«${g.title}»`).join(', '))}</b>{_t("Это цифра на вкладке «Цели». Они отмечены ниже. Нажми кнопку шага в карточке, и цифра уменьшится.")}</span>
+            </p>
+          )}
+          {active.map((g) => <GoalCard key={g.id} g={g} state={state} today={today} waiting={waitIds.has(g.id)} onOpen={() => setOpenId(g.id)} onAct={(st) => act(g, st)} />)}
           <button type="button" className="g-new" onClick={() => setWizard(true)}>{SOFT ? _t("+ Новая цель") : _tj("+ Новая цель · {0}", active.length < goalLimit() ? _t("свободно {0} из {1}", goalLimit() - active.length, goalLimit()) : _t("встанет в «Потом»"))}</button>
           {active.length > 0 && !isReviewDay(state, today) && <button type="button" className="link-btn" onClick={() => setReviewOpen(true)}>{_t("Пересмотреть неделю сейчас")}</button>}
           {later.length > 0 && (
@@ -133,14 +141,15 @@ function Dots({ state, g, today }: { state: AppState; g: Goal; today: string }) 
   return <span className="g-dots">{d.map((x, i) => <i key={i} className={x === 2 ? 'on' : x === 1 ? 'h' : ''} />)}</span>;
 }
 
-function GoalCard({ g, state, today, onOpen, onAct }: { g: Goal; state: AppState; today: string; onOpen: () => void; onAct: (st: Step) => void }) {
+function GoalCard({ g, state, today, waiting, onOpen, onAct }: { g: Goal; state: AppState; today: string; waiting?: boolean; onOpen: () => void; onAct: (st: Step) => void }) {
   const p = progress(state, g, today);
   const def = sourceDef(g.source);
   const st = todayStep(state, g, today);
   const full = def.identity ? dayDots(state, g, today).filter((x) => x === 2).length : 0;
   const part = def.identity ? dayDots(state, g, today).filter((x) => x === 1).length : 0;
   return (
-    <div className="g-card">
+    <div className={`g-card${waiting ? ' wait' : ''}`}>
+      {waiting && <span className="g-wait-tag">{_t("ждёт шага сегодня")}</span>}
       <button type="button" className="g-top" onClick={onOpen}>
         <Ring pct={def.identity ? Math.round((full / 30) * 100) : p.pct} gold={p.behind > 0} label={def.identity ? `${full}/30` : undefined} />
         <span><b>{g.title}</b>{g.identity && <small className="g-who">{g.identity}</small>}</span>

@@ -4684,4 +4684,7 @@ export const EN: Record<string, string> = {
   "Активных: {0} · рекомендуем до {1}": "Active: {0} · we suggest up to {1}",
   "Активных: {0}. Нажми на привычку, чтобы изменить её.": "Active: {0}. Tap a habit to change it.",
   "{0} Активных станет {1}.": "{0} Active after this: {1}.",
+  "Сегодня ждут шага: {0}": "Waiting for today's step: {0}",
+  "Это цифра на вкладке «Цели». Они отмечены ниже. Нажми кнопку шага в карточке, и цифра уменьшится.": "This is the number on the Goals tab. These goals are marked below. Tap the step button on a card and the number goes down.",
+  "ждёт шага сегодня": "waiting for today's step",
 };
