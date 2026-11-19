@@ -58,6 +58,16 @@ export interface Settings {
   adhan?: AdhanPrefs;
   /** The assistant's name the person chose; empty means «Помощник». */
   aiName?: string;
+  /** The assistant's look: an ornament badge or the person's own photo (kept on the device). */
+  aiStyle?: 'fes' | 'zellige' | 'arch' | 'rose' | 'photo';
+  /** Badge colour key from AI_COLORS. */
+  aiColor?: string;
+  /** How it speaks: «ты» or «вы», short or detailed, soft / warm / to the point. */
+  aiYou?: 'ty' | 'vy';
+  aiLen?: 'short' | 'long';
+  aiTone?: 'soft' | 'warm' | 'direct';
+  /** The round button at the bottom right; on unless switched off. */
+  aiFab?: boolean;
 }
 
 export type AdhanMode = 'full' | 'short' | 'off';
