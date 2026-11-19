@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f5132">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Living Muslim">
 <title>Living Muslim · привычки вокруг пяти намазов</title>
 <meta name="description" content="Living Muslim: приложение привычек вокруг пяти намазов. Без вины, без рекламы. Коран, Рамадан, цели и Круг близких.">
 <meta property="og:title" content="Living Muslim">
@@ -41,6 +45,35 @@ h2 { font-size: clamp(32px, 5vw, 46px); }
 .eyebrow { font-size: 12.5px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin: 0 0 10px; }
 section { padding: 72px 0; }
 .lead { color: var(--ink-2); font-size: 17px; max-width: 620px; margin: 14px 0 0; }
+
+/* install on the phone (19.11) */
+.inst-s .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.inst-s .lead { margin-top: 14px; }
+.inst-art { position: relative; height: 380px; border-radius: 32px; background: var(--green); overflow: hidden; display: flex; justify-content: center; align-items: flex-end; }
+.inst-art::before { content: ''; position: absolute; inset: 0; opacity: .14; background: linear-gradient(45deg, transparent 48.5%, var(--gold-2) 49.5%, var(--gold-2) 50.5%, transparent 51.5%), linear-gradient(-45deg, transparent 48.5%, var(--gold-2) 49.5%, var(--gold-2) 50.5%, transparent 51.5%); background-size: 64px 64px; }
+.inst-ph { position: relative; width: 236px; height: 340px; border-radius: 34px 34px 0 0; background: #f4f1e8; border: 7px solid #1c2b22; border-bottom: 0; padding: 30px 20px 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 12px; align-content: start; }
+.inst-ph > span { width: 40px; height: 40px; border-radius: 11px; }
+.inst-ph .me { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.inst-ph .me i { width: 44px; height: 44px; border-radius: 12px; background: #0f5132; display: grid; place-items: center; box-shadow: 0 0 0 3px #d9ad55, 0 8px 18px rgba(15, 81, 50, .35); animation: instPulse 2.4s ease-in-out infinite; }
+.inst-ph .me small { font-size: 8px; font-weight: 800; color: #14261c; white-space: nowrap; }
+@keyframes instPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .inst-ph .me i { animation: none; } }
+.inst-pros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 22px 0; }
+.inst-pros div { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; font-weight: 700; font-size: 14px; line-height: 1.3; }
+.inst-pros svg { color: var(--green-2); }
+.inst-btn { width: 100%; max-width: 420px; min-height: 58px; font-size: 17px; font-weight: 800; background: var(--green); color: #fff; box-shadow: 0 10px 24px rgba(15, 81, 50, .25); }
+.inst-btn svg { color: var(--gold-2); }
+.inst-note { margin: 10px 0 0; font-size: 13px; color: var(--ink-2); max-width: 420px; text-align: center; }
+.inst-done { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; color: var(--green-2); }
+@media (max-width: 820px) { .inst-s .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; } .inst-art { height: 320px; order: 2; } .inst-ph { width: 210px; height: 290px; } .inst-ph > span, .inst-ph .me i { width: 36px; height: 36px; } }
+.inst-dim { position: fixed; inset: 0; background: rgba(8, 20, 14, .55); z-index: 60; }
+.inst-sheet { position: fixed; left: 50%; bottom: 0; transform: translateX(-50%); width: 100%; max-width: 480px; z-index: 61; background: var(--bg); border-radius: 26px 26px 0 0; padding: 12px 18px calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 12px; }
+.inst-sheet .grab { align-self: center; width: 44px; height: 5px; border-radius: 3px; background: var(--line); }
+.inst-sheet h3 { margin: 0; font-family: var(--f-serif); font-size: 28px; line-height: 1.1; color: var(--green-2); }
+.inst-sheet p { margin: 0; font-size: 14px; color: var(--ink-2); }
+.inst-step { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; font-size: 14.5px; line-height: 1.4; }
+.inst-step i { width: 30px; height: 30px; border-radius: 50%; background: var(--green); color: #fff; font-style: normal; font-weight: 800; display: grid; place-items: center; flex: none; }
+.inst-sheet .x { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--green-soft); color: var(--ink); font: inherit; cursor: pointer; }
 
 /* header */
 .top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--green) 94%, transparent); backdrop-filter: blur(10px); color: var(--cream); }
@@ -734,6 +767,24 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   </div>
 </section>
 
+<section class="inst-s" id="install">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow"><span lang="ru">Без App Store и Google Play</span><span lang="en">No App Store, no Google Play</span></p>
+      <h2><span lang="ru">Living Muslim на главном экране телефона</span><span lang="en">Living Muslim on your home screen</span></h2>
+      <p class="lead"><span lang="ru">Одна кнопка, и иконка рядом с другими приложениями. Открывается без браузера, присылает напоминания о намазах, работает даже без интернета.</span><span lang="en">One tap and the icon sits next to your other apps. Opens without the browser, sends prayer reminders and works even offline.</span></p>
+      <div class="inst-pros">
+        <div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span lang="ru">Напоминания о намазах</span><span lang="en">Prayer reminders</span></div>
+        <div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span lang="ru">Как обычное приложение</span><span lang="en">Like a regular app</span></div>
+        <div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 8.8a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><path d="M3 3l18 18"/></svg><span lang="ru">Работает без интернета</span><span lang="en">Works offline</span></div>
+      </div>
+      <button type="button" class="btn inst-btn js-install"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span lang="ru">Установить на телефон</span><span lang="en">Install on your phone</span></button>
+      <p class="inst-note"><span lang="ru">Бесплатно · на iPhone покажем 2 шага в Safari</span><span lang="en">Free · on iPhone we show 2 steps in Safari</span></p>
+    </div>
+    <div class="inst-art" aria-hidden="true"><div class="inst-ph"><span style="background:#d7dfe8"></span><span style="background:#f2d4c9"></span><span style="background:#d8e6d2"></span><span style="background:#e6dcf2"></span><span style="background:#f3e6c4"></span><span class="me"><i><svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M3 19h6l2-5 3 9 3-13 3 9h9" stroke="#f6ecd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 9a3 3 0 1 0 4-3 2.4 2.4 0 1 1-4 3z" fill="#d9ad55"/></svg></i><small>Living Muslim</small></span><span style="background:#cfe0ea"></span><span style="background:#ead2dc"></span><span style="background:#dfe6cf"></span><span style="background:#f0dccb"></span><span style="background:#d5dbe9"></span><span style="background:#e4e9d5"></span></div></div>
+  </div>
+</section>
+
 <section id="pricing">
   <div class="wrap">
     <p class="eyebrow"><span lang="ru">Тарифы</span><span lang="en">Pricing</span></p>
@@ -1408,5 +1459,54 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 })();
 </script>
 <script src="/hit.js" data-page="landing" defer></script>
+
+<script>
+// Install on the phone: the system window where the browser offers one (Android, desktop Chrome),
+// otherwise the steps (iPhone: open the app, then Safari's Share → Add to Home Screen).
+(function () {
+  var deferred = null;
+  var ru = function () { return document.documentElement.getAttribute('data-l') !== 'en'; };
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
+  window.addEventListener('appinstalled', function () { deferred = null; done(); });
+  window.addEventListener('load', function () { if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  function done() {
+    document.querySelectorAll('.js-install').forEach(function (b) {
+      var p = document.createElement('p'); p.className = 'inst-done';
+      p.textContent = ru() ? '✓ Установлено. Открой Living Muslim с экрана телефона.' : '✓ Installed. Open Living Muslim from your home screen.';
+      b.replaceWith(p);
+    });
+  }
+  function sheet() {
+    var r = ru();
+    var dim = document.createElement('div'); dim.className = 'inst-dim';
+    var box = document.createElement('div'); box.className = 'inst-sheet'; box.setAttribute('role', 'dialog');
+    var steps = ios
+      ? (r ? ['Нажми «Открыть приложение» ниже', 'В Safari нажми «Поделиться» внизу экрана', 'Выбери «На экран „Домой“» и нажми «Добавить»']
+           : ['Tap “Open the app” below', 'In Safari tap Share at the bottom', 'Choose “Add to Home Screen” and tap Add'])
+      : (r ? ['Открой меню браузера ⋮', 'Выбери «Установить приложение» или «Добавить на главный экран»']
+           : ['Open the browser menu ⋮', 'Choose “Install app” or “Add to Home screen”']);
+    var h = '<span class="grab"></span><button type="button" class="x" aria-label="' + (r ? 'Закрыть' : 'Close') + '">✕</button>' +
+      '<h3>' + (ios ? (r ? 'Установить на iPhone' : 'Install on iPhone') : (r ? 'Установить на телефон' : 'Install on your phone')) + '</h3>' +
+      '<p>' + (ios ? (r ? 'Apple не даёт сайтам ставить себя одной кнопкой, поэтому пара шагов в Safari.' : 'Apple does not let sites install with one tap, so a couple of steps in Safari.') : (r ? 'Этот браузер не показывает кнопку установки сам.' : 'This browser has no install button of its own.')) + '</p>';
+    steps.forEach(function (t, i) { h += '<div class="inst-step"><i>' + (i + 1) + '</i><span></span></div>'; });
+    h += ios ? '<a class="btn gold" href="/app/?install=1">' + (r ? 'Открыть приложение' : 'Open the app') + '</a>' : '<button type="button" class="btn gold ok">' + (r ? 'Понятно' : 'Got it') + '</button>';
+    box.innerHTML = h;
+    box.querySelectorAll('.inst-step span').forEach(function (el, i) { el.textContent = steps[i]; });
+    var close = function () { dim.remove(); box.remove(); };
+    dim.addEventListener('click', close);
+    box.querySelector('.x').addEventListener('click', close);
+    var ok = box.querySelector('.ok'); if (ok) ok.addEventListener('click', close);
+    document.body.appendChild(dim); document.body.appendChild(box);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.js-install'); if (!b) return;
+    if (deferred) { deferred.prompt(); deferred.userChoice.then(function (c) { deferred = null; if (c && c.outcome === 'accepted') done(); }); return; }
+    sheet();
+  });
+  if (standalone) done();
+})();
+</script>
 </body>
 </html>

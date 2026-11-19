@@ -3352,3 +3352,26 @@ button.ud-wait em { font-style: normal; }
 .sl-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .sl-t b { font-size: 14.5px; }
 .sl-t small { color: var(--ink-2); font-size: 12px; }
+/* «Поставь на главный экран» on Today (19.11) */
+.ib { position: relative; margin: 18px 16px 8px; background: #0f5132; color: #f1f6f0; border-radius: 20px; padding: 14px 34px 14px 14px; display: flex; gap: 12px; align-items: center; box-shadow: 0 12px 28px rgba(15, 81, 50, .28); overflow: hidden; }
+.ib::before { content: ''; position: absolute; right: -24px; top: -24px; width: 150px; height: 110px; opacity: .16; background: linear-gradient(45deg, transparent 48%, #d9ad55 49%, #d9ad55 51%, transparent 52%), linear-gradient(-45deg, transparent 48%, #d9ad55 49%, #d9ad55 51%, transparent 52%); background-size: 40px 40px; pointer-events: none; }
+.ib-ic { position: relative; width: 52px; height: 52px; border-radius: 14px; background: #f6ecd4; box-shadow: 0 0 0 2px #d9ad55; display: grid; place-items: center; flex: none; }
+.ib-t { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ib-t b { font-size: 15px; }
+.ib-t span { font-size: 12.5px; line-height: 1.4; color: #cfe3d6; }
+.ib-go { position: relative; min-height: 44px; padding: 0 14px; border: 0; border-radius: 12px; background: #d9ad55; color: #14261c; font: inherit; font-size: 14px; font-weight: 800; flex: none; }
+.ib-x { position: absolute; top: 4px; right: 4px; width: 30px; height: 30px; border: 0; background: none; color: #cfe3d6; font: inherit; font-size: 15px; }
+.ib-sheet { display: flex; flex-direction: column; gap: 12px; }
+.ib-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.ib-head h3 { margin: 0; font-family: var(--f-serif, 'Cormorant Garamond', Georgia, serif); font-size: 28px; line-height: 1.1; color: var(--green, #0f5132); }
+.ib-close { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--green-soft, #eef3ee); color: inherit; font: inherit; font-size: 15px; flex: none; }
+.ib-p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .85; }
+.ib-step { display: flex; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; font-size: 14.5px; line-height: 1.4; }
+.ib-step > i { width: 30px; height: 30px; border-radius: 50%; background: #0f5132; color: #fff; font-style: normal; font-weight: 800; display: grid; place-items: center; flex: none; }
+.ib-step > span { flex: 1; }
+.ib-step > em { width: 44px; height: 44px; border-radius: 12px; background: var(--green-soft, #eef3ee); display: grid; place-items: center; flex: none; }
+.ib-step.gold { background: var(--gold-soft, #f6ecd4); border-color: transparent; }
+.ib-step.gold > i { background: #b88a2c; }
+.ib-note { margin: 0; font-size: 13px; line-height: 1.45; opacity: .85; }
+.ib-arrow { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--green, #0f5132); }
+.ib-arrow small { font-size: 11.5px; font-weight: 700; }

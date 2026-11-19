@@ -1,3 +1,4 @@
+import { InstallBanner } from './InstallBanner';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { dayLight, journey } from '../gamify';
@@ -236,6 +237,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         {(current === 'isha' || current === 'maghrib') && active.length > 0 && (
           <Muhasaba value={state.notes[today] ?? ''} onChange={(v) => update((s) => ({ ...s, notes: { ...s.notes, [today]: v } }))} />
         )}
+        <InstallBanner />
       </div>
     </>
   );
