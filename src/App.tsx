@@ -31,6 +31,7 @@ import { inRamadan } from './rplan';
 import { isCounted } from './store';
 import { here, tripOn } from './safar';
 import { Safar } from './components/Safar';
+import { Assistant } from './components/Assistant';
 import { QiblaScreen, type QiblaTab } from './components/Mosques';
 import { Ramadan } from './components/Ramadan';
 import { ramadanHidden } from './rplan';
@@ -135,6 +136,7 @@ export function App() {
     if (season) r.setAttribute('data-season', season); else r.removeAttribute('data-season');
   }, [season]);
   const [safar, setSafar] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const [qiblaOpen, setQiblaOpen] = useState<QiblaTab | null>(null);
   const [pathOpen, setPathOpen] = useState<PathView | null>(null);
   useEffect(() => {
@@ -306,6 +308,7 @@ export function App() {
     if ('add' in t) { setTab('today'); setSheet({ anchor: current }); return; }
     if ('ramadan' in t) { setRamadan('auto'); return; }
     if ('safar' in t) { setSafar(true); return; }
+    if ('assistant' in t) { setAiOpen(true); return; }
     if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
   };
 
@@ -348,7 +351,7 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onAssistant={() => setAiOpen(true)} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
             quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
             quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
@@ -394,6 +397,7 @@ export function App() {
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
+      {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} />}
       {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}
       {adhan.toast && <AdhanToast a={adhan.toast} onClose={adhan.closeToast} />}
       {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}

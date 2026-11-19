@@ -56,6 +56,8 @@ export interface Settings {
   quiet?: boolean;
   /** Adhan: reciter, Fajr reciter, what plays at each prayer, volume. */
   adhan?: AdhanPrefs;
+  /** The assistant's name the person chose; empty means «Помощник». */
+  aiName?: string;
 }
 
 export type AdhanMode = 'full' | 'short' | 'off';
