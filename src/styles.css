@@ -3680,6 +3680,21 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .ai-glow-night .ai-acts { background: rgba(241, 216, 150, .12); color: #f1d896; }
 .ai-glow-night .ai-acts button { background: transparent; border-color: #f1d896; color: #f1d896; }
 .ai-glow-night .ai-err { background: rgba(217, 178, 95, .2); color: #fff; }
+/* Dark theme: the ring and aurora backgrounds were light, so the light text of the dark theme vanished on them */
+:root[data-theme="dark"] .ai-glow-ring { background: var(--bg); }
+:root[data-theme="dark"] .ai-glow-ring .ai-msg.it { background: linear-gradient(135deg, var(--surface-2), #22301f); }
+:root[data-theme="dark"] .ai-glow-aurora { background: var(--bg); }
+:root[data-theme="dark"] .ai-glow-aurora .ai-msg.it { background: rgba(24, 42, 32, .85); }
+:root[data-theme="dark"] .ai-glow-aurora .ai-input textarea { background: rgba(24, 42, 32, .9); }
+:root[data-theme="dark"] .ai-input textarea::placeholder { color: var(--ink-2); opacity: 1; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ai-glow-ring { background: var(--bg); }
+  :root:not([data-theme="light"]) .ai-glow-ring .ai-msg.it { background: linear-gradient(135deg, var(--surface-2), #22301f); }
+  :root:not([data-theme="light"]) .ai-glow-aurora { background: var(--bg); }
+  :root:not([data-theme="light"]) .ai-glow-aurora .ai-msg.it { background: rgba(24, 42, 32, .85); }
+  :root:not([data-theme="light"]) .ai-glow-aurora .ai-input textarea { background: rgba(24, 42, 32, .9); }
+  :root:not([data-theme="light"]) .ai-input textarea::placeholder { color: var(--ink-2); opacity: 1; }
+}
 @media (prefers-reduced-motion: reduce) { .ai-light, .ai-light::before { animation: none !important; } }
 /* Picker in settings */
 .ai-glows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
