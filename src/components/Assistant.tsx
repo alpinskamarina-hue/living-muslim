@@ -7,7 +7,7 @@ import { type AiConfig, type AiMsg, aiName, ask, getAiConfig, loadChat, saveChat
 import { authMe } from '../auth';
 import { _t, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
-import { AI_COLORS, AI_PEOPLE, AI_STYLES, AiFace, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
+import { AI_COLORS, AI_FINISHES, AI_PEOPLE, AI_STYLES, Ai3D, AiFace, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
 
 interface Props {
   state: AppState;
@@ -206,6 +206,9 @@ const STYLE_NAMES: Record<string, () => string> = {
   m1: () => _t("Брат"), m2: () => _t("Брат"), m3: () => _t("Брат"), m4: () => _t("Брат"),
   f1: () => _t("Сестра"), f2: () => _t("Сестра"), f3: () => _t("Сестра"), f4: () => _t("Сестра"),
 };
+const FINISH_NAMES: Record<string, () => string> = {
+  medal: () => _t("Золотой медальон"), pearl: () => _t("Жемчужина"), halo: () => _t("Ореол"), glass: () => _t("Стекло"), night: () => _t("Ночная звезда"),
+};
 const COLOR_NAMES: Record<string, () => string> = {
   green: () => _t("Зелёный"), teal: () => _t("Бирюзовый"), blue: () => _t("Синий Шефшауэн"), terra: () => _t("Терракота"), purple: () => _t("Фиолетовый"), black: () => _t("Чёрный"),
 };
@@ -234,7 +237,7 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
   return (
     <>
       <div className="ai-hero">
-        <AiFace s={s} size={96} />
+        <AiFace s={s} size={96} live />
         <b>{aiName(s)}</b>
         <small>{_t("Так он выглядит на кнопке и в чате")}</small>
       </div>
@@ -243,11 +246,11 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
       <div className="ai-avs">
         {[...AI_STYLES, ...AI_PEOPLE].map((k) => (
           <button key={k} type="button" aria-pressed={style === k} className={style === k ? 'on' : ''} onClick={() => set({ aiStyle: k })}>
-            <img src={badgeUrl(k, color)} alt="" width={56} height={56} /><small>{STYLE_NAMES[k]()}</small>
+            <Ai3D url={badgeUrl(k, color)} size={56} finish={s.aiFinish || 'medal'} /><small>{STYLE_NAMES[k]()}</small>
           </button>
         ))}
         <button type="button" aria-pressed={style === 'photo'} className={style === 'photo' ? 'on' : ''} onClick={() => (photo ? set({ aiStyle: 'photo' }) : file.current?.click())}>
-          {photo ? <img src={photo} alt="" width={56} height={56} /> : <span className="ai-ph">＋</span>}<small>{_t("Своё фото")}</small>
+          {photo ? <Ai3D url={photo} size={56} finish={s.aiFinish || 'medal'} /> : <span className="ai-ph">＋</span>}<small>{_t("Своё фото")}</small>
         </button>
       </div>
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ''; }} />
@@ -279,6 +282,15 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
       <Seg value={s.aiYou || 'ty'} options={[['ty', _t("На «ты»")], ['vy', _t("На «вы»")]]} onPick={(v) => set({ aiYou: v })} />
       <Seg value={s.aiLen || 'short'} options={[['short', _t("Коротко")], ['long', _t("Подробно")]]} onPick={(v) => set({ aiLen: v })} />
       <Seg value={s.aiTone || 'warm'} options={[['soft', _t("Мягко")], ['warm', _t("Тепло")], ['direct', _t("По делу")]]} onPick={(v) => set({ aiTone: v })} />
+
+      <h4 className="ai-h">{_t("Объём и блеск")}</h4>
+      <div className="ai-finishes">
+        {AI_FINISHES.map((k) => (
+          <button key={k} type="button" aria-pressed={(s.aiFinish || 'medal') === k} className={(s.aiFinish || 'medal') === k ? 'on' : ''} onClick={() => set({ aiFinish: k })}>
+            <Ai3D url={style === 'photo' && photo ? photo : badgeUrl(style === 'photo' ? 'fes' : style, color)} size={46} finish={k} /><small>{FINISH_NAMES[k]()}</small>
+          </button>
+        ))}
+      </div>
 
       <h4 className="ai-h">{_t("Подсветка чата")}</h4>
       <div className="ai-glows">
@@ -317,7 +329,7 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
         </button>
       )}
       <button type="button" className="ai-fab" onClick={() => { seen(); onOpen(); }} aria-label={_t("Открыть помощника: {0}", name)}>
-        <AiFace s={s} size={60} />
+        <AiFace s={s} size={60} live />
         {hint && <i className="ai-dot" />}
       </button>
     </>

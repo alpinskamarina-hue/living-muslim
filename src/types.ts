@@ -63,6 +63,8 @@ export interface Settings {
   aiStyle?: import('./aiLook').AiStyle;
   /** The chat's light: a running gold ring (default), a soft aurora, or night with zellige stars. */
   aiGlow?: 'ring' | 'aurora' | 'night';
+  /** 3D finish of the assistant's picture: gold medal (default), pearl, halo, glass, night star. */
+  aiFinish?: import('./aiLook').AiFinish;
   /** Badge colour key from AI_COLORS. */
   aiColor?: string;
   /** How it speaks: «ты» or «вы», short or detailed, soft / warm / to the point. */

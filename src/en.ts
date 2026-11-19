@@ -5196,4 +5196,10 @@ export const EN: Record<string, string> = {
   "Тема: {0}": "Theme: {0}",
   "авто": "auto",
   "«После Магриба»: тёмная с Магриба до Фаджра, днём светлая. Переключить можно и на «Сегодня», значок вверху справа.": "“After Maghrib”: dark from Maghrib to Fajr, light in the day. You can also switch it on Today, top right.",
+  "Объём и блеск": "Depth and shine",
+  "Золотой медальон": "Gold medallion",
+  "Жемчужина": "Pearl",
+  "Ореол": "Halo",
+  "Стекло": "Glass",
+  "Ночная звезда": "Night star",
 };
