@@ -266,7 +266,7 @@ export interface UmrahState {
   funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];
 }
 
-export type GoalSource = 'quran' | 'pages' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz' | 'steps';
+export type GoalSource = 'quran' | 'pages' | 'bookch' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz' | 'steps';
 export interface GoalStepItem { id: string; text: string; done?: string }
 
 export interface Goal {

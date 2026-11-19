@@ -22,6 +22,7 @@ export interface SourceDef { id: GoalSource; label: string; hint: string; unit: 
 export const SOURCES: SourceDef[] = [
   { id: 'quran', label: _t("Коран: хатм по закладке"), hint: _t("из раздела Коран"), unit: _t("аятов"), target: TOTAL_AYAHS, counter: false },
   { id: 'pages', label: _t("Страницы моих книг"), hint: _t("из раздела Книги"), unit: _t("стр."), target: 300, counter: true },
+  { id: 'bookch', label: _t("Главы книги"), hint: _t("отмечаю прочитанные главы сам"), unit: _t("глав"), target: 12, counter: false },
   { id: 'chapters', label: _t("Главы пересказов"), hint: _t("из раздела Книги"), unit: _t("глав"), target: 20, counter: true },
   { id: 'course', label: _t("Курс «Английский по дням»"), hint: _t("пройденные дни"), unit: _t("дней"), target: 30, counter: false },
   { id: 'prayers', label: _t("Намазы вовремя"), hint: _t("доля за 30 дней"), unit: '%', target: 100, counter: false, identity: true },
@@ -116,7 +117,7 @@ export function rawValue(s: AppState, g: Pick<Goal, 'source' | 'habitIds' | 'man
       if (!hs.length) return 0;
       return Math.round((hs.reduce((a, h) => a + consistency(s, h, today, 30).rate, 0) / hs.length) * 100);
     }
-    case 'manual': case 'hifz': return g.manual;
+    case 'manual': case 'hifz': case 'bookch': return g.manual;
     case 'steps': { const st = (g as Goal).steps ?? []; return st.length ? st.filter((x) => x.done).length : g.manual; }
     case 'video': return (s.videos?.byCourse?.[(g as Goal).ref ?? ''] ?? []).length;
   }
@@ -147,6 +148,7 @@ export function progressLabel(s: AppState, g: Goal, today: string) {
     return q ? _t("сура {0}, аят {1} · {2} из 30 джузов", q.surah, q.ayah, juzDone(p.raw)) : _t("открой Коран, чтобы начать");
   }
   if (g.source === 'video') return _t("урок {0} из {1}", p.value, g.target);
+  if (g.source === 'bookch') return _t("{0} из {1} глав", p.value, g.target);
   if (g.source === 'hifz') return _t("{0} из {1} аятов · {2}", p.value, g.target, hifzName(g.ref));
   if (g.source === 'steps') return g.steps?.length ? _t("{0} из {1} шагов", p.value, g.steps.length) : p.value ? _t("цель достигнута") : _t("шаги не добавлены");
   const def = sourceDef(g.source);
@@ -181,6 +183,11 @@ export function weekDelta(s: AppState, g: Goal, today: string) {
   return now - base;
 }
 
+/** The reading habit that fits how a book goal is counted. */
+export const BOOK_HABIT: Record<'bookch' | 'pages', { action: string; min: string; anchor: 'asr'; sphere: 'mind' }> = {
+  bookch: { action: _t("Чтение: одна глава"), min: _t("2 страницы"), anchor: 'asr', sphere: 'mind' },
+  pages: { action: _t("Чтение, 10 страниц"), min: _t("2 страницы"), anchor: 'asr', sphere: 'mind' },
+};
 export interface Template { group: TplGroup; ic: string; ar?: boolean; sub: string; title: string; source: GoalSource; target?: number; unit?: string; identity: string; habits: { action: string; min: string; anchor: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'; sphere: 'faith' | 'body' | 'food' | 'mind' | 'biz' | 'family' }[] }
 export const TEMPLATES: Template[] = ([
   { group: 'faith', ic: 'قرآن', ar: true, sub: _t("считается по закладке в Коране"), title: _t("Хатм Корана"), source: 'quran', identity: _t("Я тот, кто читает Коран каждый день"), habits: [{ action: _t("Читать Коран 2 страницы"), min: _t("1 аят"), anchor: 'fajr', sphere: 'faith' }, { action: _t("Слушать Коран в дороге"), min: _t("10 минут"), anchor: 'dhuhr', sphere: 'faith' }] },
@@ -189,7 +196,7 @@ export const TEMPLATES: Template[] = ([
   { group: 'faith', ic: '🌙', sub: _t("понедельник и четверг"), title: _t("Посты сунны"), source: 'fasts', target: 8, identity: _t("Я тот, кто держит пост по понедельникам и четвергам"), habits: [] },
   { group: 'faith', ic: '🕋', sub: _t("по списку подготовки"), title: _t("Готов к умре"), source: 'umrah', identity: _t("Я тот, кто едет к Каабе подготовленным"), habits: [] },
   { group: 'mind', ic: '▶', sub: _t("Сира, сподвижники, бизнес · по просмотрам"), title: _t("Пройти видеокурс"), source: 'video', identity: _t("Я тот, кто учится каждый день"), habits: [{ action: _t("Один урок"), min: _t("5 минут видео"), anchor: 'isha', sphere: 'mind' }] },
-  { group: 'mind', ic: '📖', sub: _t("страницы из раздела Книги"), title: _t("Прочитать книгу"), source: 'pages', target: 300, identity: _t("Я тот, кто читает каждый день"), habits: [{ action: _t("Чтение, 10 страниц"), min: _t("2 страницы"), anchor: 'asr', sphere: 'mind' }] },
+  { group: 'mind', ic: '📖', sub: _t("по главам или по страницам"), title: _t("Прочитать книгу"), source: 'bookch', target: 12, identity: _t("Я тот, кто читает каждый день"), habits: [BOOK_HABIT.bookch] },
   { group: 'mind', ic: 'Aa', sub: _t("30 уроков по дням"), title: _t("Английский A1 за 30 дней"), source: 'course', identity: _t("Я тот, кто говорит по-английски без страха"), habits: [{ action: _t("Урок английского"), min: _t("5 фраз вслух"), anchor: 'asr', sphere: 'mind' }] },
   { group: 'body', ic: '💪', sub: _t("из раздела Здоровье"), title: _t("Сильное тело"), source: 'workouts', target: 20, identity: _t("Я тот, кто заботится о теле как об аманате"), habits: [{ action: _t("Зарядка после Фаджра"), min: _t("10 отжиманий"), anchor: 'fajr', sphere: 'body' }] },
   { group: 'body', ic: '⚖️', sub: _t("своё число: кг"), title: _t("Сбросить вес"), source: 'manual', target: 5, unit: _t("кг"), identity: _t("Я тот, кто ест треть и двигается каждый день"), habits: [{ action: _t("Ужин без добавки"), min: _t("полтарелки"), anchor: 'maghrib', sphere: 'food' }] },
@@ -223,6 +230,12 @@ export function todayStep(s: AppState, g: Goal, today: string): Step {
       return { text: `${pages} ${pl(pages, _t("страница"), _t("страницы"), _t("страниц"))}`, sub: _t("≈ {0} минут{1}", pages * 5, q ? _t(" · сура {0}, аят {1}", q.surah, q.ayah) : _t(" · с суры аль-Фатиха")), btn: _t("▶ Читать"), action: 'quran' };
     }
     case 'pages': { const n = Math.max(1, Math.ceil(perDay || 10)); return { text: `${n} ${pl(n, _t("страница"), _t("страницы"), _t("страниц"))}`, sub: _t("осталось {0} стр.", rest), btn: _t("▶ Читать"), action: 'books' }; }
+    case 'bookch': {
+      const n = Math.max(1, Math.ceil(perDay || 1));
+      const next = Math.min(g.target, p.value + 1);
+      if (rest <= 0) return { text: _t("Книга прочитана, машаАллах"), sub: _t("{0} из {0} глав", g.target), btn: _t("✓ Цель достигнута"), action: 'add' };
+      return { text: n > 1 ? _t("Главы {0}–{1}", next, Math.min(g.target, p.value + n)) : _t("Глава {0}", next), sub: _t("{0} из {1} глав{2}", p.value, g.target, left ? _t(" · {0} в день, чтобы успеть", `${n} ${pl(n, _t("глава"), _t("главы"), _t("глав"))}`) : ''), btn: _t("✓ Прочитал главу {0}", next), action: 'add' };
+    }
     case 'chapters': return { text: _t("1 глава пересказа"), sub: _t("{0} из {1} глав", p.value, g.target), btn: _t("▶ Читать"), action: 'books' };
     case 'course': return { text: _t("Урок {0} английского", Math.min(30, p.value + 1)), sub: _t("15 минут · фразы, диалог, карточки"), btn: _t("▶ Начать"), action: 'course' };
     case 'video': {
@@ -283,7 +296,7 @@ export function milestones(s: AppState, g: Goal, today: string) {
     else {
       const v = Math.round(g.target * f);
       ok = p.value >= v;
-      label = f === 1 ? _t("Цель") : g.source === 'video' ? _t("урок {0}", v) : g.source === 'hifz' ? _t("{0} аятов", v) : `${v}${g.unit ? ' ' + g.unit : ''}`;
+      label = f === 1 ? _t("Цель") : g.source === 'video' ? _t("урок {0}", v) : g.source === 'bookch' ? _t("глава {0}", v) : g.source === 'hifz' ? _t("{0} аятов", v) : `${v}${g.unit ? ' ' + g.unit : ''}`;
     }
     return { label, when, ok };
   });

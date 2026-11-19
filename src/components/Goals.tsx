@@ -6,6 +6,7 @@ import { addDays, daysBetween, fromKey } from '../dates';
 import {
   goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, hifzName, hifzRefs, hifzStep, hifzTotal, hifzMap, hifzAyahs, stepsTick, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
+  BOOK_HABIT,
 } from '../goals';
 import { markStarted } from '../dayplan';
 import { SurahPicker, SurahProgress } from './HifzSurahs';
@@ -64,6 +65,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
     if (st.action !== 'add') return onDo(st);
     if (g.source === 'hifz') update((s) => patchGoal(s, g.id, hifzStep(g, 1)));
     else if (g.source === 'steps') update((s) => patchGoal(s, g.id, g.steps?.length && g.steps.every((x) => x.done) ? { status: 'done', doneAt: today } : stepsTick(g, today)));
+    else if (g.source === 'bookch') update((s) => patchGoal(s, g.id, g.manual >= g.target ? { status: 'done', doneAt: today } : { manual: g.manual + 1 }));
     else setOpenId(g.id);
   };
 
@@ -165,6 +167,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
   const [add, setAdd] = useState('');
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [recount, setRecount] = useState(false);
   const habits = state.habits.filter((h) => g.habitIds.includes(h.id) && h.status !== 'archived');
   const activeCount = (state.goals ?? []).filter((x) => x.status === 'active').length;
   const left = daysLeft(g, today);
@@ -172,7 +175,8 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
   const miles = milestones(state, g, today);
   const next = miles.find((x) => !x.ok);
   const tpl = TEMPLATES.find((t) => t.title === g.title) ?? TEMPLATES.find((t) => t.source === g.source);
-  const suggest = (tpl?.habits ?? []).filter((h) => !state.habits.some((x) => x.action === h.action && x.status !== 'archived'));
+  const tplHabits = g.source === 'bookch' || g.source === 'pages' ? [BOOK_HABIT[g.source]] : tpl?.habits ?? [];
+  const suggest = tplHabits.filter((h) => !state.habits.some((x) => x.action === h.action && x.status !== 'archived'));
   const circles = isCloud ? myCircles() : [];
   const addHabit = (h: Template['habits'][number]) => update((s) => {
     const st2: Habit['status'] = slotsUsed(s) < activeLimit() ? 'active' : 'queued';
@@ -197,12 +201,14 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
           {g.due && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { due: addDays(g.due!, 7) })); setMenu(false); }}>{_t("Сдвинуть срок на неделю")}</button>}
           {g.status === 'active' && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { status: 'later' })); onClose(); }}>{_t("Отложить на потом")}</button>}
           {g.status === 'later' && <button type="button" disabled={activeCount >= goalLimit()} onClick={() => update((s) => patchGoal(s, g.id, { status: 'active' }))}>{_t("Начать сейчас")}</button>}
+          {(g.source === 'pages' || g.source === 'bookch') && g.status !== 'done' && <button type="button" onClick={() => { setRecount(true); setMenu(false); }}>{g.source === 'pages' ? _t("Считать по главам") : _t("Считать по страницам")}</button>}
           {g.status !== 'done' && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { status: 'done', doneAt: today })); onClose(); }}>{_t("Цель достигнута")}</button>}
           {confirm
             ? <button type="button" className="danger" onClick={() => { update((s) => ({ ...s, goals: (s.goals ?? []).filter((x) => x.id !== g.id) })); onClose(); }}>{_t("Точно удалить")}</button>
             : <button type="button" className="danger" onClick={() => setConfirm(true)}>{_t("Удалить цель")}</button>}
         </div>
       )}
+      {recount && <Recount g={g} state={state} today={today} onDone={(patch) => { if (patch) update((s) => patchGoal(s, g.id, patch)); setRecount(false); }} />}
       {g.niyya && <div className="niyya"><small>{_t("Намерение")}</small>{g.niyya}</div>}
       {g.identity && <div className="ident">{g.identity}</div>}
 
@@ -217,6 +223,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
               <button type="button" disabled={!Number(add)} onClick={() => { update((s) => patchGoal(s, g.id, { manual: g.manual + Number(add) })); setAdd(''); }}>{_t("+ Добавить")}</button>
             </div>
           ) : <button type="button" className="g-go" onClick={() => onDo(st)}>{st.btn}{st.action !== 'add' && st.action !== 'today' ? _t(" сейчас") : ''}</button>}
+          {g.source === 'bookch' && g.manual > 0 && <button type="button" className="link-btn g-undo" onClick={() => update((s) => patchGoal(s, g.id, { manual: g.manual - 1 }))}>{_t("Отметил лишнюю: −1 глава")}</button>}
         </div>
       )}
 
@@ -285,6 +292,32 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
   );
 }
 
+/** Switch a book goal between chapters and pages, keeping its title, date and habits. */
+function Recount({ g, state, today, onDone }: { g: Goal; state: AppState; today: string; onDone: (patch?: Partial<Goal>) => void }) {
+  const toCh = g.source === 'pages';
+  const [n, setN] = useState(toCh ? 12 : 300);
+  const [read, setRead] = useState(0);
+  const go = () => {
+    if (toCh) return onDone({ source: 'bookch', target: Math.max(1, n), manual: Math.min(n, read), unit: sourceDef('bookch').unit, start: 0 });
+    const next: Goal = { ...g, source: 'pages', target: Math.max(1, n), unit: sourceDef('pages').unit, manual: 0 };
+    onDone({ source: 'pages', target: next.target, unit: next.unit, manual: 0, start: rawValue(state, next, today) });
+  };
+  return (
+    <div className="g-recount">
+      <b>{toCh ? _t("Считать по главам") : _t("Считать по страницам")}</b>
+      <div className="h-row">
+        <label className="field"><span>{toCh ? _t("Глав в книге") : _t("Страниц в книге")}</span><input type="number" inputMode="numeric" min={1} value={n} onChange={(e) => setN(Number(e.target.value))} /></label>
+        {toCh && <label className="field"><span>{_t("Уже прочитано")}</span><input type="number" inputMode="numeric" min={0} value={read} onChange={(e) => setRead(Math.max(0, Number(e.target.value)))} /></label>}
+      </div>
+      <p className="tiny">{toCh ? _t("Каждый день отмечаешь прочитанную главу. Срок и привычки остаются.") : _t("Страницы будут считаться из раздела Книги с этого дня.")}</p>
+      <div className="cs-row">
+        <button type="button" className="ghost-btn" onClick={() => onDone()}>{_t("Отмена")}</button>
+        <button type="button" className="pri-btn" disabled={n < 1} onClick={go}>{_t("Сохранить")}</button>
+      </div>
+    </div>
+  );
+}
+
 function HabitLine({ h, state, today }: { h: Habit; state: AppState; today: string }) {
   const done = isCounted(state.log[today]?.[h.id]);
   return (
@@ -325,7 +358,10 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
   const [newHabits, setNewHabits] = useState<Template['habits']>([]);
   const [seed, setSeed] = useState<string[]>([]);
   const [steps, setSteps] = useState<GoalStepItem[]>([]);
+  const [already, setAlready] = useState(0);
   const def = sourceDef(source);
+  const isBook = source === 'bookch' || source === 'pages';
+  const bookBy = (src: 'bookch' | 'pages') => { setSource(src); setTarget(src === 'bookch' ? 12 : 300); setUnit(sourceDef(src).unit); setNewHabits([BOOK_HABIT[src]]); setAlready(0); };
   const activeCount = (state.goals ?? []).filter((g) => g.status === 'active').length;
   const rm = ramadanMonth(today);
   const rStart = rm.state === 'next' ? rm.days[0] : '';
@@ -368,7 +404,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
         return { id: uid(), action: h.action, min: h.min, anchor: h.anchor, sphere: h.sphere, status: st, createdAt: today };
       });
       const g: Goal = {
-        id, title: title.trim(), source, identity: identity.trim(), niyya: niyya.trim(), target, unit, start: 0, manual: 0,
+        id, title: title.trim(), source, identity: identity.trim(), niyya: niyya.trim(), target, unit, start: 0, manual: source === 'bookch' ? Math.min(target, already) : 0,
         due: due || undefined, habitIds: [...pick, ...created.map((h) => h.id)], ref: ref || undefined,
         status: activeCount < goalLimit() ? 'active' : 'later', createdAt: today,
         ...(source === 'steps' ? { steps, target: steps.length || 1, unit: '' } : {}),
@@ -454,9 +490,24 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
               <StepsEditor steps={steps} today={today} onChange={setSteps} draft />
             </div>
           )}
+          {isBook && (
+            <div className="field"><span>{_t("Как считать")}</span>
+              <div className="g-how g-bookby">
+                <button type="button" aria-pressed={source === 'bookch'} onClick={() => bookBy('bookch')}>{_t("По главам")}</button>
+                <button type="button" aria-pressed={source === 'pages'} onClick={() => bookBy('pages')}>{_t("По страницам")}</button>
+              </div>
+              <small className="tiny">{source === 'bookch' ? _t("Отмечаешь прочитанную главу сам. Подходит для любой книги, бумажной тоже.") : _t("Страницы считаются из раздела Книги, где ты читаешь свой PDF или текст.")}</small>
+            </div>
+          )}
+          {source === 'bookch' && (
+            <div className="h-row">
+              <label className="field"><span>{_t("Глав в книге")}</span><input type="number" inputMode="numeric" min={1} value={target} onChange={(e) => setTarget(Number(e.target.value))} /></label>
+              <label className="field"><span>{_t("Уже прочитано")}</span><input type="number" inputMode="numeric" min={0} value={already} onChange={(e) => setAlready(Math.max(0, Number(e.target.value)))} /></label>
+            </div>
+          )}
           {(source === 'manual' || source === 'pages' || source === 'chapters' || source === 'fasts' || source === 'workouts') && (
             <div className="h-row">
-              <label className="field"><span>{_t("Сколько")}</span><input type="number" inputMode="numeric" value={target} onChange={(e) => setTarget(Number(e.target.value))} /></label>
+              <label className="field"><span>{source === 'pages' ? _t("Страниц в книге") : _t("Сколько")}</span><input type="number" inputMode="numeric" value={target} onChange={(e) => setTarget(Number(e.target.value))} /></label>
               {source === 'manual' && <label className="field"><span>{_t("Единица")}</span><input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={_t("€, кг, раз")} /></label>}
             </div>
           )}
