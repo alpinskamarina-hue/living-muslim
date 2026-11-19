@@ -1,6 +1,6 @@
 // Install as an app (PWA) and prayer reminders by Web Push. Only on the standalone site.
 import { isCloud } from './cloud';
-import type { RamadanPush, ReminderPrefs, Settings } from './types';
+import type { Anchor, AppState, RamadanPush, ReminderPrefs, Settings } from './types';
 import { adhanServer } from './adhan';
 export type { ReminderPrefs, RamadanPush };
 
@@ -55,13 +55,37 @@ export async function currentSubscription() {
   return (await reg?.pushManager.getSubscription()) ?? null;
 }
 
-/** Server copy of what it needs to compute prayer times: place, method, offsets, time zone. No habits or notes. */
+/** Open habits per prayer: counts only (n) and whether one is Quran (q). Never names. */
+export type NudgeCounts = Partial<Record<Anchor, { n: number; q?: 1 }>>;
+export interface Nudge { d: string; b: NudgeCounts; p: NudgeCounts }
+const QURAN_RE = /коран|quran|qur'an|сур[аыу]|аят|джуз|juz|хифз|hifz|тафсир|tafsir|мусхаф/i;
+
+/** What the server needs for habit nudges: for each prayer, how many active habits sit after it (b) and how many are still open today (p). */
+export function nudgeOf(st: AppState, today: string): Nudge {
+  const b: NudgeCounts = {}, p: NudgeCounts = {};
+  const marks = st.log[today] ?? {};
+  for (const h of st.habits) {
+    if (h.status !== 'active' || h.ramadan) continue;
+    const q = QURAN_RE.test(h.action);
+    const add = (o: NudgeCounts) => { const v = (o[h.anchor] ??= { n: 0 }); v.n++; if (q) v.q = 1; };
+    add(b);
+    const m = marks[h.id];
+    if (m !== 'done' && m !== 'min') add(p);
+  }
+  return { d: today, b, p };
+}
+let nudge: Nudge | null = null;
+/** The app keeps this current; it goes to the server with the next save. */
+export const setNudge = (n: Nudge) => { nudge = n; };
+
+/** Server copy of what it needs to compute prayer times: place, method, offsets, time zone, and counts for habit nudges. No habit names or notes. */
 function serverPrefs(s: Settings, p: ReminderPrefs) {
   return {
     lat: s.lat, lng: s.lng, method: s.method, madhab: s.madhab, offsets: s.offsets ?? {},
     tz: Intl.DateTimeFormat().resolvedOptions().timeZone, prayers: p.prayers, before: p.before, muhasaba: p.muhasaba,
     ramadan: rpushOf(p), chat: p.chat !== false, quiet: Boolean(s.quiet), lang: s.lang ?? (/^en\b/i.test(navigator.language) ? 'en' : 'ru'),
     adhan: adhanServer(s),
+    habits: p.habits !== false, courses: p.courses !== false, nudge: p.habits !== false ? nudge : null,
   };
 }
 

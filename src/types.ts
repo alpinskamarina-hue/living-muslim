@@ -82,6 +82,10 @@ export interface ReminderPrefs {
   ramadan?: RamadanPush;
   /** New messages in circle chats; missing means on. */
   chat?: boolean;
+  /** Habit nudges 25 minutes after a prayer, at most 3 a day; missing means on. */
+  habits?: boolean;
+  /** «New course» notices; missing means on. */
+  courses?: boolean;
 }
 
 export interface RamadanPush {

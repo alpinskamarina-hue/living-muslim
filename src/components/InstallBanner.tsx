@@ -44,7 +44,7 @@ export function InstallBanner() {
           <span className="ib-ic"><Logo /></span>
           <div className="ib-t">
             <b>{_t("Поставь на главный экран")}</b>
-            <span>{_t("Привычки, курсы и Коран в одно касание, а сообщения из круга сразу на телефон")}</span>
+            <span>{_t("Напомним о привычках и Коране, сообщим о новом курсе и о том, кто написал в круге")}</span>
           </div>
           <button type="button" className="ib-go" onClick={install}>{_t("Установить")}</button>
           <button type="button" className="ib-x" onClick={hide} aria-label={_t("Скрыть")}>✕</button>
@@ -76,7 +76,7 @@ export function InstallSheet({ onClose }: { onClose: () => void }) {
               <em aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M8 7l4-4 4 4" /><path d="M6 11H5v10h14V11h-1" /></svg></em></div>
             <div className="ib-step"><i>2</i><span>{_t("Выбери ")}<b>{_t("«На экран „Домой“»")}</b>{_t(" и нажми «Добавить»")}</span>
               <em aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="4" y="4" width="16" height="16" rx="4" /><path d="M12 8v8M8 12h8" /></svg></em></div>
-            <div className="ib-step gold"><i>3</i><span>{_t("Открой Living Muslim с иконки и включи уведомления, чтобы не пропускать сообщения круга")}</span></div>
+            <div className="ib-step gold"><i>3</i><span>{_t("Открой Living Muslim с иконки и включи уведомления: привычки, новые курсы и сообщения круга")}</span></div>
             {!isSafari() && (
               <p className="ib-note">{_t("Сейчас открыто не в Safari. Скопируй ссылку и открой её в Safari.")} <button type="button" className="link-btn" onClick={copy}>{copied ? _t("Ссылка скопирована") : _t("Скопировать ссылку")}</button></p>
             )}

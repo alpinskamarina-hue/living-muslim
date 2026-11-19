@@ -1,6 +1,8 @@
-// Called once a minute by the database scheduler (pg_cron). Sends due prayer and muhasabah reminders.
+// Called once a minute by the database scheduler (pg_cron). Sends due prayer and muhasabah reminders,
+// habit nudges after prayers and «new course» notices.
 import webpush from 'web-push';
 import adhan from 'adhan';
+import { BUILTIN_COURSES } from './_builtin-courses.js';
 
 const { Coordinates, CalculationMethod, PrayerTimes, Madhab, HighLatitudeRule } = adhan;
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
@@ -87,7 +89,71 @@ function ramadanEvents(prefs, day, tz, t, params, coords) {
   return out;
 }
 
-export function events(prefs, now) {
+const ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+const NUDGE_AFTER_MS = 25 * 60 * 1000;
+const ruDeeds = (n) => (n % 10 === 1 && n % 100 !== 11 ? 'дело' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'дела' : 'дел');
+
+/**
+ * Habit nudges, 25 minutes after a prayer, at most 3 a day. The phone sends only counts per prayer
+ * (b: all active habits, p: what is still open today, q: one of them is Quran), never habit names.
+ * The 3 prayers are picked from b, Quran first, so the set stays the same all day.
+ * If the phone has not reported for over 2 days, one nudge a day; after 14 days, none.
+ */
+export function nudgeEvents(prefs, day, t) {
+  const N = prefs.nudge;
+  if (prefs.habits === false || !N || !N.b) return [];
+  const en = prefs.lang === 'en';
+  const pick = ORDER.filter((a) => t[a] && N.b[a]?.n > 0)
+    .sort((x, y) => (N.b[y].q ? 1 : 0) - (N.b[x].q ? 1 : 0) || ORDER.indexOf(x) - ORDER.indexOf(y))
+    .slice(0, 3);
+  // Not opened for a while: one nudge a day, and none after two weeks of silence.
+  const quiet = Math.round((Date.parse(day.key) - Date.parse(N.d || day.key)) / 86400000);
+  if (quiet > 14) return [];
+  const open = N.d === day.key ? N.p || {} : N.b;
+  const out = [];
+  const chosen = quiet > 2 ? pick.slice(0, 1) : pick;
+  for (const a of ORDER.filter((x) => chosen.includes(x))) {
+    const v = open[a];
+    if (!v || !(v.n > 0)) continue;
+    const n = v.n, q = Boolean(v.q);
+    const body = en
+      ? q ? (n > 1 ? `Quran and ${n - 1} more. Even the minimum counts.` : 'Time for your Quran. Even the minimum counts.')
+        : n > 1 ? `${n} small deeds are waiting. Even the minimum counts.` : 'One small deed is waiting. Even the minimum counts.'
+      : q ? (n > 1 ? `Коран и ещё ${n - 1} ${ruDeeds(n - 1)}. Хватит и минимума.` : 'Время для Корана. Хватит и минимума.')
+        : n > 1 ? `Тебя ждут ${n} ${ruDeeds(n)}. Хватит и минимума.` : 'Тебя ждёт одно маленькое дело. Хватит и минимума.';
+    out.push({ key: `${day.key}:h-${a}`, at: t[a].getTime() + NUDGE_AFTER_MS, title: en ? `After ${NAMES_EN[a]}` : `После ${AFTER[a]}`, body, tag: `habits-${a}`, url: '/app/' });
+  }
+  return out;
+}
+
+/** Courses added in the admin screen in the last 15 minutes (not changes to built-in ones, not hidden). */
+async function freshCourses(now) {
+  const since = new Date(now - WINDOW_MS).toISOString();
+  try {
+    const r = await fetch(`${SB}/rest/v1/lm_courses?select=id,yt,title,lang,created&hidden=eq.false&created=gte.${encodeURIComponent(since)}`, { headers: { apikey: KEY } });
+    if (!r.ok) return [];
+    const builtIn = new Set(BUILTIN_COURSES);
+    return (await r.json()).filter((c) => !builtIn.has(c.yt));
+  } catch { return []; }
+}
+
+/** One notice per new course, in the person's app language, never in quiet mode. */
+export function courseEvents(prefs, day, tz, courses) {
+  if (prefs.courses === false || prefs.quiet) return [];
+  const en = prefs.lang === 'en';
+  return courses
+    .filter((c) => (c.lang || 'ru') === (en ? 'en' : 'ru'))
+    .map((c) => ({ c, at: new Date(c.created).getTime() }))
+    .filter(({ at }) => localParts(tz, new Date(at)).key === day.key)
+    .map(({ c, at }) => ({
+      key: `${day.key}:c-${c.id}`, at,
+      title: en ? 'New course in Living Muslim' : 'Новый курс в Living Muslim',
+      body: (en ? `“${c.title}”. The first lesson is ready.` : `«${c.title}». Первый урок уже ждёт.`).slice(0, 160),
+      tag: `course-${c.id}`, url: `/app/?course=${encodeURIComponent(c.yt)}`,
+    }));
+}
+
+export function events(prefs, now, courses = []) {
   const tz = prefs.tz || 'Europe/Amsterdam';
   const day = localParts(tz, new Date(now));
   const out = [];
@@ -117,6 +183,8 @@ export function events(prefs, now) {
     });
   }
   out.push(...ramadanEvents(prefs, day, tz, t, params, coords));
+  out.push(...nudgeEvents(prefs, day, t));
+  out.push(...courseEvents(prefs, day, tz, courses));
   if (/^\d\d:\d\d$/.test(prefs.muhasaba || '')) {
     const [hh, mm] = prefs.muhasaba.split(':').map(Number);
     out.push({ key: `${day.key}:muhasaba`, at: zoned(tz, day.y, day.m, day.d, hh, mm), title: prefs.lang === 'en' ? 'Muhasabah' : 'Мухасаба', body: prefs.lang === 'en' ? 'A couple of minutes to look back on the day: what went well and what you are grateful for.' : 'Пара минут, чтобы оглянуться на день: что получилось и за что ты благодарен.', tag: 'muhasaba', url: '/app/' });
@@ -177,11 +245,12 @@ export default async function handler(req, res) {
 
   const now = Date.now();
   const subs = (await rpc('lm_push_list', { p_secret: secret })) || [];
+  const courses = await freshCourses(now);
   let sent = 0, dropped = 0;
   await Promise.all(subs.map(async (s) => {
     const prefs = s.prefs || {};
     if (typeof prefs.lat !== 'number') return;
-    const { day, list } = events(prefs, now);
+    const { day, list } = events(prefs, now, courses);
     const done = (s.sent || []).filter((k) => k.startsWith(day));
     const due = list.filter((e) => now >= e.at && now - e.at < WINDOW_MS && !done.includes(e.key));
     if (!due.length) return;

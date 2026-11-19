@@ -408,6 +408,11 @@ function RemindPage({ s, set, times }: { s: AppState['settings']; set: SetFn; ti
         )}
       </div>
 
+      <h2 className="sub-h">{_t("Мои дела и курсы")}</h2>
+      <label className="check-row"><input type="checkbox" checked={r.habits !== false} onChange={(e) => setR({ habits: e.target.checked })} />{_t("Привычки после намаза: через 25 минут, если дело ещё не отмечено. Не больше 3 в день, Коран первым.")}</label>
+      <label className="check-row"><input type="checkbox" checked={r.courses !== false} onChange={(e) => setR({ courses: e.target.checked })} />{_t("Когда выходит новый курс")}</label>
+      <label className="check-row"><input type="checkbox" checked={r.chat !== false} onChange={(e) => setR({ chat: e.target.checked })} />{_t("Новые сообщения в кругу (во время намаза ждут)")}</label>
+
       <h2 className="sub-h">{_t("Напоминания о намазах")}</h2>
       <div className="chips5">
         {ANCHORS.map((a) => (
@@ -445,7 +450,7 @@ function RemindPage({ s, set, times }: { s: AppState['settings']; set: SetFn; ti
       )}
       {msg && <p className="tiny">{msg}</p>}
       {!pushSupported() && !msg && <p className="tiny">{ios && !standalone ? _t("На iPhone сначала установи приложение на экран «Домой».") : _t("В этом браузере напоминания могут не работать.")}</p>}
-      <p className="tiny">{_t("Сервер знает только твой город и время намазов, чтобы прислать напоминание. Привычки и заметки остаются на телефоне.")}</p>
+      <p className="tiny">{_t("Сервер знает только твой город, время намазов и сколько дел ждёт после каждого намаза. Названия привычек и заметки остаются на телефоне.")}</p>
     </>
   );
 }

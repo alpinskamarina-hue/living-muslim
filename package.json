@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/landing.mjs",
-    "build:single": "tsc --noEmit && SINGLE=1 vite build && node scripts/landing.mjs",
+    "build": "node scripts/builtins.mjs && tsc --noEmit && vite build && node scripts/landing.mjs",
+    "build:single": "node scripts/builtins.mjs && tsc --noEmit && SINGLE=1 vite build && node scripts/landing.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

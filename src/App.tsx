@@ -16,7 +16,7 @@ import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
 import { Profile } from './components/Profile';
-import { syncPush } from './push';
+import { syncPush, setNudge, nudgeOf } from './push';
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
@@ -114,9 +114,14 @@ export function App() {
   const times = useMemo(() => prayerTimes({ ...place, offsets: state.settings.offsets }, now), [today, lat, lng, method, madhab, offKey]);
   const adhan = useAdhanClock(state.settings, times, today, now);
   const setSettings = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
-  const remKey = JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings));
+  const nudge = nudgeOf(state, today);
+  setNudge(nudge);
+  const remKey = JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings)) + JSON.stringify(nudge);
   useEffect(() => {
-    if (state.settings.reminders?.on) syncPush(state.settings, state.settings.reminders);
+    if (!state.settings.reminders?.on) return;
+    // Ticking habits changes the counts often: wait a moment so a burst of ticks is one save.
+    const t = setTimeout(() => syncPush(state.settings, state.settings.reminders!), 1500);
+    return () => clearTimeout(t);
   }, [lat, lng, method, madhab, offKey, remKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const { theme = 'auto', textScale = 1 } = state.settings;
   useEffect(() => {
