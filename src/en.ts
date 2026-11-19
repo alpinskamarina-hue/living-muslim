@@ -5179,4 +5179,7 @@ export const EN: Record<string, string> = {
   "Сказать помощнику": "Tell the assistant",
   "Удалить эту запись?": "Delete this note?",
   "Запиши идею": "Write down an idea",
+  "Остановить запись": "Stop recording",
+  "Договорить": "Say more",
+  "Говори, я слушаю… Нажми ■, когда закончишь": "Speak, I'm listening… Tap ■ when you're done",
 };
