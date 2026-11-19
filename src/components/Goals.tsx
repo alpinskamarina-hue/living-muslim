@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { AppState, Goal, GoalStepItem, Habit } from '../types';
+import type { AppState, Goal, GoalNote, GoalStepItem, Habit } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { activeLimit, isCounted, slotsUsed, streak, uid } from '../store';
-import { addDays, daysBetween, fromKey } from '../dates';
+import { addDays, dayKey, daysBetween, fromKey } from '../dates';
 import {
   goalLimit, TEMPLATES, RAMADAN_TPL, TPL_GROUPS, hifzName, hifzRefs, hifzStep, hifzTotal, hifzMap, hifzAyahs, stepsTick, daysLeft, progress, progressLabel, rawValue, sourceDef, weekDelta,
   todayStep, milestones, dayDots, juzDone, type Template, type TplGroup, type Step,
@@ -165,6 +165,7 @@ function GoalCard({ g, state, today, waiting, onOpen, onAct }: { g: Goal; state:
             <span>{g.source === 'manual' || p.behind ? '' : _t("Сегодня: ")}{st.text}<small>{st.sub}</small></span>
             <button type="button" className="g-do" onClick={() => onAct(st)}>{st.btn}</button>
           </span>
+          {(g.notes?.length ?? 0) > 0 && <small className="g-lastnote">📝 {g.notes![g.notes!.length - 1].text}</small>}
           <span className="g-mini"><span>{g.source === 'quran' ? _t("{0} из 30 джузов", juzDone(p.raw)) : progressLabel(state, g, today)}</span><span>{g.due ? _t("{0} · до {1}", p.behind ? _t("отстаю на {0} дн.", p.behind) : _t("в графике"), fmt(g.due)) : _t("без срока")}</span></span>
         </>
       )}
@@ -179,6 +180,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
   const [menu, setMenu] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [recount, setRecount] = useState(false);
+  const [dueEdit, setDueEdit] = useState(false);
   const habits = state.habits.filter((h) => g.habitIds.includes(h.id) && h.status !== 'archived');
   const activeCount = (state.goals ?? []).filter((x) => x.status === 'active').length;
   const left = daysLeft(g, today);
@@ -204,11 +206,12 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
     <div className="g-view">
       <div className="g-bar">
         <button type="button" className="icon-btn" onClick={onClose} aria-label={_t("К целям")}>‹</button>
-        <div><b>{g.title}</b><small>{g.due ? _t("до {0}{1}", fmt(g.due), left !== null && left >= 0 ? _t(" · осталось {0} дн.", left) : _t(" · срок прошёл")) : _t("без срока")}</small></div>
+        <div><b>{g.title}</b><small>{g.due ? _t("до {0}{1}", fmt(g.due), left === 0 ? _t(" · сегодня последний день") : left !== null && left > 0 ? _t(" · осталось {0} дн.", left) : _t(" · срок прошёл")) : _t("без срока")}</small></div>
         <button type="button" className="icon-btn g-menu-btn" onClick={() => setMenu(!menu)} aria-label={_t("Ещё")}>⋯</button>
       </div>
       {menu && (
         <div className="g-menu">
+          <button type="button" onClick={() => { setDueEdit(true); setMenu(false); }}>{g.due ? _t("Изменить срок") : _t("Поставить срок")}</button>
           {g.due && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { due: addDays(g.due!, 7) })); setMenu(false); }}>{_t("Сдвинуть срок на неделю")}</button>}
           {g.status === 'active' && <button type="button" onClick={() => { update((s) => patchGoal(s, g.id, { status: 'later' })); onClose(); }}>{_t("Отложить на потом")}</button>}
           {g.status === 'later' && <button type="button" disabled={activeCount >= goalLimit()} onClick={() => update((s) => patchGoal(s, g.id, { status: 'active' }))}>{_t("Начать сейчас")}</button>}
@@ -219,6 +222,7 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
             : <button type="button" className="danger" onClick={() => setConfirm(true)}>{_t("Удалить цель")}</button>}
         </div>
       )}
+      {dueEdit && <DueEdit due={g.due ?? ''} today={today} onDone={(d) => { if (d !== null) update((s) => patchGoal(s, g.id, { due: d || undefined })); setDueEdit(false); }} />}
       {recount && <Recount g={g} state={state} today={today} onDone={(patch) => { if (patch) update((s) => patchGoal(s, g.id, patch)); setRecount(false); }} />}
       {g.niyya && <div className="niyya"><small>{_t("Намерение")}</small>{g.niyya}</div>}
       {g.identity && <div className="ident">{g.identity}</div>}
@@ -237,6 +241,9 @@ function GoalView({ goal: g, state, update, today, onClose, onDo, onCircle }: { 
           {g.source === 'bookch' && g.manual > 0 && <button type="button" className="link-btn g-undo" onClick={() => update((s) => patchGoal(s, g.id, { manual: g.manual - 1 }))}>{_t("Отметил лишнюю: −1 глава")}</button>}
         </div>
       )}
+
+      <GoalNotes g={g} today={today} onAdd={(text) => update((s) => markStarted(patchGoal(s, g.id, { notes: [...(g.notes ?? []), { id: uid(), day: today, at: Date.now(), text }] }), today, `g:${g.id}`))}
+        onDel={(id) => update((s) => patchGoal(s, g.id, { notes: (g.notes ?? []).filter((n) => n.id !== id) }))} />
 
       <div className="g-big"><b>{def.identity ? `${dayDots(state, g, today).filter((x) => x === 2).length}/30` : `${p.pct}%`}</b><span>{def.identity ? (g.source === 'prayers' ? _t("дней, когда все 5 намазов вовремя") : _t("дней, когда всё сделано")) : `${progressLabel(state, g, today)}${g.due ? ` · ${p.behind ? _t("отстаю на {0} дн.", p.behind) : _t("в графике")}` : ''}`}</span></div>
       {def.identity ? <Dots state={state} g={g} today={today} /> : <div className="pbar"><i style={{ width: `${p.pct}%` }} /></div>}
@@ -529,6 +536,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
           {!def.identity && (
             <>
               <label className="field"><span>{_t("К какой дате (необязательно)")}</span><input type="date" value={due} min={today} onChange={(e) => setDue(e.target.value)} /></label>
+              <DueChips today={today} due={due} onPick={setDue} />
               {rStart && due !== rStart && <button type="button" className="link-btn" onClick={() => setDue(rStart)}>{_tj("К Рамадану, {0}", fmt(rStart))}</button>}
             </>
           )}
@@ -635,6 +643,66 @@ function Review({ state, update, today, onClose }: { state: AppState; update: Pr
 }
 
 /** Steps of a life goal: tick, remove, add. */
+const plusMonths = (today: string, n: number) => { const d = fromKey(today); d.setMonth(d.getMonth() + n); return dayKey(d); };
+const DUE_PICKS: [number, string][] = [[1, "через месяц"], [3, "3 месяца"], [6, "полгода"], [12, "год"]];
+
+/** Quick deadlines: a native date picker opens on today, and one tap there leaves the goal ending today. */
+function DueChips({ today, due, onPick }: { today: string; due: string; onPick: (d: string) => void }) {
+  return (
+    <div className="g-duechips">
+      {DUE_PICKS.map(([n, label]) => { const d = plusMonths(today, n); return <button key={n} type="button" aria-pressed={due === d} onClick={() => onPick(d)}>{_t(label)}</button>; })}
+    </div>
+  );
+}
+
+function DueEdit({ due, today, onDone }: { due: string; today: string; onDone: (d: string | null) => void }) {
+  const [d, setD] = useState(due);
+  return (
+    <div className="g-recount">
+      <b>{_t("Срок цели")}</b>
+      <label className="field"><span>{_t("К какой дате")}</span><input type="date" value={d} min={today} onChange={(e) => setD(e.target.value)} /></label>
+      <DueChips today={today} due={d} onPick={setD} />
+      {d && <p className="tiny">{d === today ? _t("Это сегодня. Выбери дату позже или один из вариантов выше.") : _tj("До {0}: {1} дн.", fmt(d), daysBetween(today, d))}</p>}
+      <div className="da-row">
+        <button type="button" className="pri-btn" onClick={() => onDone(d)}>{_t("Сохранить")}</button>
+        {due && <button type="button" className="link-btn" onClick={() => onDone('')}>{_t("Без срока")}</button>}
+        <button type="button" className="link-btn" onClick={() => onDone(null)}>{_t("Отмена")}</button>
+      </div>
+    </div>
+  );
+}
+
+/** Goal journal: dated notes that stay with the goal. A note counts as today's step. */
+function GoalNotes({ g, today, onAdd, onDel }: { g: Goal; today: string; onAdd: (text: string) => void; onDel: (id: string) => void }) {
+  const [text, setText] = useState('');
+  const [all, setAll] = useState(false);
+  const [del, setDel] = useState('');
+  const list: GoalNote[] = [...(g.notes ?? [])].sort((a, b) => b.at - a.at);
+  const shown = all ? list : list.slice(0, 5);
+  const save = () => { const t = text.trim(); if (!t) return; onAdd(t.slice(0, 2000)); setText(''); };
+  const when = (n: GoalNote) => (n.day === today ? _t("сегодня") : n.day === addDays(today, -1) ? _t("вчера") : fromKey(n.day).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: n.day.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric' }));
+  return (
+    <div className="g-notes">
+      <div className="g-sec">{_tj("Заметки{0}", list.length ? ` · ${list.length}` : '')}</div>
+      <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={_t("Что сделал или узнал по цели? Например: посмотрел 3 модели, понравилась одна")} />
+      <div className="g-notes-row">
+        <button type="button" className="pri-btn" disabled={!text.trim()} onClick={save}>{_t("Сохранить заметку")}</button>
+        <small>{_t("Заметка засчитается как шаг на сегодня")}</small>
+      </div>
+      {shown.map((n) => (
+        <div key={n.id} className="g-note">
+          <small>{when(n)} · {new Date(n.at).toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' })}</small>
+          <p>{n.text}</p>
+          {del === n.id
+            ? <span className="g-note-del"><button type="button" className="link-btn danger" onClick={() => { onDel(n.id); setDel(''); }}>{_t("Удалить")}</button><button type="button" className="link-btn" onClick={() => setDel('')}>{_t("Отмена")}</button></span>
+            : <button type="button" className="st-del" onClick={() => setDel(n.id)} aria-label={_t("Удалить заметку")}>✕</button>}
+        </div>
+      ))}
+      {list.length > 5 && !all && <button type="button" className="link-btn" onClick={() => setAll(true)}>{_tj("Все заметки ({0})", list.length)}</button>}
+    </div>
+  );
+}
+
 function StepsEditor({ steps, today, onChange, draft }: { steps: GoalStepItem[]; today: string; onChange: (s: GoalStepItem[]) => void; draft?: boolean }) {
   const [text, setText] = useState('');
   const add = () => { const t = text.trim(); if (!t) return; onChange([...steps, { id: uid(), text: t }]); setText(''); };

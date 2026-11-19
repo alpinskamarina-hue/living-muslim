@@ -3276,3 +3276,19 @@ button.ud-wait em { font-style: normal; }
 .g-wait b { display: block; font-size: 13.5px; }
 .g-card.wait { border-color: #d9ad55; box-shadow: inset 3px 0 0 #d9ad55; }
 .g-wait-tag { align-self: flex-start; font-size: 11.5px; font-weight: 700; color: #8a6418; background: var(--gold-soft); border-radius: 999px; padding: 2px 9px; margin-bottom: 4px; }
+
+/* Goal notes and deadline picks (19.11) */
+.g-duechips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 4px; }
+.g-duechips button { border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 600; }
+.g-duechips button[aria-pressed="true"] { background: var(--green, #1f7a4d); border-color: transparent; color: #fff; }
+.g-notes { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 4px; }
+.g-notes textarea { width: 100%; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 14px; padding: 10px 12px; font: inherit; font-size: 14px; background: var(--surface); color: var(--ink); resize: vertical; }
+.g-notes-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.g-notes-row .pri-btn { width: auto; padding: 10px 16px; }
+.g-notes-row small { font-size: 12px; opacity: .7; }
+.g-note { position: relative; border: 1px solid var(--line); border-radius: 14px; padding: 10px 36px 10px 12px; background: var(--surface); }
+.g-note small { font-size: 12px; opacity: .7; }
+.g-note p { margin: 3px 0 0; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.g-note .st-del { position: absolute; top: 6px; right: 6px; }
+.g-note-del { display: flex; gap: 12px; margin-top: 6px; }
+.g-lastnote { font-size: 12.5px; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

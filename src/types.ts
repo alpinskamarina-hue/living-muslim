@@ -268,6 +268,8 @@ export interface UmrahState {
 
 export type GoalSource = 'quran' | 'pages' | 'bookch' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz' | 'steps';
 export interface GoalStepItem { id: string; text: string; done?: string }
+/** A dated note in an open goal (Nasim, 19.11): what was done or thought, for long goals with rare steps. */
+export interface GoalNote { id: string; day: string; at: number; text: string }
 
 export interface Goal {
   id: string;
@@ -293,6 +295,8 @@ export interface Goal {
   hifz?: Record<string, number>;
   /** steps: a life goal (move, trip, wedding) as a list of steps; done = the day it was ticked. */
   steps?: GoalStepItem[];
+  /** Goal journal, newest last. */
+  notes?: GoalNote[];
   doneAt?: string;
 }
 
