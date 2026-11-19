@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
 import { type AiConfig, type AiMsg, aiName, ask, getAiConfig, loadChat, saveChat, setAiConfig } from '../assistant';
 import { authMe } from '../auth';
-import { _t } from '../i18n';
+import { _t, LANG } from '../i18n';
+import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
 import { AI_COLORS, AI_STYLES, AiFace, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
 
 interface Props {
@@ -33,13 +34,41 @@ export function Assistant({ state, onClose, onSignIn, context }: Props) {
   const [left, setLeft] = useState<number | null>(null);
   const end = useRef<HTMLDivElement>(null);
   const signed = Boolean(authMe());
+  const [rec, setRec] = useState(false);
+  const [saying, setSaying] = useState<number | null>(null);
+  const mic = useRef<Listening | null>(null);
+  const voiceLang = LANG === 'en' ? 'en-US' : 'ru-RU';
 
   useEffect(() => { saveChat(msgs); end.current?.scrollIntoView({ block: 'end' }); }, [msgs, busy]);
+  useEffect(() => () => { mic.current?.abort(); hush(); }, []);
 
-  const send = async (q = text) => {
+  const say = (i: number, t: string) => {
+    if (saying === i) { hush(); setSaying(null); return; }
+    setSaying(i);
+    speak(t.replace(/[*#_`>]+/g, '').replace(/\n+/g, '. '), false, voiceLang).then(() => setSaying((x) => (x === i ? null : x)));
+  };
+
+  const startMic = () => {
+    if (busy || rec) return;
+    setErr(''); hush(); setSaying(null);
+    if (!sttAvailable()) { setErr(_t("Здесь запись голоса не работает. Нажми микрофон на клавиатуре телефона и говори, текст появится в поле.")); return; }
+    const l = listen(voiceLang, (t) => setText(t), (t, e) => {
+      mic.current = null; setRec(false);
+      if (e === 'not-allowed' || e === 'service-not-allowed') { setErr(_t("Нет доступа к микрофону. Разреши его в настройках браузера для этого сайта.")); return; }
+      if (e && !t) { setErr(_t("Не получилось распознать. Попробуй ещё раз или напиши.")); return; }
+      if (t) send(t, true); else setText('');
+    });
+    if (!l) { setErr(_t("Не получилось включить микрофон.")); return; }
+    mic.current = l; setText(''); setRec(true);
+    try { navigator.vibrate?.(10); } catch { /* */ }
+  };
+  const stopMic = () => mic.current?.stop();
+  const cancelMic = () => { mic.current?.abort(); mic.current = null; setRec(false); setText(''); };
+
+  const send = async (q = text, voice = false) => {
     const v = q.trim();
     if (!v || busy) return;
-    const next: AiMsg[] = [...msgs, { role: 'user', content: v, at: Date.now() }];
+    const next: AiMsg[] = [...msgs, { role: 'user', content: v, at: Date.now(), ...(voice ? { voice: true } : {}) }];
     setMsgs(next); setText(''); setErr(''); setBusy(true);
     let ctx = '';
     try { ctx = context?.() ?? ''; } catch { /* answer without it */ }
@@ -50,7 +79,8 @@ export function Assistant({ state, onClose, onSignIn, context }: Props) {
       setErr(ERR[r.error]?.() ?? ERR.busy());
       return;
     }
-    setMsgs((m) => [...m, { role: 'assistant', content: r.text, at: Date.now() }]);
+    setMsgs([...next, { role: 'assistant', content: r.text, at: Date.now() }]);
+    if (voice && ttsAvailable()) say(next.length, r.text);
     setLeft(r.left ?? null);
   };
 
@@ -74,18 +104,27 @@ export function Assistant({ state, onClose, onSignIn, context }: Props) {
           </div>
         )}
         {msgs.map((m, i) => m.role === 'user'
-          ? <div key={i} className="ai-msg me">{m.content}</div>
-          : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it">{m.content}</div></div>)}
+          ? <div key={i} className="ai-msg me">{m.voice && <span className="ai-vo" aria-label={_t("Голосом")}>🎙 </span>}{m.content}</div>
+          : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it">{m.content}</div>
+            {ttsAvailable() && <button type="button" className={`ai-say${saying === i ? ' on' : ''}`} onClick={() => say(i, m.content)} aria-label={saying === i ? _t("Остановить") : _t("Прослушать")}>{saying === i ? '■' : '🔊'}</button>}</div>)}
         {busy && <div className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it ai-typing" aria-label={_t("Пишет…")}><i /><i /><i /></div></div>}
         {err && <div className="ai-err">{err}{!signed && <button type="button" className="ghost-btn" onClick={onSignIn}>{_t("Войти по почте")}</button>}</div>}
         <div ref={end} />
       </div>
 
       {signed ? (
-        <form className="ai-input" onSubmit={(e) => { e.preventDefault(); send(); }}>
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={2000} placeholder={_t("Напиши вопрос…")}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
-          <button type="submit" disabled={busy || !text.trim()} aria-label={_t("Отправить")}>➤</button>
+        <form className={`ai-input${rec ? ' ai-rec' : ''}`} onSubmit={(e) => { e.preventDefault(); if (rec) stopMic(); else send(); }}>
+          {rec && <button type="button" className="ai-mic-x" onClick={cancelMic} aria-label={_t("Отменить запись")}>✕</button>}
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={2000} readOnly={rec}
+            placeholder={rec ? _t("Говори, я слушаю…") : _t("Напиши или скажи вопрос…")}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!rec) send(); } }} />
+          {rec
+            ? <button key="stop" type="submit" className="ai-mic on" aria-label={_t("Готово, отправить")}><i /></button>
+            : text.trim()
+              ? <button key="send" type="submit" disabled={busy} aria-label={_t("Отправить")}>➤</button>
+              : <button key="mic" type="button" className="ai-mic" disabled={busy} onClick={startMic} aria-label={_t("Сказать голосом")}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+                </button>}
         </form>
       ) : (
         <div className="ai-input ai-signin">

@@ -4,7 +4,7 @@ import { accessToken } from './auth';
 import { _t, LANG } from './i18n';
 import type { Settings } from './types';
 
-export interface AiMsg { role: 'user' | 'assistant'; content: string; at: number }
+export interface AiMsg { role: 'user' | 'assistant'; content: string; at: number; /** asked by voice */ voice?: boolean }
 
 const LS = 'lm.ai.chat';
 const KEEP = 60;
