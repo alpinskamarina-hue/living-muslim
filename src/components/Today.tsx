@@ -18,6 +18,7 @@ import { RamadanToday } from './Ramadan';
 import { ramadanHidden, ramadanMode } from '../rplan';
 import { _t, _tj, LOC } from '../i18n';
 import { MosqueCard, QiblaChip, type QiblaTab } from './Mosques';
+import { aiName } from '../assistant';
 
 interface Props {
   state: AppState;
@@ -29,6 +30,7 @@ interface Props {
   onAdd: (a: Anchor) => void;
   circleLine?: { names: string[]; onOpen: () => void };
   onSafar: () => void;
+  onAssistant?: () => void;
   firstWeek?: React.ReactNode;
   onGoal: (id: string) => void;
   onReview: () => void;
@@ -44,7 +46,7 @@ interface Props {
   pathCard?: React.ReactNode;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck, onQibla, pathCard }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onAssistant, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck, onQibla, pathCard }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -125,7 +127,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <div className="row">
           <div className="top-main">
             {next ? <Countdown to={times[next]} label={ANCHOR_LABEL[next].after.replace(_t("После"), _t("До"))} /> : <b>{title}</b>}
-            <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? _t("🧭 в пути") : _t("🧭 Сафар")}</button><QiblaChip state={state} today={today} onOpen={() => onQibla('qibla')} /></small>
+            <small>{sub} · {here(state, today).place}<button type="button" className="safar-chip" onClick={onSafar}>{onTrip ? _t("🧭 в пути") : _t("🧭 Сафар")}</button><QiblaChip state={state} today={today} onOpen={() => onQibla('qibla')} />{onAssistant && <button type="button" className="safar-chip ai-chip" onClick={onAssistant}>✨ {aiName(state.settings)}</button>}</small>
           </div>
           <button type="button" className="ring light" onClick={onGarden} aria-label={_t("Свет дня: {0}%. Открыть мой сад", Math.round(light.total * 100))}>
             <svg viewBox="0 0 62 62" aria-hidden="true">

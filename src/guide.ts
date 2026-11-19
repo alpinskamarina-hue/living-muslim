@@ -5,10 +5,11 @@ import { _t } from './i18n';
 export type GoTo =
   | { tab: 'today' | 'circle' | 'progress' | 'profile' }
   | { practice: 'quran' | 'tasbih' | 'focus' | 'books' | 'videos' | 'langs' | 'health' | 'food' | 'sadaqa' | 'umrah' }
-  | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' | 'nikah' }
+  | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' | 'nikah' | 'assistant' }
   | { add: true }
   | { ramadan: true }
   | { safar: true }
+  | { assistant: true }
   | { muhasaba: true };
 
 export interface GuideItem { id: string; ic: string; title: string; why: string; how: string[]; tip?: string; go?: GoTo; open?: string }

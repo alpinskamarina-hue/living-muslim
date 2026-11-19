@@ -22,6 +22,8 @@ import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone,
 import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import { NikahPage } from './Nikah';
+import { AssistantSettings } from './Assistant';
+import { aiName } from '../assistant';
 import { useNikahReady, useNikahMe, nikahTodo } from '../nikah';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
@@ -70,6 +72,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'nikah') return <Sub title={_t("Никах")} onBack={back}><NikahPage /></Sub>;
   if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
+  if (page === 'assistant') return <Sub title={aiName(s)} onBack={back}><AssistantSettings s={s} set={set} admin={admin} onOpen={() => onGo?.({ assistant: true })} /></Sub>;
   if (page === 'help') return <Sub title={_t("Помощь")} onBack={back}><HelpPage /></Sub>;
   if (page === 'me') return <Sub title={_t("Мой профиль")} onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} /></Sub>;
   if (page === 'account') return <Sub title={_t("Аккаунт")} onBack={back}><AccountPage s={s} set={set} /></Sub>;
@@ -128,6 +131,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
       </button>
 
       <div className="menu">
+        <Row icon="✨" title={aiName(s)} sub={admin ? _t("Чат, имя и обучение помощника") : _t("Чат с ИИ-помощником, его имя")} onClick={() => go('assistant')} />
         <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
         <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
         {isCloud && nikahOn && <Row icon="💍" title={_t("Никах")} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}
@@ -152,7 +156,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'assistant' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
