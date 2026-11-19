@@ -26,6 +26,24 @@ export interface VideoItem {
   note?: string;
   pro?: boolean;
   mine?: boolean;
+  /** Course content the owner wrote: modules, lesson summaries, practice, tests. */
+  plan?: CoursePlan;
+}
+
+/** One test question: options and the index of the right one. */
+export interface QuizQ { q: string; opts: string[]; a: number; why?: string }
+/** A module is the next `n` lessons of the playlist, with an optional mini-test. */
+export interface ModulePlan { title: string; n: number; quiz?: QuizQ[] }
+/** What goes under a lesson's video. */
+export interface LessonPlan { sum?: string[]; ask?: string; act?: string }
+export interface CoursePlan {
+  about?: string;
+  modules?: ModulePlan[];
+  /** By video id. */
+  lessons?: Record<string, LessonPlan>;
+  final?: QuizQ[];
+  /** Faith courses: summaries and tests show only after an imam checked them. */
+  checked?: boolean;
 }
 
 export interface Lesson { id: string; title: string; seconds: number }
@@ -41,11 +59,19 @@ export interface VideoState {
   byCourse?: Record<string, string[]>;
   /** Courses the person started (the free plan allows 3). */
   started?: string[];
+  /** Best test score in percent: `<course>:<module index>` or `<course>:f` for the final test. */
+  quiz?: Record<string, number>;
+  /** Lesson practice done: video id → day. */
+  acts?: Record<string, string>;
+  /** Finished courses: course id → day the certificate was earned. */
+  doneC?: Record<string, string>;
+  /** Day of the last watched lesson (for the reminder after 3 quiet days). */
+  lastDay?: string;
 }
 export const emptyVideos = (): VideoState => ({ mine: [], pos: {}, notes: {} });
 
 /** A course the owner added or changed from the app (table lm_courses). */
-export interface CourseRow { kind: 'list' | 'video'; yt: string; cat: VideoCat; title: string; channel?: string | null; lang?: 'ru' | 'en'; note?: string | null; pos?: number; hidden?: boolean }
+export interface CourseRow { kind: 'list' | 'video'; yt: string; cat: VideoCat; title: string; channel?: string | null; lang?: 'ru' | 'en'; note?: string | null; pos?: number; hidden?: boolean; plan?: CoursePlan | null }
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const SBKEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
@@ -59,7 +85,10 @@ export async function loadCourses(force = false): Promise<boolean> {
     if (!force && c && Date.now() - c.at < 30 * 60000) return false;
   } catch { /* */ }
   try {
-    const r = await fetch(`${SB}/rest/v1/lm_courses?select=kind,yt,cat,title,channel,lang,note,pos,hidden&order=pos.asc,created.desc`, { headers: { apikey: SBKEY } });
+    const cols = 'kind,yt,cat,title,channel,lang,note,pos,hidden';
+    let r = await fetch(`${SB}/rest/v1/lm_courses?select=${cols},plan&order=pos.asc,created.desc`, { headers: { apikey: SBKEY } });
+    // Before course-plan.sql the table has no plan column: read the rest.
+    if (r.status === 400) r = await fetch(`${SB}/rest/v1/lm_courses?select=${cols}&order=pos.asc,created.desc`, { headers: { apikey: SBKEY } });
     if (!r.ok) return false; // table not created yet: built-in list only
     const rows = (await r.json()) as CourseRow[];
     const changed = JSON.stringify(rows) !== JSON.stringify(remote);
@@ -74,7 +103,7 @@ export function setRemoteCourses(rows: CourseRow[]) {
   try { localStorage.setItem(RC, JSON.stringify({ at: Date.now(), rows })); } catch { /* */ }
 }
 
-const fromRow = (r: CourseRow): VideoItem => ({ kind: r.kind, id: r.yt, cat: r.cat, title: r.title, channel: r.channel ?? undefined, lang: r.lang ?? 'ru', note: r.note ?? undefined });
+const fromRow = (r: CourseRow): VideoItem => ({ kind: r.kind, id: r.yt, cat: r.cat, title: r.title, channel: r.channel ?? undefined, lang: r.lang ?? 'ru', note: r.note ?? undefined, plan: r.plan ?? undefined });
 
 /** Built-in catalog with the owner's changes: new courses first, edited ones replaced, hidden ones removed. */
 export function catalog(withHidden = false): VideoItem[] {

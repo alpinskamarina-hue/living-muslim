@@ -9,6 +9,8 @@ import { _t } from './i18n';
 import { addDays } from './dates';
 import { ANCHOR_LABEL } from './types';
 import { azkarHabits, azkarNow } from './azkar';
+import { catalog } from './videos';
+import { daysBetween } from './dates';
 
 export type PlanMode = 'azkar' | 'quran' | 'videos' | 'course' | 'course-ar' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
 export interface PlanItem {
@@ -78,6 +80,16 @@ export function dayPlan(s: AppState, today: string): PlanItem[] {
     // A habit for the same practice already covers this goal today.
     if (modes.has(m) && m !== 'videos') continue;
     out.push({ key: `g:${g.id}`, ic: IC[m], title: st.text, sub: _t("Цель: {0}", g.title), mode: m, ref: st.ref });
+  }
+  // A course in progress: its next lesson, unless a lesson was already watched today.
+  const vs = s.videos;
+  const cid = vs?.last?.item;
+  if (isCloud && vs && cid && !out.some((x) => x.mode === 'videos') && !vs.doneC?.[cid] && vs.lastDay !== today && !started.includes(`c:${cid}`)) {
+    const it = [...vs.mine, ...catalog()].find((x) => x.id === cid);
+    if (it?.kind === 'list') {
+      const quiet = vs.lastDay ? daysBetween(vs.lastDay, today) : 0;
+      out.push({ key: `c:${cid}`, ic: IC.videos, title: _t("Курс: следующий урок"), sub: quiet >= 3 ? _t("«{0}» · {1} дн. без уроков, вернись хотя бы на 10 минут", it.title, quiet) : it.title, mode: 'videos', ref: cid });
+    }
   }
   return out;
 }

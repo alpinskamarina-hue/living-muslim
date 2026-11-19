@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { accessToken } from '../auth';
 import {
-  builtInIds, catalog, catOf, loadCourses, lookup, parseYouTube, remoteCourses, setRemoteCourses, thumb, VIDEO_CATS,
-  type CourseRow, type VideoCat, type VideoItem,
+  builtInIds, catalog, catOf, lessons, loadCourses, lookup, parseYouTube, remoteCourses, setRemoteCourses, thumb, VIDEO_CATS,
+  type CoursePlan, type CourseRow, type Lesson, type LessonPlan, type QuizQ, type VideoCat, type VideoItem,
 } from '../videos';
 
 // Owner screen: add YouTube courses to «Видеоуроки», change their title or category, hide or bring them back.
@@ -23,8 +23,8 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   return (await r.json()) as T;
 }
 
-interface Draft { kind: 'list' | 'video'; yt: string; cat: VideoCat; title: string; channel: string; lang: 'ru' | 'en'; note: string; count?: number; first?: string; hidden?: boolean }
-const toDraft = (x: VideoItem, hidden = false): Draft => ({ kind: x.kind, yt: x.id, cat: x.cat, title: x.title, channel: x.channel ?? '', lang: x.lang ?? 'ru', note: x.note ?? '', hidden });
+interface Draft { kind: 'list' | 'video'; yt: string; cat: VideoCat; title: string; channel: string; lang: 'ru' | 'en'; note: string; count?: number; first?: string; hidden?: boolean; plan?: CoursePlan }
+const toDraft = (x: VideoItem, hidden = false): Draft => ({ kind: x.kind, yt: x.id, cat: x.cat, title: x.title, channel: x.channel ?? '', lang: x.lang ?? 'ru', note: x.note ?? '', hidden, plan: x.plan });
 
 export function AdminCourses() {
   const [ready, setReady] = useState<boolean | null>(null);
@@ -46,8 +46,11 @@ export function AdminCourses() {
 
   const save = async (d: Draft, hidden = d.hidden ?? false) => {
     setMsg('');
-    const p = { kind: d.kind, yt: d.yt, cat: d.cat, title: d.title.trim(), channel: d.channel.trim(), lang: d.lang, note: d.note.trim(), hidden };
+    const plan = d.plan ? cleanPlan(d.plan) : undefined;
+    const p = { kind: d.kind, yt: d.yt, cat: d.cat, title: d.title.trim(), channel: d.channel.trim(), lang: d.lang, note: d.note.trim(), hidden, ...(d.plan ? { plan } : {}) };
     const saved = await rpc<CourseRow>('lm_course_save', { p });
+    // Before course-plan.sql the server drops the plan without an error.
+    if (d.plan && !('plan' in saved)) throw new Error('Курс сохранён, но содержание (модули, конспекты, тесты) нет: один раз запусти course-plan.sql в Supabase');
     setRemoteCourses([saved, ...rows.filter((r) => r.yt !== saved.yt)]);
     refresh();
     return saved;
@@ -58,7 +61,7 @@ export function AdminCourses() {
   };
   const remove = async (x: VideoItem) => {
     const isBuilt = builtIn.has(x.id);
-    if (!confirm(isBuilt ? `Вернуть «${x.title}» как было в стандартном списке?` : `Удалить «${x.title}» из видеоуроков у всех?`)) return;
+    if (!confirm(isBuilt ? `Вернуть «${x.title}» как было в стандартном списке?` : `Удалить «${x.title}» из курсов у всех?`)) return;
     try { await rpc('lm_course_delete', { p_yt: x.id }); setRemoteCourses(rows.filter((r) => r.yt !== x.id)); refresh(); setMsg(isBuilt ? 'Вернул как было' : 'Удалено'); } catch (e) { setMsg(String(e instanceof Error ? e.message : e)); }
   };
 
@@ -138,10 +141,129 @@ function CourseForm({ d: d0, isNew, onBack, onSave }: { d: Draft; isNew: boolean
             <select value={d.lang} onChange={(e) => set({ lang: e.target.value as 'ru' | 'en' })}><option value="ru">Русский</option><option value="en">English</option></select>
           </label>
           <label className="field">Пара слов о курсе (необязательно)<textarea rows={2} maxLength={300} value={d.note} onChange={(e) => set({ note: e.target.value })} /></label>
-          <button type="button" className="pri-btn big-btn" disabled={!ok || state === 'save'} onClick={submit}>{state === 'save' ? 'Сохраняю…' : isNew ? 'Добавить в видеоуроки' : 'Сохранить'}</button>
+          {d.kind === 'list' && <PlanEditor d={d} plan={d.plan ?? {}} onChange={(plan) => set({ plan })} />}
+          <button type="button" className="pri-btn big-btn" disabled={!ok || state === 'save'} onClick={submit}>{state === 'save' ? 'Сохраняю…' : isNew ? 'Добавить в курсы' : 'Сохранить'}</button>
         </>
       )}
       {err && <div className="warn">{err}</div>}
     </div>
+  );
+}
+
+// ---- course content: modules, lesson summaries and practice, tests ----
+
+const tidy = (x?: string) => (x ?? '').trim();
+function cleanQs(qs?: QuizQ[]): QuizQ[] | undefined {
+  const out = (qs ?? []).map((q) => ({ q: tidy(q.q), opts: q.opts.map(tidy), a: q.a, ...(tidy(q.why) ? { why: tidy(q.why) } : {}) }))
+    .filter((q) => q.q && q.opts.filter(Boolean).length >= 2 && q.opts[q.a]);
+  return out.length ? out : undefined;
+}
+function cleanPlan(p: CoursePlan): CoursePlan {
+  const lessonsOut: Record<string, LessonPlan> = {};
+  for (const [id, l] of Object.entries(p.lessons ?? {})) {
+    const sum = (l.sum ?? []).map(tidy).filter(Boolean);
+    const v: LessonPlan = { ...(sum.length ? { sum } : {}), ...(tidy(l.ask) ? { ask: tidy(l.ask) } : {}), ...(tidy(l.act) ? { act: tidy(l.act) } : {}) };
+    if (Object.keys(v).length) lessonsOut[id] = v;
+  }
+  return {
+    ...(tidy(p.about) ? { about: tidy(p.about) } : {}),
+    ...(p.modules?.length ? { modules: p.modules.map((m) => ({ title: tidy(m.title) || 'Модуль', n: Math.max(1, Math.floor(m.n || 1)), ...(cleanQs(m.quiz) ? { quiz: cleanQs(m.quiz) } : {}) })) } : {}),
+    ...(Object.keys(lessonsOut).length ? { lessons: lessonsOut } : {}),
+    ...(cleanQs(p.final) ? { final: cleanQs(p.final) } : {}),
+    ...(p.checked ? { checked: true } : {}),
+  };
+}
+
+function PlanEditor({ d, plan, onChange }: { d: Draft; plan: CoursePlan; onChange: (p: CoursePlan) => void }) {
+  const [items, setItems] = useState<Lesson[] | null>(null);
+  const [err, setErr] = useState(false);
+  useEffect(() => {
+    let live = true;
+    lessons({ kind: 'list', id: d.yt, cat: d.cat, title: d.title }).then((l) => live && setItems(l.items)).catch(() => live && setErr(true));
+    return () => { live = false; };
+  }, [d.yt]); // eslint-disable-line react-hooks/exhaustive-deps
+  const set = (p: Partial<CoursePlan>) => onChange({ ...plan, ...p });
+  const mods = plan.modules ?? [];
+  const setMod = (i: number, p: Partial<NonNullable<CoursePlan['modules']>[number]>) => set({ modules: mods.map((m, j) => (j === i ? { ...m, ...p } : m)) });
+  const setLesson = (id: string, p: Partial<LessonPlan>) => set({ lessons: { ...(plan.lessons ?? {}), [id]: { ...(plan.lessons?.[id] ?? {}), ...p } } });
+  const covered = mods.reduce((a, m) => a + Math.max(0, m.n || 0), 0);
+  // Which module a lesson falls into, for the headings in the lesson list.
+  const modAt = (i: number) => { let at = 0; for (let j = 0; j < mods.length; j++) { at += Math.max(0, mods[j].n || 0); if (i < at) return j; } return mods.length - 1; };
+
+  return (
+    <div className="ac-plan">
+      <h3 className="ac-h">Содержание курса</h3>
+      <p className="tiny">Всё необязательно. Без этого курс работает как список уроков: заметки, прогресс и сертификат в конце. Модули, конспекты, практика и тесты делают из него полноценный курс.</p>
+      {d.cat === 'faith' && (
+        <label className="ac-check"><input type="checkbox" checked={Boolean(plan.checked)} onChange={(e) => set({ checked: e.target.checked })} />
+          <span><b>Проверено имамом</b><small>Курсы о вере: без этой галочки конспекты и тесты людям не показываются, только уроки.</small></span></label>
+      )}
+      <label className="field">О курсе (на странице курса)<textarea rows={3} maxLength={600} value={plan.about ?? ''} onChange={(e) => set({ about: e.target.value })} placeholder="Чему научится человек, для кого курс" /></label>
+
+      <h4 className="ac-sub">Модули {items && <small>{covered} из {items.length} уроков разложено{covered < items.length && mods.length ? ', остальные уйдут в последний модуль' : ''}</small>}</h4>
+      {mods.map((m, i) => (
+        <div key={i} className="ac-mod">
+          <div className="ac-mod-top">
+            <b>{i + 1}</b>
+            <input value={m.title} placeholder="Название модуля" onChange={(e) => setMod(i, { title: e.target.value })} />
+            <input type="number" min={1} max={200} value={m.n} aria-label="Сколько уроков" onChange={(e) => setMod(i, { n: Number(e.target.value) })} />
+            <span className="tiny">уроков</span>
+            <button type="button" aria-label="Убрать модуль" onClick={() => set({ modules: mods.filter((_, j) => j !== i) })}>✕</button>
+          </div>
+          <QEditor title={`Мини-тест модуля ${i + 1}`} qs={m.quiz ?? []} onChange={(quiz) => setMod(i, { quiz })} />
+        </div>
+      ))}
+      <button type="button" className="ghost-btn" onClick={() => set({ modules: [...mods, { title: '', n: Math.max(1, Math.min(5, (items?.length ?? 5) - covered)) }] })}>+ Модуль</button>
+
+      <h4 className="ac-sub">Уроки</h4>
+      {err && <p className="warn">Не получилось загрузить уроки плейлиста.</p>}
+      {!items && !err && <p className="tiny">Загружаю уроки…</p>}
+      {items?.map((x, i) => {
+        const l = plan.lessons?.[x.id] ?? {};
+        const has = Boolean(l.sum?.some((s) => s.trim()) || l.ask?.trim() || l.act?.trim());
+        const m = mods.length ? modAt(i) : -1;
+        const head = m >= 0 && (i === 0 || modAt(i - 1) !== m);
+        return (
+          <div key={x.id}>
+            {head && <p className="ac-modh">Модуль {m + 1}{mods[m]?.title ? `. ${mods[m].title}` : ''}</p>}
+            <details className="ac-lesson">
+              <summary>{i + 1}. {x.title}{has ? ' ✓' : ''}</summary>
+              <label className="field">Главные мысли (каждая с новой строки, лучше 3)<textarea rows={3} value={(l.sum ?? []).join('\n')} onChange={(e) => setLesson(x.id, { sum: e.target.value.split('\n') })} /></label>
+              <label className="field">Вопрос себе<input value={l.ask ?? ''} onChange={(e) => setLesson(x.id, { ask: e.target.value })} placeholder="Например: что из урока я сделаю на этой неделе?" /></label>
+              <label className="field">Практика на сегодня<input value={l.act ?? ''} onChange={(e) => setLesson(x.id, { act: e.target.value })} placeholder="Одно простое действие на сегодня" /></label>
+            </details>
+          </div>
+        );
+      })}
+
+      <h4 className="ac-sub">Итоговый тест</h4>
+      <QEditor title="Итоговый тест" qs={plan.final ?? []} onChange={(final) => set({ final })} />
+      <p className="tiny">Проходной балл 70%. Сертификат даётся, когда пройдены все уроки, мини-тесты и итоговый тест.</p>
+    </div>
+  );
+}
+
+function QEditor({ title, qs, onChange }: { title: string; qs: QuizQ[]; onChange: (q: QuizQ[]) => void }) {
+  const [open, setOpen] = useState(false);
+  const setQ = (i: number, p: Partial<QuizQ>) => onChange(qs.map((q, j) => (j === i ? { ...q, ...p } : q)));
+  return (
+    <details className="ac-quiz" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>{title}: {qs.length ? `${qs.length} вопр.` : 'нет вопросов'}</summary>
+      {qs.map((q, i) => (
+        <div key={i} className="ac-q">
+          <div className="ac-mod-top"><b>{i + 1}</b><input value={q.q} placeholder="Вопрос" onChange={(e) => setQ(i, { q: e.target.value })} />
+            <button type="button" aria-label="Убрать вопрос" onClick={() => onChange(qs.filter((_, j) => j !== i))}>✕</button></div>
+          {[0, 1, 2, 3].map((o) => (
+            <label key={o} className="ac-opt">
+              <input type="radio" name={`${title}-${i}`} checked={q.a === o} onChange={() => setQ(i, { a: o })} aria-label="Верный ответ" />
+              <input value={q.opts[o] ?? ''} placeholder={o < 2 ? `Ответ ${o + 1}` : `Ответ ${o + 1} (необязательно)`} onChange={(e) => { const opts = [0, 1, 2, 3].map((k) => (k === o ? e.target.value : q.opts[k] ?? '')); setQ(i, { opts }); }} />
+            </label>
+          ))}
+          <input className="ac-why" value={q.why ?? ''} placeholder="Пояснение после ответа (необязательно)" onChange={(e) => setQ(i, { why: e.target.value })} />
+        </div>
+      ))}
+      <button type="button" className="link-btn" onClick={() => onChange([...qs, { q: '', opts: ['', '', '', ''], a: 0 }])}>+ Вопрос</button>
+      <p className="tiny">Кружок слева отмечает верный ответ.</p>
+    </details>
   );
 }

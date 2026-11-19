@@ -62,7 +62,7 @@ export function AdminPage() {
     <div className="adm">
       <div className="seg adm-tabs">
         <button type="button" aria-pressed={tab === 'stats'} onClick={() => setTab('stats')}>📊 Аналитика</button>
-        <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Видеокурсы</button>
+        <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Курсы</button>
         <button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>🚩 Жалобы</button>
       </div>
       {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : <AdminReports />}

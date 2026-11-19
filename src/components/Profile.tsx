@@ -104,7 +104,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
       {admin && (
         <button type="button" className="pro-entry adm-entry" onClick={() => go('admin')}>
           <span className="pro-badge adm-badge">📊</span>
-          <span><b>{_t("Аналитика и видеокурсы")}</b><small>{_t("Кто заходит и откуда, курсы в видеоуроках. Видно только тебе")}</small></span>
+          <span><b>{_t("Аналитика и курсы")}</b><small>{_t("Кто заходит и откуда, курсы приложения. Видно только тебе")}</small></span>
           <i aria-hidden="true">›</i>
         </button>
       )}

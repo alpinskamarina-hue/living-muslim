@@ -70,7 +70,7 @@ export function App() {
   const [state, update, replace] = useAppState();
   const [tab, setTab] = useState<Tab>(() => {
     try { const t = sessionStorage.getItem('lm.tab'); sessionStorage.removeItem('lm.tab'); if (t === 'circle') return 'circle' as Tab; } catch { /* */ }
-    try { const q = new URLSearchParams(location.search); if (q.get('c')) { if (q.has('umrah')) sessionStorage.setItem('lm.umrahGo', '1'); return 'circle' as Tab; } if (q.has('umrah')) return 'practice' as Tab; } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.get('c')) { if (q.has('umrah')) sessionStorage.setItem('lm.umrahGo', '1'); return 'circle' as Tab; } if (q.has('umrah') || q.get('course')) return 'practice' as Tab; } catch { /* */ }
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     return 'today';
   });
@@ -142,7 +142,7 @@ export function App() {
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
   // ?umrah opens the umrah app right away (the phone shortcut and /umrah links).
   const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>(() => {
-    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) return { n: 0, mode: 'umrah', ref: q.get('umrah') || undefined }; } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) return { n: 0, mode: 'umrah', ref: q.get('umrah') || undefined }; if (q.get('course')) return { n: 0, mode: 'videos', ref: q.get('course') || undefined }; } catch { /* */ }
     return { n: 0 };
   });
   const [reviewOpen, setReviewOpen] = useState(false);
