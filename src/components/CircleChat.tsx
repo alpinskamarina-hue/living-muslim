@@ -63,7 +63,7 @@ function periodOf(state: AppState, iso: string): [number, string] | null {
   return got;
 }
 const POLL_E = ['1️⃣', '2️⃣', '3️⃣', '4️⃣'];
-export interface ChatAction { ic: string; label: string; run: () => void }
+export interface ChatAction { ic: string; label: string; run: () => void; c?: string }
 
 /** One line for a message in quotes and previews. */
 export function shortOf(m: Msg, n = 90) {
@@ -293,7 +293,14 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState('');
   const fileIn = useRef<HTMLInputElement>(null);
-  const pickKind = (photo: boolean) => { setPlus(false); if (fileIn.current) { fileIn.current.accept = photo ? 'image/*' : ''; fileIn.current.click(); } };
+  const pickKind = (photo: boolean, cam = false) => {
+    setPlus(false);
+    const el = fileIn.current;
+    if (!el) return;
+    el.accept = photo ? 'image/*' : '';
+    if (cam) el.setAttribute('capture', 'environment'); else el.removeAttribute('capture');
+    el.click();
+  };
   const pickFile = (f: File | undefined) => {
     if (!f) return;
     const pic = /^image\//.test(f.type);
@@ -377,14 +384,19 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
     </div>
   ) : null;
   const quick: [string, () => void][] = main
-    ? [
-        ...(nowP ? [[prayed(nowP) ? _t("✓ Ты помолился {0}", PRAYER[nowP]) : _t("✅ Помолился {0}", PRAYER[nowP]), sayPrayed] as [string, () => void]] : []),
-        [_t("🤲 Амин"), () => send(_t("🤲 Амин"))],
-        [_t("✨ МашаАллах"), () => send(_t("✨ МашаАллах"))],
-        [_t("📍 Иду в мечеть"), () => send(_t("📍 Иду в мечеть"))],
-        [_t("💪 Я с тобой"), () => send(_t("💪 Я с тобой"))],
-      ]
+    ? (nowP ? [[prayed(nowP) ? _t("✓ Ты помолился {0}", PRAYER[nowP]) : _t("✅ Помолился {0}", PRAYER[nowP]), sayPrayed]] : [])
     : QUICK.map((t) => [t, () => send(t)]);
+  // the 📎 sheet, like WhatsApp: attachments first, then the circle's own things
+  const sheet: ChatAction[] = main ? [
+    ...(chat.filesOn ? [
+      { ic: '📄', label: _t("Документ"), c: '#7f66ff', run: () => pickKind(false) },
+      { ic: '📷', label: _t("Камера"), c: '#ff2e74', run: () => pickKind(true, true) },
+      { ic: '🖼', label: _t("Галерея"), c: '#bf59cf', run: () => pickKind(true) },
+    ] : []),
+    ...(actions ?? []),
+    { ic: '📍', label: _t("Иду в мечеть"), c: '#1f7a4d', run: () => send(_t("📍 Иду в мечеть")) },
+    ...(nowP && !prayed(nowP) ? [{ ic: '✅', label: _t("Помолился"), c: '#25a35a', run: sayPrayed }] : []),
+  ] : [];
 
   return (
     <div className="cc">
@@ -546,7 +558,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           </div>
         ) : (
           <>
-            <div className="cc-quick">{quick.map(([t, f]) => <button key={t} type="button" onClick={f}>{t}</button>)}</div>
+            {quick.length > 0 && <div className="cc-quick">{quick.map(([t, f]) => <button key={t} type="button" onClick={f}>{t}</button>)}</div>}
             {file && (
               <div className="cc-reply cc-pick">
                 <span><b>{/^image\//.test(file.type) ? _t("📷 Фото") : `${iconOf(file.name)} ${_t("Файл")}`}</b>{file.name} · {sizeOf(file.size)}</span>
@@ -555,11 +567,14 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             )}
             <div className="cc-in">
               <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
-              {main ? <button type="button" className="cc-plus" disabled={sending} aria-label={_t("Действия круга")} onClick={() => setPlus(true)}>{sending ? '…' : '＋'}</button>
-                : chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
+              {!main && chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
+              <div className={main ? 'cc-field' : 'cc-field plain'}>
               <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : placeholder ?? _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); if (file) sendFile(); else send(); } }} />
+              {main && <button type="button" className="cc-plus" disabled={sending} aria-label={_t("Прикрепить и действия круга")} onClick={() => setPlus(true)}>{sending ? '…' : '📎'}</button>}
+              {main && chat.filesOn && !text.trim() && !file && <button type="button" className="cc-cam" disabled={sending} aria-label={_t("Камера")} onClick={() => pickKind(true, true)}>📷</button>}
+              </div>
               {file || text.trim() || !recorder.supported || !chat.voiceOn ? (
                 <button type="button" className="cc-send" disabled={(!text.trim() && !file) || sending} aria-label={_t("Отправить")} onClick={() => { if (file) sendFile(); else send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
               ) : (
@@ -576,11 +591,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         <>
           <div className="dim" onClick={() => setPlus(false)} />
           <div className="sheet cc-acts" role="dialog" aria-label={_t("Действия круга")}>
-            <b>{_t("Что сделать в круге?")}</b>
             <div className="cc-acts-g">
-              {actions.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span>{a.ic}</span>{a.label}</button>)}
-              {chat.filesOn && <button type="button" onClick={() => pickKind(true)}><span>📷</span>{_t("Фото")}</button>}
-              {chat.filesOn && <button type="button" onClick={() => pickKind(false)}><span>📎</span>{_t("Файл")}</button>}
+              {sheet.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span style={{ background: a.c || '#1f7a4d' }}>{a.ic}</span>{a.label}</button>)}
             </div>
             <button type="button" className="link-btn" onClick={() => setPlus(false)}>{_t("Закрыть")}</button>
           </div>

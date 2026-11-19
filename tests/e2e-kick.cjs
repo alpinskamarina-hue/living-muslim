@@ -7,7 +7,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const say = (...a) => console.log(...a);
 const ls = (pg, k) => pg.evaluate((k) => localStorage.getItem(k), k);
 const shot = (pg, n, full = false) => pg.screenshot({ path: OUT + n + '.png', fullPage: full });
-const nav = async (pg, t) => { await pg.locator('nav.nav button', { hasText: t }).click(); await wait(700); };
+const nav = async (pg, t) => { await pg.locator('nav.nav button', { hasText: t }).click(); await wait(700); if (t === 'Круг') { await wait(800); const r = pg.locator('.wa-row'); if (await r.count()) { await r.first().click(); await wait(1200); } } };
 
 async function signup(pg, name, email) {
   await pg.goto(BASE + '/');
@@ -48,8 +48,8 @@ async function signup(pg, name, email) {
     say('B kick buttons:', await B.locator('.ch-acts .kick').count());
 
     await A.reload(); await wait(3000); await nav(A, 'Круг');
-    await A.locator('.cx-menu').click(); await wait(600);
-    await A.locator('.cx-panel .ch-mt').nth(1).click(); await wait(300);
+    await A.locator('.wa-hbtn', { hasText: '⋮' }).click(); await wait(600);
+    await A.locator('.wa-info .ch-mt').nth(1).click(); await wait(300);
     say('A kick buttons:', await A.locator('.ch-acts .kick').count());
     await A.locator('.ch-acts .kick').first().scrollIntoViewIfNeeded();
     await shot(A, 'kick-1-owner');

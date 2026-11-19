@@ -7,8 +7,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const say = (...a) => console.log(...a);
 const ls = (pg, k) => pg.evaluate((k) => localStorage.getItem(k), k);
 const shot = (pg, n, full = false) => pg.screenshot({ path: OUT + n + '.png', fullPage: full });
-const tab = async (pg, t) => { const b = pg.locator('.cc-tabs button', { hasText: t }); if (await b.count()) { await b.click(); await wait(800); } else if (t === 'Круг') { await pg.locator('.cx-menu').click(); await wait(600); } else if (await pg.locator('.cx-panel').count()) { await pg.locator('.cx-ph button').click(); await wait(400); } };
-const nav = async (pg, t) => { await pg.locator('nav.nav button', { hasText: t }).click(); await wait(700); };
+const tab = async (pg, t) => { const b = pg.locator('.cc-tabs button', { hasText: t }); if (await b.count()) { await b.click(); await wait(800); } else if (t === 'Круг') { await pg.locator('.wa-hbtn', { hasText: '⋮' }).click(); await wait(600); } else if (await pg.locator('.wa-info').count()) { await pg.locator('.wa-ibar button').click(); await wait(600); } };
+const nav = async (pg, t) => { await pg.locator('nav.nav button', { hasText: t }).click(); await wait(700); if (t === 'Круг') { await wait(800); const r = pg.locator('.wa-row'); if (await r.count()) { await r.first().click(); await wait(1200); } } };
 
 async function signup(pg, name, email) {
   await pg.goto(BASE + '/');
@@ -52,7 +52,7 @@ async function signup(pg, name, email) {
     say('A tabs:', await A.locator('.cc-tabs button').allInnerTexts());
     // A asks for dua (also posts an event card to the chat)
     await A.locator('.cc-plus').click(); await wait(300);
-    await A.locator('.cc-acts-g button', { hasText: 'Попросить дуа' }).click(); await wait(300);
+    await A.locator('.cc-acts-g button', { hasText: 'Дуа' }).click(); await wait(300);
     await A.locator('.cx-sheet textarea').fill('Давайте сделаем дуа, чтобы у нас был офис');
     await A.locator('.cx-sheet .pri-btn').click(); await wait(1500);
     // A writes in the chat

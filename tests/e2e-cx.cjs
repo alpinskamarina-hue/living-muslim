@@ -8,6 +8,8 @@ const say = (...a) => console.log(...a);
 const ls = (pg, k) => pg.evaluate((k) => localStorage.getItem(k), k);
 const shot = (pg, n, full = false) => pg.screenshot({ path: OUT + n + '.png', fullPage: full });
 const nav = async (pg, t) => { await pg.locator('nav.nav button', { hasText: t }).click(); await wait(700); };
+// the Круг tab opens the list of circle chats; tap the first row to open the chat
+const open = async (pg, shotName) => { await nav(pg, 'Круг'); await wait(1500); const r = pg.locator('.wa-row'); if (await r.count()) { if (shotName) await shot(pg, shotName); await r.first().click(); await wait(1500); } };
 
 async function signup(pg, name, email) {
   await pg.goto(BASE + '/');
@@ -50,15 +52,16 @@ async function signup(pg, name, email) {
     await nav(C, 'Круг');
     const jc = C.locator('button', { hasText: /Вступить|Присоединиться/ });
     if (await jc.count()) { await jc.first().click(); await wait(2500); }
-    await A.reload(); await wait(3500); await nav(A, 'Круг'); await wait(2000);
+    await A.reload(); await wait(3500); await open(A, 'cx-0-list-empty');
     await A.screenshot({ path: OUT + 'cx-1-empty.png' });
     // B writes, A writes
-    await B.reload(); await wait(3000); await nav(B, 'Круг'); await wait(2000);
+    await B.reload(); await wait(3000); await open(B);
     await B.locator('.cc-in textarea').fill('Братья, кто сегодня на джуму?'); await B.locator('.cc-send').click(); await wait(800);
-    await B.locator('.cc-quick button').first().click(); await wait(800);
-    say('B quick:', await B.locator('.cc-quick button').allInnerTexts());
+    await B.locator('.cc-plus').click(); await wait(300);
+    say('B sheet:', await B.locator('.cc-acts-g button').allInnerTexts());
+    await B.locator('.cc-acts-g button', { hasText: 'Иду в мечеть' }).click(); await wait(800);
     // A: plus -> poll
-    await A.reload(); await wait(3500); await nav(A, 'Круг'); await wait(1500);
+    await A.reload(); await wait(3500); await open(A, 'cx-0-list');
     await A.locator('.cc-plus').click(); await wait(400);
     await A.screenshot({ path: OUT + 'cx-2-plus.png' });
     await A.locator('.cc-acts-g button', { hasText: '📊' }).click(); await wait(300);
@@ -68,20 +71,28 @@ async function signup(pg, name, email) {
     await A.locator('.cc-poll button').first().click(); await wait(800);
     // A: dua
     await A.locator('.cc-plus').click(); await wait(300);
-    await A.locator('.cc-acts-g button', { hasText: 'Попросить дуа' }).click(); await wait(300);
+    await A.locator('.cc-acts-g button', { hasText: 'Дуа' }).click(); await wait(300);
     await A.locator('.cx-sheet textarea').fill('За маму, завтра операция');
     await A.locator('.cx-sheet .pri-btn').click(); await wait(1500);
-    await A.locator('.cc-quick button').first().click(); await wait(1200);
+    await A.locator('.cc-ev button').first().click().catch(() => {}); await wait(1200);
     await A.screenshot({ path: OUT + 'cx-3-chat.png' });
     await A.evaluate(() => window.scrollTo(0, 0)); await wait(300);
     await A.screenshot({ path: OUT + 'cx-3b-top.png' });
     await A.evaluate(() => window.scrollTo(0, 99999));
     await A.screenshot({ path: OUT + 'cx-3-chat-full.png', fullPage: true });
     // panel
-    await A.locator('.cx-menu').click(); await wait(600);
+    await A.locator('.wa-hbtn', { hasText: '⋮' }).click(); await wait(600);
     await A.screenshot({ path: OUT + 'cx-4-panel.png' });
-    await A.locator('.cx-panel').evaluate((e) => e.scrollTo(0, 99999)); await wait(300);
-    await A.screenshot({ path: OUT + 'cx-5-panel-end.png' });
+    await A.screenshot({ path: OUT + 'cx-5-panel-full.png', fullPage: true });
+    // back button of the phone: info page -> chat -> list
+    await A.goBack(); await wait(600);
+    say('after back 1, chat shown:', await A.locator('.wa-head').count());
+    await A.goBack(); await wait(1500);
+    say('after back 2, list shown:', await A.locator('.wa-row').count());
+    await A.screenshot({ path: OUT + 'cx-6-list.png' });
+    // B sees the list with the unread count
+    await B.reload(); await wait(3000); await nav(B, 'Круг'); await wait(2500);
+    await B.screenshot({ path: OUT + 'cx-7-list-B.png' });
     say('dialogs', A.dialogs, B.dialogs);
   } catch (e) { console.error('FAIL', e); process.exitCode = 1; }
   finally { await br.close(); srv.close(); await L.db.end(); }
