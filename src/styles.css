@@ -3782,3 +3782,9 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .ai-finishes button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font: inherit; color: var(--ink-2); }
 .ai-finishes button.on { border-color: var(--gold); color: var(--ink); font-weight: 700; }
 .ai-finishes small { font-size: 10.5px; line-height: 1.15; text-align: center; }
+/* Theme check 20.11: cream cards with a hard-coded light background (Friday review, niyya, safar, Ramadan) */
+:root[data-theme="dark"] :is(.g-review-cta, .h-hero.traveler, .safar-bar, .niyya, .fast-card, .rm-grid button[data-v="miss"]) { background: var(--gold-soft); border-color: #5a4720; color: var(--ink); }
+:root[data-theme="dark"] :is(.night.odd, .rm-night.odd) { background: #2a2414; border-color: #5a4720; }
+:root[data-theme="dark"] :is(.g-review-cta small, .niyya small) { color: var(--gold); }
+:root[data-theme="dark"] .safar-bar .row2 button { border-color: #5a4720; }
+:root[data-theme="dark"] :is(.acts .mn, .acts .lt) { color: #10180f; }
