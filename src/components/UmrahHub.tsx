@@ -1,4 +1,5 @@
 import { Hint } from './Guide';
+import { currentTheme } from '../theme';
 import { useEffect, useMemo, useState } from 'react';
 import { shareCard, SITE } from '../share';
 import type { AppState, UmrahState } from '../types';
@@ -76,15 +77,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const go = (t: UTab) => { setTab(t); window.scrollTo(0, 0); };
 
   // Light or dark like the whole app (auto follows the phone); the moon/sun switches it for the whole app.
-  const theme = state.settings.theme ?? 'auto';
-  const [sysDark, setSysDark] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches);
-  useEffect(() => {
-    const m = matchMedia('(prefers-color-scheme: dark)');
-    const f = () => setSysDark(m.matches);
-    m.addEventListener?.('change', f);
-    return () => m.removeEventListener?.('change', f);
-  }, []);
-  const dark = theme === 'dark' || (theme === 'auto' && sysDark);
+  const dark = currentTheme() === 'dark';
   const flipTheme = () => update((s) => ({ ...s, settings: { ...s.settings, theme: dark ? 'light' : 'dark' } }));
 
   // The umrah is its own app: the main tabs hide while it is open.

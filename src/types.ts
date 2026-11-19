@@ -38,7 +38,8 @@ export interface Settings {
   name: string;
   /** Minutes added to each calculated prayer time, to match the local mosque. */
   offsets?: Partial<Record<Anchor, number>>;
-  theme?: 'auto' | 'light' | 'dark';
+  /** prayer = dark from Maghrib to Fajr (the default when missing); auto = like the phone. */
+  theme?: 'prayer' | 'auto' | 'light' | 'dark';
   /** Text size: 1 normal, 1.1 large, 1.2 larger. */
   textScale?: number;
   reminders?: ReminderPrefs;

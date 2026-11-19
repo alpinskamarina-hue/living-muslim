@@ -17,6 +17,7 @@ import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
 import { Profile } from './components/Profile';
 import { syncPush, setNudge, nudgeOf } from './push';
+import { effectiveTheme, themeMode, setCurrentTheme, sysPrefersDark } from './theme';
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
@@ -125,12 +126,21 @@ export function App() {
     const t = setTimeout(() => syncPush(state.settings, state.settings.reminders!), 1500);
     return () => clearTimeout(t);
   }, [lat, lng, method, madhab, offKey, remKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { theme = 'auto', textScale = 1 } = state.settings;
+  const { textScale = 1 } = state.settings;
+  const [sysDark, setSysDark] = useState(sysPrefersDark);
   useEffect(() => {
-    const r = document.documentElement;
-    if (theme === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', theme);
-    document.body.style.zoom = textScale === 1 ? '' : String(textScale);
-  }, [theme, textScale]);
+    const m = matchMedia('(prefers-color-scheme: dark)');
+    const f = () => setSysDark(m.matches);
+    m.addEventListener?.('change', f);
+    return () => m.removeEventListener?.('change', f);
+  }, []);
+  const theme = effectiveTheme(themeMode(state.settings), times, now, sysDark);
+  setCurrentTheme(theme);
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('lm.theme', theme); } catch { /* private mode */ }
+  }, [theme]);
+  useEffect(() => { document.body.style.zoom = textScale === 1 ? '' : String(textScale); }, [textScale]);
   const season = inRamadan(today) && state.settings.ramadanTheme !== false ? 'ramadan' : '';
   useEffect(() => {
     const r = document.documentElement;

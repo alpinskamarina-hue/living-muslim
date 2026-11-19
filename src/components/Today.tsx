@@ -1,4 +1,5 @@
 import { InstallBanner } from './InstallBanner';
+import { ThemeSwitch } from './ThemeSwitch';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { dayLight, journey } from '../gamify';
@@ -123,6 +124,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <Ornament />
         <div className="d">
           <LogoMark size={18} />{gregorianLabel(now)} · {hijriLabel(now)}
+          <ThemeSwitch state={state} update={update} times={times} />
         </div>
         <div className="row">
           <div className="top-main">

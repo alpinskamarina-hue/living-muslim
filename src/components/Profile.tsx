@@ -1,4 +1,6 @@
 import { BadgeShelf } from './Badges';
+import { themeMode } from '../theme';
+import { themeLabel } from './ThemeSwitch';
 import { GuidePage } from './Guide';
 import { AdminPage, useIsAdmin } from './Admin';
 import type { GoTo } from '../guide';
@@ -85,7 +87,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const used = slotsUsed(state);
   const name = s.name.trim() || me?.name || signupName() || _t("Друг");
   const methodName = METHODS.find((m) => m.id === s.method)?.ru ?? '';
-  const theme = s.theme === 'light' ? _t("светлая") : s.theme === 'dark' ? _t("тёмная") : _t("как в телефоне");
+  const theme = themeLabel(themeMode(s)).toLowerCase();
 
   return (
     <div className="page">
@@ -347,16 +349,17 @@ function LangSettings({ s, set }: { s: AppState['settings']; set: SetFn }) {
 }
 
 function LookSettings({ s, set }: { s: AppState['settings']; set: SetFn }) {
-  const theme = s.theme ?? 'auto';
+  const theme = themeMode(s);
   const size = s.textScale ?? 1;
   return (
     <>
       <h2 className="sub-h">{_t("Тема")}</h2>
-      <div className="seg3" role="radiogroup" aria-label={_t("Тема")}>
-        {([['auto', _t("Как в телефоне")], ['light', _t("Светлая")], ['dark', _t("Тёмная")]] as const).map(([v, l]) => (
+      <div className="seg3 seg4" role="radiogroup" aria-label={_t("Тема")}>
+        {([['prayer', _t("После Магриба")], ['light', _t("Светлая")], ['dark', _t("Тёмная")], ['auto', _t("Как в телефоне")]] as const).map(([v, l]) => (
           <button key={v} type="button" role="radio" aria-checked={theme === v} onClick={() => set({ theme: v })}>{l}</button>
         ))}
       </div>
+      <p className="tiny">{_t("«После Магриба»: тёмная с Магриба до Фаджра, днём светлая. Переключить можно и на «Сегодня», значок вверху справа.")}</p>
       <h2 className="sub-h">{_t("Размер текста")}</h2>
       <div className="seg3" role="radiogroup" aria-label={_t("Размер текста")}>
         {([[1, _t("Обычный")], [1.1, _t("Крупнее")], [1.2, _t("Крупный")]] as const).map(([v, l]) => (
