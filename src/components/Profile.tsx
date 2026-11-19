@@ -5,7 +5,8 @@ import type { GoTo } from '../guide';
 import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
-import { LIMITS_ON, usePlan } from '../plan';
+import { ADVISED, LIMITS_ON, SOFT, usePlan } from '../plan';
+import { Advice } from './Plan';
 import { openPath } from './NewPath';
 import { pathNow } from '../newpath';
 import { GiftPass } from './GiftPass';
@@ -137,7 +138,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         <Row icon="🕌" title={_t("Намазы")} sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
         <Row icon="📢" title={_t("Азан")} sub={adhanOf(s).on ? _tj("Включён · {0}", reciterName(adhanOf(s).reciter)) : _t("Выключен · выбери чтеца")} onClick={() => go('adhan')} />
         {isCloud && <Row icon="🔔" title={_t("Напоминания")} sub={s.reminders?.on ? _t("Включены · {0} из 5 намазов", s.reminders.prayers.length) : (isStandalone() ? _t("Выключены") : _t("Установить на телефон, напоминания"))} onClick={() => go('remind')} />}
-        <Row icon="🌱" title={_t("Мои привычки")} sub={_t("{0} из {1} мест занято", used, activeLimit())} onClick={() => go('habits')} />
+        <Row icon="🌱" title={_t("Мои привычки")} sub={SOFT ? _t("Активных: {0} · рекомендуем до {1}", used, ADVISED) : _t("{0} из {1} мест занято", used, activeLimit())} onClick={() => go('habits')} />
         <Row icon="🤲" title={_t("Фразы и напоминания")} sub={`${s.me === 'f' ? _t("Я сестра") : s.me === 'm' ? _t("Я брат") : _t("Брат или сестра?")} · ${(s.words ?? 'calm') === 'normal' ? _t("обычно") : (s.words ?? 'calm') === 'calm' ? _t("спокойно") : _t("только фразы")}`} onClick={() => go('words')} />
         <Row icon="🌐" title="Язык · Language" sub={LANG === 'en' ? 'English' : 'Русский'} onClick={() => go('lang')} />
         <Row icon="🎨" title={_t("Внешний вид")} sub={_t("Тема {0} · текст {1}", theme, s.textScale && s.textScale > 1 ? _t("крупнее") : _t("обычный"))} onClick={() => go('look')} />
@@ -275,7 +276,8 @@ function HabitsSettings({ state, update, onEdit }: { state: AppState; update: Pr
   const used = slotsUsed(state);
   return (
     <>
-      <p className="page-sub">{_tj("{0} из {1} мест занято. Нажми на привычку, чтобы изменить её.", used, activeLimit())}</p>
+      <p className="page-sub">{SOFT ? _tj("Активных: {0}. Нажми на привычку, чтобы изменить её.", used) : _tj("{0} из {1} мест занято. Нажми на привычку, чтобы изменить её.", used, activeLimit())}</p>
+      <Advice k="habits" n={used} adding={0} />
       <HabitGroup title={_t("Активные")} list={byStatus('active')} onEdit={onEdit} action={(h) => [_t("В архив"), () => setStatus(h.id, 'archived')]} />
       <HabitGroup title={_t("Очередь «Скоро»")} list={byStatus('queued')} onEdit={onEdit} action={(h) => [_t("Убрать"), () => setStatus(h.id, 'archived')]} />
       <HabitGroup

@@ -12,6 +12,11 @@ export const LIMITS_ON = false;
 export const FREE = { habits: 3, circles: 3, goals: 3, books: 3, courses: 3, quits: 1 } as const;
 export const PRO = { habits: 5, circles: 20, goals: 5, books: 100, courses: 100, quits: 3 } as const;
 export type LimitKey = keyof typeof FREE;
+/** 19.11.2026 Nasim: while the tariff is off, habits, goals and habits to quit have no cap.
+ *  Past ADVISED we only show a gentle note that more than five is hard to keep. */
+export const SOFT = !LIMITS_ON;
+export const ADVISED = 5;
+const OPEN = { ...PRO, habits: 999, goals: 999, quits: 999 };
 
 export const PRICES = {
   year: { price: '€29.99', per: _t("в год"), month: '€2.50', note: _t("первый год со скидкой −37%: выходит €2.50 в месяц") },
@@ -77,7 +82,7 @@ export function planInfo(now = Date.now()): PlanInfo {
   const giftEnds = s.gift ? new Date(s.gift + GIFT_DAYS * DAY) : null;
   const gift = Boolean(giftEnds && giftEnds.getTime() > now);
   const pro = owner || trial || early || gift || !LIMITS_ON;
-  return { owner, gift, giftEnds, pro, trial: trial && !owner && !gift && LIMITS_ON, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: pro ? { ...PRO } : { ...FREE } };
+  return { owner, gift, giftEnds, pro, trial: trial && !owner && !gift && LIMITS_ON, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: SOFT ? { ...OPEN } : pro ? { ...PRO } : { ...FREE } };
 }
 export const limitOf = (k: LimitKey) => planInfo().limits[k];
 export function usePlan(): PlanInfo {

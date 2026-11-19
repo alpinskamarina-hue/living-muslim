@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Anchor, AppState, Habit, Sphere } from '../types';
 import { ANCHORS, ANCHOR_LABEL, SPHERES } from '../types';
 import { activeLimit, slotsUsed, uid } from '../store';
+import { Advice } from './Plan';
 import { dayKey } from '../dates';
 import { _t, _tj } from '../i18n';
 
@@ -105,6 +106,7 @@ export function HabitSheet({ state, editing, defaultAnchor, onSave, onDelete, on
           </>
         )}
 
+        {!editing && <Advice k="habits" n={used} />}
         {full && (
           <div className="limit">
             <b>{_tj("Активных уже {0} из {1}", used, activeLimit())}</b>

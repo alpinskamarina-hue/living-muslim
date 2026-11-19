@@ -3264,3 +3264,8 @@ button.ud-wait em { font-style: normal; }
 .g-step .g-undo { display: block; margin-top: 8px; color: #cfe3d6; font-size: 13px; }
 .g-recount { margin: 10px 0; padding: 14px; border-radius: 16px; border: 1.5px solid var(--green-2); background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
 .g-recount .cs-row .pri-btn, .g-recount .cs-row .ghost-btn { margin-top: 0; min-height: 44px; }
+
+/* Gentle note past five habits or goals (no cap, 19.11) */
+.advice { margin: 12px 0; border-radius: 14px; background: var(--gold-soft); border: 1px solid rgba(184, 138, 44, .35); padding: 10px 12px; font-size: 13px; line-height: 1.45; display: flex; flex-direction: column; gap: 3px; }
+.advice b { font-size: 13.5px; }
+.advice b::before { content: '💡 '; }

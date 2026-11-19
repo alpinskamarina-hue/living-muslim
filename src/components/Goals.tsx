@@ -14,6 +14,8 @@ import { ramadanMonth } from '../ramadan';
 import { catalog, lessons, emptyVideos } from '../videos';
 import { isCloud, myCircles, kindOf } from '../cloud';
 import { _t, _tj, LOC } from '../i18n';
+import { Advice } from './Plan';
+import { SOFT } from '../plan';
 
 interface Props {
   state: AppState;
@@ -89,7 +91,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
           )}
           {active.length === 0 && <p className="tiny">{_t("Пока целей нет. Начни с одной: например, хатм Корана к Рамадану. Цель держится на системе: намерение, образ себя и привычки.")}</p>}
           {active.map((g) => <GoalCard key={g.id} g={g} state={state} today={today} onOpen={() => setOpenId(g.id)} onAct={(st) => act(g, st)} />)}
-          <button type="button" className="g-new" onClick={() => setWizard(true)}>{_tj("+ Новая цель · {0}", active.length < goalLimit() ? _t("свободно {0} из {1}", goalLimit() - active.length, goalLimit()) : _t("встанет в «Потом»"))}</button>
+          <button type="button" className="g-new" onClick={() => setWizard(true)}>{SOFT ? _t("+ Новая цель") : _tj("+ Новая цель · {0}", active.length < goalLimit() ? _t("свободно {0} из {1}", goalLimit() - active.length, goalLimit()) : _t("встанет в «Потом»"))}</button>
           {active.length > 0 && !isReviewDay(state, today) && <button type="button" className="link-btn" onClick={() => setReviewOpen(true)}>{_t("Пересмотреть неделю сейчас")}</button>}
           {later.length > 0 && (
             <div className="g-later">
@@ -438,6 +440,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
         <>
           <p className="q">{_t("Что хочешь достичь?")}</p>
           {activeCount >= goalLimit() && <p className="tiny">{_tj("Активных целей уже {0}. Новая встанет в «Потом».", goalLimit())}</p>}
+          <Advice k="goals" n={activeCount} />
           {showR && (
             <div className="g-season">
               <b>{_tj("🌙 К Рамадану{0}", rStart ? `, ${fmt(rStart)}` : '')}</b>
@@ -551,6 +554,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
           ))}
           <QuickHabit onAdd={(h) => setNewHabits([...newHabits, h])} />
           {slotsUsed(state) + newHabits.length > activeLimit() && <p className="tiny">{_tj("Лимит {0} активных привычек: лишние встанут в очередь «Скоро».", activeLimit())}</p>}
+          {newHabits.length > 0 && <Advice k="habits" n={slotsUsed(state)} adding={newHabits.length} />}
           {!hasSystem && <p className="tiny">{_t("Эта цель считается по привычкам: выбери хотя бы одну.")}</p>}
           <button type="button" className="pri-btn" disabled={!hasSystem} onClick={finish}>{_t("Сохранить цель")}</button>
         </>

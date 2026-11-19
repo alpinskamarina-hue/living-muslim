@@ -777,7 +777,7 @@ function Prep({ state, update, today, mon, l }: P) {
         </div>
       ))}
       <h2 className="sub-h">{t('Только на 30 дней', 'Just for 30 days')}</h2>
-      <p className="q-msg left">{t('Эти привычки появятся в первый день Рамадана и не занимают место в лимите из пяти. На Ид спросим, какую оставить.', 'These habits appear on the first day of Ramadan and do not count towards your limit of five. On Eid we will ask which one to keep.')}</p>
+      <p className="q-msg left">{t('Эти привычки появятся в первый день Рамадана и не считаются среди твоих обычных привычек. На Ид спросим, какую оставить.', 'These habits appear on the first day of Ramadan and do not count among your everyday habits. On Eid we will ask which one to keep.')}</p>
       {RAMADAN_HABITS.map((h0) => {
         const added = mine.find((m) => h0.action.includes(m.action));
         return (

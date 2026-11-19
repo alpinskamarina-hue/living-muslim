@@ -7,6 +7,7 @@ import { ANCHOR_LABEL, type AppState } from '../types';
 import { activeLimit, slotsUsed } from '../store';
 import { BIZ_HABITS, BIZ_DEFAULT, addBizHabits, adviceFor, shuraTotals, type Advice, type Shura } from '../biz';
 import { _t, _tj } from '../i18n';
+import { Advice as AdviceNote } from './Plan';
 
 const AFTER: Record<string, string> = { fajr: _t("После Фаджра"), dhuhr: _t("После Зухра"), asr: _t("После Асра"), maghrib: _t("После Магриба"), isha: _t("После Иши") };
 
@@ -36,6 +37,7 @@ export function BizHabitsOffer({ state, update, today }: { state: AppState; upda
   return (
     <div className="bz-card">
       <BizPick pick={pick} setPick={setPick} />
+      {pick.length > 0 && <AdviceNote k="habits" n={used} adding={pick.length} />}
       {used + pick.length > activeLimit() && <p className="tiny">{_tj("Активных привычек уже {0} из {1}: лишние встанут в очередь и включатся, когда освободится место.", used, activeLimit())}</p>}
       <div className="da-row">
         <button type="button" className="pri-btn" disabled={!pick.length} onClick={() => update((s) => addBizHabits(s, pick, today, activeLimit(), slotsUsed(s)))}>{_t("Добавить себе")}</button>

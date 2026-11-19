@@ -3,7 +3,7 @@ import type { AppState } from '../types';
 import { plural, addDays, dayKey } from '../dates';
 import { isCounted, wouldQueue } from '../store';
 import { myCircles } from '../cloud';
-import { FREE, PRO, PRICES, LIMIT_RU, TRIAL_DAYS, LIMITS_ON, usePlan, openPro, inviteFriend, leftLabel, markSheet, type LimitKey } from '../plan';
+import { ADVISED, SOFT, FREE, PRO, PRICES, LIMIT_RU, TRIAL_DAYS, LIMITS_ON, usePlan, openPro, inviteFriend, leftLabel, markSheet, type LimitKey } from '../plan';
 import { _t, _tj } from '../i18n';
 
 // Trial dial on Today, the reminder sheets on day 5, day 7 and day 8, and the «это в Pro» gate.
@@ -157,6 +157,23 @@ export function PlanSheet({ k, state, today, onClose }: { k: 5 | 7 | 8; state: A
         <button type="button" className="link-btn pl-later" onClick={close}>{k === 8 ? _t("Хорошо, остаюсь на бесплатном") : _t("Напомнить позже")}</button>
       </div>
     </>
+  );
+}
+
+/** No cap on habits and goals (Nasim, 19.11): past five only this gentle note. n = active now, adding = how many are being added. */
+export function Advice({ k, n, adding = 1 }: { k: 'habits' | 'goals' | 'quits'; n: number; adding?: number }) {
+  if (!SOFT || n + adding <= ADVISED) return null;
+  const t = k === 'goals' ? _t("Рекомендуем не больше {0} целей сразу", ADVISED) : k === 'quits' ? _t("Рекомендуем оставлять не больше {0} привычек сразу", ADVISED) : _t("Рекомендуем не больше {0} привычек сразу", ADVISED);
+  const p = k === 'goals'
+    ? _t("Когда целей больше пяти, на каждую остаётся меньше сил. Добавить можно, это только совет. Лишнюю цель можно отложить в «Потом».")
+    : k === 'quits'
+      ? _t("Бросать сразу много тяжело, срывы случаются чаще. Добавить можно, это только совет.")
+      : _t("Больше пяти привычек внедрять тяжело: на каждую остаётся меньше сил. Добавить можно, это только совет. Закреплённые привычки (21 день на 80%) в счёт не идут.");
+  return (
+    <div className="advice" role="note">
+      <b>{t}</b>
+      <span>{adding > 0 ? _tj("{0} Активных станет {1}.", p, n + adding) : _tj("{0} Сейчас активных: {1}.", p, n)}</span>
+    </div>
   );
 }
 

@@ -7,7 +7,7 @@ import { ramadanHidden } from './rplan';
 
 const KEY = 'qadam.v1';
 const OLD_KEYS = ['istiqama.v1'];
-import { limitOf } from './plan';
+import { ADVISED, SOFT, limitOf } from './plan';
 import { _t } from './i18n';
 /** Active habit slots: 5 in Pro, 3 in Free (see plan.ts). */
 export const activeLimit = () => limitOf('habits');
@@ -130,7 +130,9 @@ function promote(s: AppState): AppState {
     for (const { i } of overLimit(habits, lim)) habits[i] = { ...habits[i], status: 'queued' };
     used = lim; changed = true;
   }
-  for (let i = 0; i < habits.length && used < lim; i++) {
+  // Without a cap the queue «Скоро» still moves forward at the advised five, so nobody gets a pile of habits at once.
+  const room = SOFT ? Math.min(lim, ADVISED) : lim;
+  for (let i = 0; i < habits.length && used < room; i++) {
     if (habits[i].status === 'queued') {
       habits[i] = { ...habits[i], status: 'active', createdAt: today };
       used++;

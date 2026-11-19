@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
 import { addDays, plural } from '../dates';
 import { limitOf } from '../plan';
-import { ProGate } from './Plan';
+import { Advice, ProGate } from './Plan';
 import {
   activeQuits, answeredToday, bestRun, cleanDays, dayMarks, newQuitId, nextMilestone, quitsOf, slippedToday,
   TEMPLATES, TRIGGERS, triggerMap, updQuit, urgesThisWeek, type Quit,
@@ -136,6 +136,7 @@ function Setup({ state, today, edit, onCancel, onSave }: { state: AppState; toda
         <div><b>{edit ? _t("Изменить план") : _t("Хочу оставить")}</b><small>{_t("Видишь только ты")}</small></div>
       </div>
 
+      {!edit && <Advice k="quits" n={active} />}
       <h2 className="qt-h2">{_t("Что хочешь оставить?")}</h2>
       <div className="qt-chips">
         {TEMPLATES.map((t) => <button key={t.what} type="button" aria-pressed={!custom && what === t.what} onClick={() => pickT(t)}>{t.what}</button>)}
