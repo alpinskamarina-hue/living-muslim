@@ -44,6 +44,8 @@ export interface CoursePlan {
   final?: QuizQ[];
   /** Faith courses: summaries and tests show only after an imam checked them. */
   checked?: boolean;
+  /** Course id that has to be finished first: this one stays closed until then. */
+  after?: string;
 }
 
 export interface Lesson { id: string; title: string; seconds: number }
@@ -67,6 +69,12 @@ export interface VideoState {
   doneC?: Record<string, string>;
   /** Day of the last watched lesson (for the reminder after 3 quiet days). */
   lastDay?: string;
+  /** Courses finished as the course of the week in a circle: course id → day. */
+  withCircle?: Record<string, string>;
+  /** Badge shown next to my name in the circle: a badge key, 'off', or unset for the best one. */
+  badge?: string;
+  /** My rating of a course: stars and text, to show and change it later. */
+  rated?: Record<string, { s: number; t: string }>;
 }
 export const emptyVideos = (): VideoState => ({ mine: [], pos: {}, notes: {} });
 

@@ -8,6 +8,7 @@ import {
 } from '../cweek';
 import { isBizCircle, shuraTotals } from '../biz';
 import { daysBetween, addDays } from '../dates';
+import { courseLine } from './CircleCourse';
 import { _t, _tj } from '../i18n';
 
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
@@ -117,6 +118,7 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
   const live = w === cur;
   const biz = isBizCircle();
   const sh = biz ? shuraTotals(members, reacts, w) : null;
+  const crLine = courseLine(members, today);
   const shLine = sh && sh.shared ? _t("🧭 Шура: поделились {0} из {1}, {2} {3}, {4} дуа", sh.shared, members.length, sh.advice, plural(sh.advice, _t("совет"), _t("совета"), _t("советов")), sh.duas) : '';
 
   const text = [
@@ -126,6 +128,7 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
     t.h ? _t("🌱 {0} {1} привычек", t.h, plural(t.h, _t("отметка"), _t("отметки"), _t("отметок"))) : '',
     biz && t.b ? _t("💼 {0} {1} у намазов", t.b, plural(t.b, _t("деловая отметка"), _t("деловые отметки"), _t("деловых отметок"))) : '',
     shLine,
+    crLine,
     goal ? _t("🎯 Цель «{0} {1}»: {2}", goal.n, unit(goal.k as GoalKind, goal.n), gv >= goal.n ? _t("выполнена ✓") : _t("{0} из {1}", gv, goal.n)) : '',
     sup.length ? _t("🤲 Больше всех поддерживали: {0}", sup.map((x) => nameOf(x.id)).join(', ')) : '',
     '',
@@ -161,6 +164,7 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
       {goal && <p className="ws-line">🎯 {gv >= goal.n ? <>{_tj("Цель «{0}  {1}» ", goal.n, unit(goal.k as GoalKind, goal.n))}<b>{_t("выполнена")}</b>{_t(", машаАллах")}</> : <>{_tj("Цель: {0} из {1}  {2}", gv, goal.n, unit(goal.k as GoalKind, goal.n))}</>}</p>}
       {biz && (t.b ?? 0) > 0 && <p className="ws-line">{_t("💼 Деловых отметок у намазов: ")}<b>{t.b}</b></p>}
       {shLine && <p className="ws-line">{shLine}</p>}
+      {crLine && <p className="ws-line">{crLine}</p>}
       {sup.length > 0 && <p className="ws-line">{_t("🤲 Больше всех поддерживали: ")}<b>{sup.map((x) => nameOf(x.id)).join(', ')}</b></p>}
       <p className="ws-line ws-soft">{_tj("В деле было {0} из {1}. Общий итог, без рейтинга по поклонению.", t.people, members.length)}</p>
       <div className="ws-btns">

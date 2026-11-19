@@ -12,6 +12,9 @@ import { dayKey, fromKey } from '../dates';
 import { drawCard, shareCard, type CardSpec } from '../share';
 import { cachedProfile } from './Nick';
 import { _t, _tj, LOC } from '../i18n';
+import { canRate, lockedBy, opensAfter, rate, reviewsOf, starsText, suggestCourse, useStats, type CStat, type Review } from '../courseSocial';
+import { currentCircle, isCloud, kindOf, myCircles, switchCircle } from '../cloud';
+import { addDays, plural } from '../dates';
 
 interface Props {
   state: AppState;
@@ -46,6 +49,7 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
   const [cat, setCat] = useState<VideoCat | 'all'>('all');
   const [more, setMore] = useState(false);
   const [, setTick] = useState(0);
+  const stats = useStats();
   useEffect(() => {
     loadCourses().then((ch) => {
       if (!ch) return;
@@ -73,7 +77,7 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
   if (view.page === 'item') {
     const item = fresh(view.item);
     return (
-      <Course item={item} vs={vs} setVs={setVs} by={sharedBy(item.id)} onBack={() => go({ page: 'home' })}
+      <Course item={item} vs={vs} setVs={setVs} by={sharedBy(item.id)} stat={stats[item.id]} onOpenItem={(it) => go({ page: 'item', item: it })} onBack={() => go({ page: 'home' })}
         onPlay={(idx) => go({ page: 'play', item, idx })} onQuiz={(k) => go({ page: 'quiz', item, k })}
         onCert={() => go({ page: 'cert', item })} onNotes={() => go({ page: 'notes', item })} />
     );
@@ -95,7 +99,7 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
     const item = fresh(view.item);
     return <Quiz item={item} k={view.k} vs={vs} setVs={setVs} onBack={() => toCourse(item)} onCert={() => go({ page: 'cert', item })} />;
   }
-  if (view.page === 'cert') { const item = fresh(view.item); return <Cert item={item} state={state} vs={vs} setVs={setVs} onBack={() => toCourse(item)} onNotes={() => go({ page: 'notes', item })} />; }
+  if (view.page === 'cert') { const item = fresh(view.item); return <Cert item={item} state={state} vs={vs} setVs={setVs} onBack={() => toCourse(item)} onNotes={() => go({ page: 'notes', item })} onOpenItem={(it) => go({ page: 'item', item: it })} />; }
   if (view.page === 'notes') { const item = fresh(view.item); return <Notes item={item} vs={vs} onBack={() => toCourse(item)} />; }
 
   const inCat = (x: VideoItem) => cat === 'all' || x.cat === cat;
@@ -143,14 +147,14 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
       )}
 
       {courses.length > 0 && <h3 className="vh">{_t("Курсы")}</h3>}
-      <div className="vgrid">{courses.map((x) => <Card key={x.id} item={x} vs={vs} onClick={() => go({ page: 'item', item: x })} />)}</div>
+      <div className="vgrid">{courses.map((x) => <Card key={x.id} item={x} vs={vs} stat={stats[x.id]} onClick={() => go({ page: 'item', item: x })} />)}</div>
 
       {singles.length > 0 && <h3 className="vh">{_t("Отдельные видео")}</h3>}
-      <div className="vgrid">{singles.map((x) => <Card key={x.id} item={x} vs={vs} onClick={() => go({ page: 'play', item: x, idx: 0 })} />)}</div>
+      <div className="vgrid">{singles.map((x) => <Card key={x.id} item={x} vs={vs} stat={stats[x.id]} onClick={() => go({ page: 'play', item: x, idx: 0 })} />)}</div>
 
       <h3 className="vh">{_t("Моё ")}<button type="button" className="link-btn" onClick={() => go({ page: 'add' })}>{_t("+ Добавить")}</button></h3>
       {mine.length ? (
-        <div className="vgrid">{mine.map((x) => <Card key={x.id} item={x} vs={vs} onClick={() => go(x.kind === 'list' ? { page: 'item', item: x } : { page: 'play', item: x, idx: 0 })} />)}</div>
+        <div className="vgrid">{mine.map((x) => <Card key={x.id} item={x} vs={vs} stat={stats[x.id]} onClick={() => go(x.kind === 'list' ? { page: 'item', item: x } : { page: 'play', item: x, idx: 0 })} />)}</div>
       ) : (
         <button type="button" className="vempty" onClick={() => go({ page: 'add' })}>{_t("Вставь ссылку на видео или плейлист YouTube, который уже смотришь. Он появится здесь, с прогрессом и заметками.")}</button>
       )}
@@ -172,7 +176,8 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
   );
 }
 
-function Card({ item, vs, onClick }: { item: VideoItem; vs: VideoState; onClick: () => void }) {
+function Card({ item, vs, stat, onClick }: { item: VideoItem; vs: VideoState; stat?: CStat; onClick: () => void }) {
+  const lock = lockedBy(item, vs);
   const [first, setFirst] = useState(item.kind === 'video' ? item.id : '');
   const [done, setDone] = useState(0);
   const [count, setCount] = useState(item.count ?? 0);
@@ -187,13 +192,15 @@ function Card({ item, vs, onClick }: { item: VideoItem; vs: VideoState; onClick:
     return () => { live = false; };
   }, [item.id]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <button type="button" className="vcard" onClick={onClick}>
+    <button type="button" className={`vcard${lock ? ' lk' : ''}`} onClick={onClick}>
       <span className="vth" style={first ? { backgroundImage: `url(${thumb(first)})` } : undefined}>
+        {lock && <i className="vlock" aria-hidden="true">🔒</i>}
         {item.kind === 'list' && count > 0 && <i className="vdur">{count} {count === 1 ? _t("урок") : count < 5 ? _t("урока") : _t("уроков")}</i>}
         {done > 0 && count > 0 && <i className="vbar" style={{ width: `${(done / count) * 100}%` }} />}
       </span>
       <b>{item.title}{item.pro && <span className="pro-badge sm">PRO</span>}</b>
       <small>{catOf(item.cat).ic} {item.channel}{item.lang === 'en' ? ' · EN' : ''}{vs.doneC?.[item.id] ? _t(" · пройден ✓") : (planOf(item)?.final?.length || planOf(item)?.modules?.some((m) => m.quiz?.length)) ? _t(" · с тестами") : ''}</small>
+      {lock ? <small className="vlk">{_t("Откроется после «{0}»", lock.title)}</small> : <StatLine stat={stat} />}
     </button>
   );
 }
@@ -210,8 +217,8 @@ function useLessons(item: VideoItem) {
   return { data, err };
 }
 
-function Course({ item, vs, setVs, by, onBack, onPlay, onQuiz, onCert, onNotes }: {
-  item: VideoItem; vs: VideoState; setVs: (fn: (v: VideoState) => VideoState) => void; by: string;
+function Course({ item, vs, setVs, by, stat, onOpenItem, onBack, onPlay, onQuiz, onCert, onNotes }: {
+  item: VideoItem; vs: VideoState; setVs: (fn: (v: VideoState) => VideoState) => void; by: string; stat?: CStat; onOpenItem: (it: VideoItem) => void;
   onBack: () => void; onPlay: (i: number) => void; onQuiz: (k: QuizKey) => void; onCert: () => void; onNotes: () => void;
 }) {
   const { data, err } = useLessons(item);
@@ -224,7 +231,12 @@ function Course({ item, vs, setVs, by, onBack, onPlay, onQuiz, onCert, onNotes }
   const locked = !started.has(item.id) && started.size >= limitOf('courses');
   const [gate, setGate] = useState(false);
   const [msg, setMsg] = useState('');
+  const [withC, setWithC] = useState(false);
+  // An advanced course opens after another one is finished.
+  const needs = lockedBy(item, vs);
+  const advanced = Boolean(item.plan?.after) && !needs;
   const begin = () => {
+    if (needs) return false;
     if (locked) { setGate(true); return false; }
     if (!started.has(item.id)) setVs((v) => ({ ...v, started: [...new Set([...(v.started ?? []), item.id])] }));
     return true;
@@ -255,15 +267,28 @@ function Course({ item, vs, setVs, by, onBack, onPlay, onQuiz, onCert, onNotes }
       <button type="button" className="link-btn pro-back" onClick={onBack}>{_t("← Курсы")}</button>
       {by && <p className="cs-by">{_t("@{0} прошёл этот курс и делится им с тобой", by)}</p>}
       {items[0] && <div className="vth big" style={{ backgroundImage: `url(${thumb(items[0].id)})` }}><i className="vdur">{_tj("{0} уроков{1}", items.length, total ? ` · ${dur(total)}` : '')}</i></div>}
-      <small className="cs-kick">{_t("Курс · {0}", catOf(item.cat).ru)}{tests ? _t(" · {0} теста", tests) : ''}</small>
+      <small className="cs-kick">{advanced ? _t("Продвинутый · ") : ''}{_t("Курс · {0}", catOf(item.cat).ru)}{tests ? _t(" · {0} теста", tests) : ''}</small>
       <h1 className="page-h">{item.mine ? data?.title || item.title : item.title}</h1>
+      <StatLine stat={stat} big />
       {about && <p className="cs-about">{about}</p>}
+      {needs && (
+        <div className="cs-lock">
+          <b>{_t("🔒 Откроется после курса «{0}»", needs.title)}</b>
+          <small>{_t("Это продолжение. Сначала пройди первый курс до сертификата.")}</small>
+          <button type="button" className="pri-btn" onClick={() => onOpenItem(needs)}>{_t("Открыть «{0}»", needs.title)}</button>
+        </div>
+      )}
+      {advanced && !cv.done && <p className="cs-open">{_t("Курс открылся, потому что ты прошёл «{0}».", catalog().find((x) => x.id === item.plan!.after)?.title ?? '')}</p>}
       {items.length > 0 && <div className="vprog"><i style={{ width: `${cv.pct}%` }} /></div>}
       <p className="page-sub">{items.length ? _t("{0}% · {1} из {2} уроков · ", cv.pct, cv.done, items.length) : ''}{data?.channel || item.channel || ''}</p>
       {(gate || (locked && !cv.done)) && <ProGate k="courses" have={started.size} />}
       {cv.complete ? (
         <button type="button" className="cs-cert" onClick={onCert}><i aria-hidden="true">🏅</i><span><b>{_t("Курс пройден")}</b><small>{_t("Открыть сертификат и поделиться")}</small></span></button>
-      ) : items.length > 0 && <button type="button" className="pri-btn big-btn" onClick={main}>{mainLabel}</button>}
+      ) : items.length > 0 && !needs && <button type="button" className="pri-btn big-btn" onClick={main}>{mainLabel}</button>}
+      {!needs && !item.mine && items.length > 1 && isCloud && myCircles().length > 0 && !cv.complete && (
+        <button type="button" className="ghost-btn cs-withc" onClick={() => setWithC(true)}>{_t("👥 Пройти с кругом")}</button>
+      )}
+      {withC && <WithCircle item={item} n={items.length} onClose={() => setWithC(false)} onDone={(cur) => { setWithC(false); begin(); setMsg(cur ? _t("Готово: курс недели появится в круге через минуту") : ''); }} />}
       {err && <p className="warn">{_t("Не получилось загрузить уроки. Проверь интернет и открой курс ещё раз.")}</p>}
       {!data && !err && <p className="tiny">{_t("Загружаю уроки…")}</p>}
 
@@ -275,7 +300,7 @@ function Course({ item, vs, setVs, by, onBack, onPlay, onQuiz, onCert, onNotes }
               const i = m.from + j, p = vs.pos[x.id];
               const isNext = n.kind === 'lesson' && n.idx === i;
               return (
-                <button key={x.id} type="button" className={`vl${p?.done ? ' d' : ''}${isNext ? ' n' : ''}`} onClick={() => play(i)}>
+                <button key={x.id} type="button" className={`vl${p?.done ? ' d' : ''}${isNext ? ' n' : ''}`} disabled={Boolean(needs)} onClick={() => play(i)}>
                   <i>{p?.done ? '✓' : i + 1}</i>
                   <span><b>{x.title}</b><small>{x.seconds ? dur(x.seconds) : ''}{p && !p.done && p.t > 5 ? _t(" · остановился на {0}", dur(Math.floor(p.t))) : ''}{vs.notes[x.id]?.trim() ? _t(" · есть заметка") : ''}</small></span>
                 </button>
@@ -304,6 +329,8 @@ function Course({ item, vs, setVs, by, onBack, onPlay, onQuiz, onCert, onNotes }
         {!item.mine && <button type="button" className="ghost-btn" onClick={share}>{_t("Поделиться курсом")}</button>}
       </div>
       {msg && <p className="tiny">{msg}</p>}
+      {!item.mine && cv.complete && <RateBox item={item} vs={vs} setVs={setVs} />}
+      {!item.mine && <Reviews id={item.id} stat={stat} />}
       <p className="tiny">{_t("Чтобы урок стал привычкой, выбери привычку в Практике, например «Один урок после Иши». Просмотренный урок отметит её сам.")}</p>
       {item.mine && (
         <button type="button" className="link-btn" onClick={() => { if (confirm(_t("Убрать этот курс из «Моё»? Прогресс просмотра сохранится."))) { setVs((v) => ({ ...v, mine: v.mine.filter((m) => m.id !== item.id) })); onBack(); } }}>{_t("Убрать из «Моё»")}</button>
@@ -382,7 +409,8 @@ function Quiz({ item, k, vs, setVs, onBack, onCert }: {
   );
 }
 
-function Cert({ item, state, vs, setVs, onBack, onNotes }: { item: VideoItem; state: AppState; vs: VideoState; setVs: (fn: (v: VideoState) => VideoState) => void; onBack: () => void; onNotes: () => void }) {
+function Cert({ item, state, vs, setVs, onBack, onNotes, onOpenItem }: { item: VideoItem; state: AppState; vs: VideoState; setVs: (fn: (v: VideoState) => VideoState) => void; onBack: () => void; onNotes: () => void; onOpenItem: (it: VideoItem) => void }) {
+  const next = opensAfter(item.id);
   const { data } = useLessons(item);
   const cv = courseView(item, data?.items ?? [], vs);
   const name = myName(state);
@@ -424,6 +452,13 @@ function Cert({ item, state, vs, setVs, onBack, onNotes }: { item: VideoItem; st
           <button type="button" className="pri-btn big-btn" onClick={share}>{_t("Поделиться")}</button>
           {msg && <p className="tiny">{msg}</p>}
           {!name && <p className="tiny">{_t("Добавь ник в профиле, и он появится на сертификате.")}</p>}
+          <p className="cs-badge">{_t("🏅 Значок курса добавлен в профиль")}</p>
+          {next.map((x) => (
+            <button key={x.id} type="button" className="cs-next" onClick={() => onOpenItem(x)}>
+              <i aria-hidden="true">🔓</i><span><small>{_t("Открылся следующий курс")}</small><b>{x.title}</b></span><em aria-hidden="true">›</em>
+            </button>
+          ))}
+          {!item.mine && <RateBox item={item} vs={vs} setVs={setVs} />}
           <button type="button" className="ghost-btn" onClick={onNotes}>{_t("Мой конспект")}</button>
           <p className="tiny">{_t("Делиться можно картинкой с ссылкой на курс: друг откроет его и начнёт с первого урока.")}</p>
         </>
@@ -460,6 +495,126 @@ function Notes({ item, vs, onBack }: { item: VideoItem; vs: VideoState; onBack: 
         </>
       )}
     </div>
+  );
+}
+
+// ---- ratings, reviews, course with a circle ----
+
+function StatLine({ stat, big }: { stat?: CStat; big?: boolean }) {
+  if (!stat || (!stat.n && !stat.done)) return null;
+  return (
+    <small className={big ? 'cs-stat' : 'vstat'}>
+      {stat.n > 0 && <><b>★ {starsText(stat.avg)}</b>{big ? ` · ${stat.n} ${plural(stat.n, _t("оценка"), _t("оценки"), _t("оценок"))}` : ''}</>}
+      {stat.done > 0 && `${stat.n > 0 ? ' · ' : ''}${_t("{0} прошли", stat.done)}`}
+    </small>
+  );
+}
+
+function Reviews({ id, stat }: { id: string; stat?: CStat }) {
+  const [list, setList] = useState<Review[] | null>(null);
+  const [all, setAll] = useState(false);
+  useEffect(() => {
+    if (!stat?.n) return;
+    let live = true;
+    reviewsOf(id).then((r) => live && setList(r));
+    return () => { live = false; };
+  }, [id, stat?.n]);
+  if (!list?.length) return null;
+  const shown = all ? list : list.slice(0, 3);
+  return (
+    <div className="cs-revs">
+      <h3 className="vh">{_t("Отзывы")}</h3>
+      {shown.map((r, i) => (
+        <div key={i} className="cs-rev">
+          <div><b>{r.nick ? `@${r.who}` : r.who}</b><span>{'★'.repeat(r.stars)}<i>{'★'.repeat(5 - r.stars)}</i></span></div>
+          <p>{r.body}</p>
+        </div>
+      ))}
+      {list.length > 3 && !all && <button type="button" className="link-btn" onClick={() => setAll(true)}>{_t("Все отзывы ({0})", list.length)}</button>}
+    </div>
+  );
+}
+
+/** Stars and a few words after the certificate. Only people who finished can rate (checked on the server too). */
+function RateBox({ item, vs, setVs }: { item: VideoItem; vs: VideoState; setVs: (fn: (v: VideoState) => VideoState) => void }) {
+  const mine = vs.rated?.[item.id];
+  const [edit, setEdit] = useState(!mine);
+  const [s, setS] = useState(mine?.s ?? 0);
+  const [t, setT] = useState(mine?.t ?? '');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  if (!vs.doneC?.[item.id] || !canRate()) return null;
+  if (!edit && mine) {
+    return (
+      <div className="cs-rate done">
+        <span>{_t("Твоя оценка: ")}<b>{'★'.repeat(mine.s)}</b>{mine.t ? ` · ${mine.t.slice(0, 60)}${mine.t.length > 60 ? '…' : ''}` : ''}</span>
+        <button type="button" className="link-btn" onClick={() => setEdit(true)}>{_t("Изменить")}</button>
+      </div>
+    );
+  }
+  const send = async () => {
+    setBusy(true); setErr('');
+    const r = await rate(item.id, s, t);
+    setBusy(false);
+    if (r === 'ok') { setVs((v) => ({ ...v, rated: { ...(v.rated ?? {}), [item.id]: { s, t: t.trim() } } })); setEdit(false); return; }
+    setErr(r === 'old' ? _t("Отзывы скоро заработают: сервер ещё обновляется.") : r === 'not_done' ? _t("Оценить можно после того, как курс пройден.") : _t("Не получилось отправить. Попробуй ещё раз."));
+  };
+  return (
+    <div className="cs-rate">
+      <b>{_t("Как тебе курс?")}</b>
+      <div className="cs-stars" role="radiogroup" aria-label={_t("Оценка")}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" role="radio" aria-checked={s === n} aria-label={_t("{0} из 5", n)} className={n <= s ? 'on' : ''} onClick={() => setS(n)}>★</button>
+        ))}
+      </div>
+      <textarea rows={3} maxLength={600} value={t} onChange={(e) => setT(e.target.value)} placeholder={_t("Что тебе дал курс? (по желанию)")} />
+      <button type="button" className="pri-btn" disabled={!s || busy} onClick={send}>{busy ? _t("Отправляю…") : _t("Отправить отзыв")}</button>
+      {err && <p className="warn">{err}</p>}
+      <small className="tiny">{_t("Отзыв увидят все рядом с твоим ником. Владелец приложения может скрыть отзыв.")}</small>
+    </div>
+  );
+}
+
+/** Suggest this course to one of my circles as the course of the week. */
+function WithCircle({ item, n, onClose, onDone }: { item: VideoItem; n: number; onClose: () => void; onDone: (current: boolean) => void }) {
+  const list = myCircles();
+  const cur = currentCircle()?.code;
+  const [code, setCode] = useState(cur ?? list[0]?.code ?? '');
+  const [weeks, setWeeks] = useState<0 | 2 | 4>(4);
+  const per = weeks ? Math.ceil(n / weeks) : 0;
+  const go = () => {
+    suggestCourse(code, { id: item.id, title: item.title.slice(0, 80), n, until: weeks ? addDays(today(), weeks * 7) : '', at: new Date().toISOString() });
+    if (code !== cur) { switchCircle(code); return; }
+    onDone(true);
+  };
+  return (
+    <>
+      <div className="dim" onClick={onClose} />
+      <div className="sheet cs-sheet" role="dialog" aria-modal="true" aria-label={_t("Пройти с кругом")}>
+        <div className="grab" />
+        <h2>{_t("Пройти с кругом")}</h2>
+        <p className="tiny">{_t("Курс станет «курсом недели» в твоём круге. Каждый проходит в своём темпе, а круг видит, кто на каком уроке.")}</p>
+        <small className="cs-lbl">{_t("Какой круг")}</small>
+        <div className="cs-circles">
+          {list.map((c) => (
+            <button key={c.code} type="button" aria-pressed={code === c.code} onClick={() => setCode(c.code)}>
+              <i aria-hidden="true">{kindOf(c.kind)?.ic ?? '👥'}</i><b>{c.title || _t("Круг")}</b>{code === c.code && <em aria-hidden="true">✓</em>}
+            </button>
+          ))}
+        </div>
+        <small className="cs-lbl">{_t("Цель круга")}</small>
+        <div className="cs-weeks">
+          {([2, 4, 0] as const).map((w) => (
+            <button key={w} type="button" aria-pressed={weeks === w} onClick={() => setWeeks(w)}>{w ? _t("{0} недели", w) : _t("Без срока")}</button>
+          ))}
+        </div>
+        <p className="tiny">{weeks ? _tj("{0} {1} за {2} недели: примерно {3} в неделю", n, plural(n, _t("урок"), _t("урока"), _t("уроков")), weeks, `${per} ${plural(per, _t("урок"), _t("урока"), _t("уроков"))}`) : _t("Каждый проходит, когда удобно. Круг всё равно видит, кто на каком уроке.")}</p>
+        <button type="button" className="pri-btn big-btn" disabled={!code} onClick={go}>{_t("Предложить кругу")}</button>
+        {code !== cur && <p className="tiny">{_t("Откроется этот круг, и курс появится в нём.")}</p>}
+        <p className="tiny">{_t("Видно только, кто на каком уроке. Заметки и баллы тестов остаются твоими.")}</p>
+        <button type="button" className="link-btn" onClick={onClose}>{_t("Отмена")}</button>
+      </div>
+    </>
   );
 }
 

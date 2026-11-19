@@ -143,9 +143,41 @@ function CourseForm({ d: d0, isNew, onBack, onSave }: { d: Draft; isNew: boolean
           <label className="field">Пара слов о курсе (необязательно)<textarea rows={2} maxLength={300} value={d.note} onChange={(e) => set({ note: e.target.value })} /></label>
           {d.kind === 'list' && <PlanEditor d={d} plan={d.plan ?? {}} onChange={(plan) => set({ plan })} />}
           <button type="button" className="pri-btn big-btn" disabled={!ok || state === 'save'} onClick={submit}>{state === 'save' ? 'Сохраняю…' : isNew ? 'Добавить в курсы' : 'Сохранить'}</button>
+          {!isNew && <AdminReviews course={d.yt} />}
         </>
       )}
       {err && <div className="warn">{err}</div>}
+    </div>
+  );
+}
+
+// ---- reviews: the owner sees all of them and can hide any (course-reviews.sql) ----
+
+interface AReview { uid: string; who: string; stars: number; body: string; hidden: boolean; day: string }
+function AdminReviews({ course }: { course: string }) {
+  const [list, setList] = useState<AReview[] | null>(null);
+  const [err, setErr] = useState('');
+  const load = () => rpc<AReview[]>('lm_course_reviews_admin', { p_course: course }).then((r) => { setList(r ?? []); setErr(''); })
+    .catch((e) => setErr(/courses\.sql|404|course_reviews/.test(String(e)) ? 'Отзывы появятся после того, как запустишь course-reviews.sql в Supabase' : String(e instanceof Error ? e.message : e)));
+  useEffect(() => { load(); }, [course]); // eslint-disable-line react-hooks/exhaustive-deps
+  const hide = async (r: AReview) => {
+    try { await rpc('lm_course_review_hide', { p_course: course, p_who: r.uid, p_hidden: !r.hidden }); load(); } catch (e) { setErr(String(e instanceof Error ? e.message : e)); }
+  };
+  const vis = (list ?? []).filter((r) => !r.hidden);
+  const avg = vis.length ? (vis.reduce((a, r) => a + r.stars, 0) / vis.length).toFixed(1).replace('.', ',') : '';
+  return (
+    <div className="ac-plan">
+      <h3 className="ac-h">Оценки и отзывы{avg ? ` · ★ ${avg} (${vis.length})` : ''}</h3>
+      {err && <p className="tiny">{err}</p>}
+      {list && !list.length && !err && <p className="tiny">Пока никто не оценил. Оценить может только тот, кто прошёл курс до сертификата.</p>}
+      {(list ?? []).map((r) => (
+        <div key={r.uid} className={`ac-rev${r.hidden ? ' off' : ''}`}>
+          <div><b>{r.who || 'Без имени'}</b><span>{'★'.repeat(r.stars)}</span><small>{r.day}</small></div>
+          {r.body && <p>{r.body}</p>}
+          <button type="button" className="link-btn" onClick={() => hide(r)}>{r.hidden ? 'Показать снова' : 'Скрыть'}</button>
+        </div>
+      ))}
+      <p className="tiny">Скрытый отзыв не видят люди, и он не считается в средней оценке.</p>
     </div>
   );
 }
@@ -171,6 +203,7 @@ function cleanPlan(p: CoursePlan): CoursePlan {
     ...(Object.keys(lessonsOut).length ? { lessons: lessonsOut } : {}),
     ...(cleanQs(p.final) ? { final: cleanQs(p.final) } : {}),
     ...(p.checked ? { checked: true } : {}),
+    ...(tidy(p.after) ? { after: tidy(p.after) } : {}),
   };
 }
 
@@ -198,6 +231,13 @@ function PlanEditor({ d, plan, onChange }: { d: Draft; plan: CoursePlan; onChang
         <label className="ac-check"><input type="checkbox" checked={Boolean(plan.checked)} onChange={(e) => set({ checked: e.target.checked })} />
           <span><b>Проверено имамом</b><small>Курсы о вере: без этой галочки конспекты и тесты людям не показываются, только уроки.</small></span></label>
       )}
+      <label className="field">Открывается после курса
+        <select value={plan.after ?? ''} onChange={(e) => set({ after: e.target.value || undefined })}>
+          <option value="">Открыт сразу</option>
+          {catalog().filter((x) => x.kind === 'list' && x.id !== d.yt).map((x) => <option key={x.id} value={x.id}>{x.title}</option>)}
+        </select>
+        <small className="tiny">Продвинутый курс: человек видит его с замком, пока не получит сертификат первого.</small>
+      </label>
       <label className="field">О курсе (на странице курса)<textarea rows={3} maxLength={600} value={plan.about ?? ''} onChange={(e) => set({ about: e.target.value })} placeholder="Чему научится человек, для кого курс" /></label>
 
       <h4 className="ac-sub">Модули {items && <small>{covered} из {items.length} уроков разложено{covered < items.length && mods.length ? ', остальные уйдут в последний модуль' : ''}</small>}</h4>

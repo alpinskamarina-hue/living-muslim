@@ -30,6 +30,8 @@ import { useChat, duaReplies, duaEventId } from '../chat';
 import { CircleChat, DuaReplies, type Draft } from './CircleChat';
 import { CH_KINDS } from '../cweek';
 import { _t, _tj } from '../i18n';
+import { CircleCourse } from './CircleCourse';
+import type { CCourse } from '../courseSocial';
 
 interface Props {
   circle: CircleApi;
@@ -58,6 +60,9 @@ interface Props {
   onNikah?: () => void;
   /** Unread chat messages per circle code. */
   chatUnread?: Record<string, number>;
+  myCC?: CCourse | null;
+  onCC?: (c: CCourse | null) => void;
+  onOpenCourse?: (id: string) => void;
 }
 
 const REACTIONS = [
@@ -65,7 +70,7 @@ const REACTIONS = [
   { e: '✨', label: _t("МашаАллах"), short: _t("МашаАллах") },
 ];
 
-export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah, chatUnread }: Props) {
+export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah, chatUnread, onCC, onOpenCourse }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
   const [jobs, setJobs] = useState(false);
@@ -299,6 +304,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <>
           <WeekSummary members={members} reacts={reacts} me={me} today={today} title={cur?.title || _t("Круг")} nameOf={(id) => names[id]?.name || _t("Участник")} onSet={onCircleGoal} />
           <CircleGoal members={members} reacts={reacts} me={me} today={today} title={cur?.title || _t("Круг")} nameOf={nm} onSet={onCircleGoal} />
+          {me && onOpenCourse && onCC && <CircleCourse members={members} me={me} today={today} isOwner={isOwner} nameOf={nm} onOpen={onOpenCourse} onEnd={onCC} onCheer={(text) => (isCloud ? openChat({ text, ref: null }) : navigator.clipboard?.writeText(text).catch(() => {}))} />}
           {me && <AmirCard members={members} me={me} today={today} nameOf={nm} amir={amir} onAmir={onAmir} />}
           {biz && me && <ShuraCard members={members} reacts={reacts} me={me} today={today} nameOf={nm} shura={shura} onShura={onShura} adv={adv} give={giveAdv} react={(k, e) => circle.react(k, e, today)} />}
         </>

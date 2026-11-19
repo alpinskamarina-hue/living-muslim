@@ -430,6 +430,9 @@ export function forgetIdentity() {
   } catch { /* */ }
 }
 
+/** Any RPC, as anyone or with a bearer token. */
+export const cloudRpc = <T,>(fn: string, args: Record<string, unknown>, bearer?: string) => rpc<T>(fn, args, bearer);
+
 /** Calls an RPC as me (uid + token added). Throws when there is no identity or the call fails. */
 export async function meRpc<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
   const me = load();

@@ -1,3 +1,4 @@
+import { BadgeShelf } from './Badges';
 import { GuidePage } from './Guide';
 import { AdminPage, useIsAdmin } from './Admin';
 import type { GoTo } from '../guide';
@@ -100,6 +101,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
           <div><b>{st.chapters}</b><small>{plural(st.chapters, _t("глава прочитана"), _t("главы прочитаны"), _t("глав прочитано"))}</small></div>
         </div>
       </div>
+
+      <BadgeShelf state={state} update={update} onOpen={onGo ? () => onGo({ practice: 'videos' }) : undefined} />
 
       {admin && (
         <button type="button" className="pro-entry adm-entry" onClick={() => go('admin')}>

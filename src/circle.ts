@@ -26,6 +26,9 @@ export interface Member {
   acc?: string[]; // challenge ids I accepted
   amir?: import('./cweek').Amir | null; // I volunteered as amir of the week
   fast?: boolean;
+  cc?: import('./courseSocial').CCourse | null; // a course I suggested to the circle
+  cp?: import('./courseSocial').CProg | null; // my place in the circle's course (lessons watched only)
+  bd?: { ic: string; t: string } | null; // one course badge shown next to my name
   // Business circles only:
   biz?: { d: number; t: number }; // business habits marked today / active, counts only
   shura?: import('./biz').Shura | null; // my three lines for this week

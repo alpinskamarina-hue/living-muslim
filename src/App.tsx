@@ -42,6 +42,7 @@ import { useInvites } from './components/Nick';
 import { useNikahReady, useNikahMe, nikahTodo } from './nikah';
 import { bizToday, takeBizPick, addBizHabits, useMyShura, useMyAdvice } from './biz';
 import { activeLimit, slotsUsed } from './store';
+import { useMyCC, courseOfCircle, progOf, shownBadge, syncDone } from './courseSocial';
 import { weekStart, totals, useMyGoals, isFriday, addWeeks, useMyAsk, askLive, activeDays, chDays, useMyChallenges, useMyAmir, CH_KINDS } from './cweek';
 import type { GoTo } from './guide';
 import { usePlan, dueSheet, PRO_EVENT } from './plan';
@@ -177,6 +178,15 @@ export function App() {
   const nikahOn = useNikahReady();
   const nk = useNikahMe(nikahOn);
   const [myAdv, giveAdv] = useMyAdvice(today);
+  const [myCC, setMyCC] = useMyCC();
+  const circleCourse = courseOfCircle(circle.members, today);
+  // The certificate is earned on this phone; tell the server so the course can be rated (course-reviews.sql).
+  useEffect(() => { syncDone(state.videos); }, [Object.keys(state.videos?.doneC ?? {}).length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Finished the circle's course: keep it for the «Прошёл с кругом» badge.
+  useEffect(() => {
+    const id = circleCourse?.id;
+    if (id && state.videos?.doneC?.[id] && !state.videos.withCircle?.[id]) update((s) => ({ ...s, videos: { ...s.videos!, withCircle: { ...(s.videos!.withCircle ?? {}), [id]: s.videos!.doneC![id] } } }));
+  }, [circleCourse?.id, state.videos?.doneC?.[circleCourse?.id ?? '']]); // eslint-disable-line react-hooks/exhaustive-deps
   // Business habits picked while creating or joining a business circle (the page reloaded since).
   useEffect(() => { const p = takeBizPick(); if (p?.length) update((s) => addBizHabits(s, p, today, activeLimit(), slotsUsed(s))); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const summary = {
@@ -196,6 +206,9 @@ export function App() {
     chs: myCh.chs,
     acc: myCh.acc,
     amir: myAmir && myAmir.w === weekStart(today) ? myAmir : null,
+    cc: myCC,
+    cp: circleCourse ? progOf(state.videos, circleCourse) : null,
+    bd: shownBadge(state.videos),
     goals: (state.goals ?? []).filter((g) => g.status === 'active' && g.shared && (!isCloud || !g.circles?.length || g.circles.includes(currentCircle()?.code ?? ''))).map((g) => ({ t: g.title, p: progress(state, g, today).pct })),
   };
   const joined = Boolean(circle.me && circle.members.some((m) => m.id === circle.me));
@@ -339,7 +352,7 @@ export function App() {
         {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
