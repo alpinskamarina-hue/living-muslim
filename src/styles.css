@@ -3591,11 +3591,11 @@ body:has(.cc-compose) .ai-fab, body:has(.cc-compose) .ai-tip, body.um-on .ai-fab
 .ai-tip b { display: block; font-size: 12.5px; }
 body:has(.fab) .ai-tip { bottom: calc(var(--nav-h) + 86px + env(safe-area-inset-bottom, 0px)); }
 body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-inset-bottom, 0px)); }
-.ai-head-face { margin-right: 10px; box-shadow: 0 0 0 2px #fff; }
+
 .ai-row { display: flex; align-items: flex-end; gap: 7px; align-self: flex-start; max-width: 92%; }
 .ai-row .ai-msg { max-width: 100%; }
 .ai-hero { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0 4px; text-align: center; }
-.ai-hero .ai-face { box-shadow: 0 12px 26px -10px rgba(15, 81, 50, .6), 0 0 0 4px #fff; margin-bottom: 4px; }
+.ai-hero .ai3d { margin: 6px 0 8px; }
 .ai-hero b { font-size: 18px; }
 .ai-hero small { color: var(--ink-2); font-size: 12.5px; }
 .ai-h { margin: 18px 0 8px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
@@ -3731,3 +3731,60 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .theme-sheet h3 { font-family: var(--f-display); font-size: 24px; color: var(--ink); }
 .theme-opts b { font-family: var(--f-body); font-weight: 700; }
 .theme-ic.t-dark, .theme-ic.t-prayer, .theme-ic.t-auto { box-shadow: inset 0 0 0 1px rgba(217, 173, 85, .45); }
+/* Assistant 3D finishes: the picture sits in .ai3d, the shine is drawn over it */
+.ai3d { position: relative; display: inline-block; flex: none; border-radius: 50%; isolation: isolate; box-sizing: border-box; }
+.ai3d > .ai-face { position: absolute; inset: var(--ai-pad, 0); width: auto; height: auto; max-width: none; border-radius: 50%; display: block; object-fit: cover; }
+.ai3d::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 2; }
+.ai-fab .ai3d { display: block; }
+.ai-fab { box-shadow: none; }
+.ai-head-face { margin-right: 10px; }
+/* Gold medallion: thick bevelled gold rim, glass with a light band */
+.ai3d.f-medal { --ai-pad: 7.5%; background: conic-gradient(from 210deg, #8a6420, #f6e2a6, #b8862c, #fff3c8, #9a7224, #f1d896, #8a6420); box-shadow: 0 .18em .3em -.1em rgba(90, 60, 10, .55), inset 0 1px 1px rgba(255, 255, 255, .7), inset 0 -2px 3px rgba(0, 0, 0, .3); }
+.ai3d.f-medal::after { inset: 7.5%; }
+/* Emerald pearl: glossy sphere */
+.ai3d.f-pearl { box-shadow: 0 .2em .35em -.12em rgba(11, 63, 39, .7), 0 0 0 2px #fff, 0 0 0 3.5px rgba(217, 178, 95, .75); }
+/* Halo: green-gold glow around */
+.ai3d.f-halo { box-shadow: 0 0 0 2px #fff, 0 0 0 5px rgba(31, 122, 77, .25), 0 0 0 9px rgba(31, 122, 77, .1), 0 0 18px 8px rgba(217, 178, 95, .45); }
+/* Chefchaouen glass: glassy shine and a rainbow edge */
+.ai3d.f-glass { box-shadow: 0 .18em .3em -.1em rgba(23, 63, 115, .6), 0 0 0 2px rgba(255, 255, 255, .9), 0 0 0 3.5px rgba(47, 109, 179, .45); }
+.ai3d.f-glass::before { content: ''; position: absolute; inset: -4px; border-radius: 50%; z-index: -1; filter: blur(2px); background: conic-gradient(rgba(255, 255, 255, 0), rgba(140, 200, 255, .8), rgba(255, 255, 255, 0) 30%, rgba(241, 216, 150, .8) 60%, rgba(255, 255, 255, 0) 75%); }
+/* Night star: gold glowing edge */
+.ai3d.f-night { box-shadow: 0 0 0 2px #d9b25f, 0 0 14px 3px rgba(241, 216, 150, .55), 0 .18em .3em -.1em #000; }
+/* Live (button and big preview): a glint runs over, a sparkle flashes, the halo breathes */
+@keyframes ai-glint { 0%, 70% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+@keyframes ai-flash { 0%, 82%, 100% { opacity: 0; transform: scale(.3) rotate(0); } 88% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@keyframes ai-breathe { 50% { box-shadow: 0 0 0 2px #fff, 0 0 0 7px rgba(31, 122, 77, .22), 0 0 0 13px rgba(31, 122, 77, .08), 0 0 26px 12px rgba(217, 178, 95, .5); } }
+.ai3d::after { background-size: 260% 100%, 100% 100%, 100% 100%; background-repeat: no-repeat; }
+/* Every finish is animated: a glint of light runs over the picture */
+.ai3d.f-medal::after, .ai3d.f-pearl::after, .ai3d.f-glass::after, .ai3d.f-night::after, .ai3d.f-halo::after { background-image: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .55) 48%, transparent 58%), var(--ai-base, none), var(--ai-base2, none); animation: ai-glint 4.5s ease-in-out infinite; }
+.ai3d.f-pearl { --ai-base: radial-gradient(60% 45% at 35% 22%, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 60%); --ai-base2: radial-gradient(90% 90% at 70% 85%, rgba(0, 0, 0, .32), transparent 55%); }
+.ai3d.f-glass { --ai-base: linear-gradient(160deg, rgba(255, 255, 255, .65) 0%, rgba(255, 255, 255, .1) 32%, transparent 45%); --ai-base2: radial-gradient(70% 30% at 50% 92%, rgba(140, 200, 255, .4), transparent 70%); }
+.ai3d.f-night, .ai3d.f-halo { --ai-base: radial-gradient(50% 35% at 35% 22%, rgba(255, 255, 255, .42), transparent 60%); }
+.ai3d.f-halo { animation: ai-breathe 3s ease-in-out infinite; }
+.ai3d.f-glass::before { animation: ai-turn 6s linear infinite; }
+.ai3d.f-night { animation: ai-glow 2.6s ease-in-out infinite; }
+@keyframes ai-turn { to { transform: rotate(360deg); } }
+@keyframes ai-glow { 50% { box-shadow: 0 0 0 2px #f1d896, 0 0 22px 6px rgba(241, 216, 150, .75), 0 .18em .3em -.1em #000; } }
+/* The button and the big preview also float and turn a little, like a coin in the light */
+@keyframes ai-float { 0%, 100% { transform: translateY(0) rotateY(0); } 25% { transform: translateY(-3px) rotateY(14deg); } 75% { transform: translateY(-1px) rotateY(-14deg); } }
+.ai3d.live > .ai-face { animation: ai-float 6s ease-in-out infinite; }
+.ai3d.live { perspective: 300px; }
+.ai3d.f-medal.live { animation: ai-float 6s ease-in-out infinite; }
+.ai3d.f-medal.live > .ai-face { animation: none; }
+.ai-spark { position: absolute; right: -2%; top: -2%; width: 30%; height: 30%; z-index: 3; pointer-events: none; opacity: 0; animation: ai-flash 5s ease-in-out infinite;
+  background: radial-gradient(#fff 0 16%, transparent 20%), conic-gradient(from 45deg, transparent 0 10%, #fff8d8 12% 13%, transparent 15% 35%, #fff8d8 37% 38%, transparent 40% 60%, #fff8d8 62% 63%, transparent 65% 85%, #fff8d8 87% 88%, transparent 90%); filter: drop-shadow(0 0 3px #f1d896); }
+@media (prefers-reduced-motion: reduce) { .ai3d, .ai3d::after, .ai3d::before, .ai3d > .ai-face, .ai-spark { animation: none !important; } .ai-spark { display: none; } }
+/* Settings */
+.ai-avs .ai3d { box-sizing: border-box; }
+.ai-avs .on .ai3d { outline: 2.5px solid var(--gold); outline-offset: 3px; }
+.ai-avs img { box-shadow: none !important; }
+.ai-finishes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.ai-finishes button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: 10px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font: inherit; color: var(--ink-2); }
+.ai-finishes button.on { border-color: var(--gold); color: var(--ink); font-weight: 700; }
+.ai-finishes small { font-size: 10.5px; line-height: 1.15; text-align: center; }
+/* Theme check 20.11: cream cards with a hard-coded light background (Friday review, niyya, safar, Ramadan) */
+:root[data-theme="dark"] :is(.g-review-cta, .h-hero.traveler, .safar-bar, .niyya, .fast-card, .rm-grid button[data-v="miss"]) { background: var(--gold-soft); border-color: #5a4720; color: var(--ink); }
+:root[data-theme="dark"] :is(.night.odd, .rm-night.odd) { background: #2a2414; border-color: #5a4720; }
+:root[data-theme="dark"] :is(.g-review-cta small, .niyya small) { color: var(--gold); }
+:root[data-theme="dark"] .safar-bar .row2 button { border-color: #5a4720; }
+:root[data-theme="dark"] :is(.acts .mn, .acts .lt) { color: #10180f; }
