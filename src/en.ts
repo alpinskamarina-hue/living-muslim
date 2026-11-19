@@ -4985,4 +4985,9 @@ export const EN: Record<string, string> = {
   "2 минуты · твоя ступенька и следующий шаг": "2 minutes · your step and what's next",
   "Ступень «{0}» · пора пройти снова": "Step «{0}» · time to take it again",
   "Ступень «{0}» · повтор через {1} дн.": "Step «{0}» · repeat in {1} days",
+  "Я совершаю все 5 намазов каждый день.": "I pray all 5 prayers every day.",
+  "Да, постоянно, не пропускаю": "Yes, always, I don't miss any",
+  "Почти всегда, иногда пропускаю": "Almost always, I miss some sometimes",
+  "Выучить 3 новые суры": "Learn 3 new surahs",
+  "аль-Каусар, аль-Кафирун, ан-Наср · месяц": "al-Kawthar, al-Kafirun, an-Nasr · a month",
 };

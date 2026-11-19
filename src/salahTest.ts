@@ -20,11 +20,12 @@ export const RUNGS: { n: Rung; title: string; sub: string }[] = [
   { n: 4, title: _t("Глубина"), sub: _t("Тафсир, заучивание") },
 ];
 
-export const SQUESTIONS: { r: Rung; q: string }[] = [
+/** opts: own answers with their value (1 = yes, below 1 = a gap on this step); default «Да» / «Пока нет». */
+export const SQUESTIONS: { r: Rung; q: string; opts?: { t: string; v: number }[] }[] = [
   { r: 1, q: _t("Я знаю, как совершать омовение (вуду).") },
   { r: 1, q: _t("Я знаю наизусть суру аль-Фатиха.") },
   { r: 1, q: _t("Я знаю, что говорить и делать в каждом ракаате.") },
-  { r: 2, q: _t("Я совершаю все 5 намазов почти каждый день.") },
+  { r: 2, q: _t("Я совершаю все 5 намазов каждый день."), opts: [{ t: _t("Да, постоянно, не пропускаю"), v: 1 }, { t: _t("Почти всегда, иногда пропускаю"), v: 0.5 }, { t: _t("Пока нет"), v: 0 }] },
   { r: 2, q: _t("Я знаю наизусть минимум 3 короткие суры (например, аль-Ихлас, аль-Фалак, ан-Нас).") },
   { r: 2, q: _t("Я понимаю смысл того, что читаю в намазе.") },
   { r: 3, q: _t("Я читаю арабские буквы, пусть медленно.") },
@@ -36,13 +37,13 @@ export const MINUTES = [5, 15, 30];
 
 /** a[0..9] = 1 yes / 0 no, a[10] = index in MINUTES. */
 export function rungOf(a: number[]): Rung {
-  for (const r of [1, 2, 3] as Rung[]) if (SQUESTIONS.some((q, i) => q.r === r && !a[i])) return r;
+  for (const r of [1, 2, 3] as Rung[]) if (SQUESTIONS.some((q, i) => q.r === r && (a[i] ?? 0) < 1)) return r;
   return 4;
 }
 export const minutesOf = (a: number[]) => MINUTES[a[10] ?? 1] ?? 15;
 /** Steps fully done below the current one (all «Да»). */
-export const rungDone = (a: number[], r: Rung) => SQUESTIONS.every((q, i) => q.r !== r || !!a[i]);
-export const gaps = (a: number[], r: Rung) => SQUESTIONS.filter((q, i) => q.r === r && !a[i]).map((q) => q.q);
+export const rungDone = (a: number[], r: Rung) => SQUESTIONS.every((q, i) => q.r !== r || (a[i] ?? 0) >= 1);
+export const gaps = (a: number[], r: Rung) => SQUESTIONS.filter((q, i) => q.r === r && (a[i] ?? 0) < 1).map((q) => q.q);
 
 export const RUNG_TEXT: Record<Rung, { head: string; text: string }> = {
   1: { head: _t("Начнём с основы"), text: _t("Ты в самом начале, и это лучшее время: каждый шаг здесь даёт награду. Начнём с омовения и Фатихи, по одному шагу в день.") },
@@ -68,14 +69,21 @@ export function planOf(a: number[]): SPlan {
     habits: [{ key: 'fatiha', action: _t("Учить аль-Фатиху: 1 аят в день после Фаджра"), min: _t("повторить выученные аяты"), anchor: 'fajr', on: true }],
     goal: { title: _t("Выучить аль-Фатиху"), source: 'hifz', ref: '1', target: hifzTotal([1]), unit: _t("аятов"), days: 14, sub: _t("7 аятов, отмечаешь выученные · 2 недели") },
   };
-  if (r === 2) return {
-    course: 'quran',
-    habits: [
-      { key: 'sura', action: _t("Учить суру: {0} минут после Фаджра", m), min: _t("повторить выученное"), anchor: 'fajr', on: true },
+  if (r === 2) {
+    // The goal follows the gap: the 3 short surahs if not known yet, else steady prayer, else 3 new surahs.
+    const knows3 = (a[4] ?? 0) >= 1, steady = (a[3] ?? 0) >= 1;
+    const goal: SGoal = !knows3
+      ? { title: _t("Выучить 3 последние суры"), source: 'hifz', ref: '112,113,114', target: hifzTotal([112, 113, 114]), unit: _t("аятов"), days: 30, sub: _t("аль-Ихлас, аль-Фалак, ан-Нас · месяц") }
+      : !steady
+        ? { title: _t("Все 5 намазов вовремя"), source: 'prayers', target: 100, unit: '%', days: 30, sub: _t("Доля намазов вовремя, срок 30 дней") }
+        : { title: _t("Выучить 3 новые суры"), source: 'hifz', ref: '108,109,110', target: hifzTotal([108, 109, 110]), unit: _t("аятов"), days: 30, sub: _t("аль-Каусар, аль-Кафирун, ан-Наср · месяц") };
+    const habits: SHabit[] = [
+      ...(!steady ? [{ key: 'fajr', action: _t("Фаджр в начале времени"), min: _t("встать к Фаджру по будильнику"), anchor: 'fajr' as Anchor, on: true }] : []),
+      { key: 'sura', action: _t("Учить суру: {0} минут после Фаджра", m), min: _t("повторить выученное"), anchor: 'fajr', on: knows3 ? steady : true },
       { key: 'meaning', action: _t("Смысл одного аята из намаза в день"), min: _t("прочитать перевод аль-Фатихи"), anchor: 'isha', on: true },
-    ],
-    goal: { title: _t("Выучить 3 последние суры"), source: 'hifz', ref: '112,113,114', target: hifzTotal([112, 113, 114]), unit: _t("аятов"), days: 30, sub: _t("аль-Ихлас, аль-Фалак, ан-Нас · месяц") },
-  };
+    ];
+    return { course: 'quran', habits, goal };
+  }
   if (r === 3) return {
     course: 'ar',
     habits: [{ key: 'arabic', action: _t("Арабский: {0} минут после Фаджра", m), min: _t("5 минут букв"), anchor: 'fajr', on: true }],
