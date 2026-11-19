@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void;
   /** Profile → Аккаунт, to sign in by email. */
   onSignIn: () => void;
+  /** A fresh summary of the person's data for the assistant, built at the moment of the question. */
+  context?: () => string;
 }
 
 const ERR: Record<string, () => string> = {
@@ -21,7 +23,7 @@ const ERR: Record<string, () => string> = {
 };
 
 /** Full-screen chat with the assistant. The conversation stays on this device. */
-export function Assistant({ state, onClose, onSignIn }: Props) {
+export function Assistant({ state, onClose, onSignIn, context }: Props) {
   const s = state.settings;
   const name = aiName(s);
   const [msgs, setMsgs] = useState<AiMsg[]>(loadChat);
@@ -39,7 +41,9 @@ export function Assistant({ state, onClose, onSignIn }: Props) {
     if (!v || busy) return;
     const next: AiMsg[] = [...msgs, { role: 'user', content: v, at: Date.now() }];
     setMsgs(next); setText(''); setErr(''); setBusy(true);
-    const r = await ask(next.slice(-30), s);
+    let ctx = '';
+    try { ctx = context?.() ?? ''; } catch { /* answer without it */ }
+    const r = await ask(next.slice(-30), s, ctx);
     setBusy(false);
     if ('error' in r) {
       if (r.error === 'signin') { setErr(_t("Чтобы говорить с помощником, войди по почте.")); return; }
@@ -51,7 +55,7 @@ export function Assistant({ state, onClose, onSignIn }: Props) {
   };
 
   const clear = () => { setMsgs([]); setErr(''); };
-  const starters = [_t("Что ты умеешь?"), _t("Как не пропускать Фаджр?"), _t("С чего начать читать Коран?")];
+  const starters = [_t("Что у меня сегодня?"), _t("Как идут мои цели?"), _t("Что ты умеешь?"), _t("Как не пропускать Фаджр?")];
 
   return (
     <div className="sess light-sess ai-sess">
@@ -178,7 +182,7 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
       </label>
 
       <button type="button" className="ghost-btn ai-open" onClick={onOpen}>{_t("Открыть чат")}</button>
-      <p className="tiny">{_t("Переписка хранится только на этом телефоне. Вопрос уходит на сервер, чтобы получить ответ, и там не сохраняется. Ответы готовит ИИ (Claude, Anthropic): это не фетва, важное уточняй у имама.")}</p>
+      <p className="tiny">{_t("Переписка хранится только на этом телефоне. Чтобы ответить про твои цели, привычки и круги, вместе с вопросом на сервер уходит их краткая сводка; там ничего не сохраняется. Ответы готовит ИИ (Claude, Anthropic): это не фетва, важное уточняй у имама.")}</p>
       {admin && <AssistantTrain />}
     </>
   );
