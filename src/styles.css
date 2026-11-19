@@ -3641,3 +3641,4 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .ai-idea p { margin: 4px 0 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ai-idea .link-btn { padding: 2px 0; font-size: 13px; color: var(--ink-2); }
 .ai-msg.it.ai-bare { padding: 0; border: 0; background: none; } .ai-bare .ai-acts { margin-top: 0; }
+.ai-input .ai-mic.ai-mic-more { background: var(--surface-2); color: var(--green-2); border: 1px solid var(--line); }

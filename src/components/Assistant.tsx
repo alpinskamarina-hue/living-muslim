@@ -63,24 +63,29 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
     if (busy || rec) return;
     setErr(''); hush(); setSaying(null);
     if (!sttAvailable()) { setErr(_t("Здесь запись голоса не работает. Нажми микрофон на клавиатуре телефона и говори, текст появится в поле.")); return; }
-    const l = listen(voiceLang, (t) => setText(t), (t, e) => {
+    const before = text.trim();
+    const l = listen(voiceLang, (t) => setText(before ? `${before} ${t}` : t), (t0, e) => {
+      const t = before ? `${before} ${t0}`.trim() : t0;
       mic.current = null; setRec(false);
       if (e === 'not-allowed' || e === 'service-not-allowed') { setErr(_t("Нет доступа к микрофону. Разреши его в настройках браузера для этого сайта.")); return; }
       if (e && !t) { setErr(_t("Не получилось распознать. Попробуй ещё раз или напиши.")); return; }
-      if (t) send(t, true); else setText('');
+      // The text stays in the field: the person reads it, can add more and sends with ➤.
+      setText((x) => (t || x).trim());
+      setVoiced(Boolean(t));
     });
     if (!l) { setErr(_t("Не получилось включить микрофон.")); return; }
-    mic.current = l; setText(''); setRec(true);
+    mic.current = l; setRec(true);
     try { navigator.vibrate?.(10); } catch { /* */ }
   };
   const stopMic = () => mic.current?.stop();
-  const cancelMic = () => { mic.current?.abort(); mic.current = null; setRec(false); setText(''); };
+  const cancelMic = () => { mic.current?.abort(); mic.current = null; setRec(false); setText(''); setVoiced(false); };
+  const [voiced, setVoiced] = useState(false);
 
   const send = async (q = text, voice = false) => {
     const v = q.trim();
     if (!v || busy) return;
     let hist: AiMsg[] = [...msgs, { role: 'user', content: v, at: Date.now(), ...(voice ? { voice: true } : {}) }];
-    setMsgs(hist); setText(''); setErr(''); setBusy(true); setUndo(null);
+    setMsgs(hist); setText(''); setVoiced(false); setErr(''); setBusy(true); setUndo(null);
     let cur = live.current;
     let go: GoTo | undefined;
     for (let round = 0; round < 5; round++) {
@@ -97,7 +102,6 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
       if (!r.calls?.length || !apply) {
         hist = [...hist, { role: 'assistant', content: r.text, at: Date.now() }];
         setMsgs(hist);
-        if (voice && ttsAvailable() && r.text) say(hist.length - 1, r.text);
         break;
       }
       // The assistant acts: carry out every call on a copy of the state, then save once.
@@ -167,15 +171,20 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
       </div>
 
       {signed ? (
-        <form className={`ai-input${rec ? ' ai-rec' : ''}`} onSubmit={(e) => { e.preventDefault(); if (rec) stopMic(); else send(); }}>
+        <form className={`ai-input${rec ? ' ai-rec' : ''}`} onSubmit={(e) => { e.preventDefault(); if (rec) stopMic(); else send(text, voiced); }}>
           {rec && <button type="button" className="ai-mic-x" onClick={cancelMic} aria-label={_t("Отменить запись")}>✕</button>}
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={2000} readOnly={rec}
-            placeholder={rec ? _t("Говори, я слушаю…") : _t("Напиши или скажи вопрос…")}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!rec) send(); } }} />
+            placeholder={rec ? _t("Говори, я слушаю… Нажми ■, когда закончишь") : _t("Напиши или скажи вопрос…")}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!rec) send(text, voiced); } }} />
           {rec
-            ? <button key="stop" type="submit" className="ai-mic on" aria-label={_t("Готово, отправить")}><i /></button>
+            ? <button key="stop" type="submit" className="ai-mic on" aria-label={_t("Остановить запись")}><i /></button>
             : text.trim()
-              ? <button key="send" type="submit" disabled={busy} aria-label={_t("Отправить")}>➤</button>
+              ? <>
+                  {voiced && <button key="more" type="button" className="ai-mic ai-mic-more" disabled={busy} onClick={startMic} aria-label={_t("Договорить")}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+                  </button>}
+                  <button key="send" type="submit" disabled={busy} aria-label={_t("Отправить")}>➤</button>
+                </>
               : <button key="mic" type="button" className="ai-mic" disabled={busy} onClick={startMic} aria-label={_t("Сказать голосом")}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
                 </button>}
