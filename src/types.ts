@@ -59,7 +59,9 @@ export interface Settings {
   /** The assistant's name the person chose; empty means «Помощник». */
   aiName?: string;
   /** The assistant's look: an ornament badge or the person's own photo (kept on the device). */
-  aiStyle?: 'fes' | 'zellige' | 'arch' | 'rose' | 'photo';
+  aiStyle?: import('./aiLook').AiStyle;
+  /** The chat's light: a running gold ring (default), a soft aurora, or night with zellige stars. */
+  aiGlow?: 'ring' | 'aurora' | 'night';
   /** Badge colour key from AI_COLORS. */
   aiColor?: string;
   /** How it speaks: «ты» or «вы», short or detailed, soft / warm / to the point. */

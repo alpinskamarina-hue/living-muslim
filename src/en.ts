@@ -5182,4 +5182,8 @@ export const EN: Record<string, string> = {
   "Остановить запись": "Stop recording",
   "Договорить": "Say more",
   "Говори, я слушаю… Нажми ■, когда закончишь": "Speak, I'm listening… Tap ■ when you're done",
+  "Подсветка чата": "Chat light",
+  "Золотое кольцо": "Golden ring",
+  "Сияние": "Aurora",
+  "Ночь в медресе": "Madrasa night",
 };

@@ -7,7 +7,7 @@ import { type AiConfig, type AiMsg, aiName, ask, getAiConfig, loadChat, saveChat
 import { authMe } from '../auth';
 import { _t, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
-import { AI_COLORS, AI_STYLES, AiFace, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
+import { AI_COLORS, AI_PEOPLE, AI_STYLES, AiFace, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
 
 interface Props {
   state: AppState;
@@ -137,7 +137,8 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
   const starters = [_t("Что у меня сегодня?"), _t("Как идут мои цели?"), _t("Что ты умеешь?"), _t("Как не пропускать Фаджр?")];
 
   return (
-    <div className="sess light-sess ai-sess">
+    <div className={`sess light-sess ai-sess ai-glow-${s.aiGlow || 'ring'}`}>
+      <i className="ai-light" aria-hidden="true" />
       <div className="sess-top">
         <button type="button" className="icon-btn" onClick={onClose} aria-label={_t("Закрыть")}>✕</button>
         <AiFace s={s} size={40} className="ai-head-face" />
@@ -202,6 +203,8 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
 
 const STYLE_NAMES: Record<string, () => string> = {
   fes: () => _t("Звезда Феса"), zellige: () => _t("Зеллидж"), arch: () => _t("Арка"), rose: () => _t("Роза"),
+  m1: () => _t("Брат"), m2: () => _t("Брат"), m3: () => _t("Брат"), m4: () => _t("Брат"),
+  f1: () => _t("Сестра"), f2: () => _t("Сестра"), f3: () => _t("Сестра"), f4: () => _t("Сестра"),
 };
 const COLOR_NAMES: Record<string, () => string> = {
   green: () => _t("Зелёный"), teal: () => _t("Бирюзовый"), blue: () => _t("Синий Шефшауэн"), terra: () => _t("Терракота"), purple: () => _t("Фиолетовый"), black: () => _t("Чёрный"),
@@ -238,7 +241,7 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
 
       <h4 className="ai-h">{_t("Аватар")}</h4>
       <div className="ai-avs">
-        {AI_STYLES.map((k) => (
+        {[...AI_STYLES, ...AI_PEOPLE].map((k) => (
           <button key={k} type="button" aria-pressed={style === k} className={style === k ? 'on' : ''} onClick={() => set({ aiStyle: k })}>
             <img src={badgeUrl(k, color)} alt="" width={56} height={56} /><small>{STYLE_NAMES[k]()}</small>
           </button>
@@ -276,6 +279,15 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
       <Seg value={s.aiYou || 'ty'} options={[['ty', _t("На «ты»")], ['vy', _t("На «вы»")]]} onPick={(v) => set({ aiYou: v })} />
       <Seg value={s.aiLen || 'short'} options={[['short', _t("Коротко")], ['long', _t("Подробно")]]} onPick={(v) => set({ aiLen: v })} />
       <Seg value={s.aiTone || 'warm'} options={[['soft', _t("Мягко")], ['warm', _t("Тепло")], ['direct', _t("По делу")]]} onPick={(v) => set({ aiTone: v })} />
+
+      <h4 className="ai-h">{_t("Подсветка чата")}</h4>
+      <div className="ai-glows">
+        {([['ring', _t("Золотое кольцо")], ['aurora', _t("Сияние")], ['night', _t("Ночь в медресе")]] as const).map(([k, label]) => (
+          <button key={k} type="button" aria-pressed={(s.aiGlow || 'ring') === k} className={`ai-glow-pick g-${k}${(s.aiGlow || 'ring') === k ? ' on' : ''}`} onClick={() => set({ aiGlow: k })}>
+            <i /><small>{label}</small>
+          </button>
+        ))}
+      </div>
 
       <h4 className="ai-h">{_t("Кнопка")}</h4>
       <label className="ai-switch">
