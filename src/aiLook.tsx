@@ -2,7 +2,6 @@
 // The photo stays on this device only (localStorage), it is never synced or sent anywhere.
 import { useEffect, useState } from 'react';
 import type { Settings } from './types';
-import { aiName } from './assistant';
 
 export const AI_STYLES = ['fes', 'zellige', 'arch', 'rose'] as const;
 /** Faces without eyes or mouth: brothers with a beard, sisters in hijab. */
@@ -135,9 +134,22 @@ export function photoToUrl(file: File): Promise<string> {
   });
 }
 
-/** The assistant's round face: own photo if chosen and present, else the ornament badge. */
-export function AiFace({ s, size = 40, className = '' }: { s: Settings; size?: number; className?: string }) {
+export const AI_FINISHES = ['medal', 'pearl', 'halo', 'glass', 'night'] as const;
+export type AiFinish = (typeof AI_FINISHES)[number];
+
+/** A round picture with the chosen 3D finish (shine, rim, glow). `live` adds the moving glint and the sparkle. */
+export function Ai3D({ url, size, finish = 'medal', live = false, className = '' }: { url: string; size: number; finish?: string; live?: boolean; className?: string }) {
+  return (
+    <span className={`ai3d f-${finish}${live ? ' live' : ''} ${className}`} style={{ width: size, height: size }} aria-hidden="true">
+      <img className="ai-face" src={url} alt="" draggable={false} />
+      {live && <i className="ai-spark" />}
+    </span>
+  );
+}
+
+/** The assistant's round face: own photo if chosen and present, else the badge or a person, in the chosen 3D finish. */
+export function AiFace({ s, size = 40, className = '', live = false }: { s: Settings; size?: number; className?: string; live?: boolean }) {
   const photo = useAiPhoto();
   const url = s.aiStyle === 'photo' && photo ? photo : badgeUrl(s.aiStyle && s.aiStyle !== 'photo' ? s.aiStyle : 'fes', s.aiColor || 'green');
-  return <img className={`ai-face ${className}`} src={url} width={size} height={size} alt="" aria-hidden="true" draggable={false} data-name={aiName(s)} />;
+  return <Ai3D url={url} size={size} finish={s.aiFinish || 'medal'} live={live} className={className} />;
 }
