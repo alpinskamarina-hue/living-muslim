@@ -131,7 +131,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
       </button>
 
       <div className="menu">
-        <Row icon="✨" title={aiName(s)} sub={admin ? _t("Чат, имя и обучение помощника") : _t("Чат с ИИ-помощником, его имя")} onClick={() => go('assistant')} />
+        <Row icon="✨" title={aiName(s)} sub={admin ? _t("Аватар, имя, как говорит и обучение") : _t("Аватар, имя и как он говорит")} onClick={() => go('assistant')} />
         <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
         <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
         {isCloud && nikahOn && <Row icon="💍" title={_t("Никах")} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}

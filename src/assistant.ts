@@ -30,7 +30,7 @@ export async function ask(history: AiMsg[], s: Settings): Promise<AskResult> {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       body: JSON.stringify({
         messages: history.map(({ role, content }) => ({ role, content })),
-        lang: LANG, name: s.aiName?.trim() || '', me: s.me || '', madhab: s.madhab,
+        lang: LANG, name: s.aiName?.trim() || '', me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '',
       }),
     });
     const j = await r.json().catch(() => ({}));

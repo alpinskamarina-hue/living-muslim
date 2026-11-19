@@ -31,7 +31,7 @@ import { inRamadan } from './rplan';
 import { isCounted } from './store';
 import { here, tripOn } from './safar';
 import { Safar } from './components/Safar';
-import { Assistant } from './components/Assistant';
+import { Assistant, AssistantFab } from './components/Assistant';
 import { QiblaScreen, type QiblaTab } from './components/Mosques';
 import { Ramadan } from './components/Ramadan';
 import { ramadanHidden } from './rplan';
@@ -351,7 +351,7 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onAssistant={() => setAiOpen(true)} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onAssistant={state.settings.aiFab === false ? () => setAiOpen(true) : undefined} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
             quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
             quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
@@ -383,6 +383,8 @@ export function App() {
           {_t("Добавить")}
         </button>
       )}
+
+      {!aiOpen && <AssistantFab s={state.settings} onOpen={() => setAiOpen(true)} />}
 
       <nav className="nav" aria-label={_t("Разделы")}>
         {(Object.keys(LABELS) as Tab[]).map((t) => (

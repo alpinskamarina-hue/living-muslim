@@ -52,6 +52,9 @@ function systemPrompt(cfg, b) {
     b.me === 'f' ? 'The person is a sister (use feminine forms in Russian).' : b.me === 'm' ? 'The person is a brother.' : '',
     b.madhab === 'hanafi' ? 'Madhhab: Hanafi.' : b.madhab === 'shafi' ? "Madhhab: Shafi'i." : '',
     `App language: ${b.lang === 'en' ? 'English' : 'Russian'}.`,
+    b.you === 'vy' ? 'In Russian, address the person formally with «вы».' : b.you === 'ty' ? 'In Russian, address the person informally with «ты».' : '',
+    b.len === 'short' ? 'The person prefers short answers: 2 to 5 sentences unless they ask for more.' : b.len === 'long' ? 'The person prefers fuller, detailed answers, with steps when useful.' : '',
+    b.tone === 'soft' ? 'Tone the person chose: especially gentle and encouraging.' : b.tone === 'warm' ? 'Tone the person chose: warm and friendly.' : b.tone === 'direct' ? 'Tone the person chose: direct and to the point, without extra words.' : '',
   ].filter(Boolean).join('\n');
   const parts = [{ type: 'text', text: BASE }];
   const owner = [
