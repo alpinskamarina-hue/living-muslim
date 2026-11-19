@@ -59,3 +59,39 @@ export function speechLang(id: string): string | null {
   const name = id.replace(/^custom:/, '');
   return BY_NAME.find(([re]) => re.test(name))?.[1] ?? null;
 }
+
+// ───── Speech-to-text through the browser (Web Speech API): free, no keys. Chrome/Android and Safari on iPhone. ─────
+type Rec = { lang: string; interimResults: boolean; continuous: boolean; start(): void; stop(): void; abort(): void;
+  onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  onerror: ((e: { error: string }) => void) | null; onend: (() => void) | null };
+
+const RecCtor = (): (new () => Rec) | null => {
+  try { const w = window as unknown as Record<string, unknown>; return (w.SpeechRecognition || w.webkitSpeechRecognition || null) as (new () => Rec) | null; } catch { return null; }
+};
+export const sttAvailable = () => Boolean(RecCtor());
+
+export interface Listening { stop: () => void; abort: () => void }
+/** Listens until stopped or a long pause. onText gets the whole text so far; onEnd the final text (or an error code). */
+export function listen(lang: string, onText: (t: string) => void, onEnd: (t: string, err?: string) => void): Listening | null {
+  const C = RecCtor();
+  if (!C) return null;
+  const r = new C();
+  r.lang = lang; r.interimResults = true; r.continuous = true;
+  let fin = '', cur = '', err: string | undefined, ended = false;
+  r.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const res = e.results[i];
+      if (res.isFinal) fin += res[0].transcript; else interim += res[0].transcript;
+    }
+    cur = (fin + interim).replace(/\s+/g, ' ').trim();
+    onText(cur);
+  };
+  r.onerror = (e) => { if (e.error !== 'no-speech' && e.error !== 'aborted') err = e.error; };
+  r.onend = () => { if (ended) return; ended = true; onEnd((fin.trim() || cur).trim(), err); };
+  try { r.start(); } catch { return null; }
+  return { stop: () => { try { r.stop(); } catch { /* */ } }, abort: () => { ended = true; try { r.abort(); } catch { /* */ } } };
+}
+
+/** Stops anything being read aloud. */
+export function hush() { try { if (ttsAvailable()) speechSynthesis.cancel(); } catch { /* */ } }
