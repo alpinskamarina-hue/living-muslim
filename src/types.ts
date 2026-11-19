@@ -155,7 +155,11 @@ export interface AppState {
   newpath?: import('./newpath').NewPathState;
   /** «Тесты» in Practice: past runs per test (answers stay on the phone). */
   tests?: import('./selftest').TestsState;
+  /** «Мои идеи»: ideas and notes the person (or the assistant for them) wrote down. */
+  ideas?: Idea[];
 }
+
+export interface Idea { id: string; at: number; text: string }
 
 export interface KidTask { id: string; t: string; icon: string }
 export interface Kid {

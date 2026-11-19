@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
+import { runTool } from '../aiActions';
+import type { GoTo } from '../guide';
+import { dayKey } from '../dates';
 import { type AiConfig, type AiMsg, aiName, ask, getAiConfig, loadChat, saveChat, setAiConfig } from '../assistant';
 import { authMe } from '../auth';
 import { _t, LANG } from '../i18n';
@@ -12,7 +15,11 @@ interface Props {
   /** Profile → Аккаунт, to sign in by email. */
   onSignIn: () => void;
   /** A fresh summary of the person's data for the assistant, built at the moment of the question. */
-  context?: () => string;
+  context?: (s: AppState) => string;
+  /** Saves the state after the assistant acted (or puts the old one back on «Отменить»). */
+  apply?: (s: AppState) => void;
+  /** Opens a screen of the app (the chat closes). */
+  onGo?: (t: GoTo) => void;
 }
 
 const ERR: Record<string, () => string> = {
@@ -24,7 +31,7 @@ const ERR: Record<string, () => string> = {
 };
 
 /** Full-screen chat with the assistant. The conversation stays on this device. */
-export function Assistant({ state, onClose, onSignIn, context }: Props) {
+export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Props) {
   const s = state.settings;
   const name = aiName(s);
   const [msgs, setMsgs] = useState<AiMsg[]>(loadChat);
@@ -38,6 +45,10 @@ export function Assistant({ state, onClose, onSignIn, context }: Props) {
   const [saying, setSaying] = useState<number | null>(null);
   const mic = useRef<Listening | null>(null);
   const voiceLang = LANG === 'en' ? 'en-US' : 'ru-RU';
+  // «Отменить» for the latest batch of actions: the message index and the state from before it.
+  const [undo, setUndo] = useState<{ i: number; prev: AppState } | null>(null);
+  const live = useRef(state);
+  live.current = state;
 
   useEffect(() => { saveChat(msgs); end.current?.scrollIntoView({ block: 'end' }); }, [msgs, busy]);
   useEffect(() => () => { mic.current?.abort(); hush(); }, []);
@@ -68,20 +79,54 @@ export function Assistant({ state, onClose, onSignIn, context }: Props) {
   const send = async (q = text, voice = false) => {
     const v = q.trim();
     if (!v || busy) return;
-    const next: AiMsg[] = [...msgs, { role: 'user', content: v, at: Date.now(), ...(voice ? { voice: true } : {}) }];
-    setMsgs(next); setText(''); setErr(''); setBusy(true);
-    let ctx = '';
-    try { ctx = context?.() ?? ''; } catch { /* answer without it */ }
-    const r = await ask(next.slice(-30), s, ctx);
-    setBusy(false);
-    if ('error' in r) {
-      if (r.error === 'signin') { setErr(_t("Чтобы говорить с помощником, войди по почте.")); return; }
-      setErr(ERR[r.error]?.() ?? ERR.busy());
-      return;
+    let hist: AiMsg[] = [...msgs, { role: 'user', content: v, at: Date.now(), ...(voice ? { voice: true } : {}) }];
+    setMsgs(hist); setText(''); setErr(''); setBusy(true); setUndo(null);
+    let cur = live.current;
+    let go: GoTo | undefined;
+    for (let round = 0; round < 5; round++) {
+      let ctx = '';
+      try { ctx = context?.(cur) ?? ''; } catch { /* answer without it */ }
+      const r = await ask(hist.slice(-40), s, ctx);
+      if ('error' in r) {
+        setBusy(false);
+        if (r.error === 'signin') { setErr(_t("Чтобы говорить с помощником, войди по почте.")); return; }
+        setErr(ERR[r.error]?.() ?? ERR.busy());
+        return;
+      }
+      if (r.left !== undefined && r.left !== null) setLeft(r.left);
+      if (!r.calls?.length || !apply) {
+        hist = [...hist, { role: 'assistant', content: r.text, at: Date.now() }];
+        setMsgs(hist);
+        if (voice && ttsAvailable() && r.text) say(hist.length - 1, r.text);
+        break;
+      }
+      // The assistant acts: carry out every call on a copy of the state, then save once.
+      const before = cur;
+      const today = dayKey(new Date());
+      const acts: string[] = [];
+      const results = r.calls.map((c) => {
+        const out = runTool(cur, c, today);
+        cur = out.s;
+        if (out.go) go = out.go;
+        if (out.done.ok && out.done.line) acts.push(out.done.line);
+        return { type: 'tool_result', tool_use_id: c.id, content: out.done.result, ...(out.done.ok ? {} : { is_error: true }) };
+      });
+      if (cur !== before) { apply(cur); setUndo({ i: hist.length, prev: before }); }
+      hist = [...hist,
+        { role: 'assistant', content: r.text, at: Date.now(), raw: r.content, ...(acts.length ? { acts } : {}) },
+        { role: 'user', content: '', at: Date.now(), raw: results, hidden: true }];
+      setMsgs(hist);
+      if (go) break;
     }
-    setMsgs([...next, { role: 'assistant', content: r.text, at: Date.now() }]);
-    if (voice && ttsAvailable()) say(next.length, r.text);
-    setLeft(r.left ?? null);
+    setBusy(false);
+    if (go && onGo) setTimeout(() => onGo(go!), acts0(hist) ? 900 : 0);
+  };
+  const acts0 = (h: AiMsg[]) => h.some((m) => m.acts?.length);
+  const undoNow = () => {
+    if (!undo || !apply) return;
+    apply(undo.prev);
+    setMsgs((m) => m.map((x, i) => (i === undo.i ? { ...x, acts: x.acts?.map((a) => `↩ ${a}`) } : x)));
+    setUndo(null);
   };
 
   const clear = () => { setMsgs([]); setErr(''); };
@@ -103,10 +148,19 @@ export function Assistant({ state, onClose, onSignIn, context }: Props) {
             {signed && <div className="ai-chips">{starters.map((q) => <button key={q} type="button" onClick={() => send(q)}>{q}</button>)}</div>}
           </div>
         )}
-        {msgs.map((m, i) => m.role === 'user'
+        {msgs.map((m, i) => m.hidden ? null : m.role === 'user'
           ? <div key={i} className="ai-msg me">{m.voice && <span className="ai-vo" aria-label={_t("Голосом")}>🎙 </span>}{m.content}</div>
-          : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it">{m.content}</div>
-            {ttsAvailable() && <button type="button" className={`ai-say${saying === i ? ' on' : ''}`} onClick={() => say(i, m.content)} aria-label={saying === i ? _t("Остановить") : _t("Прослушать")}>{saying === i ? '■' : '🔊'}</button>}</div>)}
+          : (!m.content && !m.acts?.length) ? null
+          : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className={`ai-msg it${m.content ? '' : ' ai-bare'}`}>
+              {m.content}
+              {m.acts?.length ? (
+                <div className="ai-acts">
+                  {m.acts.map((a, k) => <div key={k}>{a.startsWith('↩') ? a : `✓ ${a}`}</div>)}
+                  {undo?.i === i && <button type="button" onClick={undoNow}>{_t("Отменить")}</button>}
+                </div>
+              ) : null}
+            </div>
+            {ttsAvailable() && m.content && <button type="button" className={`ai-say${saying === i ? ' on' : ''}`} onClick={() => say(i, m.content)} aria-label={saying === i ? _t("Остановить") : _t("Прослушать")}>{saying === i ? '■' : '🔊'}</button>}</div>)}
         {busy && <div className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it ai-typing" aria-label={_t("Пишет…")}><i /><i /><i /></div></div>}
         {err && <div className="ai-err">{err}{!signed && <button type="button" className="ghost-btn" onClick={onSignIn}>{_t("Войти по почте")}</button>}</div>}
         <div ref={end} />
@@ -283,5 +337,33 @@ function AssistantTrain() {
       {cfg.updated_at && <p className="tiny">{_t("Последнее изменение: {0}", new Date(cfg.updated_at).toLocaleString())}</p>}
       {msg && <p className="tiny ai-note">{msg}</p>}
     </div>
+  );
+}
+
+/** Profile → Мои идеи: what the person or the assistant wrote down. */
+export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (fn: (s: AppState) => AppState) => void; onAsk: () => void }) {
+  const [t, setT] = useState('');
+  const list = [...(state.ideas ?? [])].reverse();
+  const add = () => { const v = t.trim(); if (!v) return; update((s) => ({ ...s, ideas: [...(s.ideas ?? []), { id: Math.random().toString(36).slice(2, 10), at: Date.now(), text: v.slice(0, 1000) }] })); setT(''); };
+  return (
+    <>
+      <p className="tiny">{_t("Сюда попадает всё, что ты попросишь помощника записать. Можно добавить и самому.")}</p>
+      <textarea className="ai-name ai-idea-in" rows={3} value={t} onChange={(e) => setT(e.target.value)} placeholder={_t("Идея, мысль, что не забыть…")} />
+      <div className="ai-photo-acts">
+        <button type="button" className="ghost-btn" disabled={!t.trim()} onClick={add}>{_t("Записать")}</button>
+        <button type="button" className="link-btn" onClick={onAsk}>{_t("Сказать помощнику")}</button>
+      </div>
+      {list.length === 0 ? <p className="tiny">{_t("Пока пусто.")}</p> : (
+        <div className="ai-ideas">
+          {list.map((x) => (
+            <div key={x.id} className="ai-idea">
+              <small>{new Date(x.at).toLocaleString(LANG === 'en' ? 'en-GB' : 'ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>
+              <p>{x.text}</p>
+              <button type="button" className="link-btn" onClick={() => { if (confirm(_t("Удалить эту запись?"))) update((s) => ({ ...s, ideas: (s.ideas ?? []).filter((y) => y.id !== x.id) })); }}>{_t("Удалить")}</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

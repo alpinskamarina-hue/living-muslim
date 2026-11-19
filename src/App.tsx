@@ -400,7 +400,7 @@ export function App() {
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
-      {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={() => buildContext(state, today, new Date(), times, circle)} />}
+      {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={(st) => buildContext(st, today, new Date(), times, circle)} apply={(st) => update(() => st)} onGo={(t) => { setAiOpen(false); go(t); }} />}
       {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}
       {adhan.toast && <AdhanToast a={adhan.toast} onClose={adhan.closeToast} />}
       {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}
