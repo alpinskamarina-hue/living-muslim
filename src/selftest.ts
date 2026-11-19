@@ -75,7 +75,7 @@ export const BARRIERS: { id: Barrier; label: string; tip: string }[] = [
   { id: 'alone', label: _t("Не с кем, одному трудно"), tip: _t("Позови друзей в Круг и предложи вызов на 7 дней с этой привычкой. Вместе держаться легче.") },
 ];
 
-export interface TestRun { day: string; a: number[]; b: Barrier; habits?: string[]; goal?: string }
+export interface TestRun { day: string; a: number[]; b?: Barrier; habits?: string[]; goal?: string }
 export interface TestsState { runs: Record<string, TestRun[]> }
 
 export const runsOf = (s: AppState, id = TEST_ID): TestRun[] => s.tests?.runs[id] ?? [];

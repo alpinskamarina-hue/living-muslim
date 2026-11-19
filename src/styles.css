@@ -3334,3 +3334,12 @@ button.ud-wait em { font-style: normal; }
 .sx-hab b { font-size: 14.5px; }
 .sx-hab small { color: var(--ink-2); font-size: 12px; }
 .sx-hab .sx-why { color: var(--ink); font-style: italic; }
+.um-know { --cc: var(--s-faith); } .um-body { --cc: var(--s-body); } .um-docs { --cc: var(--gold); } .um-heart { --cc: var(--s-family); }
+.um-c { text-align: center; }
+.um-ring { width: 136px; height: 136px; margin: 14px auto 6px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--gold) 0 var(--p), var(--surface-2) var(--p) 100%); }
+.um-ring > div { width: 106px; height: 106px; border-radius: 50%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.um-ring b { font-family: var(--f-display); font-size: 40px; line-height: .9; font-variant-numeric: tabular-nums; }
+.um-ring small { color: var(--ink-2); font-size: 12px; }
+.um-left { display: flex; gap: 10px; align-items: center; }
+.um-left i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--late); flex: none; }
+.um-left i.half { background: linear-gradient(90deg, var(--late) 50%, transparent 50%); }

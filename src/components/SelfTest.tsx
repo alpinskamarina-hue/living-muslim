@@ -158,10 +158,10 @@ export function SelfTest({ state, update, today, onExit }: Props) {
 }
 
 function Plan({ state, update, today, run, onBack, onDone }: { state: AppState; update: Props['update']; today: string; run: TestRun; onBack: () => void; onDone: (n: number, goal: boolean) => void }) {
-  const [list, setList] = useState<Proposal[]>(() => proposals(run.a, run.b));
+  const [list, setList] = useState<Proposal[]>(() => proposals(run.a, run.b ?? 'forget'));
   const idea = goalIdea(run.a);
   const [goalOn, setGoalOn] = useState(true);
-  const barrier = BARRIERS.find((b) => b.id === run.b)!;
+  const barrier = BARRIERS.find((b) => b.id === run.b) ?? BARRIERS[0];
   const picks = list.filter((p) => p.on);
   const toggle = (k: number) => setList(list.map((p, j) => (j === k ? { ...p, on: !p.on } : p)));
   const has = (p: Proposal) => state.habits.some((h) => h.action === p.action && h.status !== 'archived');
