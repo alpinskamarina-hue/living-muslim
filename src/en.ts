@@ -5008,4 +5008,9 @@ export const EN: Record<string, string> = {
   "или «Добавить на главный экран»": "or “Add to Home screen”",
   "Проще всего в Chrome: там появится кнопка «Установить».": "Easiest in Chrome: it shows an Install button.",
   "кнопка «Поделиться» здесь": "the Share button is here",
+  "Я совершаю все 5 намазов каждый день.": "I pray all 5 prayers every day.",
+  "Да, постоянно, не пропускаю": "Yes, always, I don't miss any",
+  "Почти всегда, иногда пропускаю": "Almost always, I miss some sometimes",
+  "Выучить 3 новые суры": "Learn 3 new surahs",
+  "аль-Каусар, аль-Кафирун, ан-Наср · месяц": "al-Kawthar, al-Kafirun, an-Nasr · a month",
 };

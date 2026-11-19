@@ -62,8 +62,9 @@ export function SalahTest({ state, update, today, onExit, onOpen }: Props) {
             <span className="sx-part" data-sphere="faith">{_tj("Ступень {0} · {1}", SQUESTIONS[i].r, RUNGS[SQUESTIONS[i].r - 1].title)}</span>
             <p className="sx-q">{SQUESTIONS[i].q}</p>
             <div className="sx-opts">
-              <button type="button" className="sx-opt" aria-pressed={a[i] === 1} onClick={() => pick(1)}>{_t("Да")}</button>
-              <button type="button" className="sx-opt" aria-pressed={a[i] === 0} onClick={() => pick(0)}>{_t("Пока нет")}</button>
+              {(SQUESTIONS[i].opts ?? [{ t: _t("Да"), v: 1 }, { t: _t("Пока нет"), v: 0 }]).map((o) => (
+                <button key={o.v} type="button" className="sx-opt" aria-pressed={a[i] === o.v} onClick={() => pick(o.v)}>{o.t}</button>
+              ))}
             </div>
           </>
         ) : (
