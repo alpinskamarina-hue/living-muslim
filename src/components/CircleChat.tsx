@@ -7,7 +7,8 @@ import { prayerTimes } from '../prayer';
 import { enablePush, currentSubscription, DEFAULT_PREFS } from '../push';
 import type { AppState } from '../types';
 import { plural } from '../dates';
-import { _t, _tj, LOC } from '../i18n';
+import { _t, _tj, LOC, isEn } from '../i18n';
+import { DAY_AYAHS } from '../ayahs';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 export interface Draft { text: string; ref: MsgRef | null; label?: string }
@@ -37,9 +38,38 @@ function prayerNow(state: AppState): string {
   return '';
 }
 
+const ANCH = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+/** The prayer whose time it is now (from its start until the next one), or '' before Fajr / without a place. */
+function prayerOfNow(state: AppState): string {
+  try {
+    const t = prayerTimes(state.settings, new Date());
+    let cur = '';
+    for (const a of ANCH) if (Date.now() >= t[a].getTime()) cur = a;
+    return cur;
+  } catch { return ''; }
+}
+/** Prayer periods of a day, for dividers in the chat: [start ms, anchor]. */
+const periodCache = new Map<string, [number, string][]>();
+function periodOf(state: AppState, iso: string): [number, string] | null {
+  const d = new Date(iso);
+  const k = `${dayKey(iso)}|${state.settings.lat}|${state.settings.lng}|${state.settings.method}`;
+  let list = periodCache.get(k);
+  if (!list) {
+    try { const t = prayerTimes(state.settings, d); list = ANCH.map((a) => [t[a].getTime(), a] as [number, string]); } catch { list = []; }
+    periodCache.set(k, list);
+  }
+  let got: [number, string] | null = null;
+  for (const x of list) if (d.getTime() >= x[0]) got = x;
+  return got;
+}
+const POLL_E = ['1️⃣', '2️⃣', '3️⃣', '4️⃣'];
+export interface ChatAction { ic: string; label: string; run: () => void }
+
 /** One line for a message in quotes and previews. */
 export function shortOf(m: Msg, n = 90) {
   if (m.kind === 'voice') return _t("🎙 Голосовое");
+  if (m.ref?.t === 'poll') return `📊 ${m.body.slice(0, n)}`;
+  if (m.ref?.t === 'pr') return `✅ ${m.body.slice(0, n)}`;
   if (m.kind === 'photo') return _t("📷 Фото") + (m.body ? ` · ${m.body.slice(0, n)}` : '');
   if (m.kind === 'file') return `📄 ${m.file?.name || _t("Файл")}` + (m.body ? ` · ${m.body.slice(0, n)}` : '');
   return m.body.slice(0, n);
@@ -219,13 +249,17 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions }: {
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
   /** A branch of the circle chat (an umrah trip): only its messages are shown and everything sent is tagged with it. */
   topic?: string; emptyNote?: string; placeholder?: string;
+  /** The circle's main screen: «＋» opens these actions, prayer quick buttons, ayah of the day. */
+  actions?: ChatAction[];
 }) {
+  const main = Boolean(actions);
+  const [plus, setPlus] = useState(false);
   const chat = useTopic(all, topic);
   const [text, setText] = useState('');
   const [ref, setRef] = useState<MsgRef | null>(null);
@@ -259,6 +293,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   const [file, setFile] = useState<File | null>(null);
   const [view, setView] = useState('');
   const fileIn = useRef<HTMLInputElement>(null);
+  const pickKind = (photo: boolean) => { setPlus(false); if (fileIn.current) { fileIn.current.accept = photo ? 'image/*' : ''; fileIn.current.click(); } };
   const pickFile = (f: File | undefined) => {
     if (!f) return;
     const pic = /^image\//.test(f.type);
@@ -322,12 +357,39 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
 
   const reply = ref?.r ? byId.get(ref.r) : null;
   let lastDay = '';
+  let lastPer = '';
   let newLine = false;
+  let ayahShown = false;
+  const nowP = main ? prayerOfNow(state) : '';
+  const prayed = (p: string) => chat.msgs.some((m) => m.uid === me && m.ref?.t === 'pr' && m.ref.p === p && m.ref.d === today && !m.deleted);
+  const sayPrayed = () => { if (nowP && !prayed(nowP)) chat.send(_t("помолился {0}", PRAYER[nowP]), { t: 'pr', p: nowP, d: today }, 'event'); };
+  // «X, Y помолились Аср»: one line per prayer and day, shown where the latest one is.
+  const prGroups = new Map<string, string[]>();
+  const prLast = new Map<string, number>();
+  for (const m of chat.msgs) if (m.kind === 'event' && m.ref?.t === 'pr' && !m.deleted) { const k = `${m.ref.d}|${m.ref.p}`; const l = prGroups.get(k) ?? []; if (!l.includes(m.uid)) l.push(m.uid); prGroups.set(k, l); prLast.set(k, m.id); }
+  const ayah = DAY_AYAHS[Math.floor(Date.parse(today) / 86400000) % DAY_AYAHS.length];
+  const ayahCard = main && ayah ? (
+    <div key="ayah" className="cc-ayah">
+      <small>{_t("📖 Аят дня")}</small>
+      <p lang="ar" dir="rtl">{ayah.ar}</p>
+      <span>«{isEn ? ayah.en : ayah.ru}»</span>
+      <small>{isEn ? `${ayah.ne} ${ayah.s}:${ayah.a}` : _t("Коран, {0} {1}:{2}", ayah.n, ayah.s, ayah.a)}</small>
+    </div>
+  ) : null;
+  const quick: [string, () => void][] = main
+    ? [
+        ...(nowP ? [[prayed(nowP) ? _t("✓ Ты помолился {0}", PRAYER[nowP]) : _t("✅ Помолился {0}", PRAYER[nowP]), sayPrayed] as [string, () => void]] : []),
+        [_t("🤲 Амин"), () => send(_t("🤲 Амин"))],
+        [_t("✨ МашаАллах"), () => send(_t("✨ МашаАллах"))],
+        [_t("📍 Иду в мечеть"), () => send(_t("📍 Иду в мечеть"))],
+        [_t("💪 Я с тобой"), () => send(_t("💪 Я с тобой"))],
+      ]
+    : QUICK.map((t) => [t, () => send(t)]);
 
   return (
     <div className="cc">
       <div className="cc-bar">
-        <span>{_tj("{0}  {1} · видят только люди круга", members.length, plural(members.length, _t("участник"), _t("участника"), _t("участников")))}</span>
+        <span>{main ? '' : _tj("{0}  {1} · видят только люди круга", members.length, plural(members.length, _t("участник"), _t("участника"), _t("участников")))}</span>
         <button type="button" className="cc-dots" aria-label={_t("Настройки чата")} onClick={() => setOpts((v) => !v)}>⋯</button>
       </div>
       {opts && (
@@ -355,6 +417,16 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             lastDay = dk;
             const fri = new Date(m.at).getDay() === 5;
             out.push(<div key={`d${m.id}`} className="cc-day"><span>{dayLabel(m.at)}{fri ? _t(" · Джума мубарак 🕌") : ''}</span></div>);
+            lastPer = '';
+            if (dk === dayKey(new Date().toISOString()) && ayahCard) { out.push(ayahCard); ayahShown = true; }
+          }
+          if (main) {
+            const per = periodOf(state, m.at);
+            const pk = per ? `${dk}|${per[1]}` : '';
+            if (per && pk !== lastPer) {
+              lastPer = pk;
+              out.push(<div key={`p${m.id}`} className="cc-per"><span>{PRAYER[per[1]]} · {hm(new Date(per[0]).toISOString())}</span></div>);
+            }
           }
           if (!newLine && chat.seenAtOpen && m.id > chat.seenAtOpen && m.uid !== me && !m.pending) {
             newLine = true;
@@ -380,6 +452,33 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                     <button type="button" onClick={() => replyTo(m)}>{_t("Ответить")}</button>
                   </div>
                 )}
+              </div>,
+            );
+            return out;
+          }
+          if (m.kind === 'event' && m.ref?.t === 'pr') {
+            const k = `${m.ref.d}|${m.ref.p}`;
+            if (prLast.get(k) !== m.id) return out;
+            const who = (prGroups.get(k) ?? []).map((u) => (u === me ? _t("Ты") : nm(u)));
+            out.push(<div key={m.id} className="cc-sys cc-pr">✅ <b>{who.join(', ')}</b> {who.length > 1 || who[0] === _t("Ты") ? _t("помолились {0}", PRAYER[m.ref.p || ''] || '') : _t("помолился {0}", PRAYER[m.ref.p || ''] || '')}</div>);
+            return out;
+          }
+          if (m.kind === 'event' && m.ref?.t === 'poll') {
+            const o = (m.ref.o ?? []).slice(0, 4);
+            const votes = o.map((_, i) => rs.filter(([, e]) => e === POLL_E[i]).map(([u]) => u));
+            const total = votes.reduce((n, v) => n + v.length, 0);
+            const myV = POLL_E.indexOf(m.reacts?.[me] ?? '');
+            out.push(
+              <div key={m.id} className="cc-poll" {...holdProps(m)}>
+                <p>📊 <b>{mine ? _t("Твой опрос") : _t("Опрос от {0}", nm(m.uid))}</b></p>
+                <q>{m.deleted ? _t("Опрос удалён") : m.body}</q>
+                {!m.deleted && o.map((t, i) => (
+                  <button key={i} type="button" className={myV === i ? 'on' : ''} onClick={() => chat.react(m.id, POLL_E[i])}>
+                    <i style={{ width: `${total ? (votes[i].length / total) * 100 : 0}%` }} />
+                    <span>{myV === i ? '✓ ' : ''}{t}</span><em title={votes[i].map(nm).join(', ')}>{votes[i].length}</em>
+                  </button>
+                ))}
+                {!m.deleted && <small>{total ? _tj("Голосов: {0}. Нажми ещё раз, чтобы снять свой", total) : _t("Пока никто не голосовал")}</small>}
               </div>,
             );
             return out;
@@ -411,6 +510,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           );
           return out;
         })}
+        {!ayahShown && ayahCard}
         <div ref={end} />
       </div>
 
@@ -446,7 +546,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           </div>
         ) : (
           <>
-            <div className="cc-quick">{QUICK.map((t) => <button key={t} type="button" onClick={() => send(t)}>{t}</button>)}</div>
+            <div className="cc-quick">{quick.map(([t, f]) => <button key={t} type="button" onClick={f}>{t}</button>)}</div>
             {file && (
               <div className="cc-reply cc-pick">
                 <span><b>{/^image\//.test(file.type) ? _t("📷 Фото") : `${iconOf(file.name)} ${_t("Файл")}`}</b>{file.name} · {sizeOf(file.size)}</span>
@@ -455,7 +555,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             )}
             <div className="cc-in">
               <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
-              {chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
+              {main ? <button type="button" className="cc-plus" disabled={sending} aria-label={_t("Действия круга")} onClick={() => setPlus(true)}>{sending ? '…' : '＋'}</button>
+                : chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
               <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : placeholder ?? _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); if (file) sendFile(); else send(); } }} />
@@ -471,6 +572,20 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         )}
       </div>
 
+      {plus && actions && (
+        <>
+          <div className="dim" onClick={() => setPlus(false)} />
+          <div className="sheet cc-acts" role="dialog" aria-label={_t("Действия круга")}>
+            <b>{_t("Что сделать в круге?")}</b>
+            <div className="cc-acts-g">
+              {actions.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span>{a.ic}</span>{a.label}</button>)}
+              {chat.filesOn && <button type="button" onClick={() => pickKind(true)}><span>📷</span>{_t("Фото")}</button>}
+              {chat.filesOn && <button type="button" onClick={() => pickKind(false)}><span>📎</span>{_t("Файл")}</button>}
+            </div>
+            <button type="button" className="link-btn" onClick={() => setPlus(false)}>{_t("Закрыть")}</button>
+          </div>
+        </>
+      )}
       {view && (
         <div className="cc-view" onClick={() => setView('')}>
           <img src={view} alt="" />

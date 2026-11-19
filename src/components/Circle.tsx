@@ -28,7 +28,8 @@ import { NikahInCircle } from './Nikah';
 import { ShuraCard, BizHabitsOffer, AdviceBox, bizLine } from './BizCircle';
 import { useChat, duaReplies, duaEventId } from '../chat';
 import { CircleChat, DuaReplies, type Draft } from './CircleChat';
-import { CH_KINDS } from '../cweek';
+import { CH_KINDS, CH_DAYS, goalFor, circleTotals, valOf, weekStart, amirOf } from '../cweek';
+import { addDays } from '../dates';
 import { _t, _tj } from '../i18n';
 import { CircleCourse } from './CircleCourse';
 import type { CCourse } from '../courseSocial';
@@ -76,6 +77,16 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const [jobs, setJobs] = useState(false);
   const [umra, setUmra] = useState<false | HubTab>(false);
   const [adding, setAdding] = useState(false);
+  // The circle as a chat (main screen): side panel of the circle, sheets for a dua request and a poll.
+  const [panel, setPanel] = useState(false);
+  const [openM, setOpenM] = useState('');
+  const [sheet, setSheet] = useState<'' | 'dua' | 'poll'>('');
+  const [duaText, setDuaText] = useState('');
+  const [poll, setPoll] = useState<{ q: string; o: string[] }>({ q: '', o: ['', ''] });
+  const openPanel = (sec?: string) => {
+    setPanel(true);
+    if (sec) setTimeout(() => { const el = document.getElementById(sec); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.classList.add('cx-flash'); setTimeout(() => el?.classList.remove('cx-flash'), 1600); }, 120);
+  };
   const [inviting, setInviting] = useState(false);
   const [nicks, setNicks] = useState(false);
   useEffect(() => { nicksReady().then(setNicks); }, []);
@@ -84,9 +95,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     try { const c = sessionStorage.getItem('lm.chat'); if (c && c === chatCode) { sessionStorage.removeItem('lm.chat'); return 'chat'; } } catch { /* */ }
     return 'circle';
   });
-  const chat = useChat(joined ? chatCode : undefined, view === 'chat');
+  const [cxOn, setCxOn] = useState(false);
+  const chat = useChat(joined ? chatCode : undefined, view === 'chat' || (cxOn && !panel));
   const [draft, setDraft] = useState<Draft | null>(null);
-  const openChat = (d?: Draft) => { if (d) setDraft(d); setView('chat'); window.scrollTo(0, 0); };
+  const openChat = (d?: Draft) => { if (d) setDraft(d); setView('chat'); setPanel(false); window.scrollTo(0, 0); };
   useEffect(() => {
     const f = () => { try { if (sessionStorage.getItem('lm.chat') === chatCode) { sessionStorage.removeItem('lm.chat'); setView('chat'); } } catch { /* */ } };
     window.addEventListener('lm-open-chat', f);
@@ -165,6 +177,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const biz = kind === 'biz';
   const alone = members.filter((m) => m.id !== me).length === 0;
   const chatOn = Boolean(chat.ready && joined && isCloud && !alone && me);
+  const cx = chatOn && !kicked;
+  if (cx !== cxOn) setTimeout(() => setCxOn(cx), 0);
   const ask = (a: DuaAsk | null) => {
     if (chatOn && myAsk) { const id = duaEventId(chat.msgs, me!, myAsk.d); if (id && (!a || a.t !== myAsk.t)) chat.remove(id); }
     onAsk(a);
@@ -218,35 +232,49 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
   if (inviting && cur) return <InviteByNick code={cur.code} onBack={() => { setInviting(false); window.scrollTo(0, 0); }} />;
 
-  return (
-    <div className="page">
-      <div className="ch-top">
-        <h1 className="page-h">{_t("Круг")}</h1>
-        {isCloud && joined && <button type="button" className="ch-inv" onClick={invite}>{_t("+ Пригласить")}</button>}
-      </div>
-
-      {isCloud && (
-        <div className="ch-tabs">
-          {myCircles().map((c) => (
-            <button key={c.code} type="button" aria-pressed={c.code === cur?.code} onClick={() => c.code !== cur?.code && switchCircle(c.code)}>
-              {kindOf(c.kind)?.ic ?? '👥'} {c.title}{c.code !== cur?.code && (chatUnread?.[c.code] ?? 0) > 0 && <span className="cc-badge">{chatUnread![c.code]}</span>}
-            </button>
-          ))}
-          <button type="button" className="ch-add" onClick={() => setAdding(true)}>{_t("+ Новый")}</button>
+  const membersBlock = members.length > 0 && !(alone && isCloud) && (
+      <>
+        <h3 className="ch-h">{cx ? _t("Сегодня") : familyKind ? _t("Взрослые") : _t("Участники")} <small>{members.length}</small></h3>
+        <div className="ch-mem">
+          {sorted.map((m) => {
+            const p = names[m.id];
+            const isMe = m.id === me;
+            const fresh = m.day === today;
+            const got = received(m.id);
+            const mine = me ? reacts[me]?.[m.id] : undefined;
+            const empty = !fresh || (m.done === 0 && m.prayers === 0);
+            const nudged = Boolean(me && reacts[me]?.[`n:${m.id}`]?.day === today);
+            return (
+              <div className="ch-m" key={m.id}>
+                <div className="ch-mt" onClick={cx && !isMe ? () => setOpenM((x) => (x === m.id ? '' : m.id)) : undefined}>
+                  {p?.avatarUrl ? <img className="ava" src={p.avatarUrl} alt="" /> : <span className="ava ch-ava" style={{ background: p?.color }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>}
+                  <span>
+                    <b>{isMe ? _t("{0} (ты)", p?.name || _t("Ты")) : p?.name || _t("Участник")}</b>
+                    <small>{fresh ? _t("Намазы {0}/5 · {1}привычки {2}/{3}{4}", m.prayers, biz && m.biz?.t ? _t("дела {0}/{1} · ", m.biz.d, m.biz.t) : '', m.done, m.total, m.fast ? _t(" · постится ✓") : '') : _t("Сегодня ещё не отмечался")}</small>
+                    {(m.goals ?? []).map((g) => <small key={g.t} className="m-goal">🎯 {g.t} · {g.p}%</small>)}
+                  </span>
+                  {Object.keys(got).length > 0 && <em className="ch-got">{Object.entries(got).map(([e, n]) => `${e} ${n}`).join('  ')}</em>}
+                </div>
+                {fresh && m.total > 0 && <span className="ch-bar"><i style={{ width: `${(m.done / m.total) * 100}%` }} /></span>}
+                {!isMe && joined && (!cx || openM === m.id) && (
+                  <div className="ch-acts">
+                    {REACTIONS.map((r) => {
+                      const on = mine?.e === r.e && mine.day === today;
+                      return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
+                    })}
+                    {chatOn && <button type="button" aria-label={_t("Написать {0} в чате", p?.name || _t("участнику"))} onClick={() => openChat({ text: `${(p?.name || '').split(' ')[0]}, `, ref: null })}>💬</button>}
+                    {kickOn && <button type="button" className="kick" onClick={() => kick(m.id, p?.name || _t("участника"))}>{_t("Убрать из круга")}</button>}
+                    {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? _t("👋 Отправлено") : _t("👋 Подтолкнуть")}</button>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
-      <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && kindInfo.ru !== cur.title ? ` · ${kindInfo.ru}` : ''} · </> : null}{_tj("{0}  {1} · видят только итог дня", members.length, plural(members.length, _t("человек"), _t("человека"), _t("человек")))}</p>
-
-      {chatOn && (
-        <div className="cc-tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={view === 'circle'} onClick={() => setView('circle')}>{_t("Круг")}</button>
-          <button type="button" role="tab" aria-selected={view === 'chat'} onClick={() => openChat()}>{_t("Чат")}{view !== 'chat' && chat.unread > 0 && <span className="cc-badge">{chat.unread > 99 ? '99+' : chat.unread}</span>}</button>
-        </div>
-      )}
-      {chatOn && view === 'chat' ? (
-        <CircleChat chat={chat} me={me!} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update}
-          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} />
-      ) : (<>
+      </>
+    );
+  const body = (
+    <>
       {isCloud && nicks && <InviteInbox />}
       {kicked ? (
         <div className="warn kicked">
@@ -270,7 +298,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <p>{_tj("{0} Вместе держаться легче, а дуа друг за друга приходят каждый день.", kind === 'family' ? _t("Жена, муж, родители, взрослые дети.") : biz ? _t("Партнёр, брат с похожим делом, друг-предприниматель.") : kind === 'sisters' ? _t("Подруга, сестра, соседка по мечети.") : kind === 'masjid' ? _t("Братья и сёстры с урока или из мечети.") : _t("Брат, друг, однокурсник."))}</p>
           <button type="button" className="pri-btn big-btn" onClick={invite}>{_t("Пригласить в круг")}</button>
         </div>
-      ) : (
+      ) : cx ? null : (
         <div className={`ch-hero${biz ? ' biz' : ''}`}>
           <div className="ch-seg">
             <button type="button" aria-pressed={range === 'today'} onClick={() => setRange('today')}>{_t("Сегодня")}</button>
@@ -303,9 +331,9 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       {joined && !(alone && isCloud) && (
         <>
           <WeekSummary members={members} reacts={reacts} me={me} today={today} title={cur?.title || _t("Круг")} nameOf={(id) => names[id]?.name || _t("Участник")} onSet={onCircleGoal} />
-          <CircleGoal members={members} reacts={reacts} me={me} today={today} title={cur?.title || _t("Круг")} nameOf={nm} onSet={onCircleGoal} />
+          <div id="cx-goal" /><CircleGoal members={members} reacts={reacts} me={me} today={today} title={cur?.title || _t("Круг")} nameOf={nm} onSet={onCircleGoal} />
           {me && onOpenCourse && onCC && <CircleCourse members={members} me={me} today={today} isOwner={isOwner} nameOf={nm} onOpen={onOpenCourse} onEnd={onCC} onCheer={(text) => (isCloud ? openChat({ text, ref: null }) : navigator.clipboard?.writeText(text).catch(() => {}))} />}
-          {me && <AmirCard members={members} me={me} today={today} nameOf={nm} amir={amir} onAmir={onAmir} />}
+          <div id="cx-amir" />{me && <AmirCard members={members} me={me} today={today} nameOf={nm} amir={amir} onAmir={onAmir} />}
           {biz && me && <ShuraCard members={members} reacts={reacts} me={me} today={today} nameOf={nm} shura={shura} onShura={onShura} adv={adv} give={giveAdv} react={(k, e) => circle.react(k, e, today)} />}
         </>
       )}
@@ -317,7 +345,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           onEvent={(h, text) => { if (chatOn) chat.send(text, { tr: h }, 'event'); }} />
       )}
 
-      {joined && feed.length > 0 && (
+      {joined && !cx && feed.length > 0 && (
         <>
           <h3 className="ch-h">{_t("Что нового")}</h3>
           <div className="ch-feed">{feed.slice(0, 5).map((f, i) => <div key={i}><em>{f.e}</em><span>{f.t}</span></div>)}</div>
@@ -325,9 +353,11 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
 
       {joined && biz && <BizHabitsOffer state={state} update={update} today={today} />}
+      <div id="cx-dua" />
       {joined && me && !(alone && isCloud) && <DuaAsks members={members} reacts={reacts} me={me} today={today} nameOf={nm} myAsk={myAsk} onAsk={ask} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }}
         biz={biz} extra={biz || chatOn ? duaExtra : undefined} />}
       {joined && me && isCloud && cur && !alone && <NikahInCircle code={cur.code} me={me} reacts={reacts} today={today} react={(k) => { say('dua_sent'); circle.react(k, '🤲', today); }} onOpenMine={() => onNikah?.()} />}
+      <div id="cx-ch" />
       {joined && me && !(alone && isCloud) && <Challenges members={members} me={me} today={today} nameOf={nm} ch={ch2} />}
       {joined && me && <DuaGot reacts={reacts} me={me} today={today} nameOf={nm} toOf={toOf} react={(to, e) => circle.react(to, e, today)} sex={sexOf(state)} />}
       {joined && familyKind && <FamilySection state={state} update={update} circle={circle} today={today} current={current} />}
@@ -343,51 +373,11 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         const fasting = members.filter((m) => m.day === today && m.fast).length;
         return <div className="rm-together"><span aria-hidden="true">🌙</span><span>{_t("Постимся вместе: ")}<b>{fasting}</b>{_tj(" из {0} сегодня", members.length)}</span></div>;
       })()}
-      {members.length > 0 && !(alone && isCloud) && (
-        <>
-          <h3 className="ch-h">{familyKind ? _t("Взрослые") : _t("Участники")} <small>{members.length}</small></h3>
-          <div className="ch-mem">
-            {sorted.map((m) => {
-              const p = names[m.id];
-              const isMe = m.id === me;
-              const fresh = m.day === today;
-              const got = received(m.id);
-              const mine = me ? reacts[me]?.[m.id] : undefined;
-              const empty = !fresh || (m.done === 0 && m.prayers === 0);
-              const nudged = Boolean(me && reacts[me]?.[`n:${m.id}`]?.day === today);
-              return (
-                <div className="ch-m" key={m.id}>
-                  <div className="ch-mt">
-                    {p?.avatarUrl ? <img className="ava" src={p.avatarUrl} alt="" /> : <span className="ava ch-ava" style={{ background: p?.color }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>}
-                    <span>
-                      <b>{isMe ? _t("{0} (ты)", p?.name || _t("Ты")) : p?.name || _t("Участник")}</b>
-                      <small>{fresh ? _t("Намазы {0}/5 · {1}привычки {2}/{3}{4}", m.prayers, biz && m.biz?.t ? _t("дела {0}/{1} · ", m.biz.d, m.biz.t) : '', m.done, m.total, m.fast ? _t(" · постится ✓") : '') : _t("Сегодня ещё не отмечался")}</small>
-                      {(m.goals ?? []).map((g) => <small key={g.t} className="m-goal">🎯 {g.t} · {g.p}%</small>)}
-                    </span>
-                    {Object.keys(got).length > 0 && <em className="ch-got">{Object.entries(got).map(([e, n]) => `${e} ${n}`).join('  ')}</em>}
-                  </div>
-                  {fresh && m.total > 0 && <span className="ch-bar"><i style={{ width: `${(m.done / m.total) * 100}%` }} /></span>}
-                  {!isMe && joined && (
-                    <div className="ch-acts">
-                      {REACTIONS.map((r) => {
-                        const on = mine?.e === r.e && mine.day === today;
-                        return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
-                      })}
-                      {chatOn && <button type="button" aria-label={_t("Написать {0} в чате", p?.name || _t("участнику"))} onClick={() => openChat({ text: `${(p?.name || '').split(' ')[0]}, `, ref: null })}>💬</button>}
-                      {kickOn && <button type="button" className="kick" onClick={() => kick(m.id, p?.name || _t("участника"))}>{_t("Убрать из круга")}</button>}
-                      {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? _t("👋 Отправлено") : _t("👋 Подтолкнуть")}</button>}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {!cx && membersBlock}
 
       {joined && (
         <>
-          <h3 className="ch-h">{_t("Общие дела")}</h3>
+          <h3 className="ch-h" id="cx-deeds">{_t("Общие дела")}</h3>
           <button type="button" className="um-entry" onClick={() => { setUmra('trip'); window.scrollTo(0, 0); }}>
             <span className="um-ic">🕋</span>
             <span><b>{_t("Умра")}</b><small>{umraCount ? `${umraCount} ${plural(umraCount, _t("поездка"), _t("поездки"), _t("поездок"))} · ${umraGoing ? _t("ты едешь") : _t("открой, чтобы присоединиться")}` : _t("Собрать группу, сэкономить и поехать вместе")}</small></span>
@@ -424,7 +414,171 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <button type="button" className="link-btn" onClick={() => { if (confirm(_t("Выключить семейный режим? Детские профили останутся на этом телефоне."))) update((s) => patchF(s, () => ({ on: false }))); }}>{_t("Выключить семейный режим")}</button>
       )}
       {joined && !isCloud && <button type="button" className="danger" onClick={onLeave}>{_t("Выйти из круга")}</button>}
-      </>)}
+    </>
+  );
+
+  if (cx && me) {
+    const w = weekStart(today);
+    const goal = goalFor(members, w);
+    const gt = goal && goal.k !== 'none' ? Math.min(goal.n, valOf(circleTotals(members, w), goal.k)) : 0;
+    const am = amirOf(members, w);
+    const chN = members.flatMap((m) => m.chs ?? []).filter((c) => c.start > addDays(today, -CH_DAYS)).length;
+    const khatms = Object.entries(khatm.list).map(([host, k]) => ({ host, t: k.title, n: Math.min(30, Object.values(khatm.juz).reduce((n, byHost) => n + (byHost?.[host]?.done?.length ?? 0), 0)) }));
+    const ringOf = (m: Member) => (m.day !== today ? 0 : Math.min(1, (m.prayers / 5) * 0.6 + (m.total ? (m.done / m.total) * 0.4 : 0.4 * Math.min(1, m.done))));
+    const chips: { k: string; t: string; go: () => void }[] = [];
+    if (goal && goal.k !== 'none') chips.push({ k: 'g', t: `🎯 ${gt}/${goal.n}`, go: () => openPanel('cx-goal') });
+    if (chN) chips.push({ k: 'c', t: _t("⚔️ Вызовов: {0}", chN), go: () => openPanel('cx-ch') });
+    for (const k of khatms) chips.push({ k: `k${k.host}`, t: `📖 ${k.n}/30`, go: () => openPanel('cx-deeds') });
+    if (umraCount) chips.push({ k: 'u', t: _t("🕋 Умра"), go: () => { setUmra('trip'); window.scrollTo(0, 0); } });
+    if (am) chips.push({ k: 'a', t: _t("👑 Амир: {0}", nm(am.id).split(' ')[0]), go: () => openPanel('cx-amir') });
+    if (!chips.length) chips.push({ k: 'n', t: _t("＋ Начать общее дело"), go: () => openPanel('cx-goal') });
+    const acts = [
+      { ic: '🤲', label: _t("Попросить дуа"), run: () => { setDuaText(''); setSheet('dua'); } },
+      { ic: '📊', label: _t("Опрос"), run: () => { setPoll({ q: '', o: ['', ''] }); setSheet('poll'); } },
+      { ic: '🎯', label: _t("Цель недели"), run: () => openPanel('cx-goal') },
+      { ic: '⚔️', label: _t("Вызов на 7 дней"), run: () => openPanel('cx-ch') },
+      { ic: '📖', label: kind === 'family' || kind === 'masjid' ? _t("Хатм, ифтар") : _t("Хатм"), run: () => { setJobs(true); openPanel('cx-deeds'); } },
+      { ic: '🕋', label: _t("Умра"), run: () => { setUmra('trip'); window.scrollTo(0, 0); } },
+      { ic: '👑', label: _t("Амир недели"), run: () => openPanel('cx-amir') },
+      { ic: '➕', label: _t("Позвать в круг"), run: invite },
+    ];
+    const pollOk = poll.q.trim() && poll.o.filter((x) => x.trim()).length >= 2;
+    const sendPoll = () => {
+      if (!pollOk) return;
+      const o = poll.o.map((x) => x.trim().slice(0, 40)).filter(Boolean).slice(0, 4);
+      chat.send(poll.q.trim().slice(0, 200), { t: 'poll', o }, 'event');
+      setSheet('');
+    };
+    return (
+      <div className="page cx">
+        <nav className="cx-rail" aria-label={_t("Мои круги")}>
+          {myCircles().map((c) => {
+            const n = c.code !== cur?.code ? chatUnread?.[c.code] ?? 0 : 0;
+            return (
+              <button key={c.code} type="button" aria-pressed={c.code === cur?.code} title={c.title} onClick={() => c.code !== cur?.code && switchCircle(c.code)}>
+                <span>{kindOf(c.kind)?.ic ?? '👥'}</span><small>{c.title}</small>{n > 0 && <em>{n > 99 ? '99+' : n}</em>}
+              </button>
+            );
+          })}
+          <button type="button" className="cx-new" aria-label={_t("Новый круг")} onClick={() => setAdding(true)}><span>＋</span><small>{_t("Новый")}</small></button>
+        </nav>
+        <div className="cx-main">
+          <header className="cx-head">
+            <div className="cx-row">
+              <b className="cx-title">{cur?.title || _t("Круг")}</b>
+              <span className="cx-cnt">{kindOf(kind)?.ic ?? '👥'} {members.length}</span>
+              <button type="button" className="cx-menu" aria-label={_t("Панель круга")} onClick={() => openPanel()}>☰</button>
+            </div>
+            <button type="button" className="cx-avs" onClick={() => openPanel()} aria-label={_t("Кто как сегодня")}>
+              {sorted.slice(0, 7).map((m) => {
+                const f = ringOf(m);
+                return (
+                  <span key={m.id} className="cx-av" style={{ background: `conic-gradient(#e5c26b ${f * 360}deg, rgba(255,255,255,.2) 0)` }}>
+                    {names[m.id]?.avatarUrl ? <img src={names[m.id]!.avatarUrl} alt="" /> : <i style={{ background: names[m.id]?.color || '#1f7a4d' }}>{(names[m.id]?.name || '?').slice(0, 1).toUpperCase()}</i>}
+                  </span>
+                );
+              })}
+              {sorted.length > 7 && <span className="cx-more">+{sorted.length - 7}</span>}
+              <span className="cx-sum"><b>{activeToday}/{members.length}</b> {_t("в деле")}</span>
+            </button>
+            <div className="cx-chips">{chips.map((c) => <button key={c.k} type="button" onClick={c.go}>{c.t}</button>)}</div>
+          </header>
+          {isCloud && nicks && <InviteInbox />}
+          <CircleChat chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
+            draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Написать в круг…")} />
+        </div>
+
+        {panel && (
+          <>
+            <div className="cx-dim" onClick={() => setPanel(false)} />
+            <aside className="cx-panel" role="dialog" aria-label={_t("Панель круга")}>
+              <div className="cx-ph">
+                <div><b>{cur?.title || _t("Круг")}</b><small>{_tj("{0}  {1}{2}", members.length, plural(members.length, _t("человек"), _t("человека"), _t("человек")), am ? _t(" · амир {0}", nm(am.id)) : '')}</small></div>
+                <button type="button" aria-label={_t("Закрыть")} onClick={() => setPanel(false)}>✕</button>
+              </div>
+              <div className="cx-pb">
+                <div className="cx-hero">
+                  <b>{_tj("{0} из {1} сегодня в деле", activeToday, members.length)}</b>
+                  <StreakLine members={members} today={today} />
+                  <small>{_tj("Вместе сегодня: {0}  {1} и {2}  {3}{4}", tdy.p, plural(tdy.p, _t("намаз"), _t("намаза"), _t("намазов")), tdy.h, plural(tdy.h, _t("привычка"), _t("привычки"), _t("привычек")), duas ? _t(" · 🤲 {0} дуа друг за друга", duas) : '')}</small>
+                </div>
+                {membersBlock}
+                <h3 className="ch-h">{_t("Вместе")}</h3>
+                {body}
+                <div className="cx-set">
+                  <button type="button" onClick={() => { setPanel(false); invite(); }}>{_t("➕ Пригласить в круг")}</button>
+                  <button type="button" onClick={() => { setPanel(false); setAdding(true); }}>{_t("＋ Новый круг")}</button>
+                </div>
+              </div>
+            </aside>
+          </>
+        )}
+
+        {sheet === 'dua' && (
+          <>
+            <div className="dim" onClick={() => setSheet('')} />
+            <div className="sheet cx-sheet" role="dialog" aria-label={_t("Попросить дуа")}>
+              <b>{_t("🤲 Попросить круг о дуа")}</b>
+              <p>{_t("Коротко, о чём дуа. Увидят только люди круга, просьба держится 3 дня.")}</p>
+              <textarea rows={3} maxLength={140} value={duaText} onChange={(e) => setDuaText(e.target.value)} placeholder={_t("Например: за маму, завтра операция")} autoFocus />
+              <div className="cx-sheet-row">
+                <button type="button" className="link-btn" onClick={() => setSheet('')}>{_t("Отмена")}</button>
+                <button type="button" className="pri-btn" disabled={!duaText.trim()} onClick={() => { ask({ t: duaText.trim(), d: today }); setSheet(''); }}>{_t("Попросить")}</button>
+              </div>
+            </div>
+          </>
+        )}
+        {sheet === 'poll' && (
+          <>
+            <div className="dim" onClick={() => setSheet('')} />
+            <div className="sheet cx-sheet" role="dialog" aria-label={_t("Опрос")}>
+              <b>{_t("📊 Опрос в круге")}</b>
+              <input value={poll.q} maxLength={200} onChange={(e) => setPoll({ ...poll, q: e.target.value })} placeholder={_t("Вопрос, например: где читаем Коран в субботу?")} autoFocus />
+              {poll.o.map((x, i) => (
+                <input key={i} value={x} maxLength={40} onChange={(e) => { const o = [...poll.o]; o[i] = e.target.value; setPoll({ ...poll, o }); }} placeholder={_t("Вариант {0}", i + 1)} />
+              ))}
+              {poll.o.length < 4 && <button type="button" className="link-btn" onClick={() => setPoll({ ...poll, o: [...poll.o, ''] })}>{_t("+ Ещё вариант")}</button>}
+              <div className="cx-sheet-row">
+                <button type="button" className="link-btn" onClick={() => setSheet('')}>{_t("Отмена")}</button>
+                <button type="button" className="pri-btn" disabled={!pollOk} onClick={sendPoll}>{_t("Отправить в чат")}</button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div className="ch-top">
+        <h1 className="page-h">{_t("Круг")}</h1>
+        {isCloud && joined && <button type="button" className="ch-inv" onClick={invite}>{_t("+ Пригласить")}</button>}
+      </div>
+
+      {isCloud && (
+        <div className="ch-tabs">
+          {myCircles().map((c) => (
+            <button key={c.code} type="button" aria-pressed={c.code === cur?.code} onClick={() => c.code !== cur?.code && switchCircle(c.code)}>
+              {kindOf(c.kind)?.ic ?? '👥'} {c.title}{c.code !== cur?.code && (chatUnread?.[c.code] ?? 0) > 0 && <span className="cc-badge">{chatUnread![c.code]}</span>}
+            </button>
+          ))}
+          <button type="button" className="ch-add" onClick={() => setAdding(true)}>{_t("+ Новый")}</button>
+        </div>
+      )}
+      <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && kindInfo.ru !== cur.title ? ` · ${kindInfo.ru}` : ''} · </> : null}{_tj("{0}  {1} · видят только итог дня", members.length, plural(members.length, _t("человек"), _t("человека"), _t("человек")))}</p>
+
+      {chatOn && (
+        <div className="cc-tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={view === 'circle'} onClick={() => setView('circle')}>{_t("Круг")}</button>
+          <button type="button" role="tab" aria-selected={view === 'chat'} onClick={() => openChat()}>{_t("Чат")}{view !== 'chat' && chat.unread > 0 && <span className="cc-badge">{chat.unread > 99 ? '99+' : chat.unread}</span>}</button>
+        </div>
+      )}
+      {chatOn && view === 'chat' ? (
+        <CircleChat chat={chat} me={me!} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update}
+          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} />
+      ) : (<>
+      {body}      </>)}
     </div>
   );
 }
