@@ -11,8 +11,9 @@ import { ANCHOR_LABEL } from './types';
 import { azkarHabits, azkarNow } from './azkar';
 import { catalog } from './videos';
 import { daysBetween } from './dates';
+import { lastRun, repeatIn } from './selftest';
 
-export type PlanMode = 'azkar' | 'quran' | 'videos' | 'course' | 'course-ar' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
+export type PlanMode = 'tests' | 'azkar' | 'quran' | 'videos' | 'course' | 'course-ar' | 'langs' | 'books' | 'tasbih' | 'health' | 'umrah' | 'focus';
 export interface PlanItem {
   key: string;            // h:<habitId> or g:<goalId>
   ic: string;
@@ -25,7 +26,7 @@ export interface PlanItem {
   min?: string;           // the minimum version, for «2 минуты»
 }
 
-const IC: Record<PlanMode, string> = { azkar: '🤲', quran: '📖', videos: '▶', course: '🇬🇧', 'course-ar': 'ع', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
+const IC: Record<PlanMode, string> = { tests: '🌱', azkar: '🤲', quran: '📖', videos: '▶', course: '🇬🇧', 'course-ar': 'ع', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
 
 /** Which practice a habit lives in, guessed from its name (English is checked before «урок», so «урок английского» goes to the course). */
 export function modeOfHabit(h: Habit, s: AppState): PlanMode | null {
@@ -90,6 +91,11 @@ export function dayPlan(s: AppState, today: string): PlanItem[] {
       const quiet = vs.lastDay ? daysBetween(vs.lastDay, today) : 0;
       out.push({ key: `c:${cid}`, ic: IC.videos, title: _t("Курс: следующий урок"), sub: quiet >= 3 ? _t("«{0}» · {1} дн. без уроков, вернись хотя бы на 10 минут", it.title, quiet) : it.title, mode: 'videos', ref: cid });
     }
+  }
+  // «Тесты»: 30 days after the last run, a nudge to repeat it and see what changed.
+  const tr = lastRun(s);
+  if (tr && repeatIn(tr, today) <= 0 && !started.includes('t:hard')) {
+    out.push({ key: 't:hard', ic: IC.tests, title: _t("Пройти тест снова"), sub: _t("Прошло 30 дней. Посмотри, что изменилось"), mode: 'tests' });
   }
   return out;
 }

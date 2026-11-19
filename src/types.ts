@@ -137,6 +137,8 @@ export interface AppState {
   family?: FamilyState;
   /** «Новый путь» for those who have just accepted Islam. */
   newpath?: import('./newpath').NewPathState;
+  /** «Тесты» in Practice: past runs per test (answers stay on the phone). */
+  tests?: import('./selftest').TestsState;
 }
 
 export interface KidTask { id: string; t: string; icon: string }
