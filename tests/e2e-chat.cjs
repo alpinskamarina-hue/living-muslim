@@ -7,6 +7,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const say = (...a) => console.log(...a);
 const ls = (pg, k) => pg.evaluate((k) => localStorage.getItem(k), k);
 const shot = (pg, n, full = false) => pg.screenshot({ path: OUT + n + '.png', fullPage: full });
+const tab = async (pg, t) => { const b = pg.locator('.cc-tabs button', { hasText: t }); if (await b.count()) { await b.click(); await wait(800); } else if (t === 'Круг') { await pg.locator('.cx-menu').click(); await wait(600); } else if (await pg.locator('.cx-panel').count()) { await pg.locator('.cx-ph button').click(); await wait(400); } };
 const nav = async (pg, t) => { await pg.locator('nav.nav button', { hasText: t }).click(); await wait(700); };
 
 async function signup(pg, name, email) {
@@ -50,11 +51,12 @@ async function signup(pg, name, email) {
     await A.reload(); await wait(3000); await nav(A, 'Круг');
     say('A tabs:', await A.locator('.cc-tabs button').allInnerTexts());
     // A asks for dua (also posts an event card to the chat)
-    await A.locator('.da-ask', { hasText: 'Попросить круг о дуа' }).click(); await wait(300);
-    await A.locator('.da-card textarea').fill('Давайте сделаем дуа, чтобы у нас был офис');
-    await A.locator('.da-card .pri-btn').click(); await wait(1500);
+    await A.locator('.cc-plus').click(); await wait(300);
+    await A.locator('.cc-acts-g button', { hasText: 'Попросить дуа' }).click(); await wait(300);
+    await A.locator('.cx-sheet textarea').fill('Давайте сделаем дуа, чтобы у нас был офис');
+    await A.locator('.cx-sheet .pri-btn').click(); await wait(1500);
     // A writes in the chat
-    await A.locator('.cc-tabs button', { hasText: 'Чат' }).click(); await wait(800);
+    await tab(A, 'Чат');
     await A.locator('.cc-in textarea').fill('Ассаляму алейкум, брат!');
     await A.locator('.cc-send').click(); await wait(1200);
     say('A msgs:', await A.locator('.cc-list').innerText().then((x) => x.replace(/\n+/g, ' | ')));
@@ -66,7 +68,7 @@ async function signup(pg, name, email) {
     await nav(B, 'Круг');
     say('B tab:', await B.locator('.cc-tabs button').allInnerTexts());
     await shot(B, 'chat-b1-circle', true);
-    await B.locator('.cc-tabs button', { hasText: 'Чат' }).click(); await wait(1200);
+    await tab(B, 'Чат');
     await B.locator('.cc-ev button', { hasText: 'Амин' }).click(); await wait(1200);
     await B.locator('.cc-in textarea').fill('Ва алейкум ассалям! Сделал дуа после Фаджра');
     await B.locator('.cc-send').click(); await wait(1000);
@@ -112,11 +114,11 @@ async function signup(pg, name, email) {
     await shot(A, 'chat-a0-view');
     await A.locator('.cc-view-bar button').click(); await wait(300);
     await shot(A, 'chat-a1-chat');
-    await A.locator('.cc-tabs button', { hasText: 'Круг' }).click(); await wait(800);
+    await tab(A, 'Круг');
     say('A dua card:', await A.locator('.da-card.mine').innerText().then((x) => x.replace(/\n+/g, ' | ')));
     await shot(A, 'chat-a2-circle', true);
     // owner: text only, then delete B's message
-    await A.locator('.cc-tabs button', { hasText: 'Чат' }).click(); await wait(600);
+    await tab(A, 'Чат');
     await A.locator('.cc-dots').click(); await wait(200);
     await A.locator('.cc-opts button', { hasText: 'Голосовые' }).click(); await wait(800);
     say('voice setting:', await L.q('select chat_voice from circles where code = $1', [code]));
@@ -125,7 +127,7 @@ async function signup(pg, name, email) {
     await A.locator('.cc-menu button', { hasText: 'Удалить' }).click(); await wait(1000);
     say('after delete:', await A.locator('.cc-gone').allInnerTexts());
     // B reports A's message
-    await B.reload(); await wait(3000); await nav(B, 'Круг'); await B.locator('.cc-tabs button', { hasText: 'Чат' }).click(); await wait(1200);
+    await B.reload(); await wait(3000); await nav(B, 'Круг'); await tab(B, 'Чат');
     say('B mic visible with voice off:', await B.locator('.cc-mic').count());
     await B.locator('.cc-m', { hasText: 'Ассаляму' }).click({ button: 'right' }); await wait(300);
     await B.locator('.cc-menu button', { hasText: 'Пожаловаться' }).click(); await wait(1000);

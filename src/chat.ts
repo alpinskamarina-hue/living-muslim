@@ -10,7 +10,7 @@ export interface MsgFile { name: string; size: number; mime: string; thumb?: str
 export const FILE_MAX = 5 * 1024 * 1024;
 /** r: reply to a message; t: an event card (dua, ch) or a reply tied to someone's dua request (t 'dua', to). */
 /** tr: the message belongs to an umrah trip's own chat (the host's id); the Circle chat hides it. */
-export interface MsgRef { r?: number; t?: 'dua' | 'ch'; d?: string; to?: string; k?: string; tr?: string }
+export interface MsgRef { r?: number; t?: 'dua' | 'ch' | 'pr' | 'poll'; d?: string; to?: string; k?: string; tr?: string; p?: string; o?: string[] }
 export interface Msg {
   id: number; uid: string; kind: MsgKind; body: string; ref: MsgRef | null;
   sec: number | null; bars: number[] | null; reacts: Record<string, string>;

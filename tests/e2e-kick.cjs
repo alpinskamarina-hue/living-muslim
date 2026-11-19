@@ -48,13 +48,15 @@ async function signup(pg, name, email) {
     say('B kick buttons:', await B.locator('.ch-acts .kick').count());
 
     await A.reload(); await wait(3000); await nav(A, 'Круг');
+    await A.locator('.cx-menu').click(); await wait(600);
+    await A.locator('.cx-panel .ch-mt').nth(1).click(); await wait(300);
     say('A kick buttons:', await A.locator('.ch-acts .kick').count());
     await A.locator('.ch-acts .kick').first().scrollIntoViewIfNeeded();
     await shot(A, 'kick-1-owner');
     await A.locator('.ch-acts .kick').first().click(); await wait(1500);
     say('dialogs:', A.dialogs);
     say('members after:', await L.q('select count(*)::int n from members where code = $1', [code]));
-    say('A removed list:', await A.locator('.ch-removed').innerText().catch(() => 'none'));
+    say('A removed list (panel):', await A.locator('.ch-removed').innerText().catch(() => 'none'));
     await A.locator('.ch-removed').scrollIntoViewIfNeeded();
     await shot(A, 'kick-2-removed');
 
