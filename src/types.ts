@@ -340,7 +340,19 @@ export interface FoodState {
   weight: Record<string, number>;
   own?: { id: string; l: string }[]; // own clean-day rules («Без хлеба на ночь»)
   goal?: number; // weight goal, kg
+  /** Nutrition mode (20.11): Мера (default, no numbers) or a mode with daily targets. */
+  mode?: FoodMode;
+  body?: FoodBody;
+  /** Daily kcal set by hand instead of the calculated one. */
+  kcal?: number;
+  /** What was eaten, typed in: day -> items. */
+  log?: Record<string, FoodItem[]>;
 }
+
+export type FoodMode = 'mera' | 'lose' | 'sport' | 'keep';
+export interface FoodBody { h: number; age: number; sex: 'm' | 'f'; act: 1 | 2 | 3 | 4 }
+/** One logged food: name, grams, kcal, protein, fat, carbs, meal slot. */
+export interface FoodItem { id: string; n: string; g: number; k: number; p: number; f: number; c: number; m: Meal }
 
 export interface SadaqaDay { money?: boolean; amt?: number; deed?: boolean }
 export interface SadaqaState {
