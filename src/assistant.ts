@@ -71,8 +71,10 @@ export async function fold(msgs: AiMsg[], force = false): Promise<void> {
   } catch { /* try again next time */ } finally { folding = false; }
 }
 
-/** The name people see: their own, or simply «Помощник». */
-export const aiName = (s: Settings) => s.aiName?.trim() || _t("Помощник");
+/** Default helper: a sister helps sisters (Марьям), a brother helps brothers (Юсуф). */
+export const aiDefaultName = (s: Settings) => (s.me === 'f' ? _t("Марьям") : s.me === 'm' ? _t("Юсуф") : '');
+/** The name people see: their own, the default for brother/sister, or simply «Помощник». */
+export const aiName = (s: Settings) => s.aiName?.trim() || aiDefaultName(s) || _t("Помощник");
 
 export type AskResult = { text: string; left?: number | null; calls?: { id: string; name: string; input: Record<string, unknown> }[]; content?: unknown[] } | { error: 'signin' | 'limit' | 'nokey' | 'refused' | 'net' | 'busy' };
 
@@ -86,7 +88,7 @@ export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskR
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       body: JSON.stringify({
         messages: history.map(({ role, content, raw }) => ({ role, content: raw ?? content })),
-        lang: LANG, name: s.aiName?.trim() || '', me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '', ctx, memory,
+        lang: LANG, name: s.aiName?.trim() || aiDefaultName(s), me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '', ctx, memory,
       }),
     });
     const j = await r.json().catch(() => ({}));

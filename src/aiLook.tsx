@@ -148,8 +148,10 @@ export function Ai3D({ url, size, finish = 'medal', live = false, className = ''
 }
 
 /** The assistant's round face: own photo if chosen and present, else the badge or a person, in the chosen 3D finish. */
+/** Without a chosen avatar: a sister in hijab for sisters, a brother for brothers, the medallion otherwise. */
+export const aiDefaultStyle = (s: Settings) => (s.me === 'f' ? 'f3' : s.me === 'm' ? 'm1' : 'fes');
 export function AiFace({ s, size = 40, className = '', live = false }: { s: Settings; size?: number; className?: string; live?: boolean }) {
   const photo = useAiPhoto();
-  const url = s.aiStyle === 'photo' && photo ? photo : badgeUrl(s.aiStyle && s.aiStyle !== 'photo' ? s.aiStyle : 'fes', s.aiColor || 'green');
+  const url = s.aiStyle === 'photo' && photo ? photo : badgeUrl(s.aiStyle && s.aiStyle !== 'photo' ? s.aiStyle : aiDefaultStyle(s), s.aiColor || 'green');
   return <Ai3D url={url} size={size} finish={s.aiFinish || 'medal'} live={live} className={className} />;
 }

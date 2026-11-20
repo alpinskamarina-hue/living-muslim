@@ -52,6 +52,7 @@ function systemPrompt(cfg, b) {
   const about = [
     b.name && `The assistant's name, chosen by the person: ${str(b.name, 40)}.`,
     b.me === 'f' ? 'The person is a sister (use feminine forms in Russian).' : b.me === 'm' ? 'The person is a brother.' : '',
+    b.me === 'f' ? 'You are her sister in faith: speak of yourself in feminine forms in Russian (я сделала, я рада).' : b.me === 'm' ? 'You are his brother in faith: speak of yourself in masculine forms in Russian (я сделал, я рад).' : '',
     b.madhab === 'hanafi' ? 'Madhhab: Hanafi.' : b.madhab === 'shafi' ? "Madhhab: Shafi'i." : '',
     `App language: ${b.lang === 'en' ? 'English' : 'Russian'}.`,
     b.you === 'vy' ? 'In Russian, address the person formally with «вы».' : b.you === 'ty' ? 'In Russian, address the person informally with «ты».' : '',
