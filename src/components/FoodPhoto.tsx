@@ -7,12 +7,16 @@ import type { FoodItem, Meal } from '../types';
 import { PHOTO_LIMIT, photosLeft, recognise, shrink, signedIn, type PhotoItem } from '../foodphoto';
 import { search, itemFrom } from '../foodcalc';
 import { _t, _tj } from '../i18n';
+import { BarcodeScan } from './FoodScan';
 
 const CamIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" strokeWidth="2" /></svg>
 );
 const GalIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2" /><circle cx="9" cy="9" r="2" fill="currentColor" /><path d="m21 15-5-5L5 21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+);
+const BarIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 8v8M10 8v8M13 8v8M17 8v8" /></svg>
 );
 const COLORS = ['#e3b35a', '#5fae4e', '#d9a35b', '#d9532f', '#8fb7d9', '#b88ad9', '#e07b2e', '#7fb495'];
 
@@ -24,6 +28,7 @@ const fmtPieces = (n: number) => (Math.abs(n - 0.5) < 0.01 ? '½' : Math.abs(n %
 /** The camera button and everything it opens. */
 export function PhotoEntry({ today, meal, mealLabel, onAdd, onChange }: { today: string; meal: Meal; mealLabel: string; onAdd: (items: FoodItem[]) => void; onChange?: () => void }) {
   const [sheet, setSheet] = useState(false);
+  const [scan, setScan] = useState(false);
   const [stage, setStage] = useState<Stage | null>(null);
   const [url, setUrl] = useState('');
   const [extra, setExtra] = useState('');
@@ -145,7 +150,7 @@ export function PhotoEntry({ today, meal, mealLabel, onAdd, onChange }: { today:
             <div className="fp-big">{stage.s === 'notfood' ? '🤔' : stage.s === 'limit' ? '⏳' : stage.s === 'signin' ? '🔑' : '📶'}</div>
             <b>{stage.s === 'notfood' ? _t("Не понял, что на фото") : stage.s === 'limit' ? _tj("{0} фото на сегодня уже использованы", PHOTO_LIMIT) : stage.s === 'signin' ? _t("Нужно войти по почте") : _t("Не получилось связаться")}</b>
             <p>{stage.s === 'notfood' ? (stage.reason || _t("Так бывает с тёмными фото или когда еда закрыта упаковкой.")) : stage.s === 'limit' ? _tj("Завтра снова {0}. Пока можно написать текстом, это без ограничений.", PHOTO_LIMIT) : stage.s === 'signin' ? _t("Распознавание фото работает после входа, как и Помощник. Войти можно в Профиле.") : _t("Проверь интернет и попробуй ещё раз. Фото не потратилось.")}</p>
-            {stage.s === 'notfood' && <ul className="fp-tips"><li>{_t("сними сверху, при дневном свете")}</li><li>{_t("вся тарелка в кадре")}</li><li>{_t("для упаковки лучше калории с этикетки")}</li></ul>}
+            {stage.s === 'notfood' && <ul className="fp-tips"><li>{_t("сними сверху, при дневном свете")}</li><li>{_t("вся тарелка в кадре")}</li><li>{_t("для упаковки лучше штрихкод")}</li></ul>}
             {(stage.s === 'notfood' || stage.s === 'error') && <button type="button" className="pri-btn" onClick={() => { setStage(null); pick('cam'); }}>{_t("Сфотографировать ещё раз")}</button>}
             <button type="button" className="link-btn fp-center" onClick={close}>{_t("Написать текстом")}</button>
             {stage.s === 'notfood' && <p className="fp-note">{_tj("Неудачная попытка не тратит фото из дневных {0}.", PHOTO_LIMIT)}</p>}
@@ -157,26 +162,23 @@ export function PhotoEntry({ today, meal, mealLabel, onAdd, onChange }: { today:
 
   return (
     <>
-      <button type="button" className={`fd-cam${out ? ' off' : ''}`} aria-label={_t("Фото еды")} onClick={() => (out ? setStage({ s: 'limit' }) : setSheet(true))}><CamIcon /></button>
+      <button type="button" className="fd-cam" aria-label={_t("Фото еды или штрихкод")} onClick={() => setSheet(true)}><CamIcon /></button>
       <input ref={cam} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
       <input ref={gal} type="file" accept="image/*" hidden onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = ''; }} />
       {sheet && createPortal(
         <div className="fp-dim" onClick={() => setSheet(false)}>
-          <div className="fp-sheet" role="dialog" aria-label={_t("Фото еды")} onClick={(e) => e.stopPropagation()}>
+          <div className="fp-sheet" role="dialog" aria-label={_t("Добавить еду")} onClick={(e) => e.stopPropagation()}>
             <i className="fp-grab" />
-            <b>{_t("Фото еды")}</b>
-            {signedIn() ? (
-              <>
-                <button type="button" className="fp-opt" onClick={() => pick('cam')}><i><CamIcon /></i><span><b>{_t("Сфотографировать")}</b><small>{_t("сверху, при свете, вся тарелка в кадре")}</small></span></button>
-                <button type="button" className="fp-opt" onClick={() => pick('gal')}><i><GalIcon /></i><span><b>{_t("Выбрать из галереи")}</b><small>{_t("если уже сфотографировал")}</small></span></button>
-                <p className="fp-note">{_t("Фото уходит только на распознавание и сразу удаляется. В приложении и на сервере его не храним.")}{left !== null ? ' ' + _tj("Сегодня осталось {0} из {1}.", left, PHOTO_LIMIT) : ''}</p>
-              </>
-            ) : (
-              <p className="fp-note">{_t("Распознавание фото работает после входа по почте, как и Помощник. Войти можно в Профиле. Без входа еду можно записывать текстом.")}</p>
-            )}
+            <b>{_t("Добавить еду")}</b>
+            {signedIn() && !out && <button type="button" className="fp-opt" onClick={() => pick('cam')}><i><CamIcon /></i><span><b>{_t("Сфотографировать тарелку")}</b><small>{left !== null ? _tj("примерно, осталось {0} из {1} на сегодня", left, PHOTO_LIMIT) : _t("сверху, при свете, вся тарелка в кадре")}</small></span></button>}
+            {signedIn() && out && <button type="button" className="fp-opt dis" onClick={() => { setSheet(false); setStage({ s: 'limit' }); }}><i><CamIcon /></i><span><b>{_t("Сфотографировать тарелку")}</b><small>{_tj("{0} фото на сегодня уже использованы", PHOTO_LIMIT)}</small></span></button>}
+            <button type="button" className="fp-opt" onClick={() => { setSheet(false); setScan(true); try { localStorage.setItem('lm.barcodeHint', '1'); } catch { /* */ } onChange?.(); }}><i><BarIcon /></i><span><b>{_t("Сканировать штрихкод")}<em className="fp-new">{_t("НОВОЕ")}</em></b><small>{_t("точные цифры с упаковки, без ограничений")}</small></span></button>
+            {signedIn() && !out && <button type="button" className="fp-opt" onClick={() => pick('gal')}><i><GalIcon /></i><span><b>{_t("Выбрать фото из галереи")}</b><small>{_t("если уже сфотографировал")}</small></span></button>}
+            <p className="fp-note">{signedIn() ? _t("Фото уходит только на распознавание и сразу удаляется. В приложении и на сервере его не храним.") : _t("Фото тарелки распознаётся после входа по почте, как и Помощник. Войти можно в Профиле. Штрихкод работает и без входа.")}</p>
           </div>
         </div>, document.body)}
       {screen && createPortal(screen, document.body)}
+      {scan && createPortal(<BarcodeScan meal={meal} mealLabel={mealLabel} onAdd={onAdd} onClose={() => setScan(false)} onPhoto={signedIn() && !out ? () => pick('cam') : null} />, document.body)}
     </>
   );
 }
@@ -184,9 +186,10 @@ export function PhotoEntry({ today, meal, mealLabel, onAdd, onChange }: { today:
 /** One line under the input: the «new» hint, photos left, or the limit. */
 export function PhotoLine({ today }: { today: string }) {
   const left = photosLeft(today);
-  let hint = false;
-  try { hint = !localStorage.getItem('lm.foodPhotoHint'); } catch { /* */ }
-  if (left === 0) return <div className="fd-phint off">{_tj("{0} фото на сегодня уже использованы. Завтра снова {0}. Пока можно написать текстом, это без ограничений.", PHOTO_LIMIT)}</div>;
+  let hint = false, bar = false;
+  try { hint = !localStorage.getItem('lm.foodPhotoHint'); bar = !localStorage.getItem('lm.barcodeHint'); } catch { /* */ }
+  if (left === 0) return <div className="fd-phint off">{_tj("{0} фото на сегодня уже использованы. Завтра снова {0}. Штрихкод и запись текстом без ограничений.", PHOTO_LIMIT)}</div>;
+  if (bar) return <div className="fd-phint"><b>{_t("Новое:")}</b> {_t("нажми на камеру и сканируй штрихкод на упаковке, цифры будут точные")}</div>;
   if (hint) return <div className="fd-phint"><b>{_t("Новое:")}</b> {_t("сфотографируй тарелку, посчитаю примерно")}</div>;
   return null;
 }

@@ -6,6 +6,7 @@ import { ACT, FOODS, MODES, itemFrom, lastWeight, parseQuery, search, sum, targe
 import { _t, _tj } from '../i18n';
 import { PhotoEntry, PhotoLine } from './FoodPhoto';
 import { PHOTO_LIMIT, photosLeft } from '../foodphoto';
+import { scannedRows } from '../barcode';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 const foodOf = (s: AppState): FoodState => ({ meals: {}, rules: ['sweet'], clean: {}, sunna: {}, weight: {}, ...(s.food ?? {}) });
@@ -148,6 +149,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
   const [own, setOwn] = useState<{ n: string; k: string; p: string } | null>(null);
   const parsed = parseQuery(q);
   const hits = q.trim().length > 1 ? search(parsed.text) : [];
+  const mine = q.trim().length > 1 ? search(parsed.text, scannedRows()).slice(0, 3) : [];
   const gramsFor = (row: FoodRow) => parsed.grams ?? (parsed.count ? parsed.count * row.g : row.g);
   const add = (it: FoodItem) => { update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), it] } }))); setQ(''); setChosen(null); setOwn(null); };
   const del = (id: string) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: (x.log?.[today] ?? []).filter((i) => i.id !== id) } })));
@@ -178,6 +180,17 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
             <PhotoEntry today={today} meal={meal} mealLabel={label(meal)} onAdd={addMany} onChange={() => bump((n) => n + 1)} />
           </div>
           {!q && <PhotoLine today={today} />}
+          {mine.length > 0 && (<>
+            <small className="fd-lbl">{_t("Недавно сканировал")}</small>
+            <ul className="fd-hits bc-mine">
+              {mine.map((row) => { const g = parsed.grams ?? row.g; return (
+                <li key={row.id}><button type="button" onClick={() => setChosen({ row, g: String(g) })}>
+                  <b>{row.n}</b><small>{_tj("{0} г · {1} ккал", g, Math.round((row.k * g) / 100))}</small>
+                </button></li>
+              ); })}
+            </ul>
+            {hits.length > 0 && <small className="fd-lbl">{_t("Из таблицы")}</small>}
+          </>)}
           {hits.length > 0 && (
             <ul className="fd-hits">
               {hits.map((row) => { const g = gramsFor(row); return (
@@ -188,7 +201,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
             </ul>
           )}
           {q.trim().length > 1 && (
-            <button type="button" className="link-btn fd-ownbtn" onClick={() => setOwn({ n: parsed.text || q.trim(), k: '', p: '' })}>{hits.length ? _t("Нет в списке? Записать своё блюдо") : _t("Не нашёл. Записать своё блюдо с калориями")}</button>
+            <button type="button" className="link-btn fd-ownbtn" onClick={() => setOwn({ n: parsed.text || q.trim(), k: '', p: '' })}>{hits.length || mine.length ? _t("Нет в списке? Записать своё блюдо") : _t("Не нашёл. Записать своё блюдо с калориями")}</button>
           )}
         </div>
       )}

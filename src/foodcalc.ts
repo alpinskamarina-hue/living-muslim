@@ -182,10 +182,10 @@ export function parseQuery(q: string): { text: string; grams?: number; count?: n
 const norm = (x: string) => x.toLowerCase().replace(/ё/g, 'е');
 
 /** Up to six table rows that match the typed words (start of each word, either language). */
-export function search(text: string): FoodRow[] {
+export function search(text: string, rows: FoodRow[] = FOODS): FoodRow[] {
   const words = norm(text).split(/[\s,]+/).filter((w) => w.length > 1).map((w) => w.slice(0, Math.max(3, w.length - 2)));
   if (!words.length) return [];
-  return FOODS.map((x) => {
+  return rows.map((x) => {
     const name = norm(x.n);
     const hit = words.filter((w) => name.split(/[\s,()-]+/).some((p) => p.startsWith(w)) || name.includes(w)).length;
     return { x, hit, starts: name.startsWith(words[0]) ? 1 : 0 };
