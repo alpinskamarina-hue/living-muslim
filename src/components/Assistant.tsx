@@ -211,7 +211,7 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
           ? <div key={i} className="ai-msg me">{m.voice && <span className="ai-vo" aria-label={_t("Голосом")}>🎙 </span>}{m.content}</div>
           : (!m.content && !m.acts?.length && !m.drafts?.length) ? null
           : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className={`ai-msg it${m.content ? '' : ' ai-bare'}`}>
-              {m.content}
+              {rich(m.content)}
               {m.book && (live.current.books ?? []).some((b) => b.id === m.book) && (
                 <div className="ai-book-acts">
                   <button type="button" onClick={() => onGo?.({ practice: 'books' })}>{_t("📖 Открыть в Книгах")}</button>
@@ -571,4 +571,10 @@ function AiMemoryBox({ on, set }: { on: boolean; set: (v: boolean) => void }) {
       <p className="tiny">{_t("Память хранится только на этом телефоне и уходит к помощнику вместе с вопросом.")}</p>
     </>
   );
+}
+
+/** The chat shows **bold** as bold and «- » list lines as «• »; other Markdown marks (#, __) are dropped. */
+function rich(t: string) {
+  const clean = t.replace(/^#{1,6}\s+/gm, '').replace(/__(.+?)__/g, '$1').replace(/^(\s*)[*-]\s+/gm, '$1• ');
+  return clean.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <b key={i}>{part}</b> : part.replace(/\*\*/g, '')));
 }
