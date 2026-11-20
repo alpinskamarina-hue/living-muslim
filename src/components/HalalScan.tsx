@@ -12,12 +12,16 @@ import {
 } from '../halal';
 import { LANG, _t, _tj } from '../i18n';
 import { PIcon } from './PIcon';
+import { dropSign, saveShared, sendSign, sharedOf, type Shared } from '../halalCloud';
+import { authMe } from '../auth';
 
 type Stage =
   | { s: 'cam' }
   | { s: 'type'; code: string }
   | { s: 'look'; code: string }
   | { s: 'result'; p: HProduct; saved?: number }
+  | { s: 'sign'; p: HProduct }
+  | { s: 'sending'; p: HProduct }
   | { s: 'none'; code: string }
   | { s: 'net'; code: string }
   | { s: 'reading'; code: string; url: string }
@@ -78,6 +82,16 @@ const VIc = ({ v }: { v: Verdict }) => (
   </i>
 );
 
+const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> => Promise.race([p, new Promise<null>((r) => window.setTimeout(() => r(null), ms))]);
+/** Adds what the shared base knows: approved signs count as a halal label (the owner checked the photos). */
+function withShared(p: HProduct, sh: Shared | null): HProduct {
+  if (!sh) return p;
+  const q: HProduct = { ...p, signs: sh.signs, approved: sh.ok === true ? true : sh.ok === false ? false : undefined };
+  if (!q.ing && sh.ingredients) { q.ing = sh.ingredients; q.shared = true; }
+  if (sh.ok === true && sh.signs > 0) { q.offLabel = p.label; q.label = true; }
+  return q;
+}
+
 async function shareText(title: string, text: string) {
   const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
   if (nav.share) { try { await nav.share({ title, text }); return true; } catch { return false; } }
@@ -96,6 +110,9 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
   const abort = useRef<AbortController | null>(null);
   const file = useRef<HTMLInputElement>(null);
   const photoFor = useRef('');
+  const photoKind = useRef<'ing' | 'sign'>('ing');
+  const signFor = useRef<HProduct | null>(null);
+  const [savedShared, setSavedShared] = useState('');
 
   const stopCam = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; };
   useEffect(() => () => { stopCam(); abort.current?.abort(); }, []);
@@ -114,11 +131,12 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
     setStage({ s: 'look', code });
     const ac = new AbortController(); abort.current = ac;
     const timer = window.setTimeout(() => ac.abort(), 12000);
-    const r = await findProduct(code, ac.signal);
+    const [r, sh] = await Promise.all([findProduct(code, ac.signal), withTimeout(sharedOf(code, ac.signal), 5000)]);
     window.clearTimeout(timer);
     if (ac.signal.aborted && !r.ok && abort.current !== ac) return;
     const saved = history().find((h) => h.code === code && h.p);
-    if (r.ok) show(r.p);
+    if (r.ok) show(withShared(r.p, sh));
+    else if (r.why === 'none' && sh && (sh.ingredients || sh.ok)) show(withShared({ code, n: sh.name || _t("Товар без названия"), ing: sh.ingredients || undefined, label: false, shared: Boolean(sh.ingredients), t: Date.now() }, sh));
     else if (r.why === 'net' && saved?.p) show(saved.p, saved.t);
     else if (r.why === 'none' && saved?.p?.photo) show(saved.p, saved.t);
     else if (r.why === 'none') setStage({ s: 'none', code });
@@ -165,10 +183,28 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
     try { await tr.applyConstraints({ advanced: [{ torch: !torch } as MediaTrackConstraintSet] }); setTorch(!torch); } catch { setTorch(null); }
   };
 
-  const takePhoto = (code: string) => { photoFor.current = code; stopCam(); file.current?.click(); };
+  const takePhoto = (code: string) => { photoFor.current = code; photoKind.current = 'ing'; stopCam(); file.current?.click(); };
+  const takeSign = (p: HProduct) => { signFor.current = p; photoKind.current = 'sign'; file.current?.click(); };
+  const onSignFile = async (f: File) => {
+    const p = signFor.current;
+    if (!p) return;
+    setStage({ s: 'sending', p });
+    let data = '';
+    try { data = (await shrink(f, 900)).data; } catch { /* sent without a photo */ }
+    const r = await sendSign(p.code, p.n, data);
+    setMineHalal(p.code, true);
+    const np = { ...p, signs: r.ok ? r.signs : p.signs };
+    show(np);
+    setNote(r.ok ? _tj("Спасибо! Подтверждений: {0}. После проверки знак станет зелёным у всех, а у тебя он зелёный уже сейчас.", r.signs)
+      : r.why === 'signin' ? _t("Отмечено на твоём телефоне. Чтобы знак увидели все, войди по почте в Профиле и отметь ещё раз.")
+      : r.why === 'nosql' ? _t("Отмечено на твоём телефоне. Общая база ещё не включена.")
+      : r.why === 'day' ? _t("Отмечено на твоём телефоне. На сегодня в общую базу уже много отметок, продолжи завтра.")
+      : _t("Отмечено на твоём телефоне. В общую базу отправить не получилось, проверь интернет и отметь ещё раз."));
+  };
   const onFile = async (f: File | undefined) => {
     if (file.current) file.current.value = '';
     if (!f) return;
+    if (photoKind.current === 'sign') { onSignFile(f); return; }
     const code = photoFor.current;
     let img: { data: string; url: string };
     try { img = await shrink(f, 1400); } catch { setStage({ s: 'photoErr', code, why: 'image' }); return; }
@@ -292,6 +328,33 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
         {w === 'unreadable' && <p className="fp-note">{_t("Неудачная попытка не тратит фото из дневного лимита.")}</p>}
       </div></div>
     </>);
+  } else if (stage.s === 'sign') {
+    const p = stage.p;
+    const signed = Boolean(authMe());
+    body = (<>
+      {head(_t("Знак халяль"), p.n, () => setStage({ s: 'result', p }))}
+      <div className="fp-body">
+        <div className="h-card hs-none">
+          <span className="hs-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z" /><circle cx="12" cy="13" r="3" /></svg></span>
+          <b>{_t("Сфотографируй знак халяль на упаковке")}</b>
+          <p>{_t("Фото увидит только проверяющий. После проверки знак станет зелёным для всех, кто сканирует этот товар.")}</p>
+        </div>
+        {!signed && <p className="hs-note">{_t("Чтобы помочь другим, нужно войти по почте в Профиле. Без входа отметка останется только на твоём телефоне.")}</p>}
+        <span className="hs-grow" />
+        {signed && <button type="button" className="pri-btn fp-save" onClick={() => takeSign(p)}>{_t("Сфотографировать знак")}</button>}
+        <button type="button" className={signed ? 'ghost-btn' : 'pri-btn fp-save'} onClick={() => {
+          setMineHalal(p.code, true); show(p); setNote(_t("Отмечено. На этом телефоне товар теперь зелёный."));
+        }}>{_t("Только для меня")}</button>
+      </div>
+    </>);
+  } else if (stage.s === 'sending') {
+    body = (<>
+      {head(_t("Знак халяль"), stage.p.n)}
+      <div className="fp-body">
+        <p className="fp-status" style={{ marginTop: 40 }}><b>{_t("Отправляю в общую базу…")}</b><small>{_t("пара секунд")}</small></p>
+        <div className="fp-dots"><i /><i /><i /></div>
+      </div>
+    </>);
   } else if (stage.s === 'result') {
     const { p } = stage;
     const mine = mineHalal(p.code);
@@ -301,12 +364,15 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
     const m = p.ing ? marksOf(c.found, opts) : null;
     // With a certificate or the person's own mark, meat and additives are covered; only alcohol stays worth a line.
     const shown = v === 'green' ? c.found.filter((f) => f.id === 'alcohol') : c.found;
-    const title = v === 'green' ? (p.label ? _t("Халяль: есть сертификат") : _t("Халяль: знак на упаковке"))
+    const people = Boolean(p.approved && !p.offLabel);
+    const title = v === 'green' ? (people ? _t("Халяль: знак подтверждён") : p.label ? _t("Халяль: есть сертификат") : _t("Халяль: знак на упаковке"))
       : v === 'red' ? _t("Харам по составу")
       : v === 'yellow' ? _t("Сомнительно, проверь")
       : v === 'clean' ? _t("Запрещённого в составе нет")
       : _t("Состава в базе нет");
-    const text = v === 'green' ? (p.label ? _t("В базе товаров отмечено, что на упаковке есть знак халяль.") : _t("Ты отметил, что на упаковке есть знак халяль. Это видно только на твоём телефоне."))
+    const text = v === 'green' ? (people ? _tj("Знак халяль на упаковке подтвердили по фото: {0}. Отметки проверены.", p.signs || 1)
+        : p.label ? _t("В базе товаров отмечено, что на упаковке есть знак халяль.") + (p.approved && p.signs ? ' ' + _tj("Знак подтвердили по фото: {0}.", p.signs) : '')
+        : _t("Ты отметил, что на упаковке есть знак халяль. Это видно только на твоём телефоне."))
       : v === 'red' ? _tj("В составе: {0}.", reds.map((f) => ruleName(f.id).toLowerCase()).join(', '))
       : v === 'yellow' ? (c.found.length > 1 ? _t("Есть то, что бывает и растительным, и животным. По составу не понять.") : _t("Есть то, что бывает и дозволенным, и нет. По составу не понять."))
       : v === 'clean' ? _t("Сертификата в базе нет, но и сомнительного в составе мы не нашли.")
@@ -322,6 +388,8 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
       window.location.href = `mailto:?subject=${encodeURIComponent(l.subject)}&body=${encodeURIComponent(l.body)}`;
     };
     const mark = (on: boolean) => {
+      if (on) { setStage({ s: 'sign', p }); return; }
+      dropSign(p.code);
       setMineHalal(p.code, on);
       const c2 = checkProduct(p, opts, on);
       addHistory({ code: p.code, n: p.n, v: c2.verdict, why: verdictShort(c2.verdict, c2.found, on && !p.label), t: Date.now(), p });
@@ -333,7 +401,7 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
       <div className={`fp-body hs-res hv-${v}`}>
         <div className="h-card hs-prod">
           {p.img ? <img src={p.img} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <span className="hs-ph" aria-hidden="true"><PIcon k="scan" /></span>}
-          <span><b>{p.n}</b><small>{[p.brand, p.photo ? _t("состав с фото") : ''].filter(Boolean).join(' · ') || (p.code ? group(p.code) : '')}</small></span>
+          <span><b>{p.n}</b><small>{[p.brand, p.photo ? _t("состав с фото") : p.shared ? _t("состав от людей") : ''].filter(Boolean).join(' · ') || (p.code ? group(p.code) : '')}</small></span>
         </div>
         <div className="hv-box" role="status">
           <VIc v={v} />
@@ -356,6 +424,20 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
         {v === 'clean' && (
           <div className="h-card hs-q"><b>{_t("Почему не «халяль»?")}</b><small>{_t("Мы называем товар халяль только с сертификатом или знаком на упаковке. Здесь нечему быть харамом, но подтверждения нет.")}</small></div>
         )}
+        {v !== 'green' && v !== 'red' && (p.signs ?? 0) > 0 && p.approved !== false && <p className="hs-note">{_tj("Знак халяль на этом товаре отметили по фото: {0}. Ждёт проверки.", p.signs)}</p>}
+        {p.photo && p.code && p.ing && (
+          <div className="h-card hs-help">
+            <small className="fd-lbl">{_t("Помоги другим")}</small>
+            {savedShared === p.code ? <p>{_t("Сохранено. Теперь этот состав увидят все, кто сканирует товар.")}</p> : <>
+              <p>{_t("Сохрани прочитанный состав, и следующему человеку не придётся фотографировать.")}</p>
+              <button type="button" className="ghost-btn" onClick={async () => {
+                const r = await saveShared(p.code, p.n, p.ing!);
+                if (r.ok) setSavedShared(p.code);
+                else setNote(r.why === 'signin' ? _t("Сохранять в общую базу можно после входа по почте в Профиле.") : r.why === 'nosql' ? _t("Общая база ещё не включена.") : _t("Не получилось сохранить, проверь интернет."));
+              }}>{_t("Сохранить в общую базу")}</button>
+            </>}
+          </div>
+        )}
         {note && <p className="hs-note">{note}</p>}
         <span className="hs-grow" />
         <div className="hs-acts">
@@ -366,7 +448,7 @@ export function HalalScan({ state, today, onClose, start }: { state: AppState; t
           {v === 'red' && <button type="button" className="pri-btn" onClick={() => setStage({ s: 'cam' })}>{_t("Сканировать другой")}</button>}
         </div>
         {v === 'green' && mine && !p.label && <button type="button" className="link-btn fp-center" onClick={() => mark(false)}>{_t("Убрать мою отметку")}</button>}
-        <p className="fp-note">{v === 'yellow' ? _t("Готовое письмо: «Из чего сделаны эти добавки?». Отправь его со своей почты или через сайт производителя.") + ' ' : ''}{_t("Это подсказка по составу, не фетва.")} {p.photo ? '' : _t("Данные из открытой базы Open Food Facts.")}</p>
+        <p className="fp-note">{v === 'yellow' ? _t("Готовое письмо: «Из чего сделаны эти добавки?». Отправь его со своей почты или через сайт производителя.") + ' ' : ''}{_t("Это подсказка по составу, не фетва.")} {p.photo ? '' : p.shared ? _t("Состав добавили люди по фото упаковки.") : _t("Данные из открытой базы Open Food Facts.")}</p>
         <div className="hs-links">
           {v !== 'red' && <button type="button" className="link-btn" onClick={() => setStage({ s: 'cam' })}>{_t("Сканировать другой")}</button>}
           <button type="button" className="link-btn" onClick={toRules}>{_t("Что ищем в составе")}</button>

@@ -26,6 +26,13 @@ export interface HProduct {
   label: boolean;
   /** read from a photo of the pack, not from the database */
   photo?: boolean;
+  /** the ingredient list came from the shared base (read by another person from a photo) */
+  shared?: boolean;
+  /** people who marked the halal sign in the shared base, and whether the owner approved it */
+  signs?: number;
+  approved?: boolean;
+  /** the open database itself had the halal label (before the shared base was added) */
+  offLabel?: boolean;
   t: number;
 }
 

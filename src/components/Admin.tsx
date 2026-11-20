@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { halalDecide, halalQueue, type QueueItem } from '../halalCloud';
 import { accessToken, authMe } from '../auth';
 import { AdminCourses } from './AdminCourses';
 import { setOwner } from '../plan';
@@ -57,15 +58,16 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
         <button type="button" aria-pressed={tab === 'stats'} onClick={() => setTab('stats')}>📊 Аналитика</button>
         <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Курсы</button>
         <button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>🚩 Жалобы</button>
+        <button type="button" aria-pressed={tab === 'halal'} onClick={() => setTab('halal')}>☪ Халяль</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : <AdminReports />}
     </div>
   );
 }
@@ -210,6 +212,35 @@ function AdminReports() {
           {r.deleted ? <small>Сообщение уже удалено</small> : (
             <button type="button" className="link-btn" onClick={async () => { if (!confirm('Удалить это сообщение для всех?')) return; await call('lm_chat_admin_delete', { p_id: r.msg }).catch(() => null); load(); }}>🗑 Удалить сообщение</button>
           )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** «Халяль-сканер», shared base: halal signs people photographed. Approved ones turn green for everyone. */
+function AdminHalal() {
+  const [list, setList] = useState<QueueItem[] | null>(null);
+  const [err, setErr] = useState('');
+  const load = () => halalQueue().then((r) => setList(r ?? [])).catch((e) => setErr(/nosql/.test(String(e)) ? 'Сначала запусти supabase/halal.sql в Supabase → SQL Editor.' : 'Не получилось загрузить. Проверь интернет.'));
+  useEffect(() => { load(); }, []);
+  const decide = async (code: string, ok: boolean) => { await halalDecide(code, ok).catch(() => null); setList((l) => (l ?? []).filter((x) => x.code !== code)); };
+  if (err) return <p className="tiny">{err}</p>;
+  if (!list) return <p className="tiny">Загружаю…</p>;
+  if (!list.length) return <p className="tiny">Новых знаков халяль на проверке нет.</p>;
+  return (
+    <div className="adm-rep">
+      <p className="tiny">Одобряй, только если на фото виден знак халяль на упаковке именно этого товара. По правилу из макета лучше дождаться 3 подтверждений.</p>
+      {list.map((x) => (
+        <div key={x.code} className="adm-card adm-halal">
+          <b>{x.name || 'Без названия'}</b>
+          <small>штрихкод {x.code} · подтверждений: {x.signs} · {new Date(x.last).toLocaleDateString('ru-RU')}</small>
+          {x.photos?.length ? <div className="adm-ph">{x.photos.map((b, i) => <img key={i} src={`data:image/jpeg;base64,${b}`} alt={`Фото знака ${i + 1}`} />)}</div> : <small>Без фото</small>}
+          {x.ingredients && <small className="adm-ing">Состав: {x.ingredients}</small>}
+          <div className="adm-act">
+            <button type="button" className="pri-btn" onClick={() => decide(x.code, true)}>Одобрить знак</button>
+            <button type="button" className="ghost-btn" onClick={() => decide(x.code, false)}>Отклонить</button>
+          </div>
         </div>
       ))}
     </div>
