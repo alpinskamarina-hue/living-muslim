@@ -11,6 +11,8 @@ export interface AiMsg {
   raw?: unknown[]; hidden?: boolean;
   /** What the assistant did in the app, one line each. */
   acts?: string[];
+  /** A book the person attached with 📎: its shelf id (the reply shows «Открыть» and «Сделать цель»). */
+  book?: string;
 }
 
 const LS = 'lm.ai.chat';

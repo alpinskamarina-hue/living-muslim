@@ -1,7 +1,7 @@
 // The assistant's hands: each tool call from /api/ask is carried out here, on the person's own data.
 // All calls of one answer are applied to a copy of the state; the chat then saves it in one step and keeps
 // the state from before, so «Отменить» can put everything back.
-import type { AppState, Anchor, Goal, Habit, Sphere } from './types';
+import type { AppState, Anchor, BookMeta, Goal, Habit, Sphere } from './types';
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { setMark, setPrayer, uid } from './store';
 import { rawValue } from './goals';
@@ -78,6 +78,11 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
       g.start = rawValue(s, g, today);
       return ok({ ...s, goals: [...(s.goals ?? []), g] }, _t("Новая цель: {0}{1}", title, steps.length ? _t(" · шагов: {0}", steps.length) : ''), `goal created, id ${g.id}, step ids ${steps.map((x) => x.id).join(',') || 'none'}`);
     }
+    case 'create_book_goal': {
+      const b = (s.books ?? []).find((x) => x.id === i.book_id); if (!b) return fail('no such book');
+      const g = bookGoal(s, b, today, isDay(i.due) && (i.due as string) >= today ? (i.due as string) : undefined, S(i.niyya, 300));
+      return ok({ ...s, goals: [...(s.goals ?? []), g] }, _t("Новая цель: {0}", g.title), `goal created, id ${g.id}`);
+    }
     case 'update_goal': {
       const g = goal(i.goal_id); if (!g) return fail('no goal with this id');
       const patch: Partial<Goal> = {};
@@ -135,4 +140,14 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
     }
   }
   return fail('unknown tool');
+}
+
+/** A goal «Прочитать «book»», counted by the pages read in Книги from today. */
+export function bookGoal(s: AppState, b: BookMeta, today: string, due?: string, niyya = ''): Goal {
+  const g: Goal = {
+    id: uid(), title: _t("Прочитать «{0}»", b.title.slice(0, 90)), source: 'pages', identity: _t("Я тот, кто читает каждый день"), niyya,
+    target: Math.max(1, b.pages - Math.max(0, b.page - 1)), unit: _t("стр."), start: 0, manual: 0, due, habitIds: [], status: 'active', createdAt: today,
+  };
+  g.start = rawValue(s, g, today);
+  return g;
 }

@@ -3788,3 +3788,10 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 :root[data-theme="dark"] :is(.g-review-cta small, .niyya small) { color: var(--gold); }
 :root[data-theme="dark"] .safar-bar .row2 button { border-color: #5a4720; }
 :root[data-theme="dark"] :is(.acts .mn, .acts .lt) { color: #10180f; }
+/* Assistant 📎: attach a book to the shelf */
+.ai-input .ai-clip { flex: none; width: 36px; height: 44px; border: 0; background: none; color: var(--ink-2); display: grid; place-items: center; padding: 0; }
+.ai-input .ai-clip svg { width: 22px; height: 22px; }
+.ai-clip-spin { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--green-2); animation: ai-turn 0.8s linear infinite; }
+.ai-book-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ai-book-acts button { border: 1px solid var(--line); background: var(--surface); color: var(--green-2); border-radius: 16px; padding: 7px 12px; font: inherit; font-size: 13.5px; font-weight: 600; }
+:root[data-theme="dark"] .ai-book-acts button { background: var(--surface-2); color: var(--ink); }

@@ -90,7 +90,7 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
     L.push('', `COURSES started: ${v.started.map((id) => `${cut(cat.find((c) => c.id === id)?.title ?? id, 60)} (${v.byCourse?.[id]?.length ?? 0} lessons watched)`).join('; ')}.`);
   }
   if (s.quran) L.push(`Quran: stopped at surah ${s.quran.surah}, ayah ${s.quran.ayah}.`);
-  if (s.books?.length) L.push(`Books: ${s.books.map((b) => `${cut(b.title, 50)} p. ${b.page}/${b.pages}`).join('; ')}.`);
+  if (s.books?.length) L.push(`Books: ${s.books.map((b) => `[id:${b.id}] ${cut(b.title, 50)} p. ${b.page}/${b.pages}`).join('; ')}.`);
   if (s.course) L.push(`English by days: day ${s.course.day}, ${s.course.learned.length} words learned.`);
   if (s.courseAr) L.push(`Arabic by days: day ${s.courseAr.day}, ${s.courseAr.learned.length} words learned.`);
 
