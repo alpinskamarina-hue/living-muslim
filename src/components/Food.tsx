@@ -1,11 +1,12 @@
 import { Fragment, useState } from 'react';
 import { PIcon } from './PIcon';
+import { ModeLine, ModeSetup, Tracker } from './FoodPlan';
 import type { AppState, FoodState, Meal } from '../types';
 import { addDays, fromKey, hhmm } from '../dates';
 import { prayerTimes } from '../prayer';
 import { here } from '../safar';
 import { health, hijri, patchHealth, sunnahFast } from '../health';
-import { _t, _tj, LOC } from '../i18n';
+import { _t, _tj, LOC, isEn } from '../i18n';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void; onHealth?: () => void }
 
@@ -14,7 +15,7 @@ const patch = (s: AppState, fn: (f: FoodState) => Partial<FoodState>): AppState 
 
 const MEALS: { id: Meal; l: string; when: string; ic: string; meal: string }[] = [
   { id: 'b', l: _t("Утро"), when: _t("после Фаджра"), ic: 'sunrise', meal: _t("завтрак") },
-  { id: 'l', l: _t("День"), when: _t("после Зухра"), ic: 'sun', meal: _t("обед") },
+  { id: 'l', l: isEn ? 'Midday' : 'День', when: _t("после Зухра"), ic: 'sun', meal: _t("обед") },
   { id: 'd', l: _t("Вечер"), when: _t("после Магриба"), ic: 'moon', meal: _t("ужин") },
 ];
 /** One short line a day at the top instead of the big hadith toast. */
@@ -76,6 +77,7 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
   const [tab, setTab] = useState<'day' | 'clean' | 'sunna' | 'weight' | 'adab'>('day');
   const [pick, setPick] = useState<Meal | null>(null);
   const [duaOpen, setDuaOpen] = useState(false);
+  const [setup, setSetup] = useState(false);
   const [wordHidden, setWordHidden] = useState(() => { try { return localStorage.getItem('lm.foodWord') === today; } catch { return false; } });
   const f = foodOf(state);
   const day = f.meals[today] ?? {};
@@ -140,7 +142,7 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
     <div className="sess light-sess">
       <div className="sess-top">
         <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
-        <div><b>{_t("Питание")}</b><small>{_t("Без калорий")}</small></div>
+        <div><b>{_t("Питание")}</b><small>{(f.mode ?? 'mera') === 'mera' ? _t("Без калорий") : _t("С калориями")}</small></div>
         {onHealth && <div className="fsw"><button type="button" onClick={onHealth}>{_t("Здоровье")}</button><button type="button" aria-pressed="true">{_t("Питание")}</button></div>}
       </div>
       {!wordHidden && (
@@ -148,6 +150,7 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
           <button type="button" aria-label={_t("Скрыть")} onClick={() => { setWordHidden(true); try { localStorage.setItem('lm.foodWord', today); } catch { /* */ } }}>✕</button>
         </div>
       )}
+      {setup ? <div className="h-wrap"><ModeSetup state={state} update={update} today={today} onDone={() => setSetup(false)} /></div> : <>
       <div className="seg fd-seg">
         {([['day', _t("День")], ['clean', _t("Отказ")], ['sunna', _t("Сунна")], ['weight', _t("Вес")], ['adab', _t("Адаб")]] as const).map(([k, l]) => (
           <button key={k} type="button" aria-pressed={tab === k} onClick={() => setTab(k)}>{l}</button>
@@ -156,6 +159,7 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
       <div className="h-wrap">
         {tab === 'day' && (
           <>
+            <ModeLine state={state} today={today} onOpen={() => setSetup(true)} />
             <div className="h-card fd-card fd-today">
               <div className="meal-h"><b>{fasting ? _tj("Сегодня пост · {0}", wd) : _tj("Сегодня, {0}", wd)}</b><small>{fasting && toIftar > 0 ? _tj("до ифтара {0}", toIftar >= 60 ? _tj("{0} ч {1} мин", Math.floor(toIftar / 60), toIftar % 60) : _tj("{0} мин", toIftar)) : _tj("{0} из {1}", doneN, slots.length)}</small></div>
               <div className={`fd-meals n${slots.length}`}>
@@ -200,6 +204,8 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
                 </label>
               )}
             </div>
+
+            <Tracker state={state} update={update} today={today} slots={slots} cur={cur} />
 
             <div className="h-card fd-card">
               <div className="meal-h"><b>{_t("Отказ сегодня")}</b><button type="button" className="link-btn" onClick={() => setTab('clean')}>{f.rules.length ? _t("Все ›") : _t("Выбрать ›")}</button></div>
@@ -284,6 +290,7 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
           </>
         )}
       </div>
+      </>}
     </div>
   );
 }
