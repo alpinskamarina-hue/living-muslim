@@ -1,5 +1,5 @@
 // Nutrition modes, daily targets and typing in what you ate (step 1 of the food concept, 20.11).
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { PIcon } from './PIcon';
 import type { AppState, FoodBody, FoodItem, FoodState, Meal } from '../types';
 import { ACT, FOODS, MODES, itemFrom, lastWeight, parseQuery, search, sum, target, type FoodRow } from '../foodcalc';
@@ -37,7 +37,21 @@ export function ModeSetup({ state, update, today, onDone }: { state: AppState; u
   const lw = lastWeight(f);
   const [w, setW] = useState(lw ? String(lw).replace('.', ',') : '');
   const [kcal, setKcal] = useState(f.kcal ? String(f.kcal) : '');
-  const ok = mode === 'mera' || (num(h) >= 120 && num(h) <= 230 && num(age) >= 10 && num(age) <= 100 && sex && num(w) > 25 && num(w) < 300);
+  const bad = {
+    sex: !sex,
+    h: !(num(h) >= 120 && num(h) <= 230),
+    age: !(num(age) >= 10 && num(age) <= 100),
+    w: !(num(w) > 25 && num(w) < 300),
+  };
+  const ok = mode === 'mera' || !(bad.sex || bad.h || bad.age || bad.w);
+  const missing = mode === 'mera' ? [] : [
+    bad.sex && _t("брат или сестра"),
+    bad.h && (h.trim() ? _t("рост от 120 до 230 см") : _t("рост")),
+    bad.age && (age.trim() ? _t("возраст от 10 до 100") : _t("возраст")),
+    bad.w && (w.trim() ? _t("вес от 25 до 300 кг") : _t("вес")),
+  ].filter(Boolean) as string[];
+  const [tried, setTried] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
   const young = num(age) > 0 && num(age) < 18;
   const draft = (): FoodState => ({
     ...f, mode,
@@ -46,7 +60,17 @@ export function ModeSetup({ state, update, today, onDone }: { state: AppState; u
     kcal: num(kcal) >= 1000 && num(kcal) <= 6000 ? Math.round(num(kcal)) : undefined,
   });
   const preview = ok && mode !== 'mera' ? target({ ...state, food: draft() }, draft(), today) : null;
-  const save = () => { if (!ok) return; update((s) => ({ ...s, food: draft() })); onDone(); };
+  const save = () => {
+    if (!ok) {
+      setTried(true);
+      const first = box.current?.querySelector<HTMLElement>('[data-bad]');
+      first?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      if (first instanceof HTMLInputElement) first.focus({ preventScroll: true });
+      return;
+    }
+    update((s) => ({ ...s, food: draft() })); onDone();
+  };
+  const miss = (k: keyof typeof bad) => ({ 'aria-invalid': tried && bad[k] ? true : undefined, 'data-bad': bad[k] ? '' : undefined });
   return (
     <div className="fd-setup">
       <p className="q-msg left">{_t("Выбери, как питаешься сейчас. Режим можно сменить в любой день, записи сохранятся.")}</p>
@@ -60,17 +84,17 @@ export function ModeSetup({ state, update, today, onDone }: { state: AppState; u
       </div>
       {young && <p className="q-msg left tiny-note">{_t("До 18 лет режим похудения не предлагаем: организм растёт. Лучше режим «Мера» и разговор с врачом.")}</p>}
       {mode !== 'mera' && (
-        <div className="h-card fd-card fd-body">
+        <div className="h-card fd-card fd-body" ref={box}>
           <b>{_t("О тебе")}</b>
           <small className="fd-muted">{_t("Нужно, чтобы посчитать норму. Видно только тебе.")}</small>
-          <div className="fd-sex">
+          <div className="fd-sex" {...miss('sex')}>
             <button type="button" aria-pressed={sex === 'm'} onClick={() => setSex('m')}>{_t("Брат")}</button>
             <button type="button" aria-pressed={sex === 'f'} onClick={() => setSex('f')}>{_t("Сестра")}</button>
           </div>
           <div className="fd-nums">
-            <label><small>{_t("Рост, см")}</small><input inputMode="numeric" value={h} onChange={(e) => setH(e.target.value)} placeholder="175" /></label>
-            <label><small>{_t("Возраст")}</small><input inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} placeholder="30" /></label>
-            <label><small>{_t("Вес, кг")}</small><input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} placeholder="75" /></label>
+            <label><small>{_t("Рост, см")}</small><input inputMode="numeric" value={h} onChange={(e) => setH(e.target.value)} {...miss('h')} /></label>
+            <label><small>{_t("Возраст")}</small><input inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} {...miss('age')} /></label>
+            <label><small>{_t("Вес, кг")}</small><input inputMode="decimal" value={w} onChange={(e) => setW(e.target.value)} {...miss('w')} /></label>
           </div>
           <small className="fd-lbl">{_t("Движение")}</small>
           <div className="fd-act">
@@ -88,9 +112,10 @@ export function ModeSetup({ state, update, today, onDone }: { state: AppState; u
         </div>
       )}
       <p className="q-msg left tiny-note">{_t("Это ориентир, а не медицинский совет. При болезнях, беременности, кормлении грудью или диабете посоветуйся с врачом.")}</p>
+      {missing.length > 0 && <p className={`fd-missing${tried ? ' on' : ''}`} role="status">{_tj("Чтобы сохранить, впиши: {0}.", missing.join(', '))}</p>}
       <div className="fd-actions">
         <button type="button" className="link-btn" onClick={onDone}>{_t("Отмена")}</button>
-        <button type="button" className="pri-btn" disabled={!ok} onClick={save}>{_t("Сохранить")}</button>
+        <button type="button" className={`pri-btn${ok ? '' : ' fd-wait'}`} onClick={save}>{_t("Сохранить")}</button>
       </div>
     </div>
   );

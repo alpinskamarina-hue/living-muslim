@@ -5610,4 +5610,12 @@ export const EN: Record<string, string> = {
   "Новое:": "New:",
   "сфотографируй тарелку, посчитаю примерно": "take a photo of your plate and I'll estimate it",
   "Фото сегодня: осталось {0} из {1}.": "Photos today: {0} of {1} left.",
+  "брат или сестра": "brother or sister",
+  "рост": "height",
+  "рост от 120 до 230 см": "height from 120 to 230 cm",
+  "возраст": "age",
+  "возраст от 10 до 100": "age from 10 to 100",
+  "вес": "weight",
+  "вес от 25 до 300 кг": "weight from 25 to 300 kg",
+  "Чтобы сохранить, впиши: {0}.": "To save, fill in: {0}.",
 };

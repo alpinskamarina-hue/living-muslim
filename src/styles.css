@@ -4115,3 +4115,13 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .fp-big { width: 68px; height: 68px; border-radius: 50%; margin: 0 auto 4px; display: grid; place-items: center; background: var(--surface-2); font-size: 30px; }
 .fp-err > b { font-size: 16px; } .fp-err > p { font-size: 13.5px; color: var(--ink-2); margin: 0; line-height: 1.45; }
 .fp-tips { text-align: left; font-size: 13px; margin: 4px 0; padding-left: 20px; line-height: 1.6; }
+
+/* Food setup: say what is missing instead of a silent grey button (20.11) */
+.fd-nums input[aria-invalid="true"] { border-color: #d0574a; background: color-mix(in srgb, #d0574a 7%, var(--surface)); }
+.fd-sex[aria-invalid="true"] { outline: 1.5px solid #d0574a; outline-offset: 3px; border-radius: 12px; }
+.fd-missing { width: 100%; margin: 0; font-size: 13px; line-height: 1.4; color: var(--ink-2); text-align: center; }
+.fd-missing.on { color: #c0473a; font-weight: 700; }
+:root[data-theme="dark"] .fd-missing.on { color: #ff8f80; }
+:root[data-theme="dark"] .fd-nums input[aria-invalid="true"] { border-color: #ff8f80; }
+:root[data-theme="dark"] .fd-sex[aria-invalid="true"] { outline-color: #ff8f80; }
+.fd-actions .pri-btn.fd-wait { opacity: .55; }
