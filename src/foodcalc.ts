@@ -2,6 +2,7 @@
 // Numbers are rough guides for 100 g of a typical home-cooked dish; the screen shows them as a guide, not a diet.
 import type { AppState, FoodBody, FoodItem, FoodMode, FoodState, Meal } from './types';
 import { _t } from './i18n';
+import { health, round50, workoutKcal } from './health';
 
 export interface FoodRow { id: string; n: string; k: number; p: number; f: number; c: number; g: number; u?: string }
 
@@ -142,7 +143,7 @@ export const lastWeight = (f: FoodState) => {
   return e.length ? e[e.length - 1][1] : undefined;
 };
 
-export interface Target { k: number; p: number; f: number; c: number; floor: boolean; train: boolean }
+export interface Target { k: number; p: number; f: number; c: number; floor: boolean; train: boolean; extra: number }
 
 /** Daily target from Mifflin–St Jeor: BMR × activity, then the mode. Returns null in Мера or without data. */
 export function target(s: AppState, f: FoodState, today: string): Target | null {
@@ -151,6 +152,8 @@ export function target(s: AppState, f: FoodState, today: string): Target | null 
   const bmr = 10 * w + 6.25 * b.h - 5 * b.age + (b.sex === 'f' ? -161 : 5);
   const tdee = bmr * (ACT.find((a) => a.v === b.act)?.x ?? 1.375);
   const train = Boolean(s.health?.workouts?.[today]?.length);
+  // «Спорт»: by type, minutes and how hard (health.ts), at most 800; rounded to 50.
+  const extra = train ? round50(workoutKcal(health(s), today, w)) : 0;
   let k = tdee, p = 1.2 * w, fatShare = 0.3, floor = false;
   if (mode === 'lose' && b.age >= 18) {
     k = tdee - Math.min(500, tdee * 0.15);
@@ -158,7 +161,7 @@ export function target(s: AppState, f: FoodState, today: string): Target | null 
     if (k < min) { k = min; floor = true; }
     p = 1.6 * w;
   } else if (mode === 'sport') {
-    k = tdee * 1.1 + (train ? 250 : 0);
+    k = tdee * 1.1 + extra;
     p = 1.8 * w; fatShare = 0.25;
   }
   if (f.kcal) k = f.kcal;
@@ -166,7 +169,7 @@ export function target(s: AppState, f: FoodState, today: string): Target | null 
   p = Math.round(p);
   const fat = Math.round((k * fatShare) / 9);
   const c = Math.max(0, Math.round((k - p * 4 - fat * 9) / 4));
-  return { k, p, f: fat, c, floor, train };
+  return { k, p, f: fat, c, floor, train, extra: mode === 'sport' && !f.kcal ? extra : 0 };
 }
 
 /** Text the person typed: «плов 300», «2 яйца», «banana». Splits off a number; small numbers mean pieces or portions. */

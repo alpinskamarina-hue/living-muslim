@@ -7,7 +7,7 @@ import { type Plan, type PlanAfter, type PlanRepeat, addDays, dayLabel, dropPlan
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { setMark, setPrayer, uid } from './store';
 import { rawValue } from './goals';
-import { defaultHealth, WORKOUTS } from './health';
+import { defaultHealth, WORKOUTS, WTYPES, ownEntry, parseW } from './health';
 import { markDone as azkarDone, azkarOf } from './azkar';
 import { ramadanOf } from './ramadan';
 import { updQuit } from './quit';
@@ -15,12 +15,14 @@ import { famOf, toggleKidTask } from './family';
 import { search as foodSearch, itemFrom } from './foodcalc';
 import type { FastMark, FoodItem, FoodState, Meal, UmrahState } from './types';
 import type { GoTo } from './guide';
-import { _t, LANG } from './i18n';
+import { _t, _tj, LANG } from './i18n';
 import { getMemory, setMemory } from './assistant';
 
 export interface ToolCall { id: string; name: string; input: Record<string, unknown> }
 export interface ActDone { ok: boolean; line: string; result: string }
 
+/** A workout name that only repeats the type («Зал», «Running») adds nothing next to it. */
+const PLAIN_TYPE = /^(зал|тренаж[её]рный зал|качалка|gym|бег|пробежка|run|running|ходьба|прогулка|walk|walking|футбол|football|soccer|плавание|бассейн|swim|swimming|велосипед|велик|bike|cycling|единоборства|martial arts|другое|other)$/i;
 const S = (v: unknown, n = 300) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 const isDay = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 const isAnchor = (v: unknown): v is Anchor => ANCHORS.includes(v as Anchor);
@@ -233,10 +235,27 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
         }
         case 'workout': {
           const w = WORKOUTS.find((x) => x.id === i.workout_id);
-          const name = w ? w.title : S(i.workout_name, 60);
-          if (!name) return fail('give workout_id or workout_name');
-          const id = w ? w.id : `own:${name}`;
-          return ok(put({ workouts: { ...h.workouts, [day]: [...(h.workouts[day] ?? []), id] } }), _t("Тренировка: {0}", name));
+          const type = WTYPES.find((x) => x.id === i.workout_type)?.id;
+          const extra = S(i.workout_name, 40);
+          if (!w && !type && !extra) return fail('give workout_id, workout_type or workout_name');
+          const min = Math.round(Number(i.minutes) || 0);
+          const lvl = i.intensity === 'light' ? 1 : i.intensity === 'hard' ? 3 : i.intensity === 'medium' ? 2 : undefined;
+          // Timer workouts keep their id; own ones carry type, name, minutes and how hard (health.ts ownEntry).
+          const id = w ? (min > 0 ? `${w.id}|${Math.min(600, min)}` : w.id) : ownEntry(type ?? 'other', min > 0 ? min : undefined, lvl, extra && !PLAIN_TYPE.test(extra) && extra !== WTYPES.find((x) => x.id === type)?.n ? extra : undefined, true);
+          const e = parseW(id);
+          return ok(put({ workouts: { ...h.workouts, [day]: [...(h.workouts[day] ?? []), id] } }), _t("Тренировка: {0}", [e.name, e.min ? _tj("{0} мин", e.min) : ''].filter(Boolean).join(', ')));
+        }
+        case 'no_workout': {
+          const list = h.workouts[day] ?? [];
+          if (!list.length) return fail(`no workouts on ${day}`);
+          const q = S(i.workout_name, 40).toLowerCase();
+          let at = list.length - 1;
+          if (q) { at = -1; for (let j = list.length - 1; j >= 0; j--) { const e = parseW(list[j]); if (e.name.toLowerCase().includes(q) || e.type === q || e.timer === q) { at = j; break; } } }
+          if (at < 0) return fail(`no workout matching «${q}» on ${day}`);
+          const gone = parseW(list[at]);
+          const rest = list.filter((_, j) => j !== at);
+          const wk = { ...h.workouts }; if (rest.length) wk[day] = rest; else delete wk[day];
+          return ok(put({ workouts: wk }), _t("Тренировка убрана: {0}", gone.name));
         }
         case 'fast': return ok(put({ fasts: { ...h.fasts, [day]: true } }), _t("Пост отмечен"));
         case 'no_fast': { const f = { ...h.fasts }; delete f[day]; return ok(put({ fasts: f }), _t("Отметка поста снята")); }

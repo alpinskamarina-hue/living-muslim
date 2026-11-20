@@ -21,6 +21,8 @@ export function WordsLayer({ state, today }: { state: AppState; today: string })
       const d = (e as CustomEvent<SayDetail>).detail;
       // One card per action: a burst of events (all five + on time) shows only the first, strongest one.
       if (Date.now() - busy.current < 1200) return;
+      // A workout timer is running: nothing covers it.
+      if (document.body.dataset.quiet) return;
       const c = pick(d.t, today, mode);
       if (!c) return;
       busy.current = Date.now();
@@ -28,8 +30,10 @@ export function WordsLayer({ state, today }: { state: AppState; today: string })
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setCard(null), c.kind === 'phrase' ? 3200 : 9000);
     };
+    const hide = () => setCard(null);
     window.addEventListener('lm:say', on);
-    return () => window.removeEventListener('lm:say', on);
+    window.addEventListener('lm:say-hide', hide);
+    return () => { window.removeEventListener('lm:say', on); window.removeEventListener('lm:say-hide', hide); };
   }, [today, mode]);
   if (!card) return null;
   const { c } = card;

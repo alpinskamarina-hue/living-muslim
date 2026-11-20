@@ -9,6 +9,7 @@ import type { Anchor, AppState, Habit } from './types';
 import { useAppState } from './store';
 import { dayKey, addDays, fromKey, plural } from './dates';
 import { prayerTimes, windowState } from './prayer';
+import { workoutRings } from './health';
 import { AdhanPlayer, AdhanToast, useAdhanClock } from './components/Adhan';
 import { adhanServer } from './adhan';
 import { Today } from './components/Today';
@@ -122,7 +123,8 @@ export function App() {
   const setSettings = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
   const nudge = nudgeOf(state, today);
   setNudge(nudge);
-  const pingKey = JSON.stringify(setPings(state.pings, planRings(state)));
+  const wRings = workoutRings(state, today, (d) => { const [y, m, dd] = d.split('-').map(Number); return prayerTimes({ ...here(state, d), offsets: state.settings.offsets }, new Date(y, m - 1, dd, 12)) as unknown as Record<string, Date>; });
+  const pingKey = JSON.stringify(setPings(state.pings, planRings(state), wRings));
   const remKey = pingKey + JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings)) + JSON.stringify(nudge);
   useEffect(() => {
     if (!state.settings.reminders?.on) return;
@@ -336,6 +338,7 @@ export function App() {
     const handle = (href: string) => {
       const u = new URL(href, location.origin);
       const g = u.searchParams.get('go');
+      if (g === 'workouts') { try { sessionStorage.setItem('lm.hview', 'workouts'); } catch { /* */ } go({ practice: 'health' }); return true; }
       if (g !== 'pings' && g !== 'ideas' && g !== 'plans') return false;
       if (g === 'plans') setPlanStart({ plan: u.searchParams.get('pl') || undefined, act: u.searchParams.get('do') || undefined, day: u.searchParams.get('d') || undefined });
       go({ profile: g });

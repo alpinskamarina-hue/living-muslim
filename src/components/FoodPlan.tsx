@@ -106,7 +106,7 @@ export function ModeSetup({ state, update, today, onDone }: { state: AppState; u
               <b>{_tj("{0} ккал в день", preview.k)}</b>
               <small>{_tj("белок {0} г · жиры {1} г · углеводы {2} г", preview.p, preview.f, preview.c)}</small>
               {preview.floor && <small>{_t("Не ниже безопасного минимума, поэтому дефицит меньше.")}</small>}
-              {mode === 'sport' && <small>{_t("В дни, когда в Здоровье отмечена тренировка, норма на 250 ккал больше.")}</small>}
+              {mode === 'sport' && <small>{_t("В дни с тренировкой норма больше: по виду, минутам и тяжести, до 800 ккал. Например, час в зале ≈ +350.")}</small>}
             </div>
           )}
           <label className="fd-own"><small>{_t("Своя норма, ккал (если назначил тренер или врач)")}</small><input inputMode="numeric" value={kcal} onChange={(e) => setKcal(e.target.value)} placeholder={_t("по расчёту")} /></label>
@@ -167,7 +167,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
       <div className="fd-rings">
         <Ring v={tot.k} of={t.k} label={_t("ккал")} unit="" />
         <Ring v={tot.p} of={t.p} label={_t("белок")} unit={_t("г")} />
-        <div className="fd-bars">{bar(tot.f, t.f, _t("жиры"))}{bar(tot.c, t.c, _t("углеводы"))}{t.train && <small className="fd-train">{_t("Сегодня тренировка: +250 ккал")}</small>}</div>
+        <div className="fd-bars">{bar(tot.f, t.f, _t("жиры"))}{bar(tot.c, t.c, _t("углеводы"))}{t.extra > 0 && <small className="fd-train">{_tj("Сегодня тренировка: +{0} ккал", t.extra)}</small>}</div>
       </div>
 
       <div className="fd-slots" role="group" aria-label={_t("Куда записать")}>

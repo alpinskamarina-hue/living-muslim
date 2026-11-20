@@ -5,6 +5,7 @@ import { addDays as plAdd, dayPlans, isDone, listsOf, live as livePlans } from '
 import type { AppState, Anchor } from './types';
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { addDays } from './dates';
+import { health, parseW, weekCount, wGoal } from './health';
 import { isCounted, streak } from './store';
 import { daysLeft, progressLabel, todayStep } from './goals';
 import { dayPlan } from './dayplan';
@@ -114,7 +115,7 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   // Health, sadaqa, trip, umrah
   const hl = s.health;
   if (hl) {
-    const parts = [hl.water?.[today] ? `water ${hl.water[today]}/${hl.waterGoal} glasses today` : '', hl.sleep?.[today] ? `slept ${hl.sleep[today].bed}–${hl.sleep[today].wake}` : 'sleep not logged for last night', hl.fasts?.[today] ? 'fasting today' : '', hl.workouts?.[today]?.length ? `workouts today: ${hl.workouts[today].map((w) => w.replace(/^own:/, '')).join(', ')}` : ''].filter(Boolean);
+    const parts = [hl.water?.[today] ? `water ${hl.water[today]}/${hl.waterGoal} glasses today` : '', hl.sleep?.[today] ? `slept ${hl.sleep[today].bed}–${hl.sleep[today].wake}` : 'sleep not logged for last night', hl.fasts?.[today] ? 'fasting today' : '', `workout days this week ${weekCount(health(s), today)} of goal ${wGoal(health(s))}`, hl.workouts?.[today]?.length ? `workouts today: ${hl.workouts[today].map((w) => { const e = parseW(w); return `${e.name}${e.min ? ` ${e.min} min` : ''}`; }).join(', ')}` : ''].filter(Boolean);
     if (parts.length) L.push(`Health: ${parts.join(', ')}.`);
   }
   const az = s.azkar;

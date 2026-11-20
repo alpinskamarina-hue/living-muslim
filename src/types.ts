@@ -245,7 +245,13 @@ export interface HealthState {
   waterGoal: number;
   water: Record<string, number>;
   fasts: Record<string, true>;
+  /** Per day: timer ids ('morning', 'back|7' with real minutes) and own entries ('own:gym|60|3', see health.ts parseW). */
   workouts: Record<string, string[]>;
+  /** Workout settings: days a week (2–5), timer sound, voice language, reminder after a prayer. */
+  wgoal?: number;
+  wsound?: 'voice' | 'beep' | 'off';
+  wvoice?: 'ru' | 'en';
+  wrem?: 'none' | 'fajr' | 'asr' | 'isha';
 }
 
 export interface Trip {

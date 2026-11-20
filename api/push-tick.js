@@ -203,6 +203,11 @@ export function events(prefs, now, courses = []) {
         actions: [{ action: 'done', title: en ? 'Done' : 'Сделано' }, { action: 'hour', title: en ? 'In an hour' : 'Через час' }, { action: 'tomorrow', title: en ? 'Tomorrow' : 'Завтра' }] });
       continue;
     }
+    if (r.w === 1) {
+      // Workout reminder (Здоровье → Тренировки): only on a day without a workout while the week is behind its goal.
+      out.push({ key: `${day.key}:w-${String(r.k).slice(0, 24)}`, at: r.at, title: en ? '💪 Workout' : '💪 Тренировка', body: r.t.slice(0, 160), tag: 'workout', url: '/app/?go=workouts' });
+      continue;
+    }
     out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: prefs.lang === 'en' ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=pings' });
   }
   return { day: day.key, list: out };
