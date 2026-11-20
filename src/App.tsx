@@ -13,7 +13,7 @@ import { workoutRings } from './health';
 import { AdhanPlayer, AdhanToast, useAdhanClock } from './components/Adhan';
 import { adhanServer } from './adhan';
 import { Today } from './components/Today';
-import { PlansCard, usePlansCloud, setPlanStart } from './components/Plans';
+import { PlansCard, PlansPage, usePlansCloud, setPlanStart } from './components/Plans';
 import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
@@ -417,6 +417,7 @@ export function App() {
           <div className="page">
             {!goalOpen && !reviewOpen && <Hint id="goals" />}
             <Goals state={state} update={update} today={today} openId={goalOpen} setOpenId={setGoalOpen} reviewOpen={reviewOpen} setReviewOpen={setReviewOpen} stats={<Progress state={state} today={today} onOpenGoal={setGoalOpen} />}
+              plans={<PlansPage state={state} update={update} today={today} onAsk={() => go({ assistant: true })} />}
               onDo={(st) => { window.scrollTo(0, 0); if (st.action === 'today') { setTab('today'); return; } setPracticeStart((x) => ({ n: x.n + 1, mode: st.action, ref: st.ref })); setTab('practice'); }}
               onCircle={() => { window.scrollTo(0, 0); setTab('circle'); }} />
             {!goalOpen && !reviewOpen && <WordCard t="goals_open" state={state} today={today} />}

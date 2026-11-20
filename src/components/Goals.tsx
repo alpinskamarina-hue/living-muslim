@@ -27,6 +27,8 @@ interface Props {
   reviewOpen: boolean;
   setReviewOpen: (v: boolean) => void;
   stats?: React.ReactNode;
+  /** «Планы» segment: the plans calendar (also in Профиль → Планы). */
+  plans?: React.ReactNode;
   /** Opens the place where today's step is done (Practice section, Today tab). */
   onDo: (step: Step) => void;
   onCircle: () => void;
@@ -55,9 +57,9 @@ export function isReviewDay(state: AppState, today: string) {
   return fri && active && (!state.goalReview || daysBetween(state.goalReview, today) >= 6);
 }
 
-export function Goals({ state, update, today, openId, setOpenId, reviewOpen, setReviewOpen, stats, onDo, onCircle }: Props) {
+export function Goals({ state, update, today, openId, setOpenId, reviewOpen, setReviewOpen, stats, plans, onDo, onCircle }: Props) {
   const [wizard, setWizard] = useState(false);
-  const [seg, setSeg] = useState<'goals' | 'stats'>('goals');
+  const [seg, setSeg] = useState<'goals' | 'plans' | 'stats'>('goals');
   const goals = state.goals ?? [];
   const active = goals.filter((g) => g.status === 'active');
   const later = goals.filter((g) => g.status === 'later');
@@ -83,9 +85,10 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
       <h1 className="page-h">{_t("Цели")}</h1>
       <div className="g-seg">
         <button type="button" aria-pressed={seg === 'goals'} onClick={() => setSeg('goals')}>{_t("Цели")}</button>
+        {plans && <button type="button" aria-pressed={seg === 'plans'} onClick={() => setSeg('plans')}>{_t("Планы")}</button>}
         <button type="button" aria-pressed={seg === 'stats'} onClick={() => setSeg('stats')}>{_t("Прогресс")}</button>
       </div>
-      {seg === 'stats' ? stats : (
+      {seg === 'stats' ? stats : seg === 'plans' && plans ? plans : (
         <>
           {isReviewDay(state, today) && (
             <button type="button" className="g-review-cta" onClick={() => setReviewOpen(true)}>
