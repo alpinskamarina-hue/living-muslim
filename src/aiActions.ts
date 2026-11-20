@@ -3,6 +3,7 @@
 // the state from before, so «Отменить» can put everything back.
 import type { AppState, Anchor, BookMeta, Goal, Habit, Ping, Sphere } from './types';
 import { prayerTimes } from './prayer';
+import { type Plan, type PlanAfter, type PlanRepeat, addDays, dayLabel, dropPlan, editPlan, movePlan, pid, ringAt, toggleDone, weekStart, whenLabel } from './plans';
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { setMark, setPrayer, uid } from './store';
 import { rawValue } from './goals';
@@ -23,11 +24,12 @@ export const SCREENS: Record<string, GoTo> = {
   quran: { practice: 'quran' }, tasbih: { practice: 'tasbih' }, focus: { practice: 'focus' }, books: { practice: 'books' }, courses: { practice: 'videos' },
   languages: { practice: 'langs' }, health: { practice: 'health' }, food: { practice: 'food' }, sadaqa: { practice: 'sadaqa' }, umrah: { practice: 'umrah' },
   ramadan: { ramadan: true }, safar: { safar: true }, add_habit: { add: true }, reminders: { profile: 'remind' }, prayer_settings: { profile: 'prayer' },
-  my_habits: { profile: 'habits' }, garden: { profile: 'garden' }, account: { profile: 'account' }, ideas: { profile: 'ideas' }, my_reminders: { profile: 'pings' },
+  my_habits: { profile: 'habits' }, garden: { profile: 'garden' }, account: { profile: 'account' }, ideas: { profile: 'ideas' }, my_reminders: { profile: 'pings' }, plans: { profile: 'plans' },
 };
 
 /** Runs one call on `s`. Returns the new state (or the same one on failure) and what happened. */
-export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState; done: ActDone; go?: GoTo } {
+export interface Draft { to: string; text: string }
+export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState; done: ActDone; go?: GoTo; draft?: Draft } {
   const i = c.input ?? {};
   const fail = (why: string): { s: AppState; done: ActDone } => ({ s, done: { ok: false, line: '', result: `error: ${why}` } });
   const ok = (next: AppState, line: string, result = 'done'): { s: AppState; done: ActDone } => ({ s: next, done: { ok: true, line, result } });
@@ -36,7 +38,7 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
   const setGoal = (id: string, patch: Partial<Goal>) => ({ ...s, goals: (s.goals ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)) });
   const day = isDay(i.date) ? (i.date as string) : today;
   // Marks cannot be made for days ahead; a reminder is about the future.
-  if (day > today && c.name !== 'set_reminder') return fail('the date is in the future');
+  if (day > today && !['set_reminder', 'add_plan', 'update_plan', 'draft_message'].includes(c.name)) return fail('the date is in the future');
 
   switch (c.name) {
     case 'add_habit': {
@@ -140,6 +142,53 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
     case 'cancel_reminder': {
       const p = (s.pings ?? []).find((x) => x.id === i.reminder_id); if (!p) return fail('no such reminder');
       return ok({ ...s, pings: (s.pings ?? []).filter((x) => x.id !== p.id) }, _t("Напоминание отменено: {0}", p.text));
+    }
+    case 'add_plan': {
+      const text = S(i.text, 200); if (!text) return fail('empty plan');
+      if (!isDay(i.date)) return fail('date must be YYYY-MM-DD');
+      let date = i.date as string;
+      if (date < today) return fail('that day has passed');
+      const week = i.this_week === true;
+      if (week) date = addDays(weekStart(date), 6);
+      const pr = S(i.after_prayer, 10) as PlanAfter | '';
+      if (pr && pr !== 'jumuah' && !isAnchor(pr)) return fail('unknown prayer');
+      if (pr === 'jumuah' && new Date(`${date}T12:00:00`).getDay() !== 5) return fail('that day is not a Friday');
+      const tm = S(i.time, 5);
+      if (tm && !/^\d{1,2}:\d{2}$/.test(tm)) return fail('time must be HH:MM');
+      const hasWhen = !week && Boolean(pr || tm);
+      const rm = i.remind === 'hour_before' ? 'h1' : i.remind === 'none' ? undefined : hasWhen ? 'at' : undefined;
+      const rep = ['day', 'week', 'month'].includes(i.repeat as string) ? (i.repeat as PlanRepeat) : undefined;
+      const lst = S(i.list, 30);
+      const p: Plan = { id: pid(), text, date, made: Date.now(), upd: Date.now(), ...(week ? { week: true } : {}), ...(!week && pr ? { after: pr } : !week && tm ? { time: tm.padStart(5, '0') } : {}), ...(hasWhen && rm ? { remind: rm } : {}), ...(lst ? { list: lst } : {}), ...(rep && !week ? { repeat: rep } : {}), ...(S(i.note, 1000) ? { note: S(i.note, 1000) } : {}) };
+      const next = { ...s, plans: [...(s.plans ?? []), p] };
+      const at = ringAt(s.settings, p, date);
+      const pushOn = Boolean(s.settings.reminders?.on);
+      return ok(next, _t("План: {0} · {1}", `${dayLabel(date, { weekday: 'short', day: 'numeric', month: 'short' })}${whenLabel(s.settings, p, date) ? `, ${whenLabel(s.settings, p, date)}` : ''}`, text),
+        `plan added, id ${p.id}${at ? `, rings at ${new Date(at).toString().slice(0, 21)}${pushOn ? '' : ' (notifications are OFF on this phone)'}` : ''}`);
+    }
+    case 'update_plan': {
+      const p = (s.plans ?? []).find((x) => x.id === i.plan_id && !x.del); if (!p) return fail('no plan with this id');
+      const d = isDay(i.date) ? (i.date as string) : today;
+      switch (i.action) {
+        case 'done': return ok(toggleDone(s, p.id, d, true), _t("Сделано: {0}", p.text));
+        case 'undone': return ok(toggleDone(s, p.id, d, false), _t("Снова не сделано: {0}", p.text));
+        case 'move': if (!isDay(i.date) || d < today) return fail('give a new day YYYY-MM-DD, today or later'); return ok(movePlan(s, p.id, d), _t("Перенесено на {0}: {1}", dayLabel(d, { weekday: 'short', day: 'numeric', month: 'short' }), p.text));
+        case 'delete': return ok(dropPlan(s, p.id), _t("План удалён: {0}", p.text));
+        case 'edit': {
+          const patch: Partial<Plan> = {};
+          if (S(i.text)) patch.text = S(i.text, 200);
+          const pr = S(i.after_prayer, 10) as PlanAfter | '';
+          if (pr) { if (pr !== 'jumuah' && !isAnchor(pr)) return fail('unknown prayer'); patch.after = pr; patch.time = undefined; }
+          else if (/^\d{1,2}:\d{2}$/.test(S(i.time, 5))) { patch.time = S(i.time, 5).padStart(5, '0'); patch.after = undefined; }
+          if (i.remind === 'none') patch.remind = undefined; else if (i.remind === 'at') patch.remind = 'at'; else if (i.remind === 'hour_before') patch.remind = 'h1';
+          return ok(editPlan(s, p.id, patch), _t("План изменён: {0}", patch.text ?? p.text));
+        }
+      }
+      return fail('unknown action');
+    }
+    case 'draft_message': {
+      const text = S(i.text, 2000); if (!text) return fail('empty message');
+      return { s, done: { ok: true, line: '', result: 'shown to the person with copy and WhatsApp buttons; they send it themselves' }, draft: { to: S(i.to, 60), text } };
     }
     case 'save_idea': {
       const text = S(i.text, 1000); if (!text) return fail('empty idea');

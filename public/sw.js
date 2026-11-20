@@ -63,12 +63,15 @@ self.addEventListener('push', (e) => {
     tag: d.tag || 'lm',
     renotify: /^chat-/.test(d.tag || ''),
     data: { url: d.url || '/app/' },
+    // Plans: «Сделано», «Через час», «Завтра» (Android and installed iPhone apps show up to 2–3 buttons).
+    ...(Array.isArray(d.actions) ? { actions: d.actions.slice(0, 3) } : {}),
   }));
 });
 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
-  const url = (e.notification.data && e.notification.data.url) || '/app/';
+  let url = (e.notification.data && e.notification.data.url) || '/app/';
+  if (e.action) url += (url.includes('?') ? '&' : '?') + 'do=' + encodeURIComponent(e.action);
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ws) => {
     for (const w of ws) if (w.url.includes('/app/') && 'focus' in w) { w.postMessage({ type: 'open', url }); return w.focus(); }
     return self.clients.openWindow(url);

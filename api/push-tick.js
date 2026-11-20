@@ -190,9 +190,19 @@ export function events(prefs, now, courses = []) {
     out.push({ key: `${day.key}:muhasaba`, at: zoned(tz, day.y, day.m, day.d, hh, mm), title: prefs.lang === 'en' ? 'Muhasabah' : 'Мухасаба', body: prefs.lang === 'en' ? 'A couple of minutes to look back on the day: what went well and what you are grateful for.' : 'Пара минут, чтобы оглянуться на день: что получилось и за что ты благодарен.', tag: 'muhasaba', url: '/app/' });
   }
   // Reminders set in the app (often by the assistant): sent on their own day, at their minute.
-  for (const r of Array.isArray(prefs.pings) ? prefs.pings.slice(0, 20) : []) {
+  // Plans with ⏰ come the same way (pl = plan id, d = its day, a = the prayer it follows), with buttons.
+  const en = prefs.lang === 'en';
+  for (const r of Array.isArray(prefs.pings) ? prefs.pings.slice(0, 30) : []) {
     if (!r || typeof r.at !== 'number' || typeof r.t !== 'string') continue;
     if (localParts(tz, new Date(r.at)).key !== day.key) continue;
+    if (typeof r.pl === 'string') {
+      const pl = r.pl.slice(0, 24), d = /^\d{4}-\d{2}-\d{2}$/.test(r.d || '') ? r.d : day.key;
+      const after = r.a && AFTER[r.a] ? (en ? ` after ${NAMES_EN[r.a] || "Jumu'ah"}` : ` после ${r.a === 'jumuah' ? 'Джумы' : AFTER[r.a]}`) : '';
+      const base = `/app/?go=plans&pl=${encodeURIComponent(pl)}&d=${d}`;
+      out.push({ key: `${day.key}:pl-${pl}-${Math.round(r.at / 60000) % 1e6}`, at: r.at, title: `🗓 ${en ? 'Plan' : 'План'}${after}`, body: r.t.slice(0, 160), tag: `plan-${pl}`, url: base,
+        actions: [{ action: 'done', title: en ? 'Done' : 'Сделано' }, { action: 'hour', title: en ? 'In an hour' : 'Через час' }, { action: 'tomorrow', title: en ? 'Tomorrow' : 'Завтра' }] });
+      continue;
+    }
     out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: prefs.lang === 'en' ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=pings' });
   }
   return { day: day.key, list: out };
@@ -263,7 +273,7 @@ export default async function handler(req, res) {
     for (const e of due) {
       const q = quietText(prefs, e);
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: q.title, body: q.body, tag: e.tag, url: prefs.quiet ? '/app/' : e.url || '/app/' }), { TTL: 900 });
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: q.title, body: q.body, tag: e.tag, url: prefs.quiet && !e.actions ? '/app/' : e.url || '/app/', ...(e.actions ? { actions: e.actions } : {}) }), { TTL: 900 });
         sent++;
       } catch (err) {
         if (err.statusCode === 404 || err.statusCode === 410) { dropped++; await rpc('lm_push_delete', { p_endpoint: s.endpoint }).catch(() => {}); return; }

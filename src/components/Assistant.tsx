@@ -1,3 +1,4 @@
+import { planRings, editPlan } from '../plans';
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
 import { bookGoal, pingWhen, runTool } from '../aiActions';
@@ -104,6 +105,8 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
     try { ctx = context?.(cur) ?? ''; } catch { /* answer without it */ }
     for (let round = 0; round < 5; round++) {
       const r = await ask(hist.slice(-40), s, ctx);
+      // After actions the model may have nothing more to say: that is not a refusal.
+      if ('error' in r && r.error === 'refused' && round > 0) break;
       if ('error' in r) {
         setBusy(false);
         if (r.error === 'signin') { setErr(_t("Чтобы говорить с помощником, войди по почте.")); return; }
@@ -120,16 +123,20 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
       const before = cur;
       const today = dayKey(new Date());
       const acts: string[] = [];
+      const drafts: { to: string; text: string }[] = [];
+      let planned = false;
       const results = r.calls.map((c) => {
         const out = runTool(cur, c, today);
         cur = out.s;
         if (out.go) go = out.go;
+        if (out.draft) drafts.push(out.draft);
+        if (out.done.ok && (c.name === 'add_plan' || c.name === 'update_plan')) planned = true;
         if (out.done.ok && out.done.line) acts.push(out.done.line);
         return { type: 'tool_result', tool_use_id: c.id, content: out.done.result, ...(out.done.ok ? {} : { is_error: true }) };
       });
       if (cur !== before) { apply(cur); setUndo({ i: hist.length, prev: before }); }
       hist = [...hist,
-        { role: 'assistant', content: r.text, at: Date.now(), raw: r.content, ...(acts.length ? { acts } : {}) },
+        { role: 'assistant', content: r.text, at: Date.now(), raw: r.content, ...(acts.length ? { acts } : {}), ...(drafts.length ? { drafts } : {}), ...(planned ? { plans: true } : {}) },
         { role: 'user', content: '', at: Date.now(), raw: results, hidden: true }];
       setMsgs(hist);
       if (go) break;
@@ -201,7 +208,7 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
         )}
         {msgs.map((m, i) => m.hidden ? null : m.role === 'user'
           ? <div key={i} className="ai-msg me">{m.voice && <span className="ai-vo" aria-label={_t("Голосом")}>🎙 </span>}{m.content}</div>
-          : (!m.content && !m.acts?.length) ? null
+          : (!m.content && !m.acts?.length && !m.drafts?.length) ? null
           : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className={`ai-msg it${m.content ? '' : ' ai-bare'}`}>
               {m.content}
               {m.book && (live.current.books ?? []).some((b) => b.id === m.book) && (
@@ -214,8 +221,19 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
                 <div className="ai-acts">
                   {m.acts.map((a, k) => <div key={k}>{a.startsWith('↩') ? a : `✓ ${a}`}</div>)}
                   {undo?.i === i && <button type="button" onClick={undoNow}>{_t("Отменить")}</button>}
+                  {m.plans && onGo && <button type="button" onClick={() => onGo({ profile: 'plans' })}>{_t("Открыть Планы")}</button>}
                 </div>
               ) : null}
+              {m.drafts?.map((d, k) => (
+                <div key={k} className="ai-draft">
+                  {d.to && <small>{_t("Сообщение {0}", d.to)}</small>}
+                  <p>{d.text}</p>
+                  <div>
+                    <button type="button" onClick={(e) => { const b = e.currentTarget; navigator.clipboard?.writeText(d.text).then(() => { b.textContent = _t("Скопировано ✓"); }).catch(() => {}); }}>{_t("Скопировать")}</button>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(d.text)}`} target="_blank" rel="noreferrer">{_t("Отправить в WhatsApp")}</a>
+                  </div>
+                </div>
+              ))}
             </div>
             {ttsAvailable() && m.content && <button type="button" className={`ai-say${saying === i ? ' on' : ''}`} onClick={() => say(i, m.content)} aria-label={saying === i ? _t("Остановить") : _t("Прослушать")}>{saying === i ? '■' : '🔊'}</button>}</div>)}
         {busy && <div className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it ai-typing" aria-label={_t("Пишет…")}><i /><i /><i /></div></div>}
@@ -450,20 +468,23 @@ export function PingsPage({ state, update, onAsk, onRemind }: { state: AppState;
   const soon = pings.filter((p) => p.at > now - 15 * 60000);
   const past = pings.filter((p) => p.at <= now - 15 * 60000).slice(-5).reverse();
   const dropPing = (id: string) => update((s) => ({ ...s, pings: (s.pings ?? []).filter((y) => y.id !== id) }));
+  // Plans with ⏰ ring too; «Отменить» here turns off the ring, the plan stays.
+  const rings = planRings(state).map((r) => ({ id: r.id, text: r.text, at: r.at, prayer: r.prayer, made: 0, plan: r.plan }));
+  const all = [...soon.map((p) => ({ ...p, plan: '' })), ...rings].sort((a, b) => a.at - b.at);
   return (
     <>
-      {soon.length === 0 ? <p className="tiny">{_t("Скажи помощнику «напомни…», например «напомни в пятницу после Джумы позвонить брату».")}</p> : (
+      {all.length === 0 ? <p className="tiny">{_t("Скажи помощнику «напомни…», например «напомни в пятницу после Джумы позвонить брату».")}</p> : (
         <div className="ai-ideas">
-          {soon.map((p) => (
+          {all.map((p) => (
             <div key={p.id} className="ai-idea ai-ping">
-              <small>⏰ {pingWhen(p)}</small>
+              <small>{p.plan ? '🗓' : '⏰'} {pingWhen(p)}{p.plan ? ` · ${_t("из Планов")}` : ''}</small>
               <p>{p.text}</p>
-              <button type="button" className="link-btn" onClick={() => dropPing(p.id)}>{_t("Отменить")}</button>
+              <button type="button" className="link-btn" onClick={() => (p.plan ? update((s) => editPlan(s, p.plan, { remind: undefined })) : dropPing(p.id))}>{p.plan ? _t("Не напоминать") : _t("Отменить")}</button>
             </div>
           ))}
         </div>
       )}
-      {soon.length > 0 && !state.settings.reminders?.on && <p className="tiny ai-err-t">{_t("Уведомления на этом телефоне выключены, поэтому напоминание придёт только сюда. Включи их в Профиль → Напоминания.")}</p>}
+      {all.length > 0 && !state.settings.reminders?.on && <p className="tiny ai-err-t">{_t("Уведомления на этом телефоне выключены, поэтому напоминание придёт только сюда. Включи их в Профиль → Напоминания.")}</p>}
       {past.length > 0 && (
         <div className="ai-ideas ai-pings-past">
           {past.map((p) => (

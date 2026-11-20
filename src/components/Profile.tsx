@@ -25,6 +25,8 @@ import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import { NikahPage } from './Nikah';
 import { AssistantSettings, IdeasPage, PingsPage } from './Assistant';
+import { PlansPage, takePlanStart } from './Plans';
+import { dayPlans, weekStart, addDays as plAdd, planRings } from '../plans';
 import { aiName } from '../assistant';
 import { useNikahReady, useNikahMe, nikahTodo } from '../nikah';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
@@ -75,6 +77,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
   if (page === 'assistant') return <Sub title={aiName(s)} onBack={back}><AssistantSettings s={s} set={set} admin={admin} onOpen={() => onGo?.({ assistant: true })} /></Sub>;
+  if (page === 'plans') return <Sub title={_t("Планы")} onBack={back}><PlansPage state={state} update={update} today={dayKey(new Date())} start={takePlanStart()} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
   if (page === 'pings') return <Sub title={_t("Мои напоминания")} onBack={back}><PingsPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} onRemind={() => go('remind')} /></Sub>;
   if (page === 'ideas') return <Sub title={_t("Мои идеи")} onBack={back}><IdeasPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
   if (page === 'help') return <Sub title={_t("Помощь")} onBack={back}><HelpPage /></Sub>;
@@ -136,7 +139,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
 
       <div className="menu">
         <Row icon="✨" title={aiName(s)} sub={admin ? _t("Аватар, имя, как говорит и обучение") : _t("Аватар, имя и как он говорит")} onClick={() => go('assistant')} />
-        <Row icon="⏰" title={_t("Мои напоминания")} sub={(() => { const n = (state.pings ?? []).filter((p) => p.at > Date.now()).length; return n ? _t("Впереди: {0}", n) : _t("Скажи помощнику «напомни…»"); })()} onClick={() => go('pings')} />
+        <Row icon="🗓" title={_t("Планы")} sub={(() => { const t = dayKey(new Date()); const n = dayPlans(state, t).length; let w = 0; const mon = weekStart(t); for (let i = 0; i < 7; i++) w += dayPlans(state, plAdd(mon, i)).length; return n || w ? _t("Сегодня {0} · на неделе {1}", n, w) : _t("Дела на день и неделю, между намазами"); })()} onClick={() => go('plans')} />
+        <Row icon="⏰" title={_t("Мои напоминания")} sub={(() => { const n = (state.pings ?? []).filter((p) => p.at > Date.now()).length + planRings(state).filter((p) => p.at > Date.now()).length; return n ? _t("Впереди: {0}", n) : _t("Скажи помощнику «напомни…»"); })()} onClick={() => go('pings')} />
         <Row icon="💡" title={_t("Мои идеи")} sub={state.ideas?.length ? _t("Записано: {0}", state.ideas.length) : _t("Идеи и мысли, которые записал ты или помощник")} onClick={() => go('ideas')} />
         <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
         <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
@@ -162,7 +166,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'assistant' | 'ideas' | 'pings' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

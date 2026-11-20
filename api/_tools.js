@@ -88,6 +88,38 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { reminder_id: { type: 'string' } }, required: ['reminder_id'] },
   },
   {
+    name: 'add_plan',
+    description: 'Add a plan to «Планы» (Profile → Планы, also on Today): something to do on a day. Use for tasks and errands with a day: «завтра забронировать отель», «в понедельник написать Ибрагиму», «на неделе купить подарок». For a bare «напомни» with no task to tick off, use set_reminder instead. Several tasks = several calls.',
+    input_schema: { type: 'object', properties: {
+      text: { type: 'string', description: 'The task, short, in the person\'s words.' },
+      date: { type: 'string', description: 'Day YYYY-MM-DD (local). For «на неделе» any day of that week.' },
+      this_week: { type: 'boolean', description: 'True for «на неделе» / «this week» with no fixed day.' },
+      time: { type: 'string', description: 'Local time HH:MM, if the person gave one.' },
+      after_prayer: { type: 'string', enum: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'], description: 'When the task is tied to a prayer («после Зухра»). jumuah only on a Friday.' },
+      remind: { type: 'string', enum: ['none', 'at', 'hour_before'], description: '«at» rings at the time (or 30 min after the prayer, 60 after Jumuah). Default: at, when there is a time or prayer and the person asked to be reminded or it is an appointment; none otherwise.' },
+      list: { type: 'string', description: 'Optional list: one of the person\'s lists from person_data (Работа, Семья, Дин, Умра…) when it clearly fits.' },
+      repeat: { type: 'string', enum: ['none', 'day', 'week', 'month'] },
+      note: { type: 'string', description: 'Details: phone, link, address.' },
+    }, required: ['text', 'date'] },
+  },
+  {
+    name: 'update_plan',
+    description: 'Change a plan by id: mark done or not done for a day, move it to another day, change text or time, or delete it (only when asked).',
+    input_schema: { type: 'object', properties: {
+      plan_id: { type: 'string' },
+      action: { type: 'string', enum: ['done', 'undone', 'move', 'edit', 'delete'] },
+      date: { type: 'string', description: 'For done/undone: which day (default today). For move: the new day.' },
+      text: { type: 'string' }, time: { type: 'string' },
+      after_prayer: { type: 'string', enum: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'] },
+      remind: { type: 'string', enum: ['none', 'at', 'hour_before'] },
+    }, required: ['plan_id', 'action'] },
+  },
+  {
+    name: 'draft_message',
+    description: 'Show a ready text of a message the person wants to send someone (WhatsApp, Telegram, SMS, email). The phone shows it with «Скопировать» and «Отправить в WhatsApp» buttons; the person sends it themselves. Write the text in the language and tone the person would use with that recipient.',
+    input_schema: { type: 'object', properties: { to: { type: 'string', description: 'Who it is for, e.g. «Ибрагиму».' }, text: { type: 'string' } }, required: ['text'] },
+  },
+  {
     name: 'save_idea',
     description: 'Save an idea, thought or reminder to the person\'s «Мои идеи» list (Profile → Мои идеи). Use when they want to write something down that is not a goal note.',
     input_schema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
@@ -110,17 +142,20 @@ export const TOOLS = [
   {
     name: 'open_screen',
     description: 'Open a screen of the app for the person (the chat closes). Use only when they ask to open or go somewhere, as the last action.',
-    input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders'] } }, required: ['screen'] },
+    input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders', 'plans'] } }, required: ['screen'] },
   },
 ];
 
-export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, save ideas, set and cancel reminders, mark sadaqa, add water, open a screen.
+export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, add, tick off, move and delete plans («Планы»: tasks for a day, between the prayers), draft a message for someone, save ideas, set and cancel reminders, mark sadaqa, add water, open a screen.
 - Do what the person asks right away, without asking for confirmation for ordinary things; every action shows on their phone with an «Отменить» (undo) button.
 - Ask a short question only when something essential is missing or ambiguous (which goal or habit, or a prayer for a new habit you cannot sensibly guess).
 - Use ids exactly as given in person_data. Never invent ids.
 - After acting, confirm in one or two short sentences what you did. Do not repeat the whole list.
 - When the person attaches a book file (📎) the phone puts it on the shelf in Книги by itself; you see it in person_data under Books. Offer a reading goal or create it if asked. You cannot read the text of the book.
 - A reminder needs a day and either a time or a prayer; if the person gave neither, pick a sensible moment (for example after the next Dhuhr) and say which. If the result says notifications are off, tell them to turn on Профиль → Напоминания so the reminder reaches the phone.
+- Plans vs reminders vs ideas: a task to do on a day goes to Планы (add_plan; with a time or prayer and «напомни» it also rings); a bare «напомни» without a task is set_reminder; a thought with no day is save_idea.
+- «Что у меня сегодня / на неделе?» — answer from PLANS in person_data. Offer to move undone plans from past days.
+- When a plan is to write or call someone, offer to draft the message (draft_message); never claim you sent anything, the person sends it.
 - Removing or stopping something (archive a habit, delete an idea, mark a goal reached) only when the person clearly asked.`;
 
 const BLOCKS = new Set(['text', 'tool_use', 'tool_result', 'thinking', 'redacted_thinking']);
