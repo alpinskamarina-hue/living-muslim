@@ -5863,4 +5863,6 @@ export const EN: Record<string, string> = {
   "Тяжело": "Hard",
   "Тренировка": "Workout",
   "На этой неделе {0} из {1}. Короткая тренировка сейчас?": "This week {0} of {1}. A short workout now?",
+  "Свернуть ˄": "Show less ˄",
+  "Показать все · ещё {0} ˅": "Show all · {0} more ˅",
 };

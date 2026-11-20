@@ -64,6 +64,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const markHabit = (m: Mark) => habitId && update((s) => setMark(s, today, habitId, m));
   const [editFav, setEditFav] = useState(false);
   const [testsOpen, setTestsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [uStart, setUStart] = useState<HubTab | undefined>();
   const [vref, setVref] = useState<string | undefined>(start?.mode === 'videos' ? start.ref : undefined);
 
@@ -173,6 +174,9 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const hero = plan[0];
   const rest = all.filter((x) => x.key !== hero?.key);
   const doneN = all.filter((x) => x.done).length;
+  // Two open items at a time, so the card stays short; the rest (and what is already done) behind «Показать все».
+  const restOpen = rest.filter((x) => !x.done);
+  const hidden = rest.length - Math.min(2, restOpen.length);
   const testsDone = [lastRun(state), lastRun(state, UMRAH_TEST), lastRun(state, SALAH_TEST)].filter(Boolean).length;
   const testDue = (() => { const r = lastRun(state); return r && repeatIn(r, today) <= 0; })();
 
@@ -215,14 +219,18 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
           {rest.length > 0 && (
             <div className="pnow-more">
               <div className="pnow-lbl">{_tj("Ещё на сегодня · {0} из {1}", doneN, all.length)}</div>
-              {rest.slice(0, 5).map((it) => it.done ? (
+              {(moreOpen ? [...restOpen, ...rest.filter((x) => x.done)] : restOpen.slice(0, 2)).map((it) => it.done ? (
                 <div key={it.key} className="pnow-it done"><PIcon k="check" /><span>{it.title}</span></div>
               ) : (
                 <button key={it.key} type="button" className="pnow-it" onClick={() => go(it)}>
                   <PIcon k={MODE_IC[it.mode] ?? 'book'} /><span>{it.title}{it.min ? <small>{_tj(" · минимум: {0}", it.min)}</small> : null}</span><em>›</em>
                 </button>
               ))}
-              {rest.length > 5 && <div className="pnow-lbl">{_tj("и ещё {0}", rest.length - 5)}</div>}
+              {hidden > 0 && (
+                <button type="button" className="pnow-toggle" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>
+                  {moreOpen ? _t("Свернуть ˄") : _tj("Показать все · ещё {0} ˅", hidden)}
+                </button>
+              )}
             </div>
           )}
           {!hero && !rest.length && doneN > 0 && <div className="pnow-lbl">{_t("✓ На сегодня всё начато. МашаАллах.")}</div>}
