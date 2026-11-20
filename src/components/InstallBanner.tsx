@@ -18,7 +18,7 @@ const askedFromLanding = () => { try { return new URLSearchParams(location.searc
 function Logo() {
   return (
     <svg width="34" height="34" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <path d="M3 19h6l2-5 3 9 3-13 3 9h9" stroke="#0f5132" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 19h6l2-5 3 9 3-13 3 9h9" stroke="#11553a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M13 9a3 3 0 1 0 4-3 2.4 2.4 0 1 1-4 3z" fill="#b88a2c" />
     </svg>
   );

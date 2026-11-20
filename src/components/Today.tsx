@@ -10,6 +10,7 @@ import { durationLabel, gregorianLabel, hhmm, hijriLabel, plural } from '../date
 import { type DayTimes, windowState, windowStatus } from '../prayer';
 import { HabitCard, Ticks } from './HabitCard';
 import { Ornament } from './Ornament';
+import { Lamps } from './Lamps';
 import { LogoMark } from './Logo';
 import { PrayerStrip } from './PrayerStrip';
 import { here, tripOn } from '../safar';
@@ -117,13 +118,16 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
   };
 
   const nowAnchor: Anchor = current ?? 'fajr';
+  const sky = skyOf(times, now);
+  const prayedToday = ANCHORS.filter((a) => state.prayers[today]?.[a]).length;
   const hardOn = (state.hard[today] ?? []).includes(nowAnchor);
   const others = ANCHORS.filter((a) => a !== nowAnchor);
 
   return (
     <>
-      <header className="top">
+      <header className="top sky" data-sky={sky}>
         <Ornament />
+        <Lamps prayed={prayedToday} />
         <div className="d">
           <LogoMark size={18} />{gregorianLabel(now)} · {hijriLabel(now)}
           <ThemeSwitch state={state} update={update} times={times} />
@@ -149,6 +153,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
             <span>{light.lit ? <Sun /> : <small>{_t("свет")}</small>}</span>
           </button>
         </div>
+        <svg className="arch" viewBox="0 0 360 20" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M0 20 L0 14 C110 14 160 9 180 0 C200 9 250 14 360 14 L360 20 Z" /></svg>
       </header>
 
       <div className="scroll">
@@ -296,6 +301,17 @@ function Sun() {
 
 
 /** Live countdown to the next prayer: calm tiles, seconds tick once a second (once a minute with reduced motion). */
+/** The header sky follows the prayer of the day: dawn at Fajr, emerald day, amber Asr, copper Maghrib, night after Isha. */
+export type Sky = 'dawn' | 'day' | 'asr' | 'maghrib' | 'night';
+export function skyOf(t: DayTimes, now: Date): Sky {
+  const n = now.getTime();
+  if (n < t.fajr.getTime() || n >= t.isha.getTime()) return 'night';
+  if (n < t.sunrise.getTime() + 30 * 60_000) return 'dawn';
+  if (n < t.asr.getTime()) return 'day';
+  if (n < t.maghrib.getTime()) return 'asr';
+  return 'maghrib';
+}
+
 function Countdown({ to, label }: { to: Date; label: string }) {
   const calm = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [t, setT] = useState(() => Date.now());
