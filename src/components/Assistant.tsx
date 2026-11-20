@@ -367,6 +367,14 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
   const [hint, setHint] = useState(() => { try { return !localStorage.getItem('lm.ai.hint'); } catch { return false; } });
   const seen = () => { setHint(false); try { localStorage.setItem('lm.ai.hint', '1'); } catch { /* */ } };
   useEffect(() => { if (!hint) return; const t = setTimeout(seen, 9000); return () => clearTimeout(t); }, [hint]);
+  // Hide while scrolling down (reading), come back on the first scroll up or at the top.
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const on = () => { const y = window.scrollY; if (y < 80 || y < last - 6) setAway(false); else if (y > last + 6) setAway(true); last = y; };
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
   if (s.aiFab === false) return null;
   const name = aiName(s);
   return (
@@ -376,8 +384,8 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
           <b>{name}</b>{_t("Ас-саляму алейкум! Спроси меня о чём угодно.")}
         </button>
       )}
-      <button type="button" className="ai-fab" onClick={() => { seen(); onOpen(); }} aria-label={_t("Открыть помощника: {0}", name)}>
-        <AiFace s={s} size={60} live />
+      <button type="button" className={`ai-fab${away && !hint ? ' away' : ''}`} onClick={() => { seen(); onOpen(); }} aria-label={_t("Открыть помощника: {0}", name)}>
+        <AiFace s={s} size={50} live />
         {hint && <i className="ai-dot" />}
       </button>
     </>

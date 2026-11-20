@@ -5219,4 +5219,13 @@ export const EN: Record<string, string> = {
   "Пока пусто. Помощник начнёт записывать, когда разговор станет длинным или когда ты нажмёшь «Очистить» в чате.": "Empty for now. The assistant starts noting things once a conversation gets long or when you tap «Clear» in the chat.",
   "Память выключена: помощник помнит только текущий разговор.": "Memory is off: the assistant remembers only the current conversation.",
   "Память хранится только на этом телефоне и уходит к помощнику вместе с вопросом.": "The memory stays only on this phone and goes to the assistant together with a question.",
+  "Сделай здесь, и привычка отметится сама.": "Do it here and the habit marks itself.",
+  "Ещё на сегодня · {0} из {1}": "Also today · {0} of {1}",
+  " · минимум: {0}": " · minimum: {0}",
+  "✓ На сегодня всё начато. МашаАллах.": "✓ Everything for today is started. MashaAllah.",
+  "Ты в поездке: {0}": "You are travelling: {0}",
+  "Сокращённые намазы, кибла, дуа путника": "Shortened prayers, qibla, traveller's dua",
+  "Пройдено {0} из 3 · что даётся труднее, умра, намаз": "{0} of 3 done · what is harder, umrah, prayer",
+  "3 коротких теста: что даётся труднее, умра, намаз": "3 short tests: what is harder, umrah, prayer",
+  "Особые дни": "Special days",
 };

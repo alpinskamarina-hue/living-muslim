@@ -24,6 +24,7 @@ export interface PlanItem {
   habitId?: string;       // ticking the habit when the practice ends
   anchor?: Anchor;
   min?: string;           // the minimum version, for «2 минуты»
+  done?: boolean;         // only with dayPlan(..., true): already done or started today
 }
 
 const IC: Record<PlanMode, string> = { tests: '🌱', azkar: '🤲', quran: '📖', videos: '▶', course: '🇬🇧', 'course-ar': 'ع', langs: 'Aa', books: '📚', tasbih: '📿', health: '🌿', umrah: '🕋', focus: '⏱' };
@@ -54,7 +55,7 @@ export function markStarted(s: AppState, today: string, key: string): AppState {
 }
 
 /** Everything planned for today in Practice, in prayer order, not yet started. */
-export function dayPlan(s: AppState, today: string): PlanItem[] {
+export function dayPlan(s: AppState, today: string, withDone = false): PlanItem[] {
   const started = startedOf(s, today);
   const out: PlanItem[] = [];
   const modes = new Set<PlanMode>();
@@ -67,9 +68,16 @@ export function dayPlan(s: AppState, today: string): PlanItem[] {
     const m = modeOfHabit(h, s);
     if (m === 'azkar' && h.id !== azHabit?.id) continue;
     if (m === 'azkar' && (!az.live || az.done)) continue;
-    if (!m || isCounted(s.log[today]?.[h.id]) || started.includes(`h:${h.id}`)) continue;
+    if (!m) continue;
+    if (isCounted(s.log[today]?.[h.id]) || started.includes(`h:${h.id}`)) {
+      if (withDone) { modes.add(m); out.push({ key: `h:${h.id}`, ic: IC[m], title: h.action, sub: '', mode: m, habitId: h.id, done: true }); }
+      continue;
+    }
     modes.add(m);
     out.push({ key: `h:${h.id}`, ic: IC[m], title: h.action, sub: _t("{0} · минимум: {1}", afterLabel(h.anchor), h.min), mode: m, habitId: h.id, anchor: h.anchor, min: h.min });
+  }
+  if (withDone && az.live && !azHabit && (az.done || started.includes(azKey))) {
+    out.push({ key: azKey, ic: az.part === 'm' ? '☀️' : '🌙', title: az.part === 'm' ? _t("Утренние азкары") : _t("Вечерние азкары"), sub: '', mode: 'azkar', done: true });
   }
   if (az.live && !az.done && !azHabit && !started.includes(azKey)) {
     out.push({ key: azKey, ic: az.part === 'm' ? '☀️' : '🌙', title: az.part === 'm' ? _t("Утренние азкары") : _t("Вечерние азкары"), sub: az.line, mode: 'azkar' });
@@ -77,9 +85,10 @@ export function dayPlan(s: AppState, today: string): PlanItem[] {
   for (const g of (s.goals ?? []).filter((x) => x.status === 'active')) {
     const st = todayStep(s, g, today);
     const m = GOAL_MODE[st.action];
-    if (!m || started.includes(`g:${g.id}`)) continue;
+    if (!m) continue;
     // A habit for the same practice already covers this goal today.
     if (modes.has(m) && m !== 'videos') continue;
+    if (started.includes(`g:${g.id}`)) { if (withDone) out.push({ key: `g:${g.id}`, ic: IC[m], title: st.text, sub: '', mode: m, ref: st.ref, done: true }); continue; }
     out.push({ key: `g:${g.id}`, ic: IC[m], title: st.text, sub: _t("Цель: {0}", g.title), mode: m, ref: st.ref });
   }
   // A course in progress: its next lesson, unless a lesson was already watched today.
