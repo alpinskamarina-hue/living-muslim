@@ -23,7 +23,7 @@ export const SCREENS: Record<string, GoTo> = {
   quran: { practice: 'quran' }, tasbih: { practice: 'tasbih' }, focus: { practice: 'focus' }, books: { practice: 'books' }, courses: { practice: 'videos' },
   languages: { practice: 'langs' }, health: { practice: 'health' }, food: { practice: 'food' }, sadaqa: { practice: 'sadaqa' }, umrah: { practice: 'umrah' },
   ramadan: { ramadan: true }, safar: { safar: true }, add_habit: { add: true }, reminders: { profile: 'remind' }, prayer_settings: { profile: 'prayer' },
-  my_habits: { profile: 'habits' }, garden: { profile: 'garden' }, account: { profile: 'account' }, ideas: { profile: 'ideas' },
+  my_habits: { profile: 'habits' }, garden: { profile: 'garden' }, account: { profile: 'account' }, ideas: { profile: 'ideas' }, my_reminders: { profile: 'pings' },
 };
 
 /** Runs one call on `s`. Returns the new state (or the same one on failure) and what happened. */

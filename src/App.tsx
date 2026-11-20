@@ -323,13 +323,14 @@ export function App() {
     if ('assistant' in t) { setAiOpen(true); return; }
     if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
   };
-  // A tap on a reminder notification opens /app/?go=ideas: Profile → Мои идеи и напоминания.
+  // A tap on a reminder notification opens /app/?go=pings: Profile → Мои напоминания.
   useEffect(() => {
     try {
       const u = new URL(location.href);
-      if (u.searchParams.get('go') !== 'ideas') return;
+      const g = u.searchParams.get('go');
+      if (g !== 'pings' && g !== 'ideas') return;
       u.searchParams.delete('go'); history.replaceState(null, '', u.toString());
-      go({ profile: 'ideas' });
+      go({ profile: g });
     } catch { /* */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
