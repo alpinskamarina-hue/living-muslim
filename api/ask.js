@@ -66,6 +66,8 @@ function systemPrompt(cfg, b) {
   if (owner) parts.push({ type: 'text', text: owner, cache_control: { type: 'ephemeral' } });
   else parts[1].cache_control = { type: 'ephemeral' };
   parts.push({ type: 'text', text: `<about_this_person>\n${about}\n</about_this_person>` });
+  const mem = str(b.memory, 3500).trim();
+  if (mem) parts.push({ type: 'text', text: `<assistant_memory>\nWhat you remember about this person from earlier conversations (kept on their phone; they can read and edit it). Use it naturally, do not recite it. If the person asks you to forget something, say it is removed from Профиль → Помощник → «Память».\n${mem}\n</assistant_memory>` });
   const data = str(b.ctx, 12000).trim();
   if (data) parts.push({ type: 'text', text: `<person_data>\nThe person's own data from the app right now, built on their phone. Use it to answer questions about their habits, goals, prayers, plans and circles: be specific, name their goals and numbers. Do not recite all of it unasked. Circle members' names and totals are visible to the person anyway; still mention others only when asked.\n${data}\n</person_data>` });
   return parts;

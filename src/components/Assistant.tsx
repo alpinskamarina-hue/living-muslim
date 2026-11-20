@@ -5,7 +5,7 @@ import { isBookFile, readBook } from '../bookFile';
 import { limitOf } from '../plan';
 import type { GoTo } from '../guide';
 import { dayKey } from '../dates';
-import { type AiConfig, type AiMsg, aiName, ask, getAiConfig, loadChat, saveChat, setAiConfig } from '../assistant';
+import { type AiConfig, type AiMsg, aiName, ask, fold, getAiConfig, getMemory, loadChat, onMemory, saveChat, setAiConfig, setMemory } from '../assistant';
 import { authMe } from '../auth';
 import { _t, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
@@ -125,6 +125,8 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
       if (go) break;
     }
     setBusy(false);
+    // Messages that just left the window go into the assistant's memory (in the background).
+    if (s.aiMemory !== false) void fold(hist);
     if (go && onGo) setTimeout(() => onGo(go!), acts0(hist) ? 900 : 0);
   };
   const acts0 = (h: AiMsg[]) => h.some((m) => m.acts?.length);
@@ -167,7 +169,7 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
     setUndo({ i, prev: cur });
   };
 
-  const clear = () => { setMsgs([]); setErr(''); };
+  const clear = () => { if (s.aiMemory !== false) void fold(msgs, true); setMsgs([]); setErr(''); };
   const starters = [_t("Что у меня сегодня?"), _t("Как идут мои цели?"), _t("Что ты умеешь?"), _t("Как не пропускать Фаджр?")];
 
   return (
@@ -345,6 +347,8 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
         ))}
       </div>
 
+      <AiMemoryBox on={s.aiMemory !== false} set={(v) => set({ aiMemory: v })} />
+
       <h4 className="ai-h">{_t("Кнопка")}</h4>
       <label className="ai-switch">
         <span><b>{_t("Кружок справа внизу")}</b><small>{_t("На всех вкладках, кроме открытого чата круга")}</small></span>
@@ -441,6 +445,43 @@ export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (
           ))}
         </div>
       )}
+    </>
+  );
+}
+
+/** Профиль → Помощник → «Память»: what the assistant remembers about the person; they can read, fix or erase it. */
+function AiMemoryBox({ on, set }: { on: boolean; set: (v: boolean) => void }) {
+  const [mem, setMem] = useState(getMemory);
+  const [draft, setDraft] = useState<string | null>(null);
+  useEffect(() => onMemory(() => setMem(getMemory())), []);
+  const lines = mem.text.split('\n').filter((l) => l.trim());
+  return (
+    <>
+      <h4 className="ai-h">{_t("Память")}</h4>
+      <label className="ai-switch">
+        <span><b>{_t("Помнить меня между разговорами")}</b><small>{_t("Из старых сообщений помощник записывает главное: цели, трудности, что читаешь, как тебе удобнее")}</small></span>
+        <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked)} />
+      </label>
+      {draft !== null ? (
+        <div className="ai-mem">
+          <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={8} maxLength={3000} aria-label={_t("Память помощника")} />
+          <div className="ai-mem-acts">
+            <button type="button" className="ghost-btn" onClick={() => { setMemory({ ...getMemory(), text: draft.trim() }); setDraft(null); }}>{_t("Сохранить")}</button>
+            <button type="button" className="link-btn" onClick={() => setDraft(null)}>{_t("Отмена")}</button>
+          </div>
+        </div>
+      ) : lines.length ? (
+        <div className="ai-mem">
+          <ul>{lines.map((l, i) => <li key={i}>{l.replace(/^[-•]\s*/, '')}</li>)}</ul>
+          <div className="ai-mem-acts">
+            <button type="button" className="link-btn" onClick={() => setDraft(mem.text)}>{_t("Исправить")}</button>
+            <button type="button" className="link-btn" onClick={() => setMemory({ text: '', upto: getMemory().upto })}>{_t("Стереть память")}</button>
+          </div>
+        </div>
+      ) : (
+        <p className="tiny">{on ? _t("Пока пусто. Помощник начнёт записывать, когда разговор станет длинным или когда ты нажмёшь «Очистить» в чате.") : _t("Память выключена: помощник помнит только текущий разговор.")}</p>
+      )}
+      <p className="tiny">{_t("Память хранится только на этом телефоне и уходит к помощнику вместе с вопросом.")}</p>
     </>
   );
 }

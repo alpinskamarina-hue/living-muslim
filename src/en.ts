@@ -5210,4 +5210,13 @@ export const EN: Record<string, string> = {
   "Прикрепить книгу (PDF или TXT)": "Attach a book (PDF or TXT)",
   "Прочитать «{0}»": "Read «{0}»",
   "Книга": "Book",
+  "Память": "Memory",
+  "Помнить меня между разговорами": "Remember me between conversations",
+  "Из старых сообщений помощник записывает главное: цели, трудности, что читаешь, как тебе удобнее": "From older messages the assistant notes what matters: goals, what is hard, what you read, how you like to be helped",
+  "Память помощника": "Assistant memory",
+  "Исправить": "Edit",
+  "Стереть память": "Erase memory",
+  "Пока пусто. Помощник начнёт записывать, когда разговор станет длинным или когда ты нажмёшь «Очистить» в чате.": "Empty for now. The assistant starts noting things once a conversation gets long or when you tap «Clear» in the chat.",
+  "Память выключена: помощник помнит только текущий разговор.": "Memory is off: the assistant remembers only the current conversation.",
+  "Память хранится только на этом телефоне и уходит к помощнику вместе с вопросом.": "The memory stays only on this phone and goes to the assistant together with a question.",
 };

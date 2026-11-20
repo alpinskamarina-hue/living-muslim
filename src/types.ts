@@ -65,6 +65,8 @@ export interface Settings {
   aiGlow?: 'ring' | 'aurora' | 'night';
   /** 3D finish of the assistant's picture: gold medal (default), pearl, halo, glass, night star. */
   aiFinish?: import('./aiLook').AiFinish;
+  /** «Память помощника»: false = do not remember between conversations. */
+  aiMemory?: boolean;
   /** Badge colour key from AI_COLORS. */
   aiColor?: string;
   /** How it speaks: «ты» or «вы», short or detailed, soft / warm / to the point. */
