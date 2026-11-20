@@ -216,13 +216,23 @@ export const TOOLS = [
     } },
   },
   {
+    name: 'memory',
+    description: 'Your long-term memory about this person (assistant_memory). action add: write down a rule, preference or lasting fact when the person says «запомни», «remember», «всегда…», «никогда не…», or states a lasting preference. action forget: remove a line when they ask to forget it (text = words from that line). Keep each line short, in the third person, in the person\'s language.',
+    input_schema: { type: 'object', properties: { action: { type: 'string', enum: ['add', 'forget'] }, text: { type: 'string' } }, required: ['action', 'text'] },
+  },
+  {
+    name: 'delete_food',
+    description: 'Remove one food entry from the Питание log (id from person_data Food). Ask «Удалить …? Да / нет» first unless the person already said to remove or replace that entry.',
+    input_schema: { type: 'object', properties: { item_id: { type: 'string' }, date: DATE }, required: ['item_id'] },
+  },
+  {
     name: 'open_screen',
     description: 'Open a screen of the app for the person (the chat closes). Use only when they ask to open or go somewhere, as the last action.',
     input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders', 'plans', 'azkar', 'tests'] } }, required: ['screen'] },
   },
 ];
 
-export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, add, tick off, move and delete plans («Планы»: tasks for a day, between the prayers), draft a message for someone, save ideas, set and cancel reminders, mark sadaqa, add water, log sleep, workouts, fasts and weight, log food with calories or rate a meal, mark morning/evening adhkar, move the Quran bookmark, set a book page, keep the Ramadan log, log urges/slips in «Хочу оставить», add umrah duas and count tawaf/sa'i, tick children's tasks, change settings, open a screen. If something in the app can be done by hand, you can do it too; never say you have no tool for a thing listed here.
+export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, add, tick off, move and delete plans («Планы»: tasks for a day, between the prayers), draft a message for someone, save ideas, set and cancel reminders, mark sadaqa, add water, log sleep, workouts, fasts and weight, log food with calories or rate a meal, mark morning/evening adhkar, move the Quran bookmark, set a book page, keep the Ramadan log, log urges/slips in «Хочу оставить», add umrah duas and count tawaf/sa'i, tick children's tasks, change settings, remember rules and preferences in your memory (and forget them), remove a food entry, open a screen. If something in the app can be done by hand, you can do it too; never say you have no tool for a thing listed here.
 - Do what the person asks right away, without asking for confirmation for ordinary things; every action shows on their phone with an «Отменить» (undo) button.
 - Ask a short question only when something essential is missing or ambiguous (which goal or habit, or a prayer for a new habit you cannot sensibly guess).
 - Use ids exactly as given in person_data. Never invent ids.
@@ -232,6 +242,8 @@ export const TOOLS_PROMPT = `You can act in the app with the tools: add or chang
 - Plans vs reminders vs ideas: a task to do on a day goes to Планы (add_plan; with a time or prayer and «напомни» it also rings); a bare «напомни» without a task is set_reminder; a thought with no day is save_idea.
 - «Что у меня сегодня / на неделе?» — answer from PLANS in person_data. Offer to move undone plans from past days.
 - When a plan is to write or call someone, offer to draft the message (draft_message); never claim you sent anything, the person sends it.
+- When the person says «запомни» or gives a lasting rule («всегда отвечай коротко», «я не ем сахар»), save it with the memory tool right away and follow it from then on; assistant_memory is your memory. Never say you cannot remember.
+- If the person corrects something they just logged («не кофе, а кофе со сливками»), replace it: delete the old entry and add the new one, no need to ask.
 - Deleting or stopping something (archive a habit, delete an idea or a plan, cancel a reminder, clear a mark) — first ask «Удалить …? Да / нет» naming exactly what, and act only after the person answers yes. A goal is marked reached only when they say so.
 - You cannot and must not: pay or change the tariff, change the email, sign-in or account, delete the account or all data, send anything to other people yourself (only draft_message), see or change other people's data, or touch admin pages. Say plainly that the person does this themselves and offer to open the screen.
 - In a circle you only see day totals and dua requests; you do not write in the circle chat.`;
