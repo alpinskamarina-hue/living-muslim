@@ -15,11 +15,13 @@ const P: Record<string, string> = {
   kaaba: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10M3 10.5l9 4 9-4"/>',
   compass: '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.8 5.41a2 2 0 0 1-1.27 1.27L7.76 16.24l1.8-5.41a2 2 0 0 1 1.27-1.27z"/>',
   apple: '<path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/>',
+  sunrise: '<path d="M12 2v8M4.93 10.93l1.41 1.41M2 18h2M20 18h2M19.07 10.93l-1.41 1.41M22 22H2M8 6l4-4 4 4M16 18a4 4 0 0 0-8 0"/>',
+  ban: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
 };
-export function PIcon({ k, ball, badge }: { k: string; ball?: boolean; badge?: number }) {
+export function PIcon({ k, ball, badge, cls }: { k: string; ball?: boolean; badge?: number; cls?: string }) {
   return (
-    <i className={`d3 c-${k}${ball ? ' ball' : ''}`} aria-hidden="true">
+    <i className={`d3 c-${k}${ball ? ' ball' : ''}${cls ? ` ${cls}` : ''}`} aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: P[k] ?? P.book }} />
       {badge ? <u>{badge > 99 ? '99+' : badge}</u> : null}
     </i>
