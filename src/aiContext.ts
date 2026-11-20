@@ -64,6 +64,8 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   if (done.length) L.push(`Goals reached: ${done.map((g) => `[id:${g.id}] «${cut(g.title, 60)}»${g.doneAt ? ` (${g.doneAt})` : ''}`).join('; ')}.`);
 
   // Ideas
+  const pings = (s.pings ?? []).filter((x) => x.at > Date.now() - 3600e3).sort((a, b) => a.at - b.at).slice(0, 15);
+  if (pings.length) L.push('', `REMINDERS set (local time): ${pings.map((x) => `[id:${x.id}] ${new Date(x.at).toString().slice(0, 21)}${x.prayer ? ` (after ${x.prayer})` : ''}: ${cut(x.text, 100)}`).join(' | ')}. Phone notifications: ${s.settings.reminders?.on ? 'on' : 'OFF'}.`);
   const ideas = (s.ideas ?? []).slice(-15);
   if (ideas.length) L.push('', `MY IDEAS (newest last): ${ideas.map((x) => `[id:${x.id}] ${new Date(x.at).toISOString().slice(0, 10)}: ${cut(x.text, 120)}`).join(' | ')}`);
 
