@@ -82,6 +82,14 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
   const stopMic = () => mic.current?.stop();
   const cancelMic = () => { mic.current?.abort(); mic.current = null; setRec(false); setText(''); setVoiced(false); };
   const [voiced, setVoiced] = useState(false);
+  // The field grows with the text (up to about half the screen), then scrolls inside.
+  const field = useRef<HTMLTextAreaElement>(null);
+  const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+  useEffect(() => {
+    const el = field.current; if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight + 2, Math.round(window.innerHeight * 0.42))}px`;
+  }, [text]);
 
   const send = async (q = text, voice = false) => {
     const v = q.trim();
@@ -90,9 +98,11 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
     setMsgs(hist); setText(''); setVoiced(false); setErr(''); setBusy(true); setUndo(null);
     let cur = live.current;
     let go: GoTo | undefined;
+    // The data summary is built once per question: the tool rounds that follow must see the same system prompt,
+    // or the model's earlier reasoning in this answer no longer matches it. Tool results tell it what changed.
+    let ctx = '';
+    try { ctx = context?.(cur) ?? ''; } catch { /* answer without it */ }
     for (let round = 0; round < 5; round++) {
-      let ctx = '';
-      try { ctx = context?.(cur) ?? ''; } catch { /* answer without it */ }
       const r = await ask(hist.slice(-40), s, ctx);
       if ('error' in r) {
         setBusy(false);
@@ -220,9 +230,13 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
             {adding ? <i className="ai-clip-spin" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7L14 4.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6" /></svg>}
           </button>}
           <input ref={bookIn} type="file" accept=".pdf,.txt,application/pdf,text/plain" hidden onChange={(e) => { attach(e.target.files?.[0]); e.target.value = ''; }} />
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={2000} readOnly={rec}
+          <textarea ref={field} value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={4000} readOnly={rec}
+            enterKeyHint={touch ? 'enter' : 'send'}
             placeholder={rec ? _t("Говори, я слушаю… Нажми ■, когда закончишь") : _t("Напиши или скажи вопрос…")}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!rec) send(text, voiced); } }} />
+            onKeyDown={(e) => {
+              // On a phone Enter is a new line (long tasks are written in several lines); ➤ sends. On a computer Enter sends, Shift+Enter is a new line.
+              if (e.key === 'Enter' && !e.shiftKey && !touch && !e.nativeEvent.isComposing) { e.preventDefault(); if (!rec) send(text, voiced); }
+            }} />
           {rec
             ? <button key="stop" type="submit" className="ai-mic on" aria-label={_t("Остановить запись")}><i /></button>
             : text.trim()

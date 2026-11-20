@@ -11,7 +11,7 @@ const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const MODEL = 'claude-sonnet-5-5';
 const DAILY_LIMIT = 30;
 const MAX_TURNS = 40;
-const MAX_CHARS = 2000;
+const MAX_CHARS = 4000;
 
 const client = new Anthropic();
 
@@ -104,8 +104,11 @@ export default async function handler(req, res) {
     const r = await client.beta.messages.create({
       model: MODEL,
       max_tokens: 4000,
-      betas: ['server-side-fallback-2026-07-01'],
+      betas: ['server-side-fallback-2026-07-01', 'thinking-binding-controls-2026-08-01'],
       fallbacks: 'default',
+      // The person's data and memory in the system prompt change between questions, so reasoning blocks from
+      // earlier answers no longer match it: the API drops those blocks instead of failing the whole question.
+      thinking: { type: 'adaptive', block_binding: { prefix_mismatch_behavior: 'drop_block' } },
       output_config: { effort: 'low' },
       system: systemPrompt(cfg, b),
       tools: TOOLS,

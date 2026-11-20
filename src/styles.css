@@ -3569,7 +3569,7 @@ button.ud-wait em { font-style: normal; }
 @media (prefers-reduced-motion: reduce) { .ai-typing i { animation: none; opacity: .6; } }
 .ai-err { align-self: stretch; background: var(--gold-soft); border-radius: 14px; padding: 10px 12px; font-size: 13.5px; color: var(--ink); }
 .ai-input { margin: 0 auto; width: 100%; max-width: 480px; box-sizing: border-box; display: flex; gap: 8px; align-items: flex-end; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); }
-.ai-input textarea { flex: 1; min-height: 44px; max-height: 140px; resize: none; border: 1px solid var(--line); background: var(--surface-2); border-radius: 22px; padding: 11px 14px; font: inherit; font-size: 15px; color: var(--ink); field-sizing: content; }
+.ai-input textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 42vh; overflow-y: auto; line-height: 1.4; resize: none; border: 1px solid var(--line); background: var(--surface-2); border-radius: 22px; padding: 11px 14px; font: inherit; font-size: 15px; color: var(--ink); }
 .ai-input button[type="submit"] { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--green-2); color: #fff; font-size: 17px; }
 .ai-input button:disabled { opacity: .45; }
 .ai-signin { flex-direction: column; align-items: stretch; }
