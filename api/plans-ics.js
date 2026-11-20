@@ -15,7 +15,7 @@ function localParts(tz, at) {
   const p = Object.fromEntries(f.formatToParts(at).map((x) => [x.type, x.value]));
   return { y: +p.year, m: +p.month, d: +p.day, hh: +p.hour, mm: +p.minute };
 }
-function zoned(tz, y, m, d, hh, mm) {
+export function zoned(tz, y, m, d, hh, mm) {
   const guess = Date.UTC(y, m - 1, d, hh, mm);
   const p = localParts(tz, new Date(guess));
   return guess - (Date.UTC(p.y, p.m - 1, p.d, p.hh, p.mm) - guess);

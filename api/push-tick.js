@@ -240,7 +240,7 @@ async function chatPush(secret, subs, now) {
     const prefs = s.prefs || {};
     if (inPrayer(prefs, now)) continue;
     const en = prefs.lang === 'en';
-    const what = c.kind === 'voice' ? (en ? '🎙 voice message' : '🎙 голосовое') : c.kind === 'event' ? `🤲 ${c.body}` : c.kind === 'photo' ? `📷 ${c.body || (en ? 'photo' : 'фото')}` : c.kind === 'file' ? `📄 ${c.body || (en ? 'file' : 'файл')}` : c.body;
+    const what = c.kind === 'voice' ? (en ? '🎙 voice message' : '🎙 голосовое') : c.kind === 'event' ? `🤲 ${c.body}` : c.kind === 'photo' ? `📷 ${c.body || (en ? 'photo' : 'фото')}` : c.kind === 'file' ? `📄 ${c.body || (en ? 'file' : 'файл')}` : c.kind === 'ai' ? `✨ ${c.body}` : c.body;
     const title = prefs.quiet ? (en ? 'New message' : 'Новое сообщение') : c.title || (en ? 'Your circle' : 'Круг');
     const body = prefs.quiet ? (en ? 'Open the app to read it.' : 'Открой приложение, чтобы прочитать.') : c.n > 1 ? `${c.from}: ${what}`.slice(0, 120) + (en ? ` · ${c.n} new` : ` · новых: ${c.n}`) : `${c.from}: ${what}`.slice(0, 140);
     try {
@@ -250,6 +250,24 @@ async function chatPush(secret, subs, now) {
       if (err.statusCode === 404 || err.statusCode === 410) { await rpc('lm_push_delete', { p_endpoint: s.endpoint }).catch(() => {}); continue; }
     }
     await rpc('lm_chat_push_mark', { p_secret: secret, p_endpoint: s.endpoint, p_code: c.code, p_id: c.last }).catch(() => {});
+  }
+  return sent;
+}
+
+/** Reminders the assistant set in a circle chat (supabase/circle-ai.sql): for one member or for everyone. */
+async function aiPush(secret) {
+  let list;
+  try { list = (await rpc('lm_chat_ai_due', { p_secret: secret })) || []; } catch { return 0; } // circle-ai.sql not run yet
+  let sent = 0;
+  for (const p of list) {
+    const en = p.lang === 'en';
+    try {
+      await webpush.sendNotification({ endpoint: p.endpoint, keys: { p256dh: p.p256dh, auth: p.auth } }, JSON.stringify({ title: `⏰ ${p.title || (en ? 'Your circle' : 'Круг')}`, body: String(p.body || '').slice(0, 160), tag: `aip-${p.id}`, url: `/app/?chat=${p.code}` }), { TTL: 900 });
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 404 || err.statusCode === 410) await rpc('lm_push_delete', { p_endpoint: p.endpoint }).catch(() => {});
+    }
+    await rpc('lm_chat_ai_sent_mark', { p_secret: secret, p_id: p.id, p_endpoint: p.endpoint }).catch(() => {});
   }
   return sent;
 }
@@ -283,5 +301,6 @@ export default async function handler(req, res) {
     await rpc('lm_push_mark', { p_secret: secret, p_endpoint: s.endpoint, p_sent: done }).catch(() => {});
   }));
   const chat = await chatPush(secret, subs, now);
-  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat });
+  const ai = await aiPush(secret);
+  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai });
 }
