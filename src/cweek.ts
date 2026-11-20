@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { addDays, fromKey } from './dates';
 import { isCounted } from './store';
 import type { AppState } from './types';
@@ -104,8 +104,15 @@ export const ASK_DAYS = 3;
 export const askLive = (a: DuaAsk | null | undefined, today: string): a is DuaAsk => Boolean(a && a.t && a.d <= today && a.d > addDays(today, -ASK_DAYS));
 
 const askKey = () => `lm.ask.${(isCloud && currentCircle()?.code) || 'local'}`;
+/** Writes my dua request for a circle from elsewhere (the assistant in the chat); the circle screen picks it up. */
+export function setAskFor(code: string | undefined, a: DuaAsk) {
+  try { localStorage.setItem(`lm.ask.${(isCloud && code) || 'local'}`, JSON.stringify(a)); } catch { /* */ }
+  window.dispatchEvent(new Event('lm-ask'));
+}
 export function useMyAsk(): [DuaAsk | null, (a: DuaAsk | null) => void] {
-  const [a, setA] = useState<DuaAsk | null>(() => { try { return JSON.parse(localStorage.getItem(askKey()) || 'null'); } catch { return null; } });
+  const read = () => { try { return JSON.parse(localStorage.getItem(askKey()) || 'null') as DuaAsk | null; } catch { return null; } };
+  const [a, setA] = useState<DuaAsk | null>(read);
+  useEffect(() => { const f = () => setA(read()); window.addEventListener('lm-ask', f); return () => window.removeEventListener('lm-ask', f); }, []);
   const set = (x: DuaAsk | null) => { try { if (x) localStorage.setItem(askKey(), JSON.stringify(x)); else localStorage.removeItem(askKey()); } catch { /* */ } setA(x); };
   return [a, set];
 }

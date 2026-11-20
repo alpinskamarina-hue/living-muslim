@@ -5,12 +5,20 @@ import { isCloud, meRpc, serverHas, cloudMe } from './cloud';
 import { currentSubscription } from './push';
 import { _t } from './i18n';
 
-export type MsgKind = 'text' | 'voice' | 'event' | 'photo' | 'file';
+export type MsgKind = 'text' | 'voice' | 'event' | 'photo' | 'file' | 'ai';
 export interface MsgFile { name: string; size: number; mime: string; thumb?: string; w?: number; h?: number; ok: boolean }
 export const FILE_MAX = 5 * 1024 * 1024;
 /** r: reply to a message; t: an event card (dua, ch) or a reply tied to someone's dua request (t 'dua', to). */
 /** tr: the message belongs to an umrah trip's own chat (the host's id); the Circle chat hides it. */
-export interface MsgRef { r?: number; t?: 'dua' | 'ch' | 'pr' | 'poll'; d?: string; to?: string; k?: string; tr?: string; p?: string; o?: string[] }
+/** On an assistant answer (kind 'ai'): n its name, at/all/rt the reminder it set (when, for everyone, text), pr the prayer. */
+export interface MsgRef { r?: number; t?: 'dua' | 'ch' | 'pr' | 'poll'; d?: string; to?: string; k?: string; tr?: string; p?: string; o?: string[]; n?: string; at?: string; all?: boolean; rt?: string; pr?: string }
+/** What the circle assistant needs from the phone besides the message. */
+export interface AiAskExtra { name: string; me?: string; lang?: string; place: Record<string, unknown>; circle: string }
+/** Calls to the assistant in a message: «@Марьям», «@Помощник», or the name the person gave it. */
+export function callsAi(body: string, name: string) {
+  const names = ['марьям', 'maryam', 'помощник', 'assistant', name.trim().toLowerCase()].filter(Boolean).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp(`(^|\\s)@(${names.join('|')})(?=$|[\\s,.!?:])`, 'i').test(body);
+}
 export interface Msg {
   id: number; uid: string; kind: MsgKind; body: string; ref: MsgRef | null;
   sec: number | null; bars: number[] | null; reacts: Record<string, string>;
@@ -48,6 +56,7 @@ const merge = (a: Msg[], b: Msg[]) => {
 };
 
 export interface ChatApi {
+  code: string | undefined;
   ready: boolean;
   /** Photos and documents: true once supabase/chat-files.sql is on the server. */
   filesOn: boolean;
@@ -73,6 +82,11 @@ export interface ChatApi {
   /** Photo or document: '' when sent, else an error code (big, type, day, error). */
   sendFile: (f: File, caption: string, ref?: MsgRef | null) => Promise<string>;
   fileUrl: (id: number) => Promise<string>;
+  /** The assistant in this circle: on/off, who may ask it to remind everyone, and its live reminders (msg id → on for me; missing = cancelled or past). */
+  ai: { ready: boolean; on: boolean; all: 'owner' | 'all'; mine: Record<number, boolean> };
+  askAi: (body: string, extra: AiAskExtra) => Promise<{ dua?: string; err?: string }>;
+  aiPing: (msgId: number, act: 'me' | 'notme' | 'cancel') => Promise<boolean>;
+  setAi: (on: boolean, all: 'owner' | 'all') => Promise<boolean>;
 }
 
 const voiceCache = new Map<number, string>();
@@ -91,6 +105,19 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   const me = cloudMe()?.uid ?? '';
 
   const [filesOn, setFilesOn] = useState(false);
+  const [ai, setAiState] = useState<ChatApi['ai']>({ ready: false, on: true, all: 'owner', mine: {} });
+  const lastSent = useRef(0);
+  const loadAi = useCallback(async () => {
+    if (!code) return;
+    try {
+      const [g, mine] = await Promise.all([
+        meRpc<{ on: boolean; all: 'owner' | 'all' } | null>('lm_chat_ai_get', { p_code: code }),
+        meRpc<{ msg: number; on: boolean }[] | null>('lm_chat_ai_mine', { p_code: code }),
+      ]);
+      if (!g) return;
+      setAiState({ ready: true, on: g.on !== false, all: g.all === 'all' ? 'all' : 'owner', mine: Object.fromEntries((mine ?? []).map((x) => [x.msg, x.on])) });
+    } catch { /* circle-ai.sql not run yet */ }
+  }, [code]);
   useEffect(() => { chatReady().then(setReady); }, []);
   useEffect(() => { if (ready) serverHas('lm_chat_file', { p_uid: null, p_token: null, p_id: 0 }).then(setFilesOn); }, [ready]);
 
@@ -100,7 +127,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       const r = await meRpc<ListRes | null>('lm_chat_list', { p_code: code, p_after: full ? 0 : last.current, p_before: 0 });
       if (!r) return;
       setVoiceOn(r.voice !== false); setOwner(r.owner || ''); setSeen((s) => Math.max(s, r.seen || 0)); setError('');
-      if (full) setMore(r.msgs.length >= 60);
+      if (full) { setMore(r.msgs.length >= 60); if (open) loadAi(); }
       if (full || r.msgs.length) {
         setMsgs((old) => {
           // after a full load drop what is gone (deleted by the owner, people who left)
@@ -111,7 +138,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
         });
       }
     } catch { setError(_t("Нет связи, сообщения обновятся сами")); }
-  }, [code]);
+  }, [code, open, loadAi]);
 
   // full reload now and then picks up reactions and deletions on older messages
   useEffect(() => {
@@ -155,6 +182,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       if (r?.error) throw new Error(r.error);
       setMsgs((m) => merge(m.filter((x) => x !== local), [r]));
       last.current = Math.max(last.current, r.id);
+      lastSent.current = r.id;
       return true;
     } catch (e) {
       setMsgs((m) => m.map((x) => (x === local ? { ...x, failed: true } : x)));
@@ -258,7 +286,32 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     return url;
   };
 
-  return { ready, filesOn, msgs, seenAtOpen, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
+  const askAi = async (body: string, extra: AiAskExtra) => {
+    const id = cloudMe();
+    if (!code || !id) return { err: 'auth' };
+    try {
+      const r = await fetch('/api/circle-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: id.uid, token: id.token, code, msg_id: lastSent.current, text: body, ...extra }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return { err: j.error || 'net' };
+      if (j.off) return { err: 'off' };
+      if (j.msg?.id) { setMsgs((m) => merge(m, [j.msg])); last.current = Math.max(last.current, j.msg.id); if (j.msg.ref?.at) setAiState((a) => ({ ...a, mine: { ...a.mine, [j.msg.id]: true } })); }
+      return { dua: j.dua || '' };
+    } catch { return { err: 'net' }; }
+  };
+  const aiPing = async (msgId: number, act: 'me' | 'notme' | 'cancel') => {
+    const r = await meRpc<{ ok?: boolean; error?: string }>('lm_chat_ai_ping', { p_msg: msgId, p_act: act }).catch(() => null);
+    if (!r?.ok) return false;
+    if (act !== 'cancel') setAiState((a) => ({ ...a, mine: { ...a.mine, [msgId]: act === 'me' } }));
+    if (act === 'cancel') setAiState((a) => { const mine = { ...a.mine }; delete mine[msgId]; return { ...a, mine }; });
+    return true;
+  };
+  const setAi = async (on: boolean, all: 'owner' | 'all') => {
+    const ok = await meRpc<boolean>('lm_chat_ai_set', { p_code: code, p_on: on, p_all: all }).catch(() => false);
+    if (ok) setAiState((a) => ({ ...a, on, all }));
+    return ok;
+  };
+
+  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
 }
 
 /** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */

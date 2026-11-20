@@ -170,6 +170,12 @@ section { padding: 72px 0; }
 .feat .card { padding: 20px; }
 .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--gold-soft); font-size: 22px; }
 
+.priv-s { }
+.priv-lock { width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #0f5132, #1f7a4d); display: grid; place-items: center; font-size: 30px; margin: 0 0 14px; box-shadow: 0 0 0 4px var(--gold-soft); }
+.priv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 22px; }
+.priv-grid > div { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; row-gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.priv-grid .ic { grid-row: span 2; width: 40px; height: 40px; border-radius: 12px; background: var(--green-soft); display: grid; place-items: center; font-size: 19px; }
+.priv-grid small { color: var(--ink-2); font-size: 14px; }
 .hadith { background: var(--green); color: var(--cream); text-align: center; }
 .hadith blockquote { margin: 0 auto; max-width: 820px; font-family: var(--f-serif); font-size: clamp(28px, 4.6vw, 44px); line-height: 1.15; font-weight: 700; }
 .hadith cite { display: block; margin-top: 16px; font-style: normal; opacity: .75; font-size: 14px; }
@@ -767,6 +773,20 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   </div>
 </section>
 
+<section class="priv-s" id="privacy">
+  <div class="wrap">
+    <div class="priv-lock" aria-hidden="true">🔒</div>
+    <p class="eyebrow"><span lang="ru">Твоё остаётся твоим</span><span lang="en">Yours stays yours</span></p>
+    <h2><span lang="ru">Твой день не уходит к Google</span><span lang="en">Your day doesn’t go to Google</span></h2>
+    <p class="lead"><span lang="ru">Планы, намазы и личные заметки остаются у тебя. Нам незачем их читать.</span><span lang="en">Your plans, prayers and personal notes stay with you. We have no reason to read them.</span></p>
+    <div class="priv-grid">
+      <div><span class="ic" aria-hidden="true">📱</span><b><span lang="ru">На твоём телефоне</span><span lang="en">On your phone</span></b><small><span lang="ru">Свой календарь «Планы» по умолчанию хранится только на телефоне.</span><span lang="en">Your own «Plans» calendar is kept only on your phone by default.</span></small></div>
+      <div><span class="ic" aria-hidden="true">☁️</span><b><span lang="ru">Своё облако, если нужно</span><span lang="en">Our own cloud, if you want it</span></b><small><span lang="ru">Закрытое хранилище Living Muslim. Не Google, не чужие сервера с рекламой.</span><span lang="en">Living Muslim’s private storage. Not Google, not someone else’s ad servers.</span></small></div>
+      <div><span class="ic" aria-hidden="true">🚫</span><b><span lang="ru">Без рекламы и продажи данных</span><span lang="en">No ads, no selling data</span></b><small><span lang="ru">Мы зарабатываем на подписке, а не на тебе.</span><span lang="en">We earn from subscriptions, not from you.</span></small></div>
+    </div>
+  </div>
+</section>
+
 <section class="inst-s" id="install">
   <div class="wrap">
     <div>
@@ -908,6 +928,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       <details><summary><span lang="ru">Как считается время намазов?</span><span lang="en">How are prayer times calculated?</span></summary><p lang="ru">По твоему городу или геолокации. Можно выбрать метод расчёта (Всемирная исламская лига, Умм аль-Кура, ISNA и другие) и мазхаб для Асра. Советуем сверить с мечетью рядом.</p><p lang="en">From your city or location. You can pick the calculation method (Muslim World League, Umm al-Qura, ISNA and others) and the madhhab for Asr. We recommend checking against your local mosque.</p></details>
       <details><summary><span lang="ru">Нужно ли что-то устанавливать?</span><span lang="en">Do I need to install anything?</span></summary><p lang="ru">Нет, приложение работает в браузере на телефоне и компьютере. На телефоне его можно добавить на главный экран, и оно будет открываться как обычное приложение.</p><p lang="en">No, it works in the browser on phone and desktop. On your phone you can add it to the home screen and it opens like a regular app.</p></details>
       <details><summary><span lang="ru">Кто видит мои данные?</span><span lang="en">Who can see my data?</span></summary><p lang="ru">Только ты. Привычки, заметки и мухасаба хранятся на твоём устройстве. Если вступишь в Круг, близкие увидят только итог дня: сколько отмечено привычек и намазов.</p><p lang="en">Only you. Habits, notes and muhasabah stay on your device. If you join a Circle, your people only see your daily total: how many habits and prayers you checked.</p></details>
+      <details><summary><span lang="ru">Кто видит мои планы?</span><span lang="en">Who can see my plans?</span></summary><p lang="ru">Только ты. Пока не включишь облако, они не покидают телефон. Если сам подключишь их к календарю Google или Apple, этот календарь увидит то, что ты туда отправишь.</p><p lang="en">Only you. Until you turn on the cloud, they don’t leave your phone. If you connect them to your Google or Apple calendar yourself, that calendar sees what you send there.</p></details>
       <details><summary><span lang="ru">Как позвать брата в Круг?</span><span lang="en">How do I invite a brother to my Circle?</span></summary><p lang="ru">Открой Круг, нажми «+ Пригласить» и набери первые буквы его ника. Или отправь ссылку-приглашение: по ней можно вступить даже без почты.</p><p lang="en">Open Circle, tap “+ Invite” and type the first letters of his nickname. Or send an invite link: people can join with it even without an email.</p></details>
       <details><summary><span lang="ru">Кто может найти меня по нику?</span><span lang="en">Who can find me by nickname?</span></summary><p lang="ru">Ты решаешь сам в «Мой профиль»: можно ли тебя найти и кто может звать в Круг: все, люди из твоих Кругов или никто. Сёстры могут включить «только сёстры», а фото видно только людям из твоих Кругов.</p><p lang="en">You decide in “My profile”: whether you can be found and who can invite you: everyone, people from your Circles or no one. Sisters can turn on “sisters only”, and your photo is visible only to people in your Circles.</p></details>
       <details><summary><span lang="ru">Я сменил телефон. Что перенесётся?</span><span lang="en">I got a new phone. What carries over?</span></summary><p lang="ru">Войди по той же почте, и профиль с ником и все твои Круги сами появятся на новом телефоне. Отметки и привычки пока хранятся на старом телефоне, перенос между устройствами скоро.</p><p lang="en">Sign in with the same email and your profile, nickname and all your Circles appear on the new phone. Check-ins and habits still live on the old phone for now; syncing between devices is coming soon.</p></details>

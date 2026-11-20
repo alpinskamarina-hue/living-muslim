@@ -69,6 +69,8 @@ export function PlansPage({ state, update, today, onAsk, start }: { state: AppSt
   const [form, setForm] = useState<{ p?: Plan; date: string } | null>(null);
   const [open, setOpen] = useState<Plan | null>(null);
   const [gear, setGear] = useState(false);
+  const [priv, setPriv] = useState(false);
+  const inCloud = state.plansSet?.store === 'cloud';
 
   // From a notification: «Сделано», «Через час», «Завтра».
   useEffect(() => {
@@ -87,6 +89,19 @@ export function PlansPage({ state, update, today, onAsk, start }: { state: AppSt
 
   return (
     <div className="pl">
+      <button type="button" className="pn-lock" onClick={() => setPriv(true)}>🔒 {inCloud ? _t("В облаке Living Muslim") : _t("Только на этом телефоне")}</button>
+      {priv && (
+        <div className="pn-sheet-bg" onClick={() => setPriv(false)}>
+          <div className="pn-sheet" role="dialog" aria-label={_t("Где хранятся твои планы")} onClick={(e) => e.stopPropagation()}>
+            <b className="pn-sheet-t">🔒 {_t("Где хранятся твои планы")}</b>
+            <div className="pn-pt"><span>📱</span><p>{inCloud ? _t("Копия есть на этом телефоне, а для других устройств они хранятся в облаке Living Muslim.") : _t("Сейчас только на этом телефоне. В интернет они не уходят.")}</p></div>
+            <div className="pn-pt"><span>☁️</span><p>{inCloud ? _t("Облако Living Muslim: наше закрытое хранилище, не Google. Видны только тебе.") : _t("Хочешь видеть их на других устройствах? Включи облако Living Muslim. Это наше закрытое хранилище, не Google.")}</p></div>
+            <div className="pn-pt"><span>🚫</span><p>{_t("Мы не продаём данные и не показываем рекламу.")}</p></div>
+            <button type="button" className="pn-btn" onClick={() => setPriv(false)}>{_t("Понятно")}</button>
+            <button type="button" className="link-btn" onClick={() => { setPriv(false); setGear(true); }}>{_t("Настройки хранения")}</button>
+          </div>
+        </div>
+      )}
       <div className="pn-bar">
         <div className="pn-seg" role="tablist">
           {(['day', 'week', 'month'] as View[]).map((v) => <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>{v === 'day' ? _t("День") : v === 'week' ? _t("Неделя") : _t("Месяц")}</button>)}
@@ -395,12 +410,13 @@ function PlansSettings({ state, update, onBack }: { state: AppState; update: Up;
     <div className="pn-form">
       <button type="button" className="link-btn left" onClick={onBack}>← {_t("Планы")}</button>
       <h2 className="pn-h">{_t("Настройки планов")}</h2>
+      <div className="pn-priv"><b>🔒 {_t("Твои планы только твои")}</b><p>{_t("Хранятся на твоём телефоне. Мы не передаём их Google и никому другому и не показываем по ним рекламу.")}</p></div>
       <div className="pn-lbl">{_t("Где хранить планы")}</div>
       <button type="button" className={`pn-opt${!cloud ? ' on' : ''}`} onClick={toPhone}><i /><span><b>{_t("Только на этом телефоне")}</b><small>{_t("Никто, кроме тебя, их не видит. Если сменишь телефон, планы не перейдут.")}</small></span></button>
-      <button type="button" className={`pn-opt${cloud ? ' on' : ''}`} disabled={busy} onClick={toCloud}><i /><span><b>{_t("В облаке Living Muslim")}</b><small>{_t("Видны на всех твоих устройствах после входа по почте. Хранятся закрыто, только для тебя.")}</small></span></button>
+      <button type="button" className={`pn-opt${cloud ? ' on' : ''}`} disabled={busy} onClick={toCloud}><i /><span><b>{_t("В облаке Living Muslim")}</b><small>{_t("Наше закрытое хранилище, не Google. Видны только тебе, на всех твоих устройствах после входа по почте.")}</small></span></button>
       <div className="pn-lbl">{_t("Показывать в календаре телефона")}</div>
       <div className="pn-opt pn-opt-s"><span className="ic">📅</span><span><b>{_t("Подписка на мои планы")}</b>
-        <small>{_t("Google, Apple или Outlook покажут твои планы и намазы. Обновляется само, в одну сторону: из приложения в календарь.")}</small>
+        <small>{_t("По желанию. Если включишь, календарь Google, Apple или Outlook будет видеть планы и намазы, которые ты туда отправишь. Обновляется само, в одну сторону.")}</small>
         {cloud ? (
           <span className="pn-sub-btns">
             <button type="button" className="ghost-btn" disabled={busy} onClick={() => sub('google')}>Google</button>
@@ -411,7 +427,6 @@ function PlansSettings({ state, update, onBack }: { state: AppState; update: Up;
         {cloud && ps.ics && <button type="button" className="link-btn left" onClick={async () => { const k = await icsKey(true); if (typeof k === 'string') { set({ ics: k }); setMsg(_t("Старая ссылка больше не работает. Подпишись заново.")); } }}>{_t("Сменить ссылку")}</button>}
       </span></div>
       <div className="pn-opt pn-opt-s"><span className="ic">➕</span><span><b>{_t("Кнопка «В календарь» у каждого плана")}</b><small>{_t("Открой план и нажми «В Google Календарь» или «В календарь телефона».")}</small></span></div>
-      <div className="pn-opt pn-opt-s off"><span className="ic">🔄</span><span><b>{_t("Google Календарь в обе стороны")} <em className="pn-soon">{_t("Этап 2")}</em></b><small>{_t("Встречи из Google видны в Планах, планы из приложения появляются в Google.")}</small></span></div>
       <div className="pn-lbl">{_t("Также")}</div>
       <button type="button" className={`pn-opt pn-tog${ps.prayers !== false ? ' on' : ''}`} onClick={() => set({ prayers: ps.prayers === false })}><span className="ic">🕌</span><span><b>{_t("Показывать намазы в Планах")}</b><small>{ps.prayers !== false ? _t("Включено") : _t("Выключено")}</small></span></button>
       {msg && <p className="tiny pn-msg">{msg}</p>}

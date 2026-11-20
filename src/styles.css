@@ -4125,3 +4125,24 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 :root[data-theme="dark"] .fd-nums input[aria-invalid="true"] { border-color: #ff8f80; }
 :root[data-theme="dark"] .fd-sex[aria-invalid="true"] { outline-color: #ff8f80; }
 .fd-actions .pri-btn.fd-wait { opacity: .55; }
+.pn-lock { display: inline-flex; align-items: center; gap: 6px; background: var(--green-soft, #e1efe5); color: var(--green-2); font: inherit; font-weight: 700; font-size: 12.5px; border: 0; border-radius: 20px; padding: 5px 11px; margin: 0 0 8px; cursor: pointer; }
+.pn-priv { background: linear-gradient(135deg, #0f5132, #1f7a4d); color: #fff; border-radius: 16px; padding: 13px 14px; margin: 6px 0 10px; }
+.pn-priv b { font-size: 15.5px; }
+.pn-priv p { margin: 5px 0 0; font-size: 13px; color: #dcefe3; }
+.pn-pt { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 0; }
+.pn-pt > span { flex: none; width: 30px; height: 30px; border-radius: 10px; background: var(--green-soft, #e1efe5); display: grid; place-items: center; }
+.pn-pt p { margin: 4px 0 0; font-size: 14px; }
+.pn-sheet .pn-btn { margin-top: 14px; }
+/* The assistant in a circle chat */
+.cc-ai-row { justify-content: flex-start; }
+.cc-ai { max-width: 86%; background: var(--gold-soft); border: 1.5px solid var(--gold); border-radius: 14px; padding: 8px 11px 6px; display: flex; flex-direction: column; gap: 3px; }
+.cc-ai-who { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--gold); }
+.cc-ai-who small { color: var(--ink-2); font-weight: 500; }
+.cc-ai-who i, .cc-ai-wait i, .cc-ai-sug i { width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #2f8a5c, #0f5132); border: 2px solid #d4ad5c; display: inline-block; flex: none; }
+.cc-ai-card { margin-top: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 7px 9px; font-size: 13px; display: flex; flex-direction: column; }
+.cc-ai-card.off { opacity: .6; }
+.cc-ai-btns { display: flex; gap: 6px; margin-top: 4px; }
+.cc-ai-btns button { flex: 1; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--green-2); background: transparent; border: 1.5px solid var(--green-2); border-radius: 9px; padding: 6px 4px; cursor: pointer; }
+.cc-ai-btns button.on { background: var(--green-2); color: #fff; }
+.cc-ai-wait { display: flex; align-items: center; gap: 8px; margin: 4px 14px; font-size: 13px; color: var(--ink-2); }
+.cc-ai-sug { display: flex; align-items: center; gap: 8px; width: 100%; font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); }

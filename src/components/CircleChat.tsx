@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { FILE_MAX, type ChatApi, type Msg, type MsgRef } from '../chat';
+import { FILE_MAX, callsAi, type ChatApi, type Msg, type MsgRef } from '../chat';
+import { aiName } from '../assistant';
+import { placeOf } from '../plansCloud';
+import { setAskFor } from '../cweek';
 import type { Member, Reacts } from '../circle';
 import { askAnswers } from '../cweek';
 import { blockUser } from '../cloud';
@@ -321,12 +324,22 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   };
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote(''), 2600); };
 
+  const myAi = aiName(state.settings);
+  const [thinking, setThinking] = useState(false);
+  const circleNow = () => members.map((m) => `${m.id === me ? 'the asker' : names[m.id]?.name || 'member'}: ${m.day === today ? `${m.prayers}/5 prayers, ${m.done}/${m.total} habits` : 'not marked today'}`).join('; ');
   const send = async (body = text, kind: 'text' | 'event' = 'text') => {
     if (!body.trim()) return;
     const r = ref;
     if (body === text) setText('');
     setRef(null);
-    await chat.send(body, r, kind);
+    const ok = await chat.send(body, r, kind);
+    if (!ok || kind !== 'text' || topic || !chat.ai.ready || !callsAi(body, myAi)) return;
+    if (!chat.ai.on) { flash(_t("Владелец круга выключил помощника в этом круге")); return; }
+    setThinking(true);
+    const res = await chat.askAi(body, { name: myAi, me: state.settings.me, lang: state.settings.lang, place: placeOf(state.settings), circle: circleNow() });
+    setThinking(false);
+    if (res.err) flash(res.err === 'limit' ? _t("На сегодня помощник в круге ответил уже 20 раз. Завтра снова") : res.err === 'off' ? _t("Владелец круга выключил помощника в этом круге") : _t("Помощник сейчас не ответил. Попробуй ещё раз"));
+    if (res.dua) { setAskFor(chat.code, { t: res.dua, d: today }); flash(_t("Просьба о дуа записана в круге")); }
   };
 
   const recorder = useRecorder(async (blob, sec, bars) => {
@@ -408,6 +421,9 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         <div className="cc-opts">
           <button type="button" onClick={toggleChatPush}>{chatPushOn ? _t("🔔 Уведомления о сообщениях: вкл") : _t("🔕 Уведомления о сообщениях: выкл")}</button>
           {isOwner && <button type="button" onClick={async () => { const on = !chat.voiceOn; if (await chat.setVoice(on)) flash(on ? _t("Голосовые включены") : _t("Теперь в круге только текст")); }}>{chat.voiceOn ? _t("🎙 Голосовые в круге: вкл") : _t("🎙 Голосовые в круге: выкл (только текст)")}</button>}
+          {isOwner && chat.ai.ready && <button type="button" onClick={async () => { const on = !chat.ai.on; if (await chat.setAi(on, chat.ai.all)) flash(on ? _t("Помощник в круге включён") : _t("Помощника в круге больше нет")); }}>{chat.ai.on ? _t("✨ Помощник в круге: вкл") : _t("✨ Помощник в круге: выкл")}</button>}
+          {isOwner && chat.ai.ready && chat.ai.on && <button type="button" onClick={async () => { const all = chat.ai.all === 'all' ? 'owner' : 'all'; if (await chat.setAi(true, all)) flash(all === 'all' ? _t("Напомнить всем может любой участник") : _t("Напомнить всем может только амир")); }}>{chat.ai.all === 'all' ? _t("📣 Напоминания всем: любой участник") : _t("📣 Напоминания всем: только амир")}</button>}
+          {chat.ai.ready && chat.ai.on && <small>{_tj("Напиши «@{0}», чтобы попросить помощника: напомнить тебе или всем, записать просьбу о дуа, рассказать итоги круга. Без «@» он переписку не читает.", myAi)}</small>}
           <small>{_tj("Долгое нажатие на сообщение: ответить, реакция, пожаловаться{0}.", isOwner ? _t(", удалить любое (ты владелец круга)") : _t(", удалить своё"))}</small>
         </div>
       )}
@@ -500,6 +516,35 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             return out;
           }
 
+          if (m.kind === 'ai') {
+            const live = m.ref?.at && Object.prototype.hasOwnProperty.call(chat.ai.mine, m.id);
+            const on = Boolean(chat.ai.mine[m.id]);
+            const asker = m.uid === me;
+            const at = m.ref?.at ? new Date(m.ref.at) : null;
+            out.push(
+              <div key={m.id} className="cc-row cc-ai-row">
+                <div className="cc-ai" {...holdProps(m)}>
+                  <b className="cc-ai-who"><i aria-hidden="true" />{m.ref?.n || _t("Помощник")} <small>↩ {asker ? _t("тебе") : nm(m.uid)}</small></b>
+                  {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : <span className="cc-t">{m.body}</span>}
+                  {at && !m.deleted && (
+                    <div className={`cc-ai-card${live ? '' : ' off'}`}>
+                      <b>⏰ {at.toLocaleString(LOC, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}{m.ref?.all ? _t(" · для всех") : ''}</b>
+                      <span>{live ? m.ref?.rt : _t("Напоминание отменено или уже прошло")}</span>
+                    </div>
+                  )}
+                  {live && at && at.getTime() > Date.now() && (
+                    <div className="cc-ai-btns">
+                      {on ? <button type="button" onClick={async () => { if (await chat.aiPing(m.id, 'notme')) flash(_t("Тебе не напомню")); }}>{_t("Не напоминать мне")}</button>
+                        : <button type="button" className="on" onClick={async () => { if (await chat.aiPing(m.id, 'me')) flash(_t("Напомню и тебе")); }}>{m.ref?.all ? _t("Напоминать мне") : _t("Мне тоже")}</button>}
+                      {(asker || isOwner) && <button type="button" onClick={async () => { if (!confirm(_t("Отменить это напоминание для всех, кому оно стоит?"))) return; if (await chat.aiPing(m.id, 'cancel')) flash(_t("Напоминание отменено")); }}>{_t("Отменить")}</button>}
+                    </div>
+                  )}
+                  <small className="cc-time">{hm(m.at)}</small>
+                </div>
+              </div>,
+            );
+            return out;
+          }
           const q = m.ref?.r ? byId.get(m.ref.r) : null;
           out.push(
             <div key={m.id} className={`cc-row${mine ? ' mine' : ''}`}>
@@ -526,6 +571,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         <div ref={end} />
       </div>
 
+      {thinking && <div className="cc-ai-wait"><i aria-hidden="true" />{_tj("{0} пишет…", myAi)}</div>}
       {(note || chat.error || recorder.msg) && <div className="cc-note" onClick={() => recorder.setMsg('')}>{note || recorder.msg || chat.error}</div>}
 
       <div className="cc-compose">
@@ -564,6 +610,9 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                 <span><b>{/^image\//.test(file.type) ? _t("📷 Фото") : `${iconOf(file.name)} ${_t("Файл")}`}</b>{file.name} · {sizeOf(file.size)}</span>
                 <button type="button" aria-label={_t("Убрать файл")} onClick={() => setFile(null)}>✕</button>
               </div>
+            )}
+            {chat.ai.ready && chat.ai.on && !topic && /(^|\s)@[^\s@]{0,12}$/.test(text) && (
+              <button type="button" className="cc-ai-sug" onClick={() => { setText(text.replace(/@[^\s@]{0,12}$/, `@${myAi} `)); ta.current?.focus(); }}><i aria-hidden="true" /><b>{myAi}</b> · {_t("помощник")}</button>
             )}
             <div className="cc-in">
               <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
