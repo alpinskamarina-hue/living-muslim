@@ -65,7 +65,7 @@ type Rec = { lang: string; interimResults: boolean; continuous: boolean; start()
   onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onerror: ((e: { error: string }) => void) | null; onend: (() => void) | null };
 
-const RecCtor = (): (new () => Rec) | null => {
+export const RecCtor = (): (new () => Rec) | null => {
   try { const w = window as unknown as Record<string, unknown>; return (w.SpeechRecognition || w.webkitSpeechRecognition || null) as (new () => Rec) | null; } catch { return null; }
 };
 export const sttAvailable = () => Boolean(RecCtor());

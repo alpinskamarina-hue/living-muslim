@@ -170,6 +170,8 @@ export interface AppState {
   ideas?: Idea[];
   /** Reminders the assistant (or the person) set: a push at `at` (ms), shown in Мои идеи. */
   pings?: Ping[];
+  /** «Перевод хутбы»: languages, text size and saved sermons. */
+  khutba?: import('./khutba').KhutbaState;
   /** «Планы»: things to do on a day, between the prayers. */
   plans?: import('./plans').Plan[];
   plansSet?: import('./plans').PlansSettings;

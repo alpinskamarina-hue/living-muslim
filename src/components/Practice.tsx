@@ -44,6 +44,7 @@ interface Props {
   today: string;
   suggestedId?: string;
   onSafar: () => void;
+  onKhutba?: () => void;
   onRamadan: () => void;
   /** Opened from a goal: which practice, and for videos which course. */
   start?: { mode: string; ref?: string };
@@ -56,7 +57,7 @@ interface Props {
 
 type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'course-ar' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body' | 'tests' | 'test-umrah' | 'test-salah';
 
-export function Practice({ state, update, today, suggestedId, onSafar, onRamadan, start, umrah, onQuit, circle, joined, umrahStart }: Props) {
+export function Practice({ state, update, today, suggestedId, onSafar, onKhutba, onRamadan, start, umrah, onQuit, circle, joined, umrahStart }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
   const active = state.habits.filter((h) => h.status === 'active');
   const [habitId, setHabitId] = useState<string>(suggestedId ?? active[0]?.id ?? '');
@@ -125,6 +126,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     tests: { ic: 'test', title: _t("Тест: что мне даётся труднее"), sub: (() => { const r = lastRun(state); if (!r) return _t("3 минуты · сильная сторона и план на месяц"); const l = repeatIn(r, today); return l <= 0 ? _t("Прошло 30 дней: пора пройти снова") : _t("Пройден {0} · повтор через {1} дн.", r.day.slice(8, 10) + '.' + r.day.slice(5, 7), l); })(), open: () => setMode('tests') },
     testUmrah: { ic: 'test', title: _t("Тест: готовность к умре"), sub: (() => { const r = lastRun(state, UMRAH_TEST); if (!r) return _t("3 минуты · что осталось сделать до поездки"); const l = repeatIn(r, today); return l <= 0 ? _tj("{0} из 24 · пора пройти снова", uTotal(r.a)) : _tj("{0} из 24 · повтор через {1} дн.", uTotal(r.a), l); })(), open: () => setMode('test-umrah') },
     testSalah: { ic: 'test', title: _t("Тест: намаз и Коран"), sub: (() => { const r = lastRun(state, SALAH_TEST); if (!r) return _t("2 минуты · твоя ступенька и следующий шаг"); const st = RUNGS[rungOf(r.a) - 1].title; const l = SALAH_REPEAT - daysBetween(r.day, today); return l <= 0 ? _tj("Ступень «{0}» · пора пройти снова", st) : _tj("Ступень «{0}» · повтор через {1} дн.", st, l); })(), open: () => setMode('test-salah') },
+    khutba: { ic: 'lang', title: _t("Перевод хутбы"), sub: _t("Хутба и уроки на арабском или турецком, текстом"), open: () => onKhutba?.() },
     safar: { ic: 'compass', title: _t("Сафар"), sub: state.trip ? _t("Поездка: {0}", state.trip.place) : _t("Поездка, кибла, дуа путника"), open: onSafar },
   };
   const favIds = (state.practiceFav ?? ['quran', 'videos', 'tasbih', 'langs']).filter((id) => P[id]).slice(0, 4);
@@ -264,7 +266,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
       <div className="pgl">{_t("Поклонение")}</div>
       <div className="pgrp">{['quran', 'azkar', 'tasbih', 'sadaqa'].map(row)}</div>
       <div className="pgl">{_t("Знания")}</div>
-      <div className="pgrp">{['videos', 'books', 'langs'].map(row)}</div>
+      <div className="pgrp">{['videos', 'books', 'langs', 'khutba'].map(row)}</div>
       <div className="pgl">{_t("Тело и время")}</div>
       <div className="pgrp">{['body', 'focus'].map(row)}</div>
       <div className="pgl">{_t("Работа над собой")}</div>
