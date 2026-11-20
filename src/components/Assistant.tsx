@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
-import { bookGoal, runTool } from '../aiActions';
+import { bookGoal, pingWhen, runTool } from '../aiActions';
 import { isBookFile, readBook } from '../bookFile';
 import { limitOf } from '../plan';
 import type { GoTo } from '../guide';
@@ -448,8 +448,38 @@ export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (
   const [t, setT] = useState('');
   const list = [...(state.ideas ?? [])].reverse();
   const add = () => { const v = t.trim(); if (!v) return; update((s) => ({ ...s, ideas: [...(s.ideas ?? []), { id: Math.random().toString(36).slice(2, 10), at: Date.now(), text: v.slice(0, 1000) }] })); setT(''); };
+  const now = Date.now();
+  const pings = [...(state.pings ?? [])].sort((a, b) => a.at - b.at);
+  const soon = pings.filter((p) => p.at > now - 15 * 60000);
+  const past = pings.filter((p) => p.at <= now - 15 * 60000).slice(-5).reverse();
+  const dropPing = (id: string) => update((s) => ({ ...s, pings: (s.pings ?? []).filter((y) => y.id !== id) }));
   return (
     <>
+      <h4 className="ai-h">{_t("Напоминания")}</h4>
+      {soon.length === 0 ? <p className="tiny">{_t("Скажи помощнику «напомни…», например «напомни в пятницу после Джумы позвонить брату».")}</p> : (
+        <div className="ai-ideas">
+          {soon.map((p) => (
+            <div key={p.id} className="ai-idea ai-ping">
+              <small>⏰ {pingWhen(p)}</small>
+              <p>{p.text}</p>
+              <button type="button" className="link-btn" onClick={() => dropPing(p.id)}>{_t("Отменить")}</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {soon.length > 0 && !state.settings.reminders?.on && <p className="tiny ai-err-t">{_t("Уведомления на этом телефоне выключены, поэтому напоминание придёт только сюда. Включи их в Профиль → Напоминания.")}</p>}
+      {past.length > 0 && (
+        <div className="ai-ideas ai-pings-past">
+          {past.map((p) => (
+            <div key={p.id} className="ai-idea">
+              <small>✓ {pingWhen(p)}</small>
+              <p>{p.text}</p>
+              <button type="button" className="link-btn" onClick={() => dropPing(p.id)}>{_t("Убрать")}</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <h4 className="ai-h">{_t("Идеи")}</h4>
       <p className="tiny">{_t("Сюда попадает всё, что ты попросишь помощника записать. Можно добавить и самому.")}</p>
       <textarea className="ai-name ai-idea-in" rows={3} value={t} onChange={(e) => setT(e.target.value)} placeholder={_t("Идея, мысль, что не забыть…")} />
       <div className="ai-photo-acts">

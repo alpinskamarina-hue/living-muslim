@@ -164,6 +164,8 @@ export interface AppState {
   tests?: import('./selftest').TestsState;
   /** «Мои идеи»: ideas and notes the person (or the assistant for them) wrote down. */
   ideas?: Idea[];
+  /** Reminders the assistant (or the person) set: a push at `at` (ms), shown in Мои идеи. */
+  pings?: Ping[];
 }
 
 export interface Idea { id: string; at: number; text: string }
@@ -375,3 +377,13 @@ export interface RamadanState {
   wake?: string; // "HH:MM" when I get up for work, for the sleep plan
 }
 export interface RDua { id: string; t: string; at: string; ok?: string }
+
+export interface Ping {
+  id: string;
+  text: string;
+  /** When to remind, ms since epoch. */
+  at: number;
+  /** Set relative to a prayer («после Зухра»): which one, for the label. */
+  prayer?: Anchor | 'jumuah';
+  made: number;
+}
