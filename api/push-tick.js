@@ -193,7 +193,7 @@ export function events(prefs, now, courses = []) {
   for (const r of Array.isArray(prefs.pings) ? prefs.pings.slice(0, 20) : []) {
     if (!r || typeof r.at !== 'number' || typeof r.t !== 'string') continue;
     if (localParts(tz, new Date(r.at)).key !== day.key) continue;
-    out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: prefs.lang === 'en' ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=ideas' });
+    out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: prefs.lang === 'en' ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=pings' });
   }
   return { day: day.key, list: out };
 }
