@@ -72,6 +72,22 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { goal_id: { type: 'string' }, text: { type: 'string' } }, required: ['goal_id', 'text'] },
   },
   {
+    name: 'set_reminder',
+    description: 'Set a reminder: a notification on the phone at a time, or a number of minutes after a prayer on a given day (after Jumuah = after Dhuhr on Friday). Use it whenever the person says «напомни», «remind me», or asks not to forget something at a certain moment.',
+    input_schema: { type: 'object', properties: {
+      text: { type: 'string', description: 'What to remind about, short, in the person\'s words, as it should appear in the notification.' },
+      date: { type: 'string', description: 'Day YYYY-MM-DD in the person\'s local calendar (see Today in person_data).' },
+      time: { type: 'string', description: 'Local time HH:MM. Leave out when tied to a prayer.' },
+      after_prayer: { type: 'string', enum: ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'jumuah'] },
+      minutes_after: { type: 'number', description: 'Minutes after that prayer begins; default 30 (for Jumuah 60).' },
+    }, required: ['text', 'date'] },
+  },
+  {
+    name: 'cancel_reminder',
+    description: 'Cancel a reminder by id.',
+    input_schema: { type: 'object', properties: { reminder_id: { type: 'string' } }, required: ['reminder_id'] },
+  },
+  {
     name: 'save_idea',
     description: 'Save an idea, thought or reminder to the person\'s «Мои идеи» list (Profile → Мои идеи). Use when they want to write something down that is not a goal note.',
     input_schema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
@@ -98,12 +114,13 @@ export const TOOLS = [
   },
 ];
 
-export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, save ideas, mark sadaqa, add water, open a screen.
+export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, save ideas, set and cancel reminders, mark sadaqa, add water, open a screen.
 - Do what the person asks right away, without asking for confirmation for ordinary things; every action shows on their phone with an «Отменить» (undo) button.
 - Ask a short question only when something essential is missing or ambiguous (which goal or habit, or a prayer for a new habit you cannot sensibly guess).
 - Use ids exactly as given in person_data. Never invent ids.
 - After acting, confirm in one or two short sentences what you did. Do not repeat the whole list.
 - When the person attaches a book file (📎) the phone puts it on the shelf in Книги by itself; you see it in person_data under Books. Offer a reading goal or create it if asked. You cannot read the text of the book.
+- A reminder needs a day and either a time or a prayer; if the person gave neither, pick a sensible moment (for example after the next Dhuhr) and say which. If the result says notifications are off, tell them to turn on Профиль → Напоминания so the reminder reaches the phone.
 - Removing or stopping something (archive a habit, delete an idea, mark a goal reached) only when the person clearly asked.`;
 
 const BLOCKS = new Set(['text', 'tool_use', 'tool_result', 'thinking', 'redacted_thinking']);

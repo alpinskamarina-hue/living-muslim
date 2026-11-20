@@ -1,6 +1,6 @@
 // Install as an app (PWA) and prayer reminders by Web Push. Only on the standalone site.
 import { isCloud } from './cloud';
-import type { Anchor, AppState, RamadanPush, ReminderPrefs, Settings } from './types';
+import type { Anchor, AppState, Ping, RamadanPush, ReminderPrefs, Settings } from './types';
 import { adhanServer } from './adhan';
 export type { ReminderPrefs, RamadanPush };
 
@@ -79,13 +79,20 @@ let nudge: Nudge | null = null;
 export const setNudge = (n: Nudge) => { nudge = n; };
 
 /** Server copy of what it needs to compute prayer times: place, method, offsets, time zone, and counts for habit nudges. No habit names or notes. */
+let pings: { k: string; at: number; t: string }[] = [];
+/** Upcoming reminders the server should send (next 14 days, at most 20). */
+export function setPings(list: Ping[] | undefined) {
+  const now = Date.now();
+  pings = (list ?? []).filter((x) => x.at > now - 15 * 60000 && x.at < now + 14 * 864e5).sort((a, b) => a.at - b.at).slice(0, 20).map((x) => ({ k: x.id, at: x.at, t: x.text.slice(0, 160) }));
+  return pings;
+}
 function serverPrefs(s: Settings, p: ReminderPrefs) {
   return {
     lat: s.lat, lng: s.lng, method: s.method, madhab: s.madhab, offsets: s.offsets ?? {},
     tz: Intl.DateTimeFormat().resolvedOptions().timeZone, prayers: p.prayers, before: p.before, muhasaba: p.muhasaba,
     ramadan: rpushOf(p), chat: p.chat !== false, quiet: Boolean(s.quiet), lang: s.lang ?? (/^en\b/i.test(navigator.language) ? 'en' : 'ru'),
     adhan: adhanServer(s),
-    habits: p.habits !== false, courses: p.courses !== false, nudge: p.habits !== false ? nudge : null,
+    habits: p.habits !== false, courses: p.courses !== false, nudge: p.habits !== false ? nudge : null, pings,
   };
 }
 

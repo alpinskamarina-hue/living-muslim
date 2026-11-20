@@ -1,13 +1,14 @@
 // The assistant's hands: each tool call from /api/ask is carried out here, on the person's own data.
 // All calls of one answer are applied to a copy of the state; the chat then saves it in one step and keeps
 // the state from before, so «Отменить» can put everything back.
-import type { AppState, Anchor, BookMeta, Goal, Habit, Sphere } from './types';
+import type { AppState, Anchor, BookMeta, Goal, Habit, Ping, Sphere } from './types';
+import { prayerTimes } from './prayer';
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { setMark, setPrayer, uid } from './store';
 import { rawValue } from './goals';
 import { defaultHealth } from './health';
 import type { GoTo } from './guide';
-import { _t } from './i18n';
+import { _t, LANG } from './i18n';
 
 export interface ToolCall { id: string; name: string; input: Record<string, unknown> }
 export interface ActDone { ok: boolean; line: string; result: string }
@@ -34,7 +35,8 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
   const goal = (id: unknown) => (s.goals ?? []).find((g) => g.id === id);
   const setGoal = (id: string, patch: Partial<Goal>) => ({ ...s, goals: (s.goals ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)) });
   const day = isDay(i.date) ? (i.date as string) : today;
-  if (day > today) return fail('the date is in the future');
+  // Marks cannot be made for days ahead; a reminder is about the future.
+  if (day > today && c.name !== 'set_reminder') return fail('the date is in the future');
 
   switch (c.name) {
     case 'add_habit': {
@@ -112,6 +114,33 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
       const text = S(i.text, 1000); if (!text) return fail('empty note');
       return ok(setGoal(g.id, { notes: [...(g.notes ?? []), { id: uid(), day: today, at: Date.now(), text }] }), _t("Заметка в цель «{0}»", g.title));
     }
+    case 'set_reminder': {
+      const text = S(i.text, 200); if (!text) return fail('empty reminder');
+      if (!isDay(i.date)) return fail('date must be YYYY-MM-DD');
+      const [y, m, d] = (i.date as string).split('-').map(Number);
+      const pr = S(i.after_prayer, 10) as Anchor | 'jumuah' | '';
+      let at: number;
+      if (pr) {
+        if (pr !== 'jumuah' && !isAnchor(pr)) return fail('unknown prayer');
+        if (pr === 'jumuah' && new Date(y, m - 1, d).getDay() !== 5) return fail('that day is not a Friday');
+        const t = prayerTimes(s.settings, new Date(y, m - 1, d, 12));
+        const mins = typeof i.minutes_after === 'number' && i.minutes_after >= 0 && i.minutes_after <= 600 ? i.minutes_after : pr === 'jumuah' ? 60 : 30;
+        at = t[pr === 'jumuah' ? 'dhuhr' : pr].getTime() + mins * 60000;
+      } else {
+        const tm = S(i.time, 5); if (!/^\d{1,2}:\d{2}$/.test(tm)) return fail('give a time HH:MM or after_prayer');
+        const [hh, mm] = tm.split(':').map(Number);
+        at = new Date(y, m - 1, d, hh, mm).getTime();
+      }
+      if (at < Date.now() - 60000) return fail('that moment has already passed');
+      const p: Ping = { id: uid(), text, at, made: Date.now(), ...(pr ? { prayer: pr } : {}) };
+      const pushOn = Boolean(s.settings.reminders?.on);
+      return ok({ ...s, pings: [...(s.pings ?? []), p] }, _t("Напоминание: {0} · {1}", pingWhen(p), text),
+        `reminder set, id ${p.id}, at ${new Date(at).toString().slice(0, 21)}${pushOn ? '' : '; notifications are OFF on this phone, so it shows only in the app until they turn on Профиль → Напоминания'}`);
+    }
+    case 'cancel_reminder': {
+      const p = (s.pings ?? []).find((x) => x.id === i.reminder_id); if (!p) return fail('no such reminder');
+      return ok({ ...s, pings: (s.pings ?? []).filter((x) => x.id !== p.id) }, _t("Напоминание отменено: {0}", p.text));
+    }
     case 'save_idea': {
       const text = S(i.text, 1000); if (!text) return fail('empty idea');
       const id = uid();
@@ -150,4 +179,15 @@ export function bookGoal(s: AppState, b: BookMeta, today: string, due?: string, 
   };
   g.start = rawValue(s, g, today);
   return g;
+}
+
+const PR_NAME: Record<string, () => string> = {
+  fajr: () => _t("Фаджра"), dhuhr: () => _t("Зухра"), asr: () => _t("Асра"), maghrib: () => _t("Магриба"), isha: () => _t("Иши"), jumuah: () => _t("Джумы"),
+};
+/** «пт, 21 нояб., 13:45 (после Джумы)» */
+export function pingWhen(p: Ping): string {
+  const d = new Date(p.at);
+  const day = d.toLocaleDateString(LANG === 'en' ? 'en-GB' : 'ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
+  const tm = d.toLocaleTimeString(LANG === 'en' ? 'en-GB' : 'ru-RU', { hour: '2-digit', minute: '2-digit' });
+  return p.prayer ? `${day}, ${tm} (${_t("после {0}", PR_NAME[p.prayer]())})` : `${day}, ${tm}`;
 }

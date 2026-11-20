@@ -75,7 +75,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
   if (page === 'assistant') return <Sub title={aiName(s)} onBack={back}><AssistantSettings s={s} set={set} admin={admin} onOpen={() => onGo?.({ assistant: true })} /></Sub>;
-  if (page === 'ideas') return <Sub title={_t("Мои идеи")} onBack={back}><IdeasPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
+  if (page === 'ideas') return <Sub title={_t("Идеи и напоминания")} onBack={back}><IdeasPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
   if (page === 'help') return <Sub title={_t("Помощь")} onBack={back}><HelpPage /></Sub>;
   if (page === 'me') return <Sub title={_t("Мой профиль")} onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} /></Sub>;
   if (page === 'account') return <Sub title={_t("Аккаунт")} onBack={back}><AccountPage s={s} set={set} /></Sub>;
@@ -135,7 +135,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
 
       <div className="menu">
         <Row icon="✨" title={aiName(s)} sub={admin ? _t("Аватар, имя, как говорит и обучение") : _t("Аватар, имя и как он говорит")} onClick={() => go('assistant')} />
-        <Row icon="💡" title={_t("Мои идеи")} sub={state.ideas?.length ? _t("Записано: {0}", state.ideas.length) : _t("Идеи и мысли, которые записал ты или помощник")} onClick={() => go('ideas')} />
+        <Row icon="💡" title={_t("Идеи и напоминания")} sub={(() => { const n = (state.pings ?? []).filter((p) => p.at > Date.now()).length; return n ? _t("Напоминаний впереди: {0}", n) : state.ideas?.length ? _t("Записано: {0}", state.ideas.length) : _t("Идеи и мысли, которые записал ты или помощник"); })()} onClick={() => go('ideas')} />
         <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
         <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
         {isCloud && nikahOn && <Row icon="💍" title={_t("Никах")} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}

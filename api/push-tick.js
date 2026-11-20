@@ -189,6 +189,12 @@ export function events(prefs, now, courses = []) {
     const [hh, mm] = prefs.muhasaba.split(':').map(Number);
     out.push({ key: `${day.key}:muhasaba`, at: zoned(tz, day.y, day.m, day.d, hh, mm), title: prefs.lang === 'en' ? 'Muhasabah' : 'Мухасаба', body: prefs.lang === 'en' ? 'A couple of minutes to look back on the day: what went well and what you are grateful for.' : 'Пара минут, чтобы оглянуться на день: что получилось и за что ты благодарен.', tag: 'muhasaba', url: '/app/' });
   }
+  // Reminders set in the app (often by the assistant): sent on their own day, at their minute.
+  for (const r of Array.isArray(prefs.pings) ? prefs.pings.slice(0, 20) : []) {
+    if (!r || typeof r.at !== 'number' || typeof r.t !== 'string') continue;
+    if (localParts(tz, new Date(r.at)).key !== day.key) continue;
+    out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: prefs.lang === 'en' ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=ideas' });
+  }
   return { day: day.key, list: out };
 }
 

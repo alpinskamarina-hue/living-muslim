@@ -16,7 +16,7 @@ import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
 import { Profile } from './components/Profile';
-import { syncPush, setNudge, nudgeOf } from './push';
+import { syncPush, setNudge, nudgeOf, setPings } from './push';
 import { effectiveTheme, themeMode, setCurrentTheme, sysPrefersDark } from './theme';
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
@@ -119,7 +119,8 @@ export function App() {
   const setSettings = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
   const nudge = nudgeOf(state, today);
   setNudge(nudge);
-  const remKey = JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings)) + JSON.stringify(nudge);
+  const pingKey = JSON.stringify(setPings(state.pings));
+  const remKey = pingKey + JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings)) + JSON.stringify(nudge);
   useEffect(() => {
     if (!state.settings.reminders?.on) return;
     // Ticking habits changes the counts often: wait a moment so a burst of ticks is one save.
@@ -322,6 +323,15 @@ export function App() {
     if ('assistant' in t) { setAiOpen(true); return; }
     if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
   };
+  // A tap on a reminder notification opens /app/?go=ideas: Profile → Мои идеи и напоминания.
+  useEffect(() => {
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.get('go') !== 'ideas') return;
+      u.searchParams.delete('go'); history.replaceState(null, '', u.toString());
+      go({ profile: 'ideas' });
+    } catch { /* */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tariff: 7 days of Pro from the first day, then Free «по 3». Re-check the limits when the plan changes,
   // show the reminder sheets on day 5, day 7 and day 8, and open the Pro screen from anywhere.
