@@ -58,3 +58,33 @@ export async function recognise(data: string, today: string, signal?: AbortSigna
     return { ok: false, why: 'net' };
   }
 }
+
+export type IngResult =
+  | { ok: true; name: string; ingredients: string; logo: boolean; left: number | null }
+  | { ok: false; why: 'unreadable'; reason: string; left: number | null }
+  | { ok: false; why: 'signin' | 'limit' | 'net' | 'busy' | 'nokey' | 'image' };
+
+/** «Халяль-сканер»: read the ingredient list off a photo of the pack (one photo from the same daily limit). */
+export async function readIngredients(data: string, today: string, signal?: AbortSignal): Promise<IngResult> {
+  const t = await accessToken();
+  if (!t) return { ok: false, why: 'signin' };
+  try {
+    const r = await fetch('/api/food-photo', {
+      method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ image: data, type: 'image/jpeg', lang: LANG, task: 'ingredients' }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) return { ok: false, why: 'signin' };
+    if (r.status === 429) { setLeft(today, 0); return { ok: false, why: 'limit' }; }
+    if (r.status === 503 && j.error === 'nokey') return { ok: false, why: 'nokey' };
+    if (r.status === 400) return { ok: false, why: 'image' };
+    if (!r.ok) return { ok: false, why: 'busy' };
+    const left = typeof j.left === 'number' ? j.left : null;
+    setLeft(today, left);
+    if (!j.ok || !j.ingredients) return { ok: false, why: 'unreadable', reason: String(j.why || ''), left };
+    return { ok: true, name: String(j.name || ''), ingredients: String(j.ingredients), logo: Boolean(j.halal_logo), left };
+  } catch {
+    return { ok: false, why: 'net' };
+  }
+}
