@@ -18,11 +18,11 @@ function Check({ done, onClick }: { done: boolean; onClick: () => void }) {
   return <button type="button" className={`pn-ck${done ? ' on' : ''}`} aria-pressed={done} aria-label={done ? _t("Сделано") : _t("Отметить сделанным")} onClick={(e) => { e.stopPropagation(); onClick(); }}>{done ? '✓' : ''}</button>;
 }
 
-function Item({ state, p, k, update, onOpen }: { state: AppState; p: Plan; k: string; update: Up; onOpen?: (p: Plan) => void }) {
+function Item({ state, p, k, update, onOpen, onTick }: { state: AppState; p: Plan; k: string; update: Up; onOpen?: (p: Plan) => void; onTick?: (id: string, done: boolean) => void }) {
   const done = isDone(p, k);
   return (
     <div className={`pn-it${done ? ' done' : ''}`} role="button" tabIndex={0} onClick={() => onOpen?.(p)} onKeyDown={(e) => { if (e.key === 'Enter') onOpen?.(p); }}>
-      <Check done={done} onClick={() => update((s) => toggleDone(s, p.id, k))} />
+      <Check done={done} onClick={() => { onTick?.(p.id, !done); update((s) => toggleDone(s, p.id, k)); }} />
       <div className="pn-tx">
         <b>{p.text}</b>
         <small>{p.list && <span className={`pn-tag ${listTone(state, p.list)}`}>{p.list}</span>}{whenLabel(state.settings, p, k)}</small>
@@ -33,10 +33,18 @@ function Item({ state, p, k, update, onOpen }: { state: AppState; p: Plan; k: st
 
 /** Today: «Планы на сегодня». Hidden when there is nothing today and nothing overdue. */
 export function PlansCard({ state, update, today, onOpen }: { state: AppState; update: Up; today: string; onOpen: () => void }) {
-  const list = dayPlans(state, today);
+  // Done plans leave Today (Nasim: the main page gets crowded). A plan ticked just now stays a moment so the tick is seen.
+  const [fresh, setFresh] = useState<string[]>([]);
+  const tick = (id: string, done: boolean) => {
+    if (!done) return;
+    setFresh((f) => [...f, id]);
+    setTimeout(() => setFresh((f) => f.filter((x) => x !== id)), 1400);
+  };
+  const all = dayPlans(state, today);
+  const list = all.filter((p) => !isDone(p, today) || fresh.includes(p.id));
   const late = overdue(state, today);
   if (!list.length && !late.length) return null;
-  const n = list.filter((p) => isDone(p, today)).length;
+  const n = all.filter((p) => isDone(p, today)).length;
   const mon = weekStart(today);
   let rest = 0;
   for (let i = 1; i < 7; i++) { const k = addDays(today, i); if (k > addDays(mon, 6)) break; rest += dayPlans(state, k).length; }
@@ -44,14 +52,14 @@ export function PlansCard({ state, update, today, onOpen }: { state: AppState; u
   return (
     <section className="pn-card">
       <div className="pn-card-h"><b>🗓 {_t("Планы на сегодня")}</b><button type="button" className="link-btn" onClick={onOpen}>{_t("Все")} ›</button></div>
-      {list.slice(0, 5).map((p) => <Item key={p.id} state={state} p={p} k={today} update={update} onOpen={onOpen} />)}
+      {list.slice(0, 5).map((p) => <Item key={p.id} state={state} p={p} k={today} update={update} onOpen={onOpen} onTick={tick} />)}
       {late.length > 0 && (
         <div className="pn-late">
           <span>{_t("Не сделано раньше: {0}", late.length)}</span>
           <button type="button" className="link-btn" onClick={() => update((s) => late.reduce((acc, p) => movePlan(acc, p.id, today), s))}>{_t("Перенести на сегодня")}</button>
         </div>
       )}
-      <small className="pn-card-f">{list.length ? _t("{0} из {1} сделано", n, list.length) : ''}{rest ? `${list.length ? ' · ' : ''}${_t("ещё {0} на неделе", rest)}` : ''}</small>
+      <small className="pn-card-f">{all.length ? _t("{0} из {1} сделано", n, all.length) : ''}{rest ? `${all.length ? ' · ' : ''}${_t("ещё {0} на неделе", rest)}` : ''}</small>
     </section>
   );
 }
