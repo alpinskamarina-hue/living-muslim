@@ -3523,8 +3523,8 @@ button.ud-wait em { font-style: normal; }
 .wa .cc-field textarea { border: 0; background: transparent; border-radius: 24px; padding: 12px 6px 12px 16px; }
 .wa .cc-field textarea:focus { outline: none; }
 .wa .cc-plus, .cc-cam { width: 38px; height: 44px; border: 0; background: none; color: var(--wa-ink2); font-size: 20px; flex: none; padding: 0; margin: 0; border-radius: 0; }
-.wa .cc-plus { transform: rotate(-45deg); }
-.wa .cc-plus:disabled { transform: none; }
+.wa .cc-plus, .cc-cam { display: grid; place-items: center; }
+.cc-plus .cc-ico, .cc-cam .cc-ico { display: block; }
 .wa .cc-send, .wa .cc-mic:not(.big) { width: 48px; height: 48px; background: var(--wa-acc); }
 .wa .cc-reply { background: var(--wa-field); border-radius: 12px; }
 .cc-acts-g button span { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 24px; background: var(--green-2); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); }

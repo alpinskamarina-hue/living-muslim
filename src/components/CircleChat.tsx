@@ -572,8 +572,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
               <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : placeholder ?? _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); if (file) sendFile(); else send(); } }} />
-              {main && <button type="button" className="cc-plus" disabled={sending} aria-label={_t("Прикрепить и действия круга")} onClick={() => setPlus(true)}>{sending ? '…' : '📎'}</button>}
-              {main && chat.filesOn && !text.trim() && !file && <button type="button" className="cc-cam" disabled={sending} aria-label={_t("Камера")} onClick={() => pickKind(true, true)}>📷</button>}
+              {main && <button type="button" className="cc-plus" disabled={sending} aria-label={_t("Прикрепить и действия круга")} onClick={() => setPlus(true)}>{sending ? '…' : <ClipIcon />}</button>}
+              {main && chat.filesOn && !text.trim() && !file && <button type="button" className="cc-cam" disabled={sending} aria-label={_t("Камера")} onClick={() => pickKind(true, true)}><CamIcon /></button>}
               </div>
               {file || text.trim() || !recorder.supported || !chat.voiceOn ? (
                 <button type="button" className="cc-send" disabled={(!text.trim() && !file) || sending} aria-label={_t("Отправить")} onClick={() => { if (file) sendFile(); else send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
@@ -652,4 +652,12 @@ function useTopic(chat: ChatApi, topic?: string): ChatApi {
     };
     return out;
   }, [chat, topic]);
+}
+
+/* Thin line icons in the composer, like WhatsApp: a slanted paper clip and an outline camera */
+function ClipIcon() {
+  return <svg className="cc-ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>;
+}
+function CamIcon() {
+  return <svg className="cc-ico" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3.5" /></svg>;
 }
