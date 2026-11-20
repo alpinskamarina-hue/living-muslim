@@ -3795,3 +3795,9 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .ai-book-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .ai-book-acts button { border: 1px solid var(--line); background: var(--surface); color: var(--green-2); border-radius: 16px; padding: 7px 12px; font: inherit; font-size: 13.5px; font-weight: 600; }
 :root[data-theme="dark"] .ai-book-acts button { background: var(--surface-2); color: var(--ink); }
+/* Assistant memory in Profile */
+.ai-mem { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 12px 14px; margin: 8px 0; }
+.ai-mem ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14.5px; color: var(--ink); }
+.ai-mem textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 12px; padding: 10px; font: inherit; font-size: 14.5px; resize: vertical; }
+.ai-mem-acts { display: flex; gap: 14px; align-items: center; margin-top: 10px; }
+:root[data-theme="dark"] .ai-mem { background: var(--surface-2); }
