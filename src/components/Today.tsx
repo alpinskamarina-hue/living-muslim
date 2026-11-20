@@ -20,7 +20,6 @@ import { RamadanToday } from './Ramadan';
 import { ramadanHidden, ramadanMode } from '../rplan';
 import { _t, _tj, LOC } from '../i18n';
 import { MosqueCard, QiblaChip, type QiblaTab } from './Mosques';
-import { HalalCard } from './HalalScan';
 import { aiName } from '../assistant';
 
 interface Props {
@@ -33,7 +32,6 @@ interface Props {
   onAdd: (a: Anchor) => void;
   circleLine?: { names: string[]; onOpen: () => void };
   onSafar: () => void;
-  onHalal?: (start?: 'cam' | 'hist') => void;
   onAssistant?: () => void;
   firstWeek?: React.ReactNode;
   onGoal: (id: string) => void;
@@ -52,7 +50,7 @@ interface Props {
   pathCard?: React.ReactNode;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onHalal, onAssistant, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, plans, quitCheck, onQibla, pathCard }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onAssistant, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, plans, quitCheck, onQibla, pathCard }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -160,7 +158,6 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
 
       <div className="scroll">
         <MosqueCard state={state} update={update} today={today} now={now} times={times} next={next} onOpen={onQibla} />
-        {onHalal && <HalalCard onOpen={onHalal} />}
         {pathCard}
         {plan}
         {plans}

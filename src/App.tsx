@@ -398,7 +398,7 @@ export function App() {
         {tab === 'today' && (
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
-            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onHalal={(st) => setHalal(st ?? 'cam')} onAssistant={state.settings.aiFab === false ? () => setAiOpen(true) : undefined} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
+            onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onAssistant={state.settings.aiFab === false ? () => setAiOpen(true) : undefined} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
             plans={<PlansCard state={state} update={update} today={today} onOpen={() => go({ profile: 'plans' })} />}
             quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
             quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn || (onbFor && !onbOver) ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
