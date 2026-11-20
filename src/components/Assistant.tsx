@@ -443,11 +443,8 @@ function AssistantTrain() {
   );
 }
 
-/** Profile → Мои идеи: what the person or the assistant wrote down. */
-export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (fn: (s: AppState) => AppState) => void; onAsk: () => void }) {
-  const [t, setT] = useState('');
-  const list = [...(state.ideas ?? [])].reverse();
-  const add = () => { const v = t.trim(); if (!v) return; update((s) => ({ ...s, ideas: [...(s.ideas ?? []), { id: Math.random().toString(36).slice(2, 10), at: Date.now(), text: v.slice(0, 1000) }] })); setT(''); };
+/** Profile → Мои напоминания: what the assistant (asked «напомни…») set; each one is a push at its minute. */
+export function PingsPage({ state, update, onAsk, onRemind }: { state: AppState; update: (fn: (s: AppState) => AppState) => void; onAsk: () => void; onRemind: () => void }) {
   const now = Date.now();
   const pings = [...(state.pings ?? [])].sort((a, b) => a.at - b.at);
   const soon = pings.filter((p) => p.at > now - 15 * 60000);
@@ -455,7 +452,6 @@ export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (
   const dropPing = (id: string) => update((s) => ({ ...s, pings: (s.pings ?? []).filter((y) => y.id !== id) }));
   return (
     <>
-      <h4 className="ai-h">{_t("Напоминания")}</h4>
       {soon.length === 0 ? <p className="tiny">{_t("Скажи помощнику «напомни…», например «напомни в пятницу после Джумы позвонить брату».")}</p> : (
         <div className="ai-ideas">
           {soon.map((p) => (
@@ -479,7 +475,21 @@ export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (
           ))}
         </div>
       )}
-      <h4 className="ai-h">{_t("Идеи")}</h4>
+      <div className="ai-photo-acts">
+        <button type="button" className="ghost-btn" onClick={onAsk}>{_t("Сказать помощнику")}</button>
+        {!state.settings.reminders?.on && <button type="button" className="link-btn" onClick={onRemind}>{_t("Включить уведомления")}</button>}
+      </div>
+    </>
+  );
+}
+
+/** Profile → Мои идеи: what the person or the assistant wrote down. */
+export function IdeasPage({ state, update, onAsk }: { state: AppState; update: (fn: (s: AppState) => AppState) => void; onAsk: () => void }) {
+  const [t, setT] = useState('');
+  const list = [...(state.ideas ?? [])].reverse();
+  const add = () => { const v = t.trim(); if (!v) return; update((s) => ({ ...s, ideas: [...(s.ideas ?? []), { id: Math.random().toString(36).slice(2, 10), at: Date.now(), text: v.slice(0, 1000) }] })); setT(''); };
+  return (
+    <>
       <p className="tiny">{_t("Сюда попадает всё, что ты попросишь помощника записать. Можно добавить и самому.")}</p>
       <textarea className="ai-name ai-idea-in" rows={3} value={t} onChange={(e) => setT(e.target.value)} placeholder={_t("Идея, мысль, что не забыть…")} />
       <div className="ai-photo-acts">

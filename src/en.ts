@@ -5468,4 +5468,8 @@ export const EN: Record<string, string> = {
   "Уведомления на этом телефоне выключены, поэтому напоминание придёт только сюда. Включи их в Профиль → Напоминания.": "Notifications are off on this phone, so reminders only show here. Turn them on in Profile → Reminders.",
   "Идеи и напоминания": "Ideas and reminders",
   "Напоминаний впереди: {0}": "Upcoming reminders: {0}",
+  "Мои напоминания": "My reminders",
+  "Впереди: {0}": "Upcoming: {0}",
+  "Скажи помощнику «напомни…»": "Tell the assistant «remind me…»",
+  "Включить уведомления": "Turn on notifications",
 };
