@@ -16,6 +16,7 @@ import { search as foodSearch, itemFrom } from './foodcalc';
 import type { FastMark, FoodItem, FoodState, Meal, UmrahState } from './types';
 import type { GoTo } from './guide';
 import { _t, LANG } from './i18n';
+import { getMemory, setMemory } from './assistant';
 
 export interface ToolCall { id: string; name: string; input: Record<string, unknown> }
 export interface ActDone { ok: boolean; line: string; result: string }
@@ -44,7 +45,7 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
   const setGoal = (id: string, patch: Partial<Goal>) => ({ ...s, goals: (s.goals ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)) });
   const day = isDay(i.date) ? (i.date as string) : today;
   // Marks cannot be made for days ahead; a reminder is about the future.
-  if (day > today && !['set_reminder', 'add_plan', 'update_plan', 'draft_message', 'change_setting', 'set_quran_place', 'set_book_page', 'umrah'].includes(c.name)) return fail('the date is in the future');
+  if (day > today && !['set_reminder', 'add_plan', 'update_plan', 'draft_message', 'change_setting', 'memory', 'set_quran_place', 'set_book_page', 'umrah'].includes(c.name)) return fail('the date is in the future');
 
   switch (c.name) {
     case 'add_habit': {
@@ -343,6 +344,31 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
       if (isAnchor(i.offset_prayer) && typeof i.offset_minutes === 'number' && Math.abs(i.offset_minutes) <= 60) { st.offsets = { ...(st.offsets ?? {}), [i.offset_prayer]: Math.round(i.offset_minutes) }; lines.push(_t("поправка {0}: {1} мин", ANCHOR_LABEL[i.offset_prayer].ru, Math.round(i.offset_minutes))); }
       if (!lines.length) return fail('nothing to change (language, city and notifications are changed by the person in Профиль)');
       return ok({ ...s, settings: st }, _t("Настройки: {0}", lines.join(', ')));
+    }
+    case 'memory': {
+      if (s.settings.aiMemory === false) return fail('memory is switched off by the person in Профиль → Помощник → Память; tell them to switch it on');
+      const t = S(i.text, 300).replace(/\s+/g, ' ');
+      if (!t) return fail('empty text');
+      const m = getMemory();
+      const lines = m.text.split('\n').map((x) => x.trim()).filter(Boolean);
+      const norm = (x: string) => x.replace(/^-\s*/, '').trim().toLowerCase();
+      if (i.action === 'forget') {
+        const keep = lines.filter((x) => !norm(x).includes(t.toLowerCase()));
+        if (keep.length === lines.length) return fail('no line in the memory contains this text; use the exact words from assistant_memory');
+        setMemory({ ...m, text: keep.join('\n'), at: Date.now() });
+        return ok(s, _t("Забыла: {0}", t));
+      }
+      if (lines.some((x) => norm(x) === t.toLowerCase())) return ok(s, _t("Уже помню: {0}", t));
+      const next = [`- ${t}`, ...lines].join('\n');
+      if (next.length > 3000) return fail('memory is full (3000 characters); ask the person what to forget');
+      setMemory({ ...m, text: next, at: Date.now() });
+      return ok(s, _t("Запомнила: {0}", t), 'saved to the memory; it comes with every question from now on');
+    }
+    case 'delete_food': {
+      const f = foodState(s);
+      const items = f.log?.[day] ?? [];
+      const it = items.find((x) => x.id === i.item_id); if (!it) return fail('no food item with this id on that day');
+      return ok({ ...s, food: { ...f, log: { ...(f.log ?? {}), [day]: items.filter((x) => x.id !== it.id) } } }, _t("Убрано из питания: {0} {1} г", it.n, it.g));
     }
     case 'open_screen': {
       const g = SCREENS[S(i.screen, 40)]; if (!g) return fail('unknown screen');

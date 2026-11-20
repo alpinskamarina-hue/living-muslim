@@ -123,7 +123,7 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   if (fd) {
     const eaten = fd.log?.[today] ?? [];
     const w = Object.keys(fd.weight ?? {}).sort().pop();
-    const bits = [`mode ${fd.mode ?? 'mera'}`, eaten.length ? `eaten today ${eaten.reduce((a, x) => a + x.k, 0)} kcal (${eaten.map((x) => `${cut(x.n, 30)} ${x.g} g`).join(', ')})` : '', w ? `last weight ${fd.weight[w]} kg on ${w}` : ''].filter(Boolean);
+    const bits = [`mode ${fd.mode ?? 'mera'}`, eaten.length ? `eaten today ${eaten.reduce((a, x) => a + x.k, 0)} kcal (${eaten.map((x) => `[id:${x.id}] ${cut(x.n, 30)} ${x.g} g ${x.k} kcal`).join(', ')})` : '', w ? `last weight ${fd.weight[w]} kg on ${w}` : ''].filter(Boolean);
     L.push(`Food: ${bits.join(', ')}.`);
   }
   const rf = s.ramadan?.fasts?.[today];
