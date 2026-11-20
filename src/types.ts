@@ -277,11 +277,15 @@ export interface Trip {
   told?: string;
   /** Circle dua requests I made dua for on this trip (asker ids). */
   duas?: string[];
+  /** No return date: 'unknown' (may leave any day) or 'long' (moving, study, work). `to` is then OPEN_TO. */
+  open?: 'unknown' | 'long';
+  /** Day the person decided to stay: from then on not a traveller. */
+  settled?: string;
   /** Plan ids added to «Планы» for departure and return. */
   planIds?: string[];
 }
 
-export interface PastTrip { from: string; to: string; place?: string; prayers?: number; total?: number; duas?: number; sunnah?: boolean }
+export interface PastTrip { from: string; to: string; open?: boolean; place?: string; prayers?: number; total?: number; duas?: number; sunnah?: boolean }
 export interface Masah { worn: number; broke?: number; wipes?: number }
 
 export interface UmrahState {

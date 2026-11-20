@@ -4477,3 +4477,9 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .sf-ic .li { width: 18px; height: 18px; }
 .sf-mini .li, .sf-chips .li, .ghost-btn .li, .link-btn .li { width: 16px; height: 16px; vertical-align: -3px; }
 .sess .ghost-btn:has(.li) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.cp-mine { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cp-mine small { color: var(--ink-2); font-size: 12px; margin-right: 2px; }
+.cp-mine button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 13px; color: var(--ink); }
+.cp-search .link-btn { padding: 0; font-size: 12.5px; }
+.sf-when { display: flex; flex-direction: column; gap: 0; }
+.sf-when .chk { padding: 8px 2px; }

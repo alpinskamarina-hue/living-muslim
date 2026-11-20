@@ -26,10 +26,18 @@ export function compassWord(deg: number) {
 }
 
 export const tripOn = (s: AppState, day: string) => Boolean(s.trip && day >= s.trip.from && day <= s.trip.to);
+/** A trip without a return date keeps `to` far ahead. */
+export const OPEN_TO = '2099-12-31';
+/** Without a return date habit days are excused only for the first days, else streaks could be frozen for good. */
+export const OPEN_EXCUSED = 3;
+const plusDays = (k: string, n: number) => { const d = fromKey(k); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const daysBetween = (a: string, b: string) => Math.round((fromKey(b).getTime() - fromKey(a).getTime()) / 864e5);
+/** Shafi'i: not knowing when one leaves, shortening lasts up to 18 days. */
+export const SHAFI_OPEN_DAYS = 18;
 
 export function isTripDay(s: AppState, day: string) {
-  if (tripOn(s, day)) return true;
-  return (s.pastTrips ?? []).some((t) => day >= t.from && day <= t.to);
+  if (tripOn(s, day) && (!s.trip!.open || day < plusDays(s.trip!.from, OPEN_EXCUSED))) return true;
+  return (s.pastTrips ?? []).some((t) => day >= t.from && day <= (t.open ? [t.to, plusDays(t.from, OPEN_EXCUSED - 1)].sort()[0] : t.to));
 }
 
 /** Settings for prayer times: the destination while a trip is on. */
@@ -48,6 +56,19 @@ export function travelStatus(s: AppState, day: string): { traveler: boolean; why
   if (!s.trip || !tripOn(s, day)) return { traveler: false, why: '' };
   const km = distanceKm(s.settings, s.trip);
   if (km < MIN_KM) return { traveler: false, why: _t("До места {0} км. Обычно сафаром считается поездка от ~80 км.", Math.round(km)) };
+  const hanafi = s.settings.madhab === 'hanafi';
+  const roadDay = day === s.trip.from;
+  const shortWhy = hanafi ? _t("Зухр, Аср и Иша по 2 ракаата. У ханафитов намазы не объединяют.") : _t("Зухр, Аср и Иша по 2 ракаата. Можно объединять Зухр с Асром и Магриб с Ишой.");
+  if (s.trip.settled && day >= s.trip.settled && !roadDay)
+    return { traveler: false, why: _t("Ты решил остаться на месте надолго: ты уже не путник, намазы полностью, джума обязательна.") };
+  if (s.trip.open === 'long' && !roadDay)
+    return { traveler: false, why: _t("Ты остаёшься надолго: путник только в день дороги. На месте намазы полностью, джума обязательна.") };
+  if (s.trip.open === 'unknown') {
+    if (hanafi) return { traveler: true, why: _t("Ты не знаешь, когда уедешь, и не решил пробыть 15 дней: сокращаешь, даже если ждёшь долго. ") + shortWhy };
+    const n = daysBetween(s.trip.from, day);
+    if (n > SHAFI_OPEN_DAYS) return { traveler: false, why: _t("Прошло больше {0} дней: по шафиитскому мазхабу, даже если не знаешь, когда уедешь, теперь намазы полностью.", SHAFI_OPEN_DAYS) };
+    return { traveler: true, why: shortWhy };
+  }
   const limit = STAY_LIMIT[s.settings.madhab];
   if (s.trip.stayDays >= limit && day !== s.trip.from && day !== s.trip.to)
     return { traveler: false, why: _t("Ты собираешься пробыть на месте {0} дн. По {1} мазхабу от {2} дней на месте ты уже не путник: намазы полностью. Сокращение только в дни дороги.", s.trip.stayDays, s.settings.madhab === 'hanafi' ? _t("ханафитскому") : _t("шафиитскому"), limit) };
@@ -208,11 +229,18 @@ export function tripSummary(s: AppState, t: Trip): PastTrip {
   let prayers = 0, total = 0;
   for (let d = fromKey(t.from); ; d.setDate(d.getDate() + 1)) {
     const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    if (k > t.to) break;
+    if (k > t.to || k > plusDays(t.from, 400)) break;
     total += 5;
     prayers += Object.keys(s.prayers?.[k] ?? {}).length;
   }
-  return { from: t.from, to: t.to, place: t.place, prayers, total, duas: t.duas?.length ?? 0 };
+  return { from: t.from, to: t.to, place: t.place, prayers, total, duas: t.duas?.length ?? 0, ...(t.open ? { open: true } : {}) };
+}
+
+/** Shafi'i, return unknown: days of shortening left (0 = from today full prayers). Null when it does not apply. */
+export function shafiDaysLeft(s: AppState, day: string): number | null {
+  const t = s.trip;
+  if (!t || t.open !== 'unknown' || s.settings.madhab !== 'shafi' || t.settled) return null;
+  return Math.max(0, SHAFI_OPEN_DAYS - daysBetween(t.from, day));
 }
 
 /** Reminders for the server: the end of masah (3 h before) and joined prayers on the next two trip days. */

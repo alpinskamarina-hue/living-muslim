@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { AppState, Masah, Trip } from '../types';
 import { addDays, fromKey } from '../dates';
 import {
-  CHECKLIST, DUAS, MIN_KM, STAY_LIMIT, checkId, compassWord, distanceKm, isChecked, qibla, travelStatus, tripOn, here,
+  OPEN_TO, SHAFI_OPEN_DAYS, shafiDaysLeft, CHECKLIST, DUAS, MIN_KM, STAY_LIMIT, checkId, compassWord, distanceKm, isChecked, qibla, travelStatus, tripOn, here,
   travelPlan, masahLeft, leftLabel, roadPlan, prayerName, hhmm, tripSummary,
 } from '../safar';
 import { prayerTimes } from '../prayer';
@@ -31,6 +31,7 @@ interface Props {
 }
 
 const fmt = (k: string) => { const d = fromKey(k); return `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, '0')}`; };
+const rangeOf = (t: { from: string; to: string; open?: unknown }) => (t.open || t.to === OPEN_TO ? _tj("с {0} · без даты возвращения", fmt(t.from)) : `${fmt(t.from)}–${fmt(t.to)}`);
 const dayCount = (a: string, b: string) => Math.round((fromKey(b).getTime() - fromKey(a).getTime()) / 864e5) + 1;
 const useNow = (ms = 30000) => { const [n, setN] = useState(() => new Date()); useEffect(() => { const t = setInterval(() => setN(new Date()), ms); return () => clearInterval(t); }, [ms]); return n; };
 
@@ -38,8 +39,8 @@ export function Safar({ state, update, today, onClose, circle, joined }: Props) 
   const trip = state.trip;
   const on = tripOn(state, today);
   const [tab, setTab] = useState<Tab>('trip');
-  const title = state.tripBack && !trip ? _t("С возвращением!") : trip ? (on ? _tj("{0} · день {1} из {2}", trip.place, dayCount(trip.from, today), dayCount(trip.from, trip.to)) : trip.place) : _t("Сафар");
-  const sub = trip ? `${fmt(trip.from)}–${fmt(trip.to)}${on ? ` · ${travelStatus(state, today).traveler ? _t("ты путник") : _t("полные намазы")}` : ''}` : _t("Поездка, дорога, масх, дуа, рядом, кибла");
+  const title = state.tripBack && !trip ? _t("С возвращением!") : trip ? (on ? (trip.open ? _tj("{0} · день {1}", trip.place, dayCount(trip.from, today)) : _tj("{0} · день {1} из {2}", trip.place, dayCount(trip.from, today), dayCount(trip.from, trip.to))) : trip.place) : _t("Сафар");
+  const sub = trip ? `${rangeOf(trip)}${on ? ` · ${travelStatus(state, today).traveler ? _t("ты путник") : _t("полные намазы")}` : ''}` : _t("Поездка, дорога, масх, дуа, рядом, кибла");
   const tabs: [Tab, string][] = [['trip', _t("Поездка")], ['road', _t("Дорога")], ['masah', _t("Масх")], ['dua', _t("Дуа")], ['near', _t("Рядом")], ['qibla', _t("Кибла")]];
   const pt = on ? trip! : null;
   return (
@@ -74,6 +75,7 @@ function TripSetup({ state, update, today }: { state: AppState; update: Update; 
   const [stay, setStay] = useState(3);
   const [geo, setGeo] = useState('');
   const [toPlans, setToPlans] = useState(true);
+  const [when, setWhen] = useState<'date' | 'unknown' | 'long'>('date');
   const km = place ? distanceKm(state.settings, place) : 0;
 
   const locateMe = () => {
@@ -88,34 +90,53 @@ function TripSetup({ state, update, today }: { state: AppState; update: Update; 
 
   const start = () => {
     if (!place) return;
-    const end = to < from ? from : to;
+    const open = when === 'date' ? undefined : when;
+    const end = open ? OPEN_TO : to < from ? from : to;
     const now = Date.now();
     const planIds: string[] = [];
     const plans = toPlans ? [
       { id: pid(), text: _tj("Выезд: {0}", place.name), date: from, list: undefined, made: now, upd: now },
-      { id: pid(), text: _tj("Возвращение из: {0}", place.name), date: end, made: now, upd: now },
+      ...(open ? [] : [{ id: pid(), text: _tj("Возвращение из: {0}", place.name), date: end, made: now, upd: now }]),
     ] : [];
     plans.forEach((p) => planIds.push(p.id));
-    const t: Trip = { place: place.name, lat: place.lat, lng: place.lng, from, to: end, stayDays: stay, paused: [], checklist: [], planIds };
+    const t: Trip = { place: place.name, lat: place.lat, lng: place.lng, from, to: end, stayDays: open ? 0 : stay, paused: [], checklist: [], planIds, ...(open ? { open } : {}) };
     update((s) => ({ ...s, trip: t, tripBack: null, plans: plans.length ? [...(s.plans ?? []), ...plans] : s.plans }));
   };
 
   return (
     <>
       <p className="q-msg left">{_t("Укажи, куда едешь. Время намазов пересчитается под это место, а дни поездки не будут считаться пропусками привычек.")}</p>
-      <CityPicker value={place} onPick={setPlace} exclude={state.settings.place} cityLabel={_t("Куда")} search />
+      <CityPicker value={place} onPick={setPlace} onClear={() => setPlace(null)} exclude={state.settings.place} cityLabel={_t("Куда")} />
       <button type="button" className="link-btn left" onClick={locateMe}><Ic e="pin" /> {_t("Определить, где я сейчас")}</button>
       {geo && <p className="q-msg left">{geo}</p>}
-      <div className="h-row">
-        <label className="field"><span>{_t("Выезд")}</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
-        <label className="field"><span>{_t("Возвращение")}</span><input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
+      <label className="field"><span>{_t("Выезд")}</span><input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
+      <div className="h-card sf-when">
+        <b className="sf-h">{_t("Когда вернёшься?")}</b>
+        {([['date', _t("Знаю дату возвращения"), ''], ['unknown', _t("Пока не знаю"), _t("могу уехать в любой день: жду дела, документы, лечение")], ['long', _t("Остаюсь надолго"), _t("переезд, учёба, работа: решил жить там 15+ дней")]] as const).map(([k, l, sub]) => (
+          <label key={k} className="chk"><input type="radio" name="sf-when" checked={when === k} onChange={() => setWhen(k)} /><span><b>{l}</b>{sub && <small>{sub}</small>}</span></label>
+        ))}
       </div>
-      <label className="field"><span>{_t("Сколько дней пробудешь на месте")}</span>
-        <select value={stay} onChange={(e) => setStay(Number(e.target.value))}>
-          {[0, 1, 2, 3, 4, 5, 7, 10, 14, 15, 20, 30].map((v) => <option key={v} value={v}>{v === 0 ? _t("Не останавливаюсь") : _t("{0} дн.", v)}</option>)}
-        </select>
-      </label>
-      {place && (
+      {when === 'date' && (
+        <>
+          <label className="field"><span>{_t("Возвращение")}</span><input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
+          <label className="field"><span>{_t("Сколько дней пробудешь на месте")}</span>
+            <select value={stay} onChange={(e) => setStay(Number(e.target.value))}>
+              {[0, 1, 2, 3, 4, 5, 7, 10, 14, 15, 20, 30].map((v) => <option key={v} value={v}>{v === 0 ? _t("Не останавливаюсь") : _t("{0} дн.", v)}</option>)}
+            </select>
+          </label>
+        </>
+      )}
+      {place && when !== 'date' && (
+        <div className="h-card sf-gold">
+          <b className="sf-h">{_t("Как будут намазы")}</b>
+          <small>{km < MIN_KM ? _t("До места около {0} км. Обычно сафаром считается поездка от ~80 км, так что намазы, скорее всего, полностью.", Math.round(km))
+            : when === 'long' ? _t("Около {0} км. Путник только в день дороги. На месте сразу полные намазы, джума обязательна.", Math.round(km))
+              : state.settings.madhab === 'hanafi' ? _t("Около {0} км. Пока не решил пробыть 15 дней и больше, ты путник и сокращаешь, даже если ждёшь долго.", Math.round(km))
+                : _t("Около {0} км. Пока не знаешь, когда уедешь, ты путник: сокращаешь и объединяешь до {1} дней, потом полностью.", Math.round(km), SHAFI_OPEN_DAYS)}</small>
+          <small>{_t("Серии привычек не горят первые 3 дня, дальше привычки считаются как дома.")}</small>
+        </div>
+      )}
+      {place && when === 'date' && (
         <p className="q-msg left">
           {km < MIN_KM
             ? _t("До места около {0} км. Обычно сафаром считается поездка от ~80 км, так что намазы, скорее всего, полностью.", Math.round(km))
@@ -124,7 +145,7 @@ function TripSetup({ state, update, today }: { state: AppState; update: Update; 
               : _t("Около {0} км. В пути и на месте можно сокращать намазы{1}.", Math.round(km), state.settings.madhab === 'shafi' ? _t(" и объединять") : '')}
         </p>
       )}
-      <label className="chk"><input type="checkbox" checked={toPlans} onChange={() => setToPlans(!toPlans)} /><span><b>{_t("Добавить выезд и возвращение в «Планы»")}</b><small>{_t("Два дела в календаре, их можно поправить там")}</small></span></label>
+      <label className="chk"><input type="checkbox" checked={toPlans} onChange={() => setToPlans(!toPlans)} /><span><b>{when === 'date' ? _t("Добавить выезд и возвращение в «Планы»") : _t("Добавить выезд в «Планы»")}</b><small>{_t("Можно поправить в календаре")}</small></span></label>
       <button type="button" className="pri-btn" disabled={!place} onClick={start}>{_t("Начать поездку")}</button>
       <p className="q-msg left tiny-note">{_tj("Правила зависят от мазхаба в Профиле (сейчас: {0}). В спорных случаях уточни у своего имама.", state.settings.madhab === 'hanafi' ? _t("ханафитский") : _t("шафиитский"))}</p>
       <History state={state} />
@@ -208,6 +229,8 @@ function TripView({ state, update, today, trip, go, circle, joined }: { state: A
         <button type="button" className="h-card" onClick={() => go('dua')}><b><Ic e="hands" /> {_t("Дуа")}</b><small>{asks ? _tj("{0} просьб Круга", asks) : _t("дуа путника")}</small></button>
       </div>
 
+      {trip.open && on && <OpenCard state={state} trip={trip} today={today} patch={patch} />}
+
       {!trip.depTime && today <= trip.from && <button type="button" className="ghost-btn" onClick={() => go('road')}><Ic e="plane" /> {_t("Указать рейс или время выезда")}</button>}
 
       {active.length > 0 && (
@@ -252,12 +275,55 @@ function TripView({ state, update, today, trip, go, circle, joined }: { state: A
       </form>
 
       <h2 className="sub-h">{_t("Даты")}</h2>
-      <div className="h-row">
+      {trip.open ? (
         <label className="field"><span>{_t("Выезд")}</span><input type="date" value={trip.from} onChange={(e) => patch({ from: e.target.value })} /></label>
-        <label className="field"><span>{_t("Возвращение")}</span><input type="date" value={trip.to} min={trip.from} onChange={(e) => patch({ to: e.target.value })} /></label>
-      </div>
+      ) : (
+        <div className="h-row">
+          <label className="field"><span>{_t("Выезд")}</span><input type="date" value={trip.from} onChange={(e) => patch({ from: e.target.value })} /></label>
+          <label className="field"><span>{_t("Возвращение")}</span><input type="date" value={trip.to} min={trip.from} onChange={(e) => patch({ to: e.target.value })} /></label>
+        </div>
+      )}
       <button type="button" className="danger" onClick={end}>{_t("Я вернулся, закончить поездку")}</button>
     </>
+  );
+}
+
+/** A trip without a return date: how long shortening lasts, and «Узнал дату» / «Решил остаться». */
+function OpenCard({ state, trip, today, patch }: { state: AppState; trip: Trip; today: string; patch: (p: Partial<Trip>) => void }) {
+  const [pick, setPick] = useState(false);
+  const [date, setDate] = useState(addDays(today, 3));
+  const left = shafiDaysLeft(state, today);
+  const settled = trip.open === 'long' || Boolean(trip.settled && trip.settled <= today);
+  const ends = left !== null ? fmt(addDays(trip.from, SHAFI_OPEN_DAYS + 1)) : '';
+  return (
+    <div className="h-card">
+      {left !== null && !settled && (
+        <>
+          <b className="sf-h">{left > 0 ? _tj("Шафиитский мазхаб: ещё {0} дн. путника", left) : _t("Шафиитский мазхаб: срок путника вышел")}</b>
+          <small>{left > 0 ? _tj("Если не знаешь, когда уедешь, сокращать можно до {0} дней. С {1} намазы полностью.", SHAFI_OPEN_DAYS, ends) : _t("Прошло 18 дней: теперь намазы полностью, даже если не знаешь, когда уедешь.")}</small>
+        </>
+      )}
+      {left === null && !settled && <><b className="sf-h">{_t("Без даты возвращения")}</b><small>{_t("Пока ты не решил пробыть 15 дней и больше, ты путник и сокращаешь.")}</small></>}
+      {settled && <><b className="sf-h">{_t("Ты живёшь на месте")}</b><small>{_t("Намазы полностью, джума обязательна. Когда поедешь домой, нажми «Я вернулся».")}</small></>}
+      <b className="sf-h" style={{ marginTop: 8 }}>{_t("Планы поменялись?")}</b>
+      {pick ? (
+        <div className="sf-add">
+          <input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} />
+          <button type="button" className="pri-btn" onClick={() => {
+            const stay = Math.max(0, Math.round((fromKey(date).getTime() - fromKey(today).getTime()) / 864e5));
+            patch({ open: undefined, to: date, stayDays: stay, settled: undefined });
+            setPick(false);
+          }}>{_t("Сохранить")}</button>
+        </div>
+      ) : (
+        <div className="sf-two">
+          <button type="button" className="ghost-btn" onClick={() => setPick(true)}>{_t("Узнал дату")}</button>
+          {!settled && <button type="button" className="ghost-btn" onClick={() => patch({ settled: today })}>{_t("Решил остаться")}</button>}
+        </div>
+      )}
+      {!settled && !pick && <small>{_t("«Решил остаться»: с сегодняшнего дня ты не путник, намазы полностью.")}</small>}
+      <small>{_t("Серии привычек не горят первые 3 дня, дальше привычки считаются как дома.")}</small>
+    </div>
   );
 }
 
@@ -445,7 +511,7 @@ function TellCircle({ code, trip, today, onTold }: { code: string; trip: Trip; t
   const chat = useChat(code, false);
   const [busy, setBusy] = useState(false);
   if (trip.told === today) return <small className="sf-ok">{_t("✓ Круг знает, что ты в пути")}</small>;
-  const text = _tj("🧭 Я еду в {0} ({1}–{2}). Дуа путника принимается: нажмите «🤲 Дуа» в Круге и напишите, о чём сделать дуа за вас.", trip.place, fmt(trip.from), fmt(trip.to));
+  const text = _tj("🧭 Я еду в {0} ({1}–{2}). Дуа путника принимается: нажмите «🤲 Дуа» в Круге и напишите, о чём сделать дуа за вас.", trip.place, fmt(trip.from), trip.open ? '…' : fmt(trip.to));
   return (
     <button type="button" className="gold-btn sf-wide" disabled={busy || !chat.ready} onClick={async () => { setBusy(true); const ok = await chat.send(text, null, 'text'); setBusy(false); if (ok) onTold(); }}>
       {busy ? _t("Отправляю…") : _t("Сказать Кругу, что я в пути")}
