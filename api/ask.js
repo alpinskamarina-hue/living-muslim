@@ -5,12 +5,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { APP_GUIDE } from './_appguide.js';
 import { TOOLS, TOOLS_PROMPT, cleanMessages } from './_tools.js';
+import { HAIKU, SONNET, logUsage, pickModel } from './_route.js';
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
-const MODEL = 'claude-sonnet-5-5';
 const DAILY_LIMIT = 30;
-const MAX_TURNS = 40;
+// Older talk is folded into the memory note on the phone (api/remember.js), so a short window is enough.
+const MAX_TURNS = 14;
 const MAX_CHARS = 4000;
 
 const client = new Anthropic();
@@ -64,8 +65,9 @@ function systemPrompt(cfg, b) {
     cfg?.instructions?.trim() && `<owner_instructions>\n${cfg.instructions.trim()}\n</owner_instructions>`,
     cfg?.knowledge?.trim() && `<owner_knowledge>\nFacts and texts the app's owner gave you. Prefer them over your own memory when they apply.\n${cfg.knowledge.trim()}\n</owner_knowledge>`,
   ].filter(Boolean).join('\n\n');
-  if (owner) parts.push({ type: 'text', text: owner, cache_control: { type: 'ephemeral' } });
-  else parts[1].cache_control = { type: 'ephemeral' };
+  // Tools, rules and the app guide are the same for everyone: cached for an hour and shared by all people.
+  if (owner) parts.push({ type: 'text', text: owner, cache_control: { type: 'ephemeral', ttl: '1h' } });
+  else parts[1].cache_control = { type: 'ephemeral', ttl: '1h' };
   parts.push({ type: 'text', text: `<about_this_person>\n${about}\n</about_this_person>` });
   const mem = str(b.memory, 3500).trim();
   if (mem) parts.push({ type: 'text', text: `<assistant_memory>\nWhat you remember about this person from earlier conversations (kept on their phone; they can read and edit it). Use it naturally, do not recite it. Rules and preferences written here are the person's standing wishes: follow them every time. To add or remove a line use the memory tool.\n${mem}\n</assistant_memory>` });
@@ -101,20 +103,36 @@ export default async function handler(req, res) {
 
   const cfg = (await rpc('lm_ai_config_get', {}).catch(() => null))?.body || null;
 
+  const system = systemPrompt(cfg, b);
+  const call = (model) => client.beta.messages.create(model === SONNET ? {
+    model,
+    max_tokens: 4000,
+    betas: ['server-side-fallback-2026-07-01', 'thinking-binding-controls-2026-08-01'],
+    fallbacks: 'default',
+    // The person's data and memory in the system prompt change between questions, so reasoning blocks from
+    // earlier answers no longer match it: the API drops those blocks instead of failing the whole question.
+    thinking: { type: 'adaptive', block_binding: { prefix_mismatch_behavior: 'drop_block' } },
+    output_config: { effort: 'low' },
+    system, tools: TOOLS, messages: msgs,
+  } : {
+    model, max_tokens: 3000,
+    output_config: { effort: 'low' },
+    system, tools: TOOLS, messages: msgs,
+  });
+
   try {
-    const r = await client.beta.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      betas: ['server-side-fallback-2026-07-01', 'thinking-binding-controls-2026-08-01'],
-      fallbacks: 'default',
-      // The person's data and memory in the system prompt change between questions, so reasoning blocks from
-      // earlier answers no longer match it: the API drops those blocks instead of failing the whole question.
-      thinking: { type: 'adaptive', block_binding: { prefix_mismatch_behavior: 'drop_block' } },
-      output_config: { effort: 'low' },
-      system: systemPrompt(cfg, b),
-      tools: TOOLS,
-      messages: msgs,
-    });
+    let model = pickModel(msgs);
+    let r;
+    try { r = await call(model); } catch (e) {
+      if (model !== HAIKU) throw e;
+      console.error('ask haiku failed, using sonnet', e?.status, e?.message);
+      model = SONNET; r = await call(model);
+    }
+    // Haiku has no server-side fallback: a refusal or an empty answer goes to Sonnet once.
+    if (model === HAIKU && (r.stop_reason === 'refusal' || (r.stop_reason !== 'tool_use' && !r.content.some((c) => c.type === 'text' && c.text.trim())))) {
+      logUsage('ask', model, r.usage); model = SONNET; r = await call(model);
+    }
+    logUsage('ask', model, r.usage);
     const text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('').trim();
     if (r.stop_reason === 'refusal') return res.status(200).json({ text: '', refused: true });
     if (r.stop_reason === 'tool_use') {

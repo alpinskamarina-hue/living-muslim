@@ -2,6 +2,7 @@
 // with grams, a calorie range and macros. The photo is not stored anywhere: it lives only in this request.
 // Limit: 10 recognised photos a day per person (supabase/food-photo.sql); the owner has none.
 import Anthropic from '@anthropic-ai/sdk';
+import { logUsage } from './_route.js';
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
@@ -108,6 +109,7 @@ export default async function handler(req, res) {
         ],
       }],
     });
+    logUsage('food-photo', MODEL, r.usage);
     if (r.stop_reason === 'refusal') { await giveBack(); return res.status(200).json({ food: false, items: [], why: '', left: left === null ? null : left + (counted ? 1 : 0) }); }
     const text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('');
     let out;

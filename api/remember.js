@@ -2,6 +2,7 @@
 // the conversation window; a small model folds what matters into the note and sends it back.
 // The note lives on the phone (Профиль → Помощник), the server stores nothing.
 import Anthropic from '@anthropic-ai/sdk';
+import { logUsage } from './_route.js';
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
@@ -58,6 +59,7 @@ export default async function handler(req, res) {
       system: SYSTEM,
       messages: [{ role: 'user', content: `<current_note>\n${memory || '(empty)'}\n</current_note>\n\n<older_messages>\n${lines.join('\n\n')}\n</older_messages>\n\nReturn the updated note.` }],
     });
+    logUsage('remember', MODEL, r.usage);
     if (r.stop_reason === 'refusal') return res.status(200).json({ memory, kept: true });
     let text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('').trim();
     if (text === '(empty)') text = '';

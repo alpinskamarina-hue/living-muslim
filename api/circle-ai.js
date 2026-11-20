@@ -4,13 +4,14 @@
 // Reminders for one person or for the whole circle are pushed by /api/push-tick. Only the asked message and
 // the circle's day totals are sent to the model, never the rest of the conversation.
 import Anthropic from '@anthropic-ai/sdk';
+import { HAIKU, SONNET, logUsage } from './_route.js';
 import adhan from 'adhan';
 import { zoned } from './plans-ics.js';
 
 const { Coordinates, CalculationMethod, PrayerTimes, Madhab, HighLatitudeRule } = adhan;
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
-const MODEL = 'claude-sonnet-5-5';
+const MODEL = SONNET;
 const DAILY = 20;
 const client = new Anthropic();
 const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
@@ -93,13 +94,22 @@ export default async function handler(req, res) {
 
   let out;
   try {
-    const r = await client.beta.messages.create({
-      model: MODEL, max_tokens: 1500,
-      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
-      system: SYSTEM,
-      messages: [{ role: 'user', content: `${info}\n\nMessage:\n${text}` }],
-    });
+    const messages = [{ role: 'user', content: `${info}\n\nMessage:\n${text}` }];
+    // Short circle requests (reminders, day totals) go to Haiku; Sonnet only if Haiku fails or declines.
+    let model = HAIKU, r;
+    try {
+      r = await client.messages.create({ model, max_tokens: 1500, output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } }, system: SYSTEM, messages });
+    } catch (e) { console.error('circle-ai haiku failed', e?.status, e?.message); r = null; }
+    if (!r || r.stop_reason === 'refusal') {
+      model = MODEL;
+      r = await client.beta.messages.create({
+        model, max_tokens: 1500,
+        betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
+        system: SYSTEM, messages,
+      });
+    }
+    logUsage('circle', model, r.usage);
     if (r.stop_reason === 'refusal') return res.status(200).json({ refused: true });
     out = JSON.parse(r.content.filter((c) => c.type === 'text').map((c) => c.text).join(''));
   } catch (e) {
