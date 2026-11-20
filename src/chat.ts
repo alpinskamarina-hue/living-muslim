@@ -16,7 +16,7 @@ export interface MsgRef { r?: number; t?: 'dua' | 'ch' | 'pr' | 'poll'; d?: stri
 export interface AiAskExtra { name: string; me?: string; lang?: string; place: Record<string, unknown>; circle: string }
 /** Calls to the assistant in a message: «@Марьям», «@Помощник», or the name the person gave it. */
 export function callsAi(body: string, name: string) {
-  const names = ['марьям', 'maryam', 'помощник', 'assistant', name.trim().toLowerCase()].filter(Boolean).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const names = ['марьям', 'maryam', 'юсуф', 'yusuf', 'помощник', 'assistant', name.trim().toLowerCase()].filter(Boolean).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return new RegExp(`(^|\\s)@(${names.join('|')})(?=$|[\\s,.!?:])`, 'i').test(body);
 }
 export interface Msg {

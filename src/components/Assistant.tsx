@@ -10,7 +10,8 @@ import { type AiConfig, type AiMsg, aiName, ask, fold, getAiConfig, getMemory, l
 import { authMe } from '../auth';
 import { _t, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
-import { AI_COLORS, AI_FINISHES, AI_PEOPLE, AI_STYLES, Ai3D, AiFace, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
+import { useOnb } from './Onboard';
+import { AI_COLORS, AI_FINISHES, AI_PEOPLE, AI_STYLES, Ai3D, AiFace, aiDefaultStyle, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
 
 interface Props {
   state: AppState;
@@ -304,7 +305,7 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
   const photo = useAiPhoto();
   const file = useRef<HTMLInputElement>(null);
   const [photoErr, setPhotoErr] = useState('');
-  const style = s.aiStyle || 'fes';
+  const style = s.aiStyle || aiDefaultStyle(s);
   const color = s.aiColor || 'green';
   const pick = async (f?: File) => {
     if (!f) return;
@@ -396,7 +397,10 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
 
 /** The round button at the bottom right, on every tab. First time it greets once. */
 export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: () => void }) {
-  const [hint, setHint] = useState(() => { try { return !localStorage.getItem('lm.ai.hint'); } catch { return false; } });
+  const onb = useOnb();
+  const [hint0, setHint] = useState(() => { try { return !localStorage.getItem('lm.ai.hint'); } catch { return false; } });
+  // While the first-day card is on Today, it does the greeting: the bubble would cover it.
+  const hint = hint0 && (onb === 'done' || onb === 'skip');
   const seen = () => { setHint(false); try { localStorage.setItem('lm.ai.hint', '1'); } catch { /* */ } };
   useEffect(() => { if (!hint) return; const t = setTimeout(seen, 9000); return () => clearTimeout(t); }, [hint]);
   // Hide while scrolling down (reading), come back on the first scroll up or at the top.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AppState } from '../types';
 import { FAQ, FIRST_WEEK, GUIDE, HINTS, type GoTo } from '../guide';
 import { _t, _tj, LANG } from '../i18n';
+import { onbReset } from './Onboard';
 
 const ls = {
   get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -119,6 +120,7 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
           </div>
         ))}
       </div>
+      <button type="button" className="ghost-btn" style={{ marginBottom: 8 }} onClick={() => { onbReset(); go({ tab: 'today' }); window.scrollTo(0, 0); }}>{_t("✨ Пройти знакомство с помощником заново")}</button>
       <button type="button" className="link-btn" onClick={() => { try { localStorage.removeItem('lm.fw'); Object.keys(HINTS).forEach((k) => localStorage.removeItem(`lm.hint.${k}`)); } catch { /* */ } go({ tab: 'today' }); }}>{_t("Показать подсказки и «Первую неделю» снова")}</button>
     </div>
   );

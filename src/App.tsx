@@ -56,6 +56,7 @@ import { TrialDial, PlanSheet } from './components/Plan';
 import { useIsAdmin } from './components/Admin';
 import { _t } from './i18n';
 import { PathChoice, PathToday, PATH_EVENT, type PathView } from './components/NewPath';
+import { OnboardCard, useOnb } from './components/Onboard';
 import { npOf } from './newpath';
 import { lazyNamed } from './lazy';
 import type { OutGo } from './components/NewPathScreens';
@@ -190,6 +191,10 @@ export function App() {
   const iftar = useIftar();
   const paused = tripOn(state, today) ? state.trip?.paused ?? [] : [];
   const active = state.habits.filter((h) => h.status === 'active' && !paused.includes(h.id) && !ramadanHidden(state, h, today));
+  // First day with the helper: for people who start fresh (no habits, no path), or who are midway through it.
+  const onb = useOnb();
+  const [onbFor, setOnbFor] = useState(() => onb !== 'done' && onb !== 'skip' && (onb !== '' || (active.length === 0 && !state.settings.path)));
+  useEffect(() => { if (onb === 'again') setOnbFor(true); }, [onb]);
   const prayersToday = state.prayers?.[today] ?? {};
   const [myGoals, setMyGoal] = useMyGoals();
   const [myAsk, setMyAsk] = useMyAsk();
@@ -365,8 +370,11 @@ export function App() {
   const npOn = Boolean(npOf(state).on);
   const ws = windowState(times, now);
   const teachA: Anchor = ws.current ?? ws.next ?? 'fajr';
+  const choice = !state.settings.path && active.length === 0 ? <PathChoice state={state} update={update} today={today} /> : null;
+  const onbOver = onb === 'done' || onb === 'skip';
   const pathCard = npOn ? <PathToday state={state} update={update} today={today} prayer={teachA} />
-    : !state.settings.path && active.length === 0 ? <PathChoice state={state} update={update} today={today} /> : null;
+    : onbFor ? <><OnboardCard state={state} update={update} times={times} today={today} onGo={(t) => (t === 'circle' ? go({ tab: 'circle' }) : setAiOpen(true))} />{onbOver && choice}</>
+    : choice;
   const pathGo = (g: OutGo) => {
     setPathOpen(null);
     if (g === 'qibla' || g === 'mosques') { setQiblaOpen(g); return; }
@@ -387,7 +395,7 @@ export function App() {
             onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onAssistant={state.settings.aiFab === false ? () => setAiOpen(true) : undefined} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
             plans={<PlansCard state={state} update={update} today={today} onOpen={() => go({ profile: 'plans' })} />}
             quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
-            quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
+            quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn || (onbFor && !onbOver) ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
         {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
