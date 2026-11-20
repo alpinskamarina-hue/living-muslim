@@ -4409,3 +4409,5 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 /* business circle: tile turquoise instead of navy; nikah: terracotta instead of plum */
 :root { --biz: #1f4f4c; --biz-2: #2f7f7a; --biz-soft: #e3eee9; --nk: #9a4a30; --nk-soft: #f6e6dc; }
 :root[data-theme="dark"] { --biz-2: #6fc0b9; --biz-soft: #17292a; --nk: #e09a7e; --nk-soft: #2e1f19; }
+.onb-city { display: flex; flex-direction: column; min-width: 240px; flex: 1; }
+.onb-city .field { margin-bottom: 8px; }

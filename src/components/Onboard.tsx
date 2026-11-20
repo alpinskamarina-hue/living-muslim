@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Anchor, AppState, Habit } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { PLACES, type DayTimes } from '../prayer';
+import { CityPicker } from './CityPicker';
 import { hhmm } from '../dates';
 import { uid } from '../store';
 import { aiName } from '../assistant';
@@ -183,10 +184,7 @@ function OnboardChat({ state, update, times, today, start, onClose, onGo }: { st
             <button type="button" onClick={() => { me(_t("Другой город")); setSub('pick'); }}>{_t("Другой город")}</button>
           </Chips>}
           {step === 0 && sub === 'pick' && <Chips>
-            <select className="onb-sel" defaultValue="" onChange={(e) => { const p = PLACES.find((x) => x.name === e.target.value); if (p) { me(p.name); setPlace(p.name, p.lat, p.lng); } }}>
-              <option value="" disabled>{_t("Выбери город")}</option>
-              {PLACES.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
-            </select>
+            <div className="onb-city"><CityPicker value={null} onPick={(p) => { me(p.name); setPlace(p.name, p.lat, p.lng); }} /></div>
           </Chips>}
           {step === 0 && sub === 'madhab' && <>
             <Ai s={s}>{_t("А мазхаб? От него зависит время Асра.")}</Ai>

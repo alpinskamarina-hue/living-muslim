@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AppState, Trip } from '../types';
-import { PLACES } from '../prayer';
+import { CityPicker } from './CityPicker';
 import { addDays, fromKey } from '../dates';
 import { CHECKLIST, DUAS, MIN_KM, STAY_LIMIT, compassWord, distanceKm, qibla, travelStatus, tripOn } from '../safar';
 import { _t, _tj } from '../i18n';
@@ -73,12 +73,7 @@ function TripSetup({ state, update, today }: { state: AppState; update: Props['u
   return (
     <>
       <p className="q-msg left">{_t("Укажи, куда едешь. Время намазов пересчитается под это место, а дни поездки не будут считаться пропусками привычек.")}</p>
-      <label className="field"><span>{_t("Куда")}</span>
-        <select value={place && PLACES.some((p) => p.name === place.name) ? place.name : ''} onChange={(e) => { const p = PLACES.find((x) => x.name === e.target.value); if (p) setPlace(p); }}>
-          <option value="">{place && !PLACES.some((p) => p.name === place.name) ? `${place.name} (${place.lat.toFixed(2)}, ${place.lng.toFixed(2)})` : _t("Выбери город")}</option>
-          {PLACES.filter((p) => p.name !== state.settings.place).map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
-        </select>
-      </label>
+      <CityPicker value={place} onPick={setPlace} exclude={state.settings.place} cityLabel={_t("Куда")} />
       <button type="button" className="link-btn left" onClick={locate}>{_t("📍 Определить, где я сейчас")}</button>
       {geo && <p className="q-msg left">{geo}</p>}
       <div className="h-row">

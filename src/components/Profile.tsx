@@ -32,7 +32,8 @@ import { aiName } from '../assistant';
 import { useNikahReady, useNikahMe, nikahTodo } from '../nikah';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
 import { ANCHOR_LABEL } from '../types';
-import { METHODS, PLACES, type DayTimes } from '../prayer';
+import { METHODS, type DayTimes } from '../prayer';
+import { CityPicker } from './CityPicker';
 import { addDays, dayKey, daysBetween, hhmm, plural } from '../dates';
 import { activeLimit, initialState, slotsUsed } from '../store';
 import { _t, _tj, LANG } from '../i18n';
@@ -254,16 +255,7 @@ function PrayerSettings({ s, set, times }: { s: AppState['settings']; set: SetFn
       </div>
       <p className="tiny">{_t("Сверь время с мечетью рядом и поправь кнопками − и + по минуте.")}{anyOff && <> <button type="button" className="link-btn" onClick={() => set({ offsets: {} })}>{_t("Сбросить поправки")}</button></>}</p>
 
-      <label className="field">
-        <span>{_t("Город")}</span>
-        <select
-          value={PLACES.some((p) => p.name === s.place) ? s.place : ''}
-          onChange={(e) => { const p = PLACES.find((x) => x.name === e.target.value); if (p) set({ place: p.name, lat: p.lat, lng: p.lng }); }}
-        >
-          {!PLACES.some((p) => p.name === s.place) && <option value="">{s.place} ({s.lat.toFixed(2)}, {s.lng.toFixed(2)})</option>}
-          {PLACES.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
-        </select>
-      </label>
+      <CityPicker key={s.place} value={{ name: s.place, lat: s.lat, lng: s.lng }} onPick={(p) => set({ place: p.name, lat: p.lat, lng: p.lng })} />
       <button type="button" className="ghost-btn" onClick={locate}>{_t("Определить по геолокации")}</button>
       {geo && <p className="tiny">{geo}</p>}
       <label className="field">
