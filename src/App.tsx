@@ -36,6 +36,7 @@ import { isCounted } from './store';
 import { here, tripOn, safarRings } from './safar';
 import { Safar } from './components/Safar';
 import { Khutba } from './components/Khutba';
+import { HalalScan } from './components/HalalScan';
 import { Assistant, AssistantFab } from './components/Assistant';
 import { buildContext } from './aiContext';
 import { QiblaScreen, type QiblaTab } from './components/Mosques';
@@ -156,6 +157,7 @@ export function App() {
   }, [season]);
   const [safar, setSafar] = useState(false);
   const [khutba, setKhutba] = useState(() => { try { return new URLSearchParams(location.search).has('khutba'); } catch { return false; } });
+  const [halal, setHalal] = useState<'' | 'cam' | 'hist'>('');
   const [aiOpen, setAiOpen] = useState(false);
   const [qiblaOpen, setQiblaOpen] = useState<QiblaTab | null>(null);
   const [pathOpen, setPathOpen] = useState<PathView | null>(null);
@@ -410,7 +412,7 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
+        {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onHalal={() => setHalal('cam')} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
           <div className="page">
             {!goalOpen && !reviewOpen && <Hint id="goals" />}
@@ -447,6 +449,7 @@ export function App() {
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
       {khutba && <Khutba state={state} update={update} today={today} onClose={() => setKhutba(false)} />}
+      {halal && <HalalScan state={state} today={today} start={halal} onClose={() => setHalal('')} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} circle={circle} joined={joined} />}
       {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={(st) => buildContext(st, today, new Date(), times, circle)} apply={(st) => update(() => st)} onGo={(t) => { setAiOpen(false); go(t); }} />}
       {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}

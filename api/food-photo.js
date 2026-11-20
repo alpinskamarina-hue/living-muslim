@@ -69,6 +69,26 @@ Write names and notes in the requested language.
 If the photo is not food, is too dark or blurry, or shows only closed packaging, set food=false, items=[] and a short reason in why.
 The check field: only when a visible dish commonly contains pork, alcohol or gelatin (sausage, pepperoni, ham, tiramisu, gummies, some desserts and sauces), one short neutral sentence suggesting to check the ingredients. Never call anything haram or halal, never give a ruling. Otherwise leave it empty.`;
 
+// «Халяль-сканер», product not in the database: read the ingredient list off a photo of the pack, word for word.
+// The app checks the words itself; the model never gives a ruling.
+const ING_SCHEMA = {
+  type: 'object',
+  properties: {
+    ok: { type: 'boolean', description: 'true if an ingredient list is readable on the photo' },
+    name: { type: 'string', description: 'product name if visible on the pack, else empty' },
+    ingredients: { type: 'string', description: 'the ingredient list copied word for word in its original language, including E-numbers; empty if not readable' },
+    halal_logo: { type: 'boolean', description: 'true only if a halal logo or the word halal/helal/حلال is clearly printed on the pack' },
+    why: { type: 'string', description: 'when ok is false: one short reason in the requested language (too blurry, no ingredient list on the photo)' },
+  },
+  required: ['ok', 'name', 'ingredients', 'halal_logo', 'why'],
+  additionalProperties: false,
+};
+
+const ING_SYSTEM = `You read food packaging for the halal ingredient checker of Living Muslim, a habits app for Muslims.
+Copy the ingredient list from the photo exactly as printed, in its original language, with E-numbers and percentages. Do not translate, summarise or add anything. If the list continues off the photo, copy what is visible.
+Say whether a halal logo or the word halal/helal/حلال is clearly printed. Never judge whether the product is halal or haram.
+If no ingredient list is readable, set ok=false, ingredients="" and give a short reason in why, in the requested language.`;
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
@@ -92,6 +112,41 @@ export default async function handler(req, res) {
   const counted = Boolean(take.body?.ok && !take.body.owner);
   const giveBack = () => (counted ? rpc('lm_photo_give', {}, token).catch(() => null) : null);
   const left = take.body?.owner ? null : take.body?.limit ? Math.max(0, take.body.limit - take.body.n) : null;
+
+  if (b.task === 'ingredients') {
+    try {
+      const r = await client.beta.messages.create({
+        model: MODEL,
+        max_tokens: 3000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: ING_SCHEMA } },
+        system: ING_SYSTEM,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: type, data: img } },
+            { type: 'text', text: `Language for why: ${b.lang === 'en' ? 'English' : 'Russian'}. Copy the ingredient list.` },
+          ],
+        }],
+      });
+      logUsage('halal-photo', MODEL, r.usage);
+      const text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('');
+      let out;
+      try { out = JSON.parse(text); } catch { out = null; }
+      const ingredients = String(out?.ingredients || '').slice(0, 2000).trim();
+      if (r.stop_reason === 'refusal' || !out || !out.ok || !ingredients) {
+        await giveBack();
+        return res.status(200).json({ ok: false, why: String(out?.why || '').slice(0, 200), left: left === null ? null : left + (counted ? 1 : 0) });
+      }
+      return res.status(200).json({ ok: true, name: String(out.name || '').slice(0, 80), ingredients, halal_logo: Boolean(out.halal_logo), left });
+    } catch (e) {
+      await giveBack();
+      const status = e?.status || 500;
+      console.error('halal-photo failed', status, e?.message);
+      return res.status(status === 429 || status === 529 ? 503 : 502).json({ error: 'model' });
+    }
+  }
 
   try {
     const r = await client.beta.messages.create({
