@@ -1,4 +1,5 @@
 import { shareCard } from '../share';
+import { Ic } from './LIcon';
 import { useState, type ReactNode } from 'react';
 import type { Member, Reacts } from '../circle';
 import { plural } from '../dates';
@@ -84,7 +85,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
   return (
     <div className={`cg-card${done ? ' done' : ''}`}>
       <div className="cg-top">
-        <span className="cg-ic" aria-hidden="true">{GOAL_KINDS[gk].ic}</span>
+        <span className="cg-ic" aria-hidden="true"><Ic e={GOAL_KINDS[gk].ic} /></span>
         <span>
           <small>{_tj("Цель недели · поставил{0}", goal.by === me ? _t(" ты") : _t("(а) {0}", nameOf(goal.by)))}</small>
           <b>{goal.n} {unit(gk, goal.n)}</b>

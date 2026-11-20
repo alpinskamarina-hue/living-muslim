@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Ic } from './LIcon';
 import { FILE_MAX, callsAi, type ChatApi, type Msg, type MsgRef } from '../chat';
 import { aiName } from '../assistant';
 import { placeOf } from '../plansCloud';
@@ -641,7 +642,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           <div className="dim" onClick={() => setPlus(false)} />
           <div className="sheet cc-acts" role="dialog" aria-label={_t("Действия круга")}>
             <div className="cc-acts-g">
-              {sheet.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span style={{ background: a.c || '#1f7a4d' }}>{a.ic}</span>{a.label}</button>)}
+              {sheet.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span style={{ background: a.c || '#1d6b49' }}><Ic e={a.ic} /></span>{a.label}</button>)}
             </div>
             <button type="button" className="link-btn" onClick={() => setPlus(false)}>{_t("Закрыть")}</button>
           </div>

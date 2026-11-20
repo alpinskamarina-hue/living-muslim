@@ -1,4 +1,4 @@
-/* Practice icons: one line set (Lucide-style, ISC) drawn white on a glossy coloured 3D tile or ball. */
+/* Practice icons: one line set (Lucide-style, ISC) drawn in brass on a flat sand tile («Двор мечети»). */
 const P: Record<string, string> = {
   book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
@@ -24,7 +24,7 @@ const P: Record<string, string> = {
 export function PIcon({ k, ball, badge, cls }: { k: string; ball?: boolean; badge?: number; cls?: string }) {
   return (
     <i className={`d3 c-${k}${ball ? ' ball' : ''}${cls ? ` ${cls}` : ''}`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: P[k] ?? P.book }} />
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: P[k] ?? P.book }} />
       {badge ? <u>{badge > 99 ? '99+' : badge}</u> : null}
     </i>
   );

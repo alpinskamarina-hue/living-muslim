@@ -1,4 +1,5 @@
 import { inRamadan } from '../rplan';
+import { Ic } from './LIcon';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { AppState, HealthState, Mark, SleepLog } from '../types';
@@ -96,7 +97,7 @@ export function Health({ state, update, today, habitName, onExit, onFinish, onFo
           <div className="wk-log">
             {list.map((e, i) => (
               <div key={`${e.raw}-${i}`} className="wk-row">
-                <span className="wk-ic" aria-hidden="true">{e.ic}</span>
+                <span className="wk-ic" aria-hidden="true"><Ic e={e.ic} /></span>
                 <span><b>{e.name}</b><small>{entryLine(e, sport)}</small></span>
                 <button type="button" className="wk-x" aria-label={_tj("Убрать: {0}", e.name)} onClick={() => drop(day, i)}>✕</button>
               </div>
@@ -251,7 +252,7 @@ function OwnSheet({ h, today, sport, onClose, onSave }: { h: HealthState; today:
         <b>{_t("Своя тренировка")}</b>
         <small className="wk-lab">{_t("Что")}</small>
         <div className={`wk-chips${tried && !type ? ' bad' : ''}`}>
-          {WTYPES.map((t) => <button type="button" key={t.id} aria-pressed={type === t.id} onClick={() => setType(t.id)}><span aria-hidden="true">{t.ic}</span> {t.n}</button>)}
+          {WTYPES.map((t) => <button type="button" key={t.id} aria-pressed={type === t.id} onClick={() => setType(t.id)}><span aria-hidden="true"><Ic e={t.ic} /></span> {t.n}</button>)}
         </div>
         {type === 'other' && <input className="wk-in" value={name} maxLength={40} placeholder={_t("Что именно, например, йога")} onChange={(e) => setName(e.target.value)} />}
         <small className="wk-lab">{_t("Сколько минут")}</small>

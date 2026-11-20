@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Ic } from './LIcon';
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi, URsvp } from '../umrahCircle';
 import { umrahOf } from './Umrah';
@@ -132,7 +133,7 @@ export function UmrahDocs({ state, update, today, api, hosts, host, going, canSe
           return (
             <div key={x.k} className={`udoc-k${l.length ? ' has' : ''}${w ? ' warn' : ''}`}>
               <div className="udoc-h">
-                <i aria-hidden="true">{l.length ? '✓' : x.ic}</i>
+                <i aria-hidden="true">{l.length ? '✓' : <Ic e={x.ic} />}</i>
                 <span><b>{x.t}</b><small>{l.length ? `${l.length} ${_t("файл.")}` : x.sub}</small></span>
                 <button type="button" onClick={() => pickFor(x.k)}>{l.length ? '+' : _t("Добавить")}</button>
               </div>

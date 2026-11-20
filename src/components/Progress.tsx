@@ -1,4 +1,5 @@
 import type { AppState } from '../types';
+import { Ic } from './LIcon';
 import { ANCHORS, ANCHOR_LABEL, sphereName } from '../types';
 import { consistency, isCounted, streak } from '../store';
 import { addDays, fromKey, plural } from '../dates';
@@ -88,7 +89,7 @@ export function Progress({ state, today, onOpenGoal }: { state: AppState; today:
       {finds.length > 0 && (
         <div className="finds">
           <b>{_t("Что видно за 4 недели")}</b>
-          {finds.map((f, i) => <p key={i}><span aria-hidden="true">{f.ic}</span>{f.text}</p>)}
+          {finds.map((f, i) => <p key={i}><span aria-hidden="true"><Ic e={f.ic} /></span>{f.text}</p>)}
         </div>
       )}
       {trends.length > 0 && (

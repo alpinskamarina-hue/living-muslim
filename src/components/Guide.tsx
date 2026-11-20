@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Ic } from './LIcon';
 import type { AppState } from '../types';
 import { FAQ, FIRST_WEEK, GUIDE, HINTS, type GoTo } from '../guide';
 import { _t, _tj, LANG } from '../i18n';
@@ -59,7 +60,7 @@ export function Hint({ id }: { id: keyof typeof HINTS }) {
   const h = HINTS[id];
   return (
     <div className="hint" role="note">
-      <b>💡 {h.t}</b>
+      <b><Ic e="💡" cls="hint-ic" />{h.t}</b>
       <p>{h.p}</p>
       <button type="button" className="link-btn" onClick={() => { ls.set(key, '1'); setSeen(true); }}>{_t("Понятно")}</button>
     </div>
@@ -92,14 +93,14 @@ export function GuidePage({ go }: { go: (t: GoTo) => void }) {
             {sec.items.map((it) => (
               <div key={it.id} className={`guide-it${open === it.id ? ' open' : ''}`}>
                 <button type="button" className="guide-head" onClick={() => setOpen(open === it.id ? null : it.id)} aria-expanded={open === it.id}>
-                  <span className="mi" aria-hidden="true">{it.ic}</span>
+                  <span className="mi" aria-hidden="true"><Ic e={it.ic} /></span>
                   <span className="mt"><b>{it.title}</b><small>{it.why}</small></span>
                   <i aria-hidden="true">{open === it.id ? '▴' : '▾'}</i>
                 </button>
                 {open === it.id && (
                   <div className="guide-body">
                     <ol>{it.how.map((h) => <li key={h}>{h}</li>)}</ol>
-                    {it.tip && <p className="guide-tip">💡 {it.tip}</p>}
+                    {it.tip && <p className="guide-tip"><Ic e="💡" cls="hint-ic" />{it.tip}</p>}
                     {it.go && <button type="button" className="pri-btn" onClick={() => go(it.go!)}>{it.open ?? _t("Открыть")}</button>}
                   </div>
                 )}

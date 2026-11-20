@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Ic } from './LIcon';
 import type { AppState, Habit, Mark, Sphere } from '../types';
 import { ProGate } from './Plan';
 import { limitOf } from '../plan';
@@ -122,7 +123,7 @@ export function Videos({ state, update, habitName, onExit, onFinish, open }: Pro
             const n = all.filter((x) => x.cat === c.id).length;
             return (
               <button key={c.id} type="button" className="vtopic" aria-pressed={cat === c.id} onClick={() => setCat(cat === c.id ? 'all' : c.id)}>
-                <i>{c.ic}</i><b>{c.ru}</b><small>{n} {n === 1 ? _t("курс") : n < 5 ? _t("курса") : _t("курсов")}</small>
+                <i><Ic e={c.ic} /></i><b>{c.ru}</b><small>{n} {n === 1 ? _t("курс") : n < 5 ? _t("курса") : _t("курсов")}</small>
               </button>
             );
           })}

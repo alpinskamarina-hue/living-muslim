@@ -1,4 +1,5 @@
 import { BadgeShelf } from './Badges';
+import { Ic } from './LIcon';
 import { themeMode } from '../theme';
 import { themeLabel } from './ThemeSwitch';
 import { GuidePage } from './Guide';
@@ -186,7 +187,7 @@ function stats(state: AppState) {
 function Row({ icon, title, sub, onClick }: { icon: string; title: string; sub: string; onClick: () => void }) {
   return (
     <button type="button" className="menu-row" onClick={onClick}>
-      <span className="mi" aria-hidden="true">{icon}</span>
+      <span className="mi" aria-hidden="true"><Ic e={icon} /></span>
       <span className="mt"><b>{title}</b><small>{sub}</small></span>
       <i aria-hidden="true">›</i>
     </button>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Ic } from './LIcon';
 import { InviteInbox } from './Nick';
 import { BizPick } from './BizCircle';
 import { BIZ_DEFAULT, rememberBizPick } from '../biz';
@@ -75,7 +76,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
             <div className="cl-f"><span>{_t("Какой это круг")}</span></div>
             <div className="cl-kinds">
               {CIRCLE_KINDS.filter((x) => !x.old).map((x) => (
-                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : undefined} onClick={() => setKind(x.id)}><i>{x.ic}</i>{x.ru}{x.fresh && <em className="cl-new">{_t("новое")}</em>}</button>
+                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : undefined} onClick={() => setKind(x.id)}><i><Ic e={x.ic} /></i>{x.ru}{x.fresh && <em className="cl-new">{_t("новое")}</em>}</button>
               ))}
             </div>
             <p className="tiny">{k.hint}</p>

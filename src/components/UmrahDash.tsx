@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Ic } from './LIcon';
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi, URsvp } from '../umrahCircle';
 import { DOCS, passPrice } from './UmrahPlan';
@@ -63,7 +64,7 @@ export function GroupDash({ api, host, going, me, nameOf, onStep, onDocs }: { ap
       <div className="ud-tiles">
         {tiles.map((x) => (
           <button key={x.t} type="button" className={x.ok ? 'ok' : ''} onClick={x.go}>
-            <i aria-hidden="true">{x.ok ? '✓' : x.ic}</i><small>{x.t}</small><b>{x.v}</b>
+            <i aria-hidden="true">{x.ok ? '✓' : <Ic e={x.ic} />}</i><small>{x.t}</small><b>{x.v}</b>
           </button>
         ))}
       </div>

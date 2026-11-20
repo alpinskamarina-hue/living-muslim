@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Ic } from './LIcon';
 import type { AppState, Goal, GoalNote, GoalStepItem, Habit } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { activeLimit, isCounted, slotsUsed, streak, uid } from '../store';
@@ -460,7 +461,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
           {showR && (
             <div className="g-season">
               <b>{_tj("🌙 К Рамадану{0}", rStart ? `, ${fmt(rStart)}` : '')}</b>
-              {RAMADAN_TPL.map((t) => <button key={t.title} type="button" onClick={() => choose(t)}>{t.ar ? <i className="ar">{t.ic}</i> : <i>{t.ic}</i>}{t.title}</button>)}
+              {RAMADAN_TPL.map((t) => <button key={t.title} type="button" onClick={() => choose(t)}>{t.ar ? <i className="ar">{t.ic}</i> : <i><Ic e={t.ic} /></i>}{t.title}</button>)}
             </div>
           )}
           <div className="g-tabs">
@@ -468,7 +469,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
           </div>
           {TEMPLATES.filter((t) => t.group === group).map((t) => (
             <button type="button" key={t.title} className="g-tp" onClick={() => choose(t)}>
-              <i className={t.ar ? 'ar' : ''}>{t.ic}</i><span><b>{t.title}</b><small>{t.sub}</small></span>
+              <i className={t.ar ? 'ar' : ''}>{t.ar ? t.ic : <Ic e={t.ic} />}</i><span><b>{t.title}</b><small>{t.sub}</small></span>
             </button>
           ))}
           <div className="g-sec">{_t("Своя цель")}</div>
