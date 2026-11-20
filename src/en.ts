@@ -5202,4 +5202,12 @@ export const EN: Record<string, string> = {
   "Ореол": "Halo",
   "Стекло": "Glass",
   "Ночная звезда": "Night star",
+  "Можно прикрепить книгу в PDF или TXT.": "You can attach a book as a PDF or TXT.",
+  "Полка в Книгах заполнена. Убери одну книгу или открой Pro.": "The shelf in Books is full. Remove a book or get Pro.",
+  "Книга «{0}» на полке в разделе Книги, страниц: {1}. Файл хранится только на этом телефоне.": "«{0}» is on the shelf in Books, {1} pages. The file stays only on this phone.",
+  "📖 Открыть в Книгах": "📖 Open in Books",
+  "🎯 Сделать цель «Прочитать»": "🎯 Make it a reading goal",
+  "Прикрепить книгу (PDF или TXT)": "Attach a book (PDF or TXT)",
+  "Прочитать «{0}»": "Read «{0}»",
+  "Книга": "Book",
 };

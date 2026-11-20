@@ -1,24 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type * as PdfJs from 'pdfjs-dist';
 import type { AppState, BookMeta, Mark } from '../types';
-import { uid } from '../store';
 import { dayKey } from '../dates';
-import { deleteFile, getFile, putFile } from '../idb';
+import { deleteFile, getFile } from '../idb';
+import { isBookFile, loadPdf, readBook } from '../bookFile';
 import { SUMMARY_BOOKS, useSummaries } from '../summaries';
 import { SummaryBook } from './Summaries';
 import { ProGate } from './Plan';
 import { limitOf } from '../plan';
 import { _t, _tj, isEn } from '../i18n';
-
-// The PDF reader is heavy: it is downloaded only when a PDF is added or opened.
-let pdfLib: Promise<typeof PdfJs> | null = null;
-function loadPdf() {
-  pdfLib ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.js?worker&inline')]).then(([lib, W]) => {
-    lib.GlobalWorkerOptions.workerPort = new W.default();
-    return lib;
-  });
-  return pdfLib;
-}
 
 interface Props {
   state: AppState;
@@ -41,23 +31,10 @@ export function Books({ state, update, habitName, onExit, onFinish }: Props) {
     update((s) => ({ ...s, books: (s.books ?? []).map((b) => (b.id === id ? { ...b, ...patch } : b)) }));
 
   const add = async (f: File) => {
-    const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
-    const isTxt = f.type.startsWith('text/') || /\.txt$/i.test(f.name);
-    if (!isPdf && !isTxt) { setBusy(_t("Пока поддерживаются PDF и TXT. EPUB добавлю следующим шагом.")); return; }
+    if (!isBookFile(f)) { setBusy(_t("Пока поддерживаются PDF и TXT. EPUB добавлю следующим шагом.")); return; }
     setBusy(_t("Добавляю книгу…"));
     try {
-      const id = uid();
-      let pages = 1;
-      if (isPdf) {
-        const pdfjs = await loadPdf();
-        const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
-        pages = doc.numPages;
-        await doc.destroy();
-      } else {
-        pages = Math.max(1, Math.ceil((await f.text()).length / 1800));
-      }
-      await putFile(id, f);
-      const meta: BookMeta = { id, title: f.name.replace(/\.(pdf|txt)$/i, ''), kind: isPdf ? 'pdf' : 'txt', pages, page: 1, addedAt: dayKey(new Date()) };
+      const meta = await readBook(f);
       update((s) => ({ ...s, books: [...(s.books ?? []), meta] }));
       setBusy('');
     } catch {

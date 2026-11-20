@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AppState } from '../types';
-import { runTool } from '../aiActions';
+import { bookGoal, runTool } from '../aiActions';
+import { isBookFile, readBook } from '../bookFile';
+import { limitOf } from '../plan';
 import type { GoTo } from '../guide';
 import { dayKey } from '../dates';
 import { type AiConfig, type AiMsg, aiName, ask, getAiConfig, loadChat, saveChat, setAiConfig } from '../assistant';
@@ -133,6 +135,38 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
     setUndo(null);
   };
 
+  // 📎 A book file: it goes straight onto the shelf in Книги on this phone. No AI call, the file is not sent anywhere.
+  const bookIn = useRef<HTMLInputElement>(null);
+  const [adding, setAdding] = useState(false);
+  const attach = async (f?: File) => {
+    if (!f || !apply) return;
+    setErr('');
+    if (!isBookFile(f)) { setErr(_t("Можно прикрепить книгу в PDF или TXT.")); return; }
+    if ((live.current.books ?? []).length >= limitOf('books')) { setErr(_t("Полка в Книгах заполнена. Убери одну книгу или открой Pro.")); return; }
+    setAdding(true);
+    try {
+      const b = await readBook(f);
+      const cur = live.current;
+      apply({ ...cur, books: [...(cur.books ?? []), b] });
+      setUndo(null);
+      setMsgs((m) => [...m,
+        { role: 'user', content: `📎 ${f.name}`, at: Date.now() },
+        { role: 'assistant', content: _t("Книга «{0}» на полке в разделе Книги, страниц: {1}. Файл хранится только на этом телефоне.", b.title, b.pages), at: Date.now(), book: b.id }]);
+    } catch {
+      setErr(_t("Не получилось открыть файл. Возможно, он защищён паролем или повреждён."));
+    }
+    setAdding(false);
+  };
+  const goalFor = (i: number, id: string) => {
+    const cur = live.current;
+    const b = (cur.books ?? []).find((x) => x.id === id);
+    if (!b || !apply) return;
+    const g = bookGoal(cur, b, dayKey(new Date()));
+    apply({ ...cur, goals: [...(cur.goals ?? []), g] });
+    setMsgs((m) => m.map((x, k) => (k === i ? { ...x, acts: [...(x.acts ?? []), _t("Новая цель: {0}", g.title)] } : x)));
+    setUndo({ i, prev: cur });
+  };
+
   const clear = () => { setMsgs([]); setErr(''); };
   const starters = [_t("Что у меня сегодня?"), _t("Как идут мои цели?"), _t("Что ты умеешь?"), _t("Как не пропускать Фаджр?")];
 
@@ -158,6 +192,12 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
           : (!m.content && !m.acts?.length) ? null
           : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className={`ai-msg it${m.content ? '' : ' ai-bare'}`}>
               {m.content}
+              {m.book && (live.current.books ?? []).some((b) => b.id === m.book) && (
+                <div className="ai-book-acts">
+                  <button type="button" onClick={() => onGo?.({ practice: 'books' })}>{_t("📖 Открыть в Книгах")}</button>
+                  {!m.acts?.length && <button type="button" onClick={() => goalFor(i, m.book!)}>{_t("🎯 Сделать цель «Прочитать»")}</button>}
+                </div>
+              )}
               {m.acts?.length ? (
                 <div className="ai-acts">
                   {m.acts.map((a, k) => <div key={k}>{a.startsWith('↩') ? a : `✓ ${a}`}</div>)}
@@ -174,6 +214,10 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
       {signed ? (
         <form className={`ai-input${rec ? ' ai-rec' : ''}`} onSubmit={(e) => { e.preventDefault(); if (rec) stopMic(); else send(text, voiced); }}>
           {rec && <button type="button" className="ai-mic-x" onClick={cancelMic} aria-label={_t("Отменить запись")}>✕</button>}
+          {!rec && apply && <button type="button" className="ai-clip" disabled={busy || adding} onClick={() => bookIn.current?.click()} aria-label={_t("Прикрепить книгу (PDF или TXT)")} title={_t("Прикрепить книгу (PDF или TXT)")}>
+            {adding ? <i className="ai-clip-spin" /> : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5l-8.5 8.5a5 5 0 0 1-7-7L14 4.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6" /></svg>}
+          </button>}
+          <input ref={bookIn} type="file" accept=".pdf,.txt,application/pdf,text/plain" hidden onChange={(e) => { attach(e.target.files?.[0]); e.target.value = ''; }} />
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={1} maxLength={2000} readOnly={rec}
             placeholder={rec ? _t("Говори, я слушаю… Нажми ■, когда закончишь") : _t("Напиши или скажи вопрос…")}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!rec) send(text, voiced); } }} />

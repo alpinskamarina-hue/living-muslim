@@ -47,6 +47,11 @@ export const TOOLS = [
     }, required: ['title'] },
   },
   {
+    name: 'create_book_goal',
+    description: 'Create a goal «read this book» for a book on the shelf in Книги (by book id). Progress is counted by the pages the person reads in the app reader.',
+    input_schema: { type: 'object', properties: { book_id: { type: 'string' }, due: { type: 'string', description: 'Deadline YYYY-MM-DD, if any.' }, niyya: { type: 'string' } }, required: ['book_id'] },
+  },
+  {
     name: 'update_goal',
     description: 'Change a goal (by id): title, deadline, niyya, or status (active, later = postponed, done = reached).',
     input_schema: { type: 'object', properties: { goal_id: { type: 'string' }, title: { type: 'string' }, due: { type: 'string', description: 'YYYY-MM-DD, or "none" to remove the deadline.' }, niyya: { type: 'string' }, status: { type: 'string', enum: ['active', 'later', 'done'] } }, required: ['goal_id'] },
@@ -93,11 +98,12 @@ export const TOOLS = [
   },
 ];
 
-export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals, add and tick goal steps, write goal notes, save ideas, mark sadaqa, add water, open a screen.
+export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, save ideas, mark sadaqa, add water, open a screen.
 - Do what the person asks right away, without asking for confirmation for ordinary things; every action shows on their phone with an «Отменить» (undo) button.
 - Ask a short question only when something essential is missing or ambiguous (which goal or habit, or a prayer for a new habit you cannot sensibly guess).
 - Use ids exactly as given in person_data. Never invent ids.
 - After acting, confirm in one or two short sentences what you did. Do not repeat the whole list.
+- When the person attaches a book file (📎) the phone puts it on the shelf in Книги by itself; you see it in person_data under Books. Offer a reading goal or create it if asked. You cannot read the text of the book.
 - Removing or stopping something (archive a habit, delete an idea, mark a goal reached) only when the person clearly asked.`;
 
 const BLOCKS = new Set(['text', 'tool_use', 'tool_result', 'thinking', 'redacted_thinking']);
