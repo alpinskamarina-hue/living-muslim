@@ -7,7 +7,13 @@ import { type Plan, type PlanAfter, type PlanRepeat, addDays, dayLabel, dropPlan
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { setMark, setPrayer, uid } from './store';
 import { rawValue } from './goals';
-import { defaultHealth } from './health';
+import { defaultHealth, WORKOUTS } from './health';
+import { markDone as azkarDone, azkarOf } from './azkar';
+import { ramadanOf } from './ramadan';
+import { updQuit } from './quit';
+import { famOf, toggleKidTask } from './family';
+import { search as foodSearch, itemFrom } from './foodcalc';
+import type { FastMark, FoodItem, FoodState, Meal, UmrahState } from './types';
 import type { GoTo } from './guide';
 import { _t, LANG } from './i18n';
 
@@ -22,8 +28,8 @@ const SPHERES: Sphere[] = ['faith', 'body', 'food', 'mind', 'biz', 'family'];
 export const SCREENS: Record<string, GoTo> = {
   today: { tab: 'today' }, circle: { tab: 'circle' }, goals: { tab: 'progress' }, profile: { tab: 'profile' },
   quran: { practice: 'quran' }, tasbih: { practice: 'tasbih' }, focus: { practice: 'focus' }, books: { practice: 'books' }, courses: { practice: 'videos' },
-  languages: { practice: 'langs' }, health: { practice: 'health' }, food: { practice: 'food' }, sadaqa: { practice: 'sadaqa' }, umrah: { practice: 'umrah' },
-  ramadan: { ramadan: true }, safar: { safar: true }, add_habit: { add: true }, reminders: { profile: 'remind' }, prayer_settings: { profile: 'prayer' },
+  languages: { practice: 'langs' }, health: { practice: 'health' }, food: { practice: 'food' }, sadaqa: { practice: 'sadaqa' }, umrah: { practice: 'umrah' }, tests: { practice: 'tests' },
+  azkar: { practice: 'azkar' }, ramadan: { ramadan: true }, safar: { safar: true }, add_habit: { add: true }, reminders: { profile: 'remind' }, prayer_settings: { profile: 'prayer' },
   my_habits: { profile: 'habits' }, garden: { profile: 'garden' }, account: { profile: 'account' }, ideas: { profile: 'ideas' }, my_reminders: { profile: 'pings' }, plans: { profile: 'plans' },
 };
 
@@ -38,7 +44,7 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
   const setGoal = (id: string, patch: Partial<Goal>) => ({ ...s, goals: (s.goals ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)) });
   const day = isDay(i.date) ? (i.date as string) : today;
   // Marks cannot be made for days ahead; a reminder is about the future.
-  if (day > today && !['set_reminder', 'add_plan', 'update_plan', 'draft_message'].includes(c.name)) return fail('the date is in the future');
+  if (day > today && !['set_reminder', 'add_plan', 'update_plan', 'draft_message', 'change_setting', 'set_quran_place', 'set_book_page', 'umrah'].includes(c.name)) return fail('the date is in the future');
 
   switch (c.name) {
     case 'add_habit': {
@@ -212,6 +218,132 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
       const v = Math.max(0, (h.water[today] ?? 0) + n);
       return ok({ ...s, health: { ...h, water: { ...h.water, [today]: v } } }, _t("Вода сегодня: {0} из {1}", v, h.waterGoal));
     }
+    case 'log_health': {
+      const h = { ...defaultHealth(), ...(s.health ?? {}) };
+      const put = (patch: Partial<typeof h>) => ({ ...s, health: { ...h, ...patch } });
+      switch (i.what) {
+        case 'sleep': {
+          const bed = S(i.bed, 5), wake = S(i.wake, 5);
+          if (!/^\d{1,2}:\d{2}$/.test(bed) || !/^\d{1,2}:\d{2}$/.test(wake)) return fail('give bed and wake as HH:MM');
+          const q = i.quality === 'good' ? 3 : i.quality === 'bad' ? 1 : 2;
+          const [bh, bm] = bed.split(':').map(Number), [wh, wm] = wake.split(':').map(Number);
+          const mins = ((wh * 60 + wm) - (bh * 60 + bm) + 1440) % 1440;
+          return ok(put({ sleep: { ...h.sleep, [day]: { bed: bed.padStart(5, '0'), wake: wake.padStart(5, '0'), q } } }), _t("Сон: {0}–{1}, {2} ч {3} мин", bed.padStart(5, '0'), wake.padStart(5, '0'), Math.floor(mins / 60), mins % 60), `sleep saved for the night before ${day}: ${Math.floor(mins / 60)}h ${mins % 60}m`);
+        }
+        case 'workout': {
+          const w = WORKOUTS.find((x) => x.id === i.workout_id);
+          const name = w ? w.title : S(i.workout_name, 60);
+          if (!name) return fail('give workout_id or workout_name');
+          const id = w ? w.id : `own:${name}`;
+          return ok(put({ workouts: { ...h.workouts, [day]: [...(h.workouts[day] ?? []), id] } }), _t("Тренировка: {0}", name));
+        }
+        case 'fast': return ok(put({ fasts: { ...h.fasts, [day]: true } }), _t("Пост отмечен"));
+        case 'no_fast': { const f = { ...h.fasts }; delete f[day]; return ok(put({ fasts: f }), _t("Отметка поста снята")); }
+        case 'water_goal': { const n = Math.round(Number(i.glasses) || 0); if (n < 1 || n > 30) return fail('glasses 1..30'); return ok(put({ waterGoal: n }), _t("Цель по воде: {0} стаканов", n)); }
+        case 'weight': {
+          const kg = Number(i.weight_kg); if (!(kg > 20 && kg < 400)) return fail('weight_kg must be a number in kg');
+          const f = foodState(s);
+          return ok({ ...s, food: { ...f, weight: { ...f.weight, [day]: Math.round(kg * 10) / 10 } } }, _t("Вес: {0} кг", Math.round(kg * 10) / 10));
+        }
+      }
+      return fail('unknown what');
+    }
+    case 'log_food': {
+      const f = foodState(s);
+      const meal: Meal = i.meal === 'breakfast' ? 'b' : i.meal === 'dinner' ? 'd' : i.meal === 'lunch' ? 'l' : (new Date().getHours() < 11 ? 'b' : new Date().getHours() < 16 ? 'l' : 'd');
+      const items: FoodItem[] = [];
+      for (const x of (Array.isArray(i.items) ? i.items : []).slice(0, 20) as Record<string, unknown>[]) {
+        const n = S(x?.name, 60); const g = Number(x?.grams); if (!n || !(g > 0 && g < 5000)) continue;
+        const row = foodSearch(n)[0];
+        const k = Number(x.kcal);
+        if (k >= 0 && Number.isFinite(k) && x.kcal !== undefined) {
+          const num = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Math.round(Number(v) * 10) / 10 : 0);
+          items.push({ id: `fi-${uid()}`, n, g: Math.round(g), k: Math.round(k), p: num(x.protein), f: num(x.fat), c: num(x.carbs), m: meal });
+        } else if (row) items.push({ ...itemFrom(row, g, meal), n });
+      }
+      if (!items.length) return fail('give items with name and grams (and kcal, protein, fat, carbs per portion)');
+      const kc = items.reduce((a, x) => a + x.k, 0);
+      const log = { ...(f.log ?? {}), [day]: [...(f.log?.[day] ?? []), ...items] };
+      const meals = i.portion ? { ...f.meals, [day]: { ...(f.meals[day] ?? {}), [meal]: i.portion === 'light' ? 1 : i.portion === 'overate' ? 3 : 2 } } : f.meals;
+      const dayK = log[day].reduce((a, x) => a + x.k, 0);
+      return ok({ ...s, food: { ...f, log, meals } }, _t("Питание: {0} · {1} ккал", items.map((x) => `${x.n} ${x.g} г`).join(', '), kc), `logged ${items.length} items, ${kc} kcal; today total ${dayK} kcal${f.mode && f.mode !== 'mera' ? '' : ' (calorie counting is not the chosen mode; the items are still saved)'}`);
+    }
+    case 'rate_meal': {
+      const f = foodState(s);
+      const meal: Meal | null = i.meal === 'breakfast' ? 'b' : i.meal === 'lunch' ? 'l' : i.meal === 'dinner' ? 'd' : null;
+      if (!meal) return fail('meal must be breakfast, lunch or dinner');
+      const v = i.portion === 'light' ? 1 : i.portion === 'overate' ? 3 : i.portion === 'normal' ? 2 : 0;
+      const dm = { ...(f.meals[day] ?? {}) }; if (v) dm[meal] = v as 1 | 2 | 3; else delete dm[meal];
+      return ok({ ...s, food: { ...f, meals: { ...f.meals, [day]: dm } } }, v ? _t("Приём пищи отмечен") : _t("Отметка снята"));
+    }
+    case 'mark_azkar': {
+      const part = i.part === 'evening' ? 'e' : i.part === 'morning' ? 'm' : null; if (!part) return fail('part must be morning or evening');
+      if (i.done === false) { const a = azkarOf(s); return ok({ ...s, azkar: { ...a, [part]: a[part].filter((d) => d !== day) } }, _t("Отметка азкаров снята")); }
+      return ok(azkarDone(s, day, part), part === 'm' ? _t("Утренние азкары прочитаны") : _t("Вечерние азкары прочитаны"));
+    }
+    case 'set_quran_place': {
+      const su = Math.round(Number(i.surah)), ay = Math.max(1, Math.round(Number(i.ayah) || 1));
+      if (!(su >= 1 && su <= 114)) return fail('surah 1..114');
+      const q = { translation: true, size: 1, ...(s.quran ?? {}), surah: su, ayah: ay };
+      return ok({ ...s, quran: q }, _t("Коран: закладка на суре {0}, аят {1}", su, ay));
+    }
+    case 'set_book_page': {
+      const b = (s.books ?? []).find((x) => x.id === i.book_id); if (!b) return fail('no such book');
+      const pg = Math.round(Number(i.page)); if (!(pg >= 1 && pg <= b.pages)) return fail(`page 1..${b.pages}`);
+      return ok({ ...s, books: s.books!.map((x) => (x.id === b.id ? { ...x, page: pg } : x)) }, _t("«{0}»: стр. {1} из {2}", b.title.slice(0, 40), pg, b.pages));
+    }
+    case 'ramadan': {
+      const r = ramadanOf(s);
+      const put = (patch: Partial<typeof r>, line: string) => ok({ ...s, ramadan: { ...r, ...patch } }, line);
+      if (i.what === 'fast') {
+        const m = ['fast', 'ill', 'travel', 'period', 'other', 'chronic'].includes(i.status as string) ? (i.status as FastMark) : 'fast';
+        return put({ fasts: { ...r.fasts, [day]: m } }, m === 'fast' ? _t("Пост отмечен") : _t("День без поста отмечен"));
+      }
+      if (i.what === 'clear_fast') { const f = { ...r.fasts }; delete f[day]; return put({ fasts: f }, _t("Отметка поста снята")); }
+      if (i.what === 'night') {
+        const n = ['tarawih', 'tahajjud', 'itikaf'].includes(i.night as string) ? (i.night as string) : null; if (!n) return fail('night must be tarawih, tahajjud or itikaf');
+        const l = r.nights[day] ?? [];
+        return put({ nights: { ...r.nights, [day]: l.includes(n) ? l : [...l, n] } }, _t("Ночь отмечена: {0}", n === 'tarawih' ? _t("таравих") : n === 'tahajjud' ? _t("тахаджуд") : _t("иатикаф")));
+      }
+      if (i.what === 'qada') return put({ qada: r.qada.includes(day) ? r.qada : [...r.qada, day] }, _t("Возмещённый пост отмечен"));
+      return fail('unknown what');
+    }
+    case 'quit_log': {
+      const q = (s.quits ?? []).find((x) => x.id === i.quit_id && x.status === 'active'); if (!q) return fail('no such active «Хочу оставить» item');
+      if (i.kind === 'urge') return ok(updQuit(s, q.id, (x) => ({ ...x, urges: [...x.urges, { day, at: Date.now() }].slice(-500) })), _t("«Тянуло, но удержался» · {0}", q.what.slice(0, 40)));
+      if (i.kind === 'held') return ok(updQuit(s, q.id, (x) => ({ ...x, clean: x.clean.includes(day) ? x.clean : [...x.clean, day] })), _t("День без срыва · {0}", q.what.slice(0, 40)));
+      if (i.kind === 'slip') {
+        const cause = (Array.isArray(i.causes) ? i.causes : []).map((t) => S(t, 40)).filter(Boolean).slice(0, 5);
+        return ok(updQuit(s, q.id, (x) => ({ ...x, clean: x.clean.filter((d) => d !== day), slips: [...x.slips.filter((sl) => sl.day !== day), { day, at: Date.now(), cause }].sort((a, b) => a.at - b.at).slice(-500) })), _t("Срыв записан · {0}", q.what.slice(0, 40)));
+      }
+      return fail('kind must be urge, held or slip');
+    }
+    case 'umrah': {
+      const u: UmrahState = { prep: [], duas: [], tawaf: 0, saee: 0, ...(s.umrah ?? {}) };
+      if (i.action === 'add_dua') { const t = S(i.text, 300); if (!t) return fail('empty dua'); return ok({ ...s, umrah: { ...u, duas: [...u.duas, { id: uid(), text: t, ...(S(i.for_whom, 60) ? { who: S(i.for_whom, 60) } : {}) }] } }, _t("Дуа для умры записано")); }
+      if (i.action === 'tawaf' || i.action === 'saee') { const n = Math.round(Number(i.count)); if (!(n >= 0 && n <= 7)) return fail('count 0..7'); return ok({ ...s, umrah: { ...u, [i.action]: n } }, i.action === 'tawaf' ? _t("Таваф: круг {0} из 7", n) : _t("Сай: {0} из 7", n)); }
+      return fail('unknown action');
+    }
+    case 'kid_task': {
+      const fam = famOf(s); const k = fam.kids.find((x) => x.id === i.kid_id); if (!k) return fail('no such child');
+      const t = k.tasks.find((x) => x.id === i.task_id); if (!t) return fail('no such task');
+      const has = (k.log[day] ?? []).includes(t.id);
+      if (has === (i.done !== false)) return ok(s, _t("{0}: «{1}» уже отмечено", k.name, t.t));
+      return ok(toggleKidTask(s, k.id, day, t.id), i.done === false ? _t("{0}: отметка снята", k.name) : _t("{0}: «{1}» ✓", k.name, t.t));
+    }
+    case 'change_setting': {
+      const st = { ...s.settings };
+      const lines: string[] = [];
+      if (['prayer', 'auto', 'light', 'dark'].includes(i.theme as string)) { st.theme = i.theme as typeof st.theme; lines.push(_t("тема")); }
+      if (i.text_size === 'normal' || i.text_size === 'large' || i.text_size === 'larger') { st.textScale = i.text_size === 'normal' ? 1 : i.text_size === 'large' ? 1.1 : 1.2; lines.push(_t("размер текста")); }
+      if (['normal', 'calm', 'phrases'].includes(i.words as string)) { st.words = i.words as typeof st.words; lines.push(_t("исламские фразы")); }
+      if (i.me === 'brother' || i.me === 'sister') { st.me = i.me === 'brother' ? 'm' : 'f'; lines.push(_t("обращение")); }
+      if (S(i.name, 40)) { st.name = S(i.name, 40); lines.push(_t("имя")); }
+      if (i.madhab === 'hanafi' || i.madhab === 'shafi') { st.madhab = i.madhab; lines.push(_t("мазхаб для Асра")); }
+      if (isAnchor(i.offset_prayer) && typeof i.offset_minutes === 'number' && Math.abs(i.offset_minutes) <= 60) { st.offsets = { ...(st.offsets ?? {}), [i.offset_prayer]: Math.round(i.offset_minutes) }; lines.push(_t("поправка {0}: {1} мин", ANCHOR_LABEL[i.offset_prayer].ru, Math.round(i.offset_minutes))); }
+      if (!lines.length) return fail('nothing to change (language, city and notifications are changed by the person in Профиль)');
+      return ok({ ...s, settings: st }, _t("Настройки: {0}", lines.join(', ')));
+    }
     case 'open_screen': {
       const g = SCREENS[S(i.screen, 40)]; if (!g) return fail('unknown screen');
       return { s, done: { ok: true, line: '', result: 'opening' }, go: g };
@@ -219,6 +351,8 @@ export function runTool(s: AppState, c: ToolCall, today: string): { s: AppState;
   }
   return fail('unknown tool');
 }
+
+const foodState = (s: AppState): FoodState => ({ meals: {}, rules: ['sweet'], clean: {}, sunna: {}, weight: {}, ...(s.food ?? {}) });
 
 /** A goal «Прочитать «book»», counted by the pages read in Книги from today. */
 export function bookGoal(s: AppState, b: BookMeta, today: string, due?: string, niyya = ''): Goal {

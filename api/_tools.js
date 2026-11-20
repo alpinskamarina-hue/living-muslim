@@ -140,13 +140,89 @@ export const TOOLS = [
     input_schema: { type: 'object', properties: { glasses: { type: 'integer' } }, required: ['glasses'] },
   },
   {
+    name: 'log_health',
+    description: 'Health (Практика → Здоровье): sleep («лёг в 1:00, встал в 7:00»), a workout, a sunnah fast day, the daily water goal, or body weight. Sleep is saved for the morning day (date = the day they woke up, default today).',
+    input_schema: { type: 'object', properties: {
+      what: { type: 'string', enum: ['sleep', 'workout', 'fast', 'no_fast', 'water_goal', 'weight'] },
+      bed: { type: 'string', description: 'Sleep: went to bed, HH:MM.' }, wake: { type: 'string', description: 'Sleep: woke up, HH:MM.' },
+      quality: { type: 'string', enum: ['good', 'ok', 'bad'] },
+      workout_id: { type: 'string', enum: ['morning', 'back', 'strength'], description: 'One of the app workouts, if it matches; otherwise workout_name.' },
+      workout_name: { type: 'string', description: 'Own workout, e.g. «Бег 5 км», «Футбол».' },
+      glasses: { type: 'integer', description: 'water_goal: glasses per day.' },
+      weight_kg: { type: 'number' }, date: DATE,
+    }, required: ['what'] },
+  },
+  {
+    name: 'log_food',
+    description: 'Write what the person ate into Питание (calorie log), with your best estimate per portion. «Съел плов 300 г и салат» = two items. If no grams were said, assume a usual portion and say so.',
+    input_schema: { type: 'object', properties: {
+      items: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, grams: { type: 'number' }, kcal: { type: 'number' }, protein: { type: 'number' }, fat: { type: 'number' }, carbs: { type: 'number' } }, required: ['name', 'grams', 'kcal'] } },
+      meal: { type: 'string', enum: ['breakfast', 'lunch', 'dinner'], description: 'In Ramadan breakfast = suhoor, dinner = iftar. Leave out to pick by the time of day.' },
+      portion: { type: 'string', enum: ['light', 'normal', 'overate'], description: 'Only if the person said how much (ate lightly, overate).' },
+      date: DATE,
+    }, required: ['items'] },
+  },
+  {
+    name: 'rate_meal',
+    description: 'Mark a meal in Питание by measure only, without calories: light, normal, overate, or clear.',
+    input_schema: { type: 'object', properties: { meal: { type: 'string', enum: ['breakfast', 'lunch', 'dinner'] }, portion: { type: 'string', enum: ['light', 'normal', 'overate', 'clear'] }, date: DATE }, required: ['meal', 'portion'] },
+  },
+  {
+    name: 'mark_azkar',
+    description: 'Mark the morning or evening adhkar as read (done=false to clear).',
+    input_schema: { type: 'object', properties: { part: { type: 'string', enum: ['morning', 'evening'] }, done: { type: 'boolean' }, date: DATE }, required: ['part'] },
+  },
+  {
+    name: 'set_quran_place',
+    description: 'Move the Quran bookmark (where the reader opens) to a surah and ayah, e.g. «я дочитал до 2:255» → surah 2, ayah 256 (the next one to read).',
+    input_schema: { type: 'object', properties: { surah: { type: 'integer' }, ayah: { type: 'integer' } }, required: ['surah', 'ayah'] },
+  },
+  {
+    name: 'set_book_page',
+    description: 'Set the current page of a book on the shelf in Книги (book id from person_data), e.g. «я на 120 странице».',
+    input_schema: { type: 'object', properties: { book_id: { type: 'string' }, page: { type: 'integer' } }, required: ['book_id', 'page'] },
+  },
+  {
+    name: 'ramadan',
+    description: 'Ramadan log: a fast day (status fast, or a reason for not fasting), clear a fast mark, a night prayer (tarawih, tahajjud, itikaf, on the evening\'s day), or a made-up (qada) fast today.',
+    input_schema: { type: 'object', properties: {
+      what: { type: 'string', enum: ['fast', 'clear_fast', 'night', 'qada'] },
+      status: { type: 'string', enum: ['fast', 'ill', 'travel', 'period', 'other', 'chronic'] },
+      night: { type: 'string', enum: ['tarawih', 'tahajjud', 'itikaf'] }, date: DATE,
+    }, required: ['what'] },
+  },
+  {
+    name: 'quit_log',
+    description: '«Хочу оставить» (bad habits the person is leaving, by id from person_data): urge = felt the pull but held on; held = a whole day without it; slip = it happened (with optional causes). Be gentle, no blame; after a slip remind that tawba is open.',
+    input_schema: { type: 'object', properties: { quit_id: { type: 'string' }, kind: { type: 'string', enum: ['urge', 'held', 'slip'] }, causes: { type: 'array', items: { type: 'string' } }, date: DATE }, required: ['quit_id', 'kind'] },
+  },
+  {
+    name: 'umrah',
+    description: 'Umrah: add a dua to the list to make there (optionally for whom), or set the tawaf / sa\'i round counter (0–7).',
+    input_schema: { type: 'object', properties: { action: { type: 'string', enum: ['add_dua', 'tawaf', 'saee'] }, text: { type: 'string' }, for_whom: { type: 'string' }, count: { type: 'integer' } }, required: ['action'] },
+  },
+  {
+    name: 'kid_task',
+    description: 'Family: tick (or untick with done=false) a child\'s task for the day, by kid id and task id from person_data.',
+    input_schema: { type: 'object', properties: { kid_id: { type: 'string' }, task_id: { type: 'string' }, done: { type: 'boolean' }, date: DATE }, required: ['kid_id', 'task_id'] },
+  },
+  {
+    name: 'change_setting',
+    description: 'Change app settings: theme (prayer = dark from Maghrib to Fajr), text size, how many Islamic phrases (normal, calm, phrases only), brother/sister form, name in the app, madhab for Asr, or a minutes correction to one prayer time to match the local mosque. Language, city and notifications the person changes in Профиль (open the screen).',
+    input_schema: { type: 'object', properties: {
+      theme: { type: 'string', enum: ['prayer', 'auto', 'light', 'dark'] }, text_size: { type: 'string', enum: ['normal', 'large', 'larger'] },
+      words: { type: 'string', enum: ['normal', 'calm', 'phrases'] }, me: { type: 'string', enum: ['brother', 'sister'] }, name: { type: 'string' },
+      madhab: { type: 'string', enum: ['shafi', 'hanafi'] }, offset_prayer: PRAYER, offset_minutes: { type: 'integer', description: '-60..60, the full correction for that prayer.' },
+    } },
+  },
+  {
     name: 'open_screen',
     description: 'Open a screen of the app for the person (the chat closes). Use only when they ask to open or go somewhere, as the last action.',
-    input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders', 'plans'] } }, required: ['screen'] },
+    input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders', 'plans', 'azkar', 'tests'] } }, required: ['screen'] },
   },
 ];
 
-export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, add, tick off, move and delete plans («Планы»: tasks for a day, between the prayers), draft a message for someone, save ideas, set and cancel reminders, mark sadaqa, add water, open a screen.
+export const TOOLS_PROMPT = `You can act in the app with the tools: add or change habits, mark habits and prayers, create and update goals (also «read this book» goals for books on the shelf), add and tick goal steps, write goal notes, add, tick off, move and delete plans («Планы»: tasks for a day, between the prayers), draft a message for someone, save ideas, set and cancel reminders, mark sadaqa, add water, log sleep, workouts, fasts and weight, log food with calories or rate a meal, mark morning/evening adhkar, move the Quran bookmark, set a book page, keep the Ramadan log, log urges/slips in «Хочу оставить», add umrah duas and count tawaf/sa'i, tick children's tasks, change settings, open a screen. If something in the app can be done by hand, you can do it too; never say you have no tool for a thing listed here.
 - Do what the person asks right away, without asking for confirmation for ordinary things; every action shows on their phone with an «Отменить» (undo) button.
 - Ask a short question only when something essential is missing or ambiguous (which goal or habit, or a prayer for a new habit you cannot sensibly guess).
 - Use ids exactly as given in person_data. Never invent ids.
@@ -156,7 +232,9 @@ export const TOOLS_PROMPT = `You can act in the app with the tools: add or chang
 - Plans vs reminders vs ideas: a task to do on a day goes to Планы (add_plan; with a time or prayer and «напомни» it also rings); a bare «напомни» without a task is set_reminder; a thought with no day is save_idea.
 - «Что у меня сегодня / на неделе?» — answer from PLANS in person_data. Offer to move undone plans from past days.
 - When a plan is to write or call someone, offer to draft the message (draft_message); never claim you sent anything, the person sends it.
-- Removing or stopping something (archive a habit, delete an idea, mark a goal reached) only when the person clearly asked.`;
+- Deleting or stopping something (archive a habit, delete an idea or a plan, cancel a reminder, clear a mark) — first ask «Удалить …? Да / нет» naming exactly what, and act only after the person answers yes. A goal is marked reached only when they say so.
+- You cannot and must not: pay or change the tariff, change the email, sign-in or account, delete the account or all data, send anything to other people yourself (only draft_message), see or change other people's data, or touch admin pages. Say plainly that the person does this themselves and offer to open the screen.
+- In a circle you only see day totals and dua requests; you do not write in the circle chat.`;
 
 const BLOCKS = new Set(['text', 'tool_use', 'tool_result', 'thinking', 'redacted_thinking']);
 /** Messages from the browser: plain text turns, or block turns of a tool round. */

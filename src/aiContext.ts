@@ -96,7 +96,7 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
     L.push('', 'LEAVING BEHIND (bad habits, private):');
     for (const q of quits) {
       const last = q.slips.length ? q.slips[q.slips.length - 1].day : q.start;
-      L.push(`- ${cut(q.what, 60)} · since ${q.start} · last slip ${q.slips.length ? last : 'none'} · resisted urges: ${q.urges.length}${q.instead ? ` · instead: ${cut(q.instead, 60)}` : ''}`);
+      L.push(`- [id:${q.id}] ${cut(q.what, 60)} · since ${q.start} · last slip ${q.slips.length ? last : 'none'} · resisted urges: ${q.urges.length}${q.instead ? ` · instead: ${cut(q.instead, 60)}` : ''}`);
     }
   }
 
@@ -114,14 +114,27 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   // Health, sadaqa, trip, umrah
   const hl = s.health;
   if (hl) {
-    const parts = [hl.water?.[today] ? `water ${hl.water[today]}/${hl.waterGoal} glasses today` : '', hl.sleep?.[today] ? `slept ${hl.sleep[today].bed}–${hl.sleep[today].wake}` : '', hl.fasts?.[today] ? 'fasting today' : ''].filter(Boolean);
+    const parts = [hl.water?.[today] ? `water ${hl.water[today]}/${hl.waterGoal} glasses today` : '', hl.sleep?.[today] ? `slept ${hl.sleep[today].bed}–${hl.sleep[today].wake}` : 'sleep not logged for last night', hl.fasts?.[today] ? 'fasting today' : '', hl.workouts?.[today]?.length ? `workouts today: ${hl.workouts[today].map((w) => w.replace(/^own:/, '')).join(', ')}` : ''].filter(Boolean);
     if (parts.length) L.push(`Health: ${parts.join(', ')}.`);
   }
+  const az = s.azkar;
+  if (az) L.push(`Adhkar today: morning ${az.m.includes(today) ? 'read' : 'not yet'}, evening ${az.e.includes(today) ? 'read' : 'not yet'}.`);
+  const fd = s.food;
+  if (fd) {
+    const eaten = fd.log?.[today] ?? [];
+    const w = Object.keys(fd.weight ?? {}).sort().pop();
+    const bits = [`mode ${fd.mode ?? 'mera'}`, eaten.length ? `eaten today ${eaten.reduce((a, x) => a + x.k, 0)} kcal (${eaten.map((x) => `${cut(x.n, 30)} ${x.g} g`).join(', ')})` : '', w ? `last weight ${fd.weight[w]} kg on ${w}` : ''].filter(Boolean);
+    L.push(`Food: ${bits.join(', ')}.`);
+  }
+  const rf = s.ramadan?.fasts?.[today];
+  if (rf) L.push(`Ramadan log today: ${rf}.`);
+  const kids = s.family?.kids ?? [];
+  if (kids.length) L.push('', `CHILDREN (family tasks): ${kids.map((k) => `[id:${k.id}] ${cut(k.name, 20)}, ${k.age}: ${k.tasks.map((t) => `[id:${t.id}] ${(k.log[today] ?? []).includes(t.id) ? '✓' : '○'} ${cut(t.t, 40)}`).join('; ')}`).join(' | ')}.`);
   const sd = s.sadaqa?.days;
   if (sd) { const m = today.slice(0, 7); const n = Object.entries(sd).filter(([d, x]) => d.startsWith(m) && (x.money || x.deed)).length; if (n) L.push(`Sadaqa: ${n} days this month${sd[today] ? ', given today' : ''}.`); }
   if (s.trip && s.trip.to >= today) L.push(`Travelling (safar): ${s.trip.place}, ${s.trip.from} to ${s.trip.to}.`);
   const u = s.umrah;
-  if (u?.from) L.push(`Umrah trip: ${u.from}${u.to ? ` to ${u.to}` : ''}; preparation items done: ${u.prep?.length ?? 0}; duas on the list: ${u.duas?.length ?? 0}.`);
+  if (u?.from) L.push(`Umrah trip: ${u.from}${u.to ? ` to ${u.to}` : ''}; preparation items done: ${u.prep?.length ?? 0}; duas on the list: ${u.duas?.length ?? 0}; tawaf counter ${u.tawaf ?? 0}/7, sa'i ${u.saee ?? 0}/7.`);
 
   // Circles
   const mine = myCircles();
