@@ -4,6 +4,8 @@ import { PIcon } from './PIcon';
 import type { AppState, FoodBody, FoodItem, FoodState, Meal } from '../types';
 import { ACT, FOODS, MODES, itemFrom, lastWeight, parseQuery, search, sum, target, type FoodRow } from '../foodcalc';
 import { _t, _tj } from '../i18n';
+import { PhotoEntry, PhotoLine } from './FoodPhoto';
+import { PHOTO_LIMIT, photosLeft } from '../foodphoto';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 const foodOf = (s: AppState): FoodState => ({ meals: {}, rules: ['sweet'], clean: {}, sunna: {}, weight: {}, ...(s.food ?? {}) });
@@ -125,6 +127,8 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
   const add = (it: FoodItem) => { update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), it] } }))); setQ(''); setChosen(null); setOwn(null); };
   const del = (id: string) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: (x.log?.[today] ?? []).filter((i) => i.id !== id) } })));
   const label = (m: Meal) => slots.find((x) => x.id === m)?.l ?? m;
+  const [, bump] = useState(0);
+  const addMany = (l: FoodItem[]) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), ...l] } })));
   const bar = (v: number, of: number, l: string) => (
     <div className="fd-bar"><small>{l}</small><i><u style={{ width: `${Math.min(100, of ? (v / of) * 100 : 0)}%` }} /></i><small>{_tj("{0} / {1} г", Math.round(v), of)}</small></div>
   );
@@ -144,7 +148,11 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
       </div>
       {!chosen && !own && (
         <div className="fd-find">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("Что съел? Например: плов 300 или 2 яйца")} aria-label={_t("Что съел")} />
+          <div className="fd-findrow">
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("Что съел? Например: плов 300 или 2 яйца")} aria-label={_t("Что съел")} />
+            <PhotoEntry today={today} meal={meal} mealLabel={label(meal)} onAdd={addMany} onChange={() => bump((n) => n + 1)} />
+          </div>
+          {!q && <PhotoLine today={today} />}
           {hits.length > 0 && (
             <ul className="fd-hits">
               {hits.map((row) => { const g = gramsFor(row); return (
@@ -207,7 +215,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
           })}
         </div>
       )}
-      <small className="fd-muted">{_tj("Цифры примерные, ±20%. В списке {0} блюд, своё можно записать с калориями с упаковки.", FOODS.length)}</small>
+      <small className="fd-muted">{_tj("Цифры примерные, ±20%. В списке {0} блюд, своё можно записать с калориями с упаковки.", FOODS.length)}{photosLeft(today) ? ' ' + _tj("Фото сегодня: осталось {0} из {1}.", photosLeft(today), PHOTO_LIMIT) : ''}</small>
     </div>
   );
 }
