@@ -12,11 +12,13 @@ import { prayerTimes, windowState } from './prayer';
 import { AdhanPlayer, AdhanToast, useAdhanClock } from './components/Adhan';
 import { adhanServer } from './adhan';
 import { Today } from './components/Today';
+import { PlansCard, usePlansCloud, setPlanStart } from './components/Plans';
 import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
 import { Profile } from './components/Profile';
 import { syncPush, setNudge, nudgeOf, setPings } from './push';
+import { planRings } from './plans';
 import { effectiveTheme, themeMode, setCurrentTheme, sysPrefersDark } from './theme';
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
@@ -119,7 +121,7 @@ export function App() {
   const setSettings = (patch: Partial<AppState['settings']>) => update((x) => ({ ...x, settings: { ...x.settings, ...patch } }));
   const nudge = nudgeOf(state, today);
   setNudge(nudge);
-  const pingKey = JSON.stringify(setPings(state.pings));
+  const pingKey = JSON.stringify(setPings(state.pings, planRings(state)));
   const remKey = pingKey + JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings)) + JSON.stringify(nudge);
   useEffect(() => {
     if (!state.settings.reminders?.on) return;
@@ -323,16 +325,25 @@ export function App() {
     if ('assistant' in t) { setAiOpen(true); return; }
     if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
   };
-  // A tap on a reminder notification opens /app/?go=pings: Profile → Мои напоминания.
+  // A tap on a reminder notification opens /app/?go=pings (Мои напоминания) or ?go=plans&pl=…&do=…&d=… (a plan,
+  // with «Сделано», «Через час», «Завтра» from the notification buttons). Also when the app is already open.
   useEffect(() => {
-    try {
-      const u = new URL(location.href);
+    const handle = (href: string) => {
+      const u = new URL(href, location.origin);
       const g = u.searchParams.get('go');
-      if (g !== 'pings' && g !== 'ideas') return;
-      u.searchParams.delete('go'); history.replaceState(null, '', u.toString());
+      if (g !== 'pings' && g !== 'ideas' && g !== 'plans') return false;
+      if (g === 'plans') setPlanStart({ plan: u.searchParams.get('pl') || undefined, act: u.searchParams.get('do') || undefined, day: u.searchParams.get('d') || undefined });
       go({ profile: g });
+      return true;
+    };
+    try {
+      if (handle(location.href)) { const u = new URL(location.href); ['go', 'pl', 'do', 'd'].forEach((k) => u.searchParams.delete(k)); history.replaceState(null, '', u.toString()); }
     } catch { /* */ }
+    const onMsg = (e: MessageEvent) => { try { if (e.data?.type === 'open') handle(e.data.url); } catch { /* */ } };
+    navigator.serviceWorker?.addEventListener('message', onMsg);
+    return () => navigator.serviceWorker?.removeEventListener('message', onMsg);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  usePlansCloud(state, update);
 
   // Tariff: 7 days of Pro from the first day, then Free «по 3». Re-check the limits when the plan changes,
   // show the reminder sheets on day 5, day 7 and day 8, and open the Pro screen from anywhere.
@@ -374,6 +385,7 @@ export function App() {
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
             onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onAssistant={state.settings.aiFab === false ? () => setAiOpen(true) : undefined} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
+            plans={<PlansCard state={state} update={update} today={today} onOpen={() => go({ profile: 'plans' })} />}
             quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
             quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />

@@ -41,13 +41,15 @@ interface Props {
   plan?: React.ReactNode;
   /** «Хочу оставить» lines under the plan, and the evening question next to the muhasaba. */
   quits?: React.ReactNode;
+  /** «Планы на сегодня». */
+  plans?: React.ReactNode;
   quitCheck?: React.ReactNode;
   onQibla: (tab: QiblaTab) => void;
   /** «Новый путь»: the path card, or the choice for someone new. */
   pathCard?: React.ReactNode;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onAssistant, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, quitCheck, onQibla, pathCard }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onAssistant, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, plans, quitCheck, onQibla, pathCard }: Props) {
   const { current, next, end } = windowState(times, now);
   const [open, setOpen] = useState<Anchor | null>(null);
   const onTrip = tripOn(state, today);
@@ -153,6 +155,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <MosqueCard state={state} update={update} today={today} now={now} times={times} next={next} onOpen={onQibla} />
         {pathCard}
         {plan}
+        {plans}
         {quits}
         {(j.streak > 0 || j.lit > 0) && (
           <button type="button" className="streak-line" onClick={onGarden}>

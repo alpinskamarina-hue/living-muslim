@@ -1,6 +1,7 @@
 // What the assistant knows about this person: a short plain-text summary built on the phone from the app's own data
 // and sent with each question (it is not stored on the server). Only the person's own data, plus what their circle
 // already sees (names and day totals); notes and the dua list stay out unless they belong to a goal the person keeps.
+import { addDays as plAdd, dayPlans, isDone, listsOf, live as livePlans } from './plans';
 import type { AppState, Anchor } from './types';
 import { ANCHORS, ANCHOR_LABEL } from './types';
 import { addDays } from './dates';
@@ -66,6 +67,20 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   // Ideas
   const pings = (s.pings ?? []).filter((x) => x.at > Date.now() - 3600e3).sort((a, b) => a.at - b.at).slice(0, 15);
   if (pings.length) L.push('', `REMINDERS set (local time): ${pings.map((x) => `[id:${x.id}] ${new Date(x.at).toString().slice(0, 21)}${x.prayer ? ` (after ${x.prayer})` : ''}: ${cut(x.text, 100)}`).join(' | ')}. Phone notifications: ${s.settings.reminders?.on ? 'on' : 'OFF'}.`);
+  // Plans («Планы»)
+  try {
+    const lines: string[] = [];
+    for (let i = -7; i <= 14; i++) {
+      const k = plAdd(today, i);
+      for (const p of dayPlans(s, k)) {
+        if (i < 0 && (p.repeat || isDone(p, k))) continue;
+        lines.push(`[id:${p.id}] ${k}${p.after ? ` after ${p.after}` : p.time ? ` ${p.time}` : ''}${p.remind ? ' ⏰' : ''}${p.repeat ? ` (every ${p.repeat})` : ''}${p.list ? ` #${p.list}` : ''}: ${cut(p.text, 100)}${isDone(p, k) ? ' — DONE' : i < 0 ? ' — NOT DONE (overdue)' : ''}`);
+      }
+    }
+    for (const p of livePlans(s).filter((x) => x.week && x.date >= today && x.date <= plAdd(today, 14))) lines.push(`[id:${p.id}] week ending ${p.date}: ${cut(p.text, 100)}${isDone(p, p.date) ? ' — DONE' : ''}`);
+    if (lines.length) L.push('', `PLANS (Планы, local days, -7..+14): ${lines.slice(0, 60).join(' | ')}. Lists: ${listsOf(s).join(', ')}.`);
+    else L.push('', `PLANS: none yet. Lists: ${listsOf(s).join(', ')}.`);
+  } catch { /* plans are a nice-to-have */ }
   const ideas = (s.ideas ?? []).slice(-15);
   if (ideas.length) L.push('', `MY IDEAS (newest last): ${ideas.map((x) => `[id:${x.id}] ${new Date(x.at).toISOString().slice(0, 10)}: ${cut(x.text, 120)}`).join(' | ')}`);
 

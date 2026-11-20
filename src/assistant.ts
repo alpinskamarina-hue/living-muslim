@@ -13,6 +13,10 @@ export interface AiMsg {
   acts?: string[];
   /** A book the person attached with 📎: its shelf id (the reply shows «Открыть» and «Сделать цель»). */
   book?: string;
+  /** Messages the assistant drafted for the person to send (copy / WhatsApp). */
+  drafts?: { to: string; text: string }[];
+  /** The answer touched «Планы»: show «Открыть Планы». */
+  plans?: boolean;
 }
 
 const LS = 'lm.ai.chat';
