@@ -33,7 +33,7 @@ import { useKhatm } from './khatm';
 import { useIftar } from './iftar';
 import { inRamadan } from './rplan';
 import { isCounted } from './store';
-import { here, tripOn } from './safar';
+import { here, tripOn, safarRings } from './safar';
 import { Safar } from './components/Safar';
 import { Assistant, AssistantFab } from './components/Assistant';
 import { buildContext } from './aiContext';
@@ -124,12 +124,13 @@ export function App() {
   const nudge = nudgeOf(state, today);
   setNudge(nudge);
   const wRings = workoutRings(state, today, (d) => { const [y, m, dd] = d.split('-').map(Number); return prayerTimes({ ...here(state, d), offsets: state.settings.offsets }, new Date(y, m - 1, dd, 12)) as unknown as Record<string, Date>; });
-  const pingKey = JSON.stringify(setPings(state.pings, planRings(state), wRings));
+  const pingKey = JSON.stringify(setPings(state.pings, planRings(state), wRings, safarRings(state, today)));
   const remKey = pingKey + JSON.stringify(state.settings.reminders ?? null) + (state.settings.lang ?? '') + JSON.stringify(adhanServer(state.settings)) + JSON.stringify(nudge);
   useEffect(() => {
     if (!state.settings.reminders?.on) return;
     // Ticking habits changes the counts often: wait a moment so a burst of ticks is one save.
-    const t = setTimeout(() => syncPush(state.settings, state.settings.reminders!), 1500);
+    // On a trip the server computes prayer reminders for the destination.
+    const t = setTimeout(() => syncPush(place, state.settings.reminders!), 1500);
     return () => clearTimeout(t);
   }, [lat, lng, method, madhab, offKey, remKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const { textScale = 1 } = state.settings;
@@ -443,7 +444,7 @@ export function App() {
       <WordsLayer state={state} today={today} />
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}
-      {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} />}
+      {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} circle={circle} joined={joined} />}
       {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={(st) => buildContext(st, today, new Date(), times, circle)} apply={(st) => update(() => st)} onGo={(t) => { setAiOpen(false); go(t); }} />}
       {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}
       {adhan.toast && <AdhanToast a={adhan.toast} onClose={adhan.closeToast} />}

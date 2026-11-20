@@ -212,3 +212,37 @@ export function mosqueCard(s: AppState, today: string, now: Date, times: Record<
 }
 
 export const hideCard = (key: string) => write(HIDE_KEY, key);
+
+// ───── Halal places (Safar «Рядом») ─────
+const HALAL_KEY = 'lm_halal';
+export interface Halal { id: string; name: string; lat: number; lng: number; kind: string; only: boolean }
+/** Cafés and shops tagged halal in OpenStreetMap. Tags are added by volunteers: few places have them, and none is a guarantee. */
+export async function findHalal(at: { lat: number; lng: number }): Promise<Halal[]> {
+  const gl = grid(at.lat), gg = grid(at.lng);
+  const c = read<{ lat: number; lng: number; at: number; list: Halal[] }>(HALAL_KEY);
+  if (c && c.lat === gl && c.lng === gg && Date.now() - c.at < 7 * 864e5) return c.list;
+  const q = `[out:json][timeout:20];nwr["diet:halal"~"^(yes|only)$"](around:${RADIUS_M + 800},${gl},${gg});out center tags 60;`;
+  let err: unknown = null;
+  for (const s of SERVERS) {
+    try {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 20000);
+      const r = await fetch(`${s}?data=${encodeURIComponent(q)}`, { signal: ctl.signal });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(String(r.status));
+      const j = await r.json();
+      const list: Halal[] = [];
+      for (const e of j.elements ?? []) {
+        const lat = e.lat ?? e.center?.lat, lng = e.lon ?? e.center?.lon;
+        if (typeof lat !== 'number' || typeof lng !== 'number') continue;
+        const t = e.tags ?? {};
+        const name = (t['name:ru'] && LOC === 'ru-RU' ? t['name:ru'] : null) ?? t.name ?? t['name:en'] ?? '';
+        list.push({ id: `${e.type}/${e.id}`, name, lat, lng, kind: t.amenity ?? t.shop ?? '', only: t['diet:halal'] === 'only' });
+      }
+      write(HALAL_KEY, { lat: gl, lng: gg, at: Date.now(), list });
+      return list;
+    } catch (e) { err = e; }
+  }
+  throw err ?? new Error('overpass');
+}
+export const halalSearchUrl = () => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('halal')}`;

@@ -1,5 +1,8 @@
-import type { AppState, Settings } from './types';
+import type { Anchor, AppState, Masah, PastTrip, Settings, Trip } from './types';
+import { ANCHORS } from './types';
 import { _t } from './i18n';
+import { prayerTimes, type DayTimes } from './prayer';
+import { fromKey } from './dates';
 
 const R = 6371;
 const rad = (d: number) => (d * Math.PI) / 180;
@@ -51,7 +54,10 @@ export function travelStatus(s: AppState, day: string): { traveler: boolean; why
   return { traveler: true, why: s.settings.madhab === 'hanafi' ? _t("Зухр, Аср и Иша по 2 ракаата. У ханафитов намазы не объединяют.") : _t("Зухр, Аср и Иша по 2 ракаата. Можно объединять Зухр с Асром и Магриб с Ишой.") };
 }
 
-export const CHECKLIST = [_t("Коврик для намаза"), _t("Коран или приложение"), _t("Бутылка для омовения"), _t("Зарядка и пауэрбанк"), _t("Лекарства"), _t("Документы и билеты"), _t("Садака в дорогу"), _t("Попрощаться с близкими")];
+export const CHECKLIST = [_t("Коврик для намаза"), _t("Коран или приложение"), _t("Бутылка для омовения"), _t("Зарядка и пауэрбанк"), _t("Лекарства"), _t("Документы и билеты"), _t("Садака в дорогу"), _t("Попрощаться с близкими"), _t("Носки для масха (надеть после омовения)")];
+/** Built-in items are kept by id, so a tick survives switching the language. Older trips hold the text itself. */
+export const checkId = (i: number) => `c${i}`;
+export const isChecked = (t: Trip, i: number) => t.checklist.includes(checkId(i)) || t.checklist.includes(CHECKLIST[i]);
 
 export interface Dua { title: string; when: string; ar: string; tr: string; ru: string; src: string }
 export const DUAS: Dua[] = [
@@ -91,3 +97,135 @@ export const DUAS: Dua[] = [
     src: _t("Муслим, 1342"),
   },
 ];
+
+// ───── The traveller's day ─────
+
+export interface PlanRow { a: Anchor[]; at: Date; until: Date; rakats: string; together: boolean }
+
+/** Today's prayers for a traveller: shortened, and for the Shafi'i madhab Dhuhr+Asr and Maghrib+Isha together. */
+export function travelPlan(s: AppState, day: string, t: DayTimes): PlanRow[] {
+  const st = travelStatus(s, day);
+  const short = st.traveler;
+  const join = short && s.settings.madhab === 'shafi';
+  const r = (a: Anchor) => (a === 'fajr' ? '2' : a === 'maghrib' ? '3' : short ? '2' : '4');
+  const end = (a: Anchor): Date => {
+    if (a === 'fajr') return t.sunrise;
+    const i = ANCHORS.indexOf(a);
+    if (i < 4) return t[ANCHORS[i + 1]];
+    const m = new Date(t.isha); m.setHours(23, 59, 0, 0); return m;
+  };
+  if (!join) return ANCHORS.map((a) => ({ a: [a], at: t[a], until: end(a), rakats: r(a), together: false }));
+  return [
+    { a: ['fajr'], at: t.fajr, until: t.sunrise, rakats: '2', together: false },
+    { a: ['dhuhr', 'asr'], at: t.dhuhr, until: t.maghrib, rakats: '2+2', together: true },
+    { a: ['maghrib', 'isha'], at: t.maghrib, until: end('isha'), rakats: '3+2', together: true },
+  ];
+}
+
+// ───── Masah over socks ─────
+
+export const MASAH_H = { traveler: 72, home: 24 } as const;
+/** The term runs from the first time wudu broke after putting the socks on (Hanafi and Shafi'i). */
+export function masahLeft(m: Masah | null | undefined, traveler: boolean, now = Date.now()) {
+  if (!m) return null;
+  const hours = traveler ? MASAH_H.traveler : MASAH_H.home;
+  if (!m.broke) return { started: false, hours, end: null as number | null, left: hours * 3600e3, frac: 1 };
+  const end = m.broke + hours * 3600e3;
+  const left = Math.max(0, end - now);
+  return { started: true, hours, end, left, frac: left / (hours * 3600e3) };
+}
+export function leftLabel(ms: number) {
+  const h = Math.floor(ms / 3600e3), m = Math.floor((ms % 3600e3) / 60e3);
+  if (h >= 24) return _t("{0} сут {1} ч", Math.floor(h / 24), h % 24);
+  return h > 0 ? _t("{0} ч {1} мин", h, m) : _t("{0} мин", m);
+}
+
+// ───── The road: which prayers fall into it ─────
+
+export interface RoadStep { at: Date; kind: 'dep' | 'arr' | 'prayer'; a?: Anchor; inside?: boolean; advice?: string }
+
+const LBL = (a: Anchor) => ({ fajr: _t("Фаджр"), dhuhr: _t("Зухр"), asr: _t("Аср"), maghrib: _t("Магриб"), isha: _t("Иша") }[a]);
+const hm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+/**
+ * Prayer windows met on the road. Position is taken along a straight line between home and the destination,
+ * so times in the air are close enough to plan by. Times are by the phone's clock (home time zone).
+ */
+export function roadPlan(s: AppState, trip: Trip): { dep: Date; arr: Date; steps: RoadStep[] } | null {
+  if (!trip.depTime || !trip.dur) return null;
+  const [h, m] = trip.depTime.split(':').map(Number);
+  const dep = fromKey(trip.from); dep.setHours(h, m, 0, 0);
+  const arr = new Date(dep.getTime() + trip.dur * 60e3);
+  const home = s.settings;
+  const at = (d: Date): Settings => {
+    const f = Math.min(1, Math.max(0, (d.getTime() - dep.getTime()) / (arr.getTime() - dep.getTime())));
+    return { ...home, lat: home.lat + (trip.lat - home.lat) * f, lng: home.lng + (trip.lng - home.lng) * f };
+  };
+  const shafi = home.madhab === 'shafi';
+  const traveler = distanceKm(home, trip) >= MIN_KM;
+  const mode = trip.mode ?? 'plane';
+  const steps: RoadStep[] = [{ at: dep, kind: 'dep' }, { at: arr, kind: 'arr' }];
+  // Walk the road in 5-minute steps; a prayer starts when its time at the current point has come.
+  let prev: Anchor | 'sunrise' | null = null;
+  const cur = (d: Date): Anchor | 'sunrise' | null => {
+    const t = prayerTimes(at(d), d);
+    let c: Anchor | 'sunrise' | null = null;
+    for (const k of ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const) if (t[k].getTime() <= d.getTime()) c = k;
+    return c;
+  };
+  // The prayer already running at departure counts too.
+  const begin = new Date(dep.getTime() - 1);
+  prev = cur(begin);
+  const met: { a: Anchor; at: Date; startedBefore: boolean }[] = [];
+  if (prev && prev !== 'sunrise') met.push({ a: prev, at: prayerTimes(at(begin), begin)[prev], startedBefore: true });
+  for (let x = dep.getTime(); x <= arr.getTime(); x += 5 * 60e3) {
+    const d = new Date(x);
+    const c = cur(d);
+    if (c !== prev && c && c !== 'sunrise') met.push({ a: c, at: d, startedBefore: false });
+    prev = c;
+  }
+  const atArr = cur(arr);
+  for (const p of met) {
+    const goesOn = p.a === atArr; // the window is still open on arrival
+    const pair: Anchor | null = shafi && traveler ? ({ dhuhr: 'asr', asr: 'dhuhr', maghrib: 'isha', isha: 'maghrib' } as Partial<Record<Anchor, Anchor>>)[p.a] ?? null : null;
+    let advice: string;
+    if (p.startedBefore) advice = goesOn ? _t("Время уже идёт. Лучше соверши до посадки, или после прибытия.") : _t("Время уже идёт: соверши до посадки.");
+    else if (goesOn) advice = _t("Можно совершить после прибытия: время ещё будет.");
+    else if (pair === 'asr' || pair === 'isha') advice = _t("Можно отложить и совершить вместе с {0} после прибытия.", pair === 'asr' ? _t("Асром") : _t("Ишой"));
+    else if (pair) advice = _t("Лучше соверши вместе с {0} до посадки.", pair === 'dhuhr' ? _t("Зухром") : _t("Магрибом"));
+    else advice = mode === 'car' ? _t("Время закончится в дороге: остановись и соверши намаз.") : _t("Время закончится в пути: соверши намаз на месте, стоя или сидя.");
+    steps.push({ at: p.at, kind: 'prayer', a: p.a, inside: !p.startedBefore, advice });
+  }
+  steps.sort((a, b) => a.at.getTime() - b.at.getTime() || (a.kind === 'dep' ? -1 : 1));
+  return { dep, arr, steps };
+}
+export const prayerName = LBL;
+export const hhmm = hm;
+
+// ───── Summary after the trip ─────
+
+export function tripSummary(s: AppState, t: Trip): PastTrip {
+  let prayers = 0, total = 0;
+  for (let d = fromKey(t.from); ; d.setDate(d.getDate() + 1)) {
+    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (k > t.to) break;
+    total += 5;
+    prayers += Object.keys(s.prayers?.[k] ?? {}).length;
+  }
+  return { from: t.from, to: t.to, place: t.place, prayers, total, duas: t.duas?.length ?? 0 };
+}
+
+/** Reminders for the server: the end of masah (3 h before) and joined prayers on the next two trip days. */
+export function safarRings(s: AppState, today: string, now = Date.now()): { k: string; at: number; t: string }[] {
+  const out: { k: string; at: number; t: string }[] = [];
+  const m = masahLeft(s.masah, travelStatus(s, today).traveler, now);
+  if (m?.end) out.push({ k: `masah-${s.masah!.broke}`, at: m.end - 3 * 3600e3, t: _t("Масх на носки заканчивается в {0}. Дальше снова полное омовение с мытьём ног.", hm(new Date(m.end))) });
+  for (let i = 0; i < 2; i++) {
+    const d = fromKey(today); d.setDate(d.getDate() + i);
+    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (!tripOn(s, k) || !travelStatus(s, k).traveler || s.settings.madhab !== 'shafi') continue;
+    const t = prayerTimes({ ...here(s, k), offsets: s.settings.offsets }, new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12));
+    for (const r of travelPlan(s, k, t)) if (r.together) out.push({ k: `safar-${k}-${r.a[0]}`, at: r.at.getTime() - 10 * 60e3, t: _t("Через 10 минут {0} вместе: по {1} ракаата.", r.a.map(LBL).join(' + '), r.rakats) });
+  }
+  return out;
+}

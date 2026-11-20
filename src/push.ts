@@ -82,11 +82,12 @@ export const setNudge = (n: Nudge) => { nudge = n; };
 /** Server copy of what it needs to compute prayer times: place, method, offsets, time zone, and counts for habit nudges. No habit names or notes. */
 let pings: { k: string; at: number; t: string; pl?: string; d?: string; a?: string; w?: 1 }[] = [];
 /** Upcoming reminders the server should send (next 14 days, at most 30): the person's own and those of plans (⏰). */
-export function setPings(list: Ping[] | undefined, plans: PlanRing[] = [], workouts: { k: string; at: number; t: string; w: 1 }[] = []) {
+export function setPings(list: Ping[] | undefined, plans: PlanRing[] = [], workouts: { k: string; at: number; t: string; w: 1 }[] = [], extra: { k: string; at: number; t: string }[] = []) {
   const now = Date.now();
   const own = (list ?? []).filter((x) => x.at > now - 15 * 60000 && x.at < now + 14 * 864e5).map((x) => ({ k: x.id, at: x.at, t: x.text.slice(0, 160) }));
   const pl = plans.map((x) => ({ k: x.id, at: x.at, t: x.text.slice(0, 160), pl: x.plan, d: x.day, ...(x.prayer ? { a: x.prayer } : {}) }));
-  pings = [...own, ...pl, ...workouts.slice(0, 7)].sort((a, b) => a.at - b.at).slice(0, 30);
+  const ex = extra.filter((x) => x.at > now - 15 * 60000 && x.at < now + 14 * 864e5);
+  pings = [...own, ...ex, ...pl, ...workouts.slice(0, 7)].sort((a, b) => a.at - b.at).slice(0, 30);
   return pings;
 }
 function serverPrefs(s: Settings, p: ReminderPrefs) {

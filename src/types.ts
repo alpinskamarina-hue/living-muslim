@@ -156,7 +156,11 @@ export interface AppState {
   sadaqa?: SadaqaState;
   ramadan?: RamadanState;
   goalReview?: string; // day of the last weekly review
-  pastTrips?: { from: string; to: string }[];
+  pastTrips?: PastTrip[];
+  /** Socks for wiping (masah): when put on after wudu and when wudu first broke after that, ms. */
+  masah?: Masah | null;
+  /** The «С возвращением» card after a trip ends, until closed. */
+  tripBack?: PastTrip | null;
   family?: FamilyState;
   /** «Новый путь» for those who have just accepted Islam. */
   newpath?: import('./newpath').NewPathState;
@@ -262,8 +266,23 @@ export interface Trip {
   to: string; // return day
   stayDays: number; // planned days at the destination
   paused: string[]; // habit ids on pause during the trip
-  checklist: string[]; // ticked items
+  checklist: string[]; // ticked items: 'c0'.. for built-in ones (older copies hold the text), own items by text
+  /** Own checklist items. */
+  extra?: string[];
+  /** The road: how and when. depTime "HH:MM" on `from`, by the phone's clock; dur in minutes. */
+  mode?: 'plane' | 'train' | 'car';
+  depTime?: string;
+  dur?: number;
+  /** Day I told the circle I am on the road. */
+  told?: string;
+  /** Circle dua requests I made dua for on this trip (asker ids). */
+  duas?: string[];
+  /** Plan ids added to «Планы» for departure and return. */
+  planIds?: string[];
 }
+
+export interface PastTrip { from: string; to: string; place?: string; prayers?: number; total?: number; duas?: number; sunnah?: boolean }
+export interface Masah { worn: number; broke?: number; wipes?: number }
 
 export interface UmrahState {
   prep: string[];
