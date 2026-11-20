@@ -4,7 +4,7 @@ import { _t } from './i18n';
 // Where a guide button leads. App.tsx knows how to open each of these.
 export type GoTo =
   | { tab: 'today' | 'circle' | 'progress' | 'profile' }
-  | { practice: 'quran' | 'tasbih' | 'focus' | 'books' | 'videos' | 'langs' | 'health' | 'food' | 'sadaqa' | 'umrah' }
+  | { practice: 'quran' | 'tasbih' | 'focus' | 'books' | 'videos' | 'langs' | 'health' | 'food' | 'sadaqa' | 'umrah' | 'azkar' | 'tests' }
   | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' | 'nikah' | 'assistant' | 'ideas' | 'pings' | 'plans' }
   | { add: true }
   | { ramadan: true }

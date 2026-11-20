@@ -21,7 +21,7 @@ Tabs at the bottom: Сегодня (Today), Практика (Practice), Кру�
 - Курсы (Courses): video courses with lessons, tests, a final test and badges; courses can be taken together with a circle and reviewed.
 - Книги (Books): own PDFs and chapter summaries (e.g. «Атомные привычки»); a goal «Прочитать книгу» by chapters or pages.
 - Языки (Languages): word cards with sound and transcription, «Говори» speaking practice, courses «Английский по дням» and «Арабский по дням» (A1).
-- Здоровье и питание: sleep from Fajr, water, short workouts, sunnah fasts, meals by the sunnah (no calories).
+- Здоровье и питание: sleep from Fajr, water, short workouts, sunnah fasts; Питание has modes (Мера without numbers, or calories for losing weight, sport, keeping weight), a food log with calories and a food photo. The assistant can log sleep, workouts, weight and food for the person.
 - Фокус-таймер: timer for focused reading or study.
 - Умра: everything for umrah: preparation of the heart, duas list, rites with tawaf and sa'i counters, video lessons, documents on the phone, savings, trip with a circle group, miqat countdown, diary.
 - Хочу оставить (Leave behind): quitting a bad habit privately: niyya, triggers, replacement, barriers, «Тянет» button for urges, clean days.
