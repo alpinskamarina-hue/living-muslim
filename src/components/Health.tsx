@@ -14,6 +14,7 @@ interface Props {
   habitName?: string;
   onExit: () => void;
   onFinish: (m: Mark) => void;
+  onFood?: () => void;
 }
 
 type View = 'home' | 'sleep' | 'water' | 'fasts' | 'workouts';
@@ -22,7 +23,7 @@ const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h
 const sleepMin = (l: SleepLog) => { const d = toMin(l.wake) - toMin(l.bed); return d <= 0 ? d + 1440 : d; };
 const WD = [_t("вс"), _t("пн"), _t("вт"), _t("ср"), _t("чт"), _t("пт"), _t("сб")];
 
-export function Health({ state, update, today, habitName, onExit, onFinish }: Props) {
+export function Health({ state, update, today, habitName, onExit, onFinish, onFood }: Props) {
   const [view, setView] = useState<View>('home');
   const [run, setRun] = useState<Workout | null>(null);
   const h = health(state);
@@ -73,6 +74,7 @@ export function Health({ state, update, today, habitName, onExit, onFinish }: Pr
       <div className="sess-top">
         <button type="button" className="icon-btn" onClick={onExit} aria-label={_t("Выйти")}>✕</button>
         <div><b>{_t("Здоровье")}</b><small>{_t("«Твоё тело имеет на тебя право» (аль-Бухари)")}</small></div>
+        {onFood && <div className="fsw"><button type="button" aria-pressed="true">{_t("Здоровье")}</button><button type="button" onClick={onFood}>{_t("Питание")}</button></div>}
       </div>
       <div className="h-wrap">
         {inRamadan(today) && (

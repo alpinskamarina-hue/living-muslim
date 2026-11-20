@@ -338,6 +338,8 @@ export interface FoodState {
   clean: Record<string, string[]>; // day -> rules kept
   sunna: Record<string, string[]>;
   weight: Record<string, number>;
+  own?: { id: string; l: string }[]; // own clean-day rules («Без хлеба на ночь»)
+  goal?: number; // weight goal, kg
 }
 
 export interface SadaqaDay { money?: boolean; amt?: number; deed?: boolean }

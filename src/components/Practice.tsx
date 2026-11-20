@@ -68,7 +68,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   const [vref, setVref] = useState<string | undefined>(start?.mode === 'videos' ? start.ref : undefined);
 
   // Opening a section greets once a day with one fitting ayah or hadith (the sections are full-screen sheets).
-  const OPEN: Partial<Record<Mode, Trigger>> = { quran: 'quran_open', langs: 'langs_open', books: 'books_open', health: 'health_open', sadaqa: 'sadaqa_open', food: 'food_open', umrah: 'umrah_open' };
+  const OPEN: Partial<Record<Mode, Trigger>> = { quran: 'quran_open', langs: 'langs_open', books: 'books_open', health: 'health_open', sadaqa: 'sadaqa_open', umrah: 'umrah_open' };
   useEffect(() => { const t = OPEN[mode]; if (t) say(t); }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
   if (mode === 'focus') return <Focus habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} startSurah={start?.mode === 'quran' && start.ref ? Number(start.ref) : undefined} onExit={() => setMode('home')} onFinish={markHabit} />;
@@ -76,9 +76,9 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
   if (mode === 'course-ar') return <ArCourse state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
   if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onCourse={() => setMode('course')} onCourseAr={() => setMode('course-ar')} />;
   if (mode === 'books') return <Books state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
-  if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
+  if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onFood={() => setMode('food')} />;
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
-  if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} />;
+  if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} onHealth={() => setMode('health')} />;
   if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} start={uStart ?? umrahStart} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
   if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={vref} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'body') return (
@@ -117,7 +117,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onRamadan
     ...(isCloud ? { videos: { ic: 'play', title: _t("Курсы"), sub: vidDone ? _t("Пройдено уроков: {0}", vidDone) : _t("Уроки, практика, тесты и сертификат"), open: () => setMode('videos') } } : {}),
     books: { ic: 'books', title: _t("Книги"), sub: state.books?.length ? _t("На полке: {0}", state.books.length) : _t("Атомные привычки и свои PDF"), open: () => setMode('books') },
     langs: { ic: 'lang', badge: due, title: _t("Языки"), sub: state.course ? _t("Английский A1: день {0}{1}", state.course.day + 1, due ? _t(" · {0} к повторению", due) : '') : state.courseAr ? _t("Арабский A1: день {0}{1}", state.courseAr.day + 1, due ? _t(" · {0} к повторению", due) : '') : due ? _t("{0} карточек к повторению", due) : isEn ? _t("Арабский A1, карточки слов") : _t("Курсы английского и арабского, карточки слов"), pct: state.course ? (state.course.day + 1) / A1.length : state.courseAr ? (state.courseAr.day + 1) / 30 : undefined, open: () => setMode('langs') },
-    body: { ic: 'leaf', title: _t("Здоровье и питание"), sub: _t("Вода {0}/{1} · еда {2} из 3 · сон, посты", health(state).water[today] ?? 0, health(state).waterGoal, Object.keys(foodOf(state).meals[today] ?? {}).length), open: () => setMode('body') },
+    body: { ic: 'leaf', title: _t("Здоровье и питание"), sub: _t("Вода {0}/{1} · еда {2} из 3 · сон, посты", health(state).water[today] ?? 0, health(state).waterGoal, Object.keys(foodOf(state).meals[today] ?? {}).length), open: () => setMode('food') },
     focus: { ic: 'timer', title: _t("Фокус-таймер"), sub: _t("Засечь время на любое дело"), open: () => setMode('focus') },
     umrah: { ic: 'kaaba', title: _t("Умра"), sub: state.umrah?.prep?.length ? _t("Подготовка {0}%", prepPct(state)) : _t("Обряды со счётчиком, подготовка, дуа"), open: () => setMode('umrah') },
     quit: { ic: 'shield', title: _t("Хочу оставить"), sub: (() => { const a = activeQuits(state); return a.length ? a.map((q) => _t("{0}: {1} дн.", q.what, cleanDays(q, today))).join(' · ') : _t("Оставить вредную привычку, тайно"); })(), open: () => onQuit?.() },
