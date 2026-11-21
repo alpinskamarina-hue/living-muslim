@@ -31,6 +31,8 @@ export type MethodId =
 
 export interface Settings {
   place: string;
+  /** Habit ids not shown in «Путь» of my profile. */
+  pathHide?: string[];
   lat: number;
   lng: number;
   method: MethodId;

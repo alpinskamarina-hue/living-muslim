@@ -5,12 +5,14 @@ import { SeekerCard } from './Nikah';
 import { nikahFeed, useNikahMe, useNikahReady } from '../nikah';
 import type { NkCard } from '../nikah';
 import {
-  INTENTS, KINDS, modeOf, ASK_LABEL, getPerson, myIntents, setIntent, setCity, intentsFeed, sendAsk, answerAsk, rangeOf,
+  INTENTS, KINDS, modeOf, ASK_LABEL, getPerson, reportAsk, myIntents, setIntent, setCity, intentsFeed, sendAsk, answerAsk, rangeOf,
   type Person, type Intent, type IntentKind, type AskKind, type FeedItem, type Ask, openPerson,
 } from '../person';
 import type { AppState } from '../types';
 import { plural } from '../dates';
 import { _t, _tj, LOC } from '../i18n';
+import { PathView, PathSettingsPage, TOPICS, topicLabel } from './PathView';
+import { dayKey } from '../dates';
 
 const daysSince = (iso: string) => Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 86400000));
 function sinceLine(iso: string) {
@@ -33,7 +35,7 @@ const askTemplate = (k: AskKind, name: string, i?: Intent) => {
 };
 
 /** Mounted once in the app: shows a person's profile over everything when someone taps an avatar or a name. */
-export function PersonHost({ state, onSeek }: { state: AppState; onSeek: () => void }) {
+export function PersonHost({ state, update, onSeek }: { state: AppState; update: (fn: (s: AppState) => AppState) => void; onSeek: () => void }) {
   const [uid, setUid] = useState('');
   const pushed = useRef(false);
   useEffect(() => {
@@ -52,10 +54,12 @@ export function PersonHost({ state, onSeek }: { state: AppState; onSeek: () => v
   useEffect(() => { document.body.classList.toggle('pp-on', Boolean(uid)); }, [uid]);
   if (!uid) return null;
   const close = () => { if (pushed.current) history.back(); else setUid(''); };
-  return <PersonPage key={uid} uid={uid} state={state} onClose={close} onSeek={() => { close(); setTimeout(onSeek, 60); }} />;
+  return <PersonPage key={uid} uid={uid} state={state} update={update} onClose={close} onSeek={() => { close(); setTimeout(onSeek, 60); }} />;
 }
 
-function PersonPage({ uid, onClose, onSeek, state }: { uid: string; onClose: () => void; onSeek: () => void; state: AppState }) {
+function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onClose: () => void; onSeek: () => void; state: AppState; update: (fn: (s: AppState) => AppState) => void }) {
+  const [settings, setSettings] = useState(false);
+  const [topic, setTopic] = useState('');
   const me = cloudMe()?.uid;
   const [p, setP] = useState<Person | null | undefined>(undefined);
   const [ask, setAsk] = useState<{ k: AskKind; i?: Intent } | null>(null);
@@ -91,13 +95,20 @@ function PersonPage({ uid, onClose, onSeek, state }: { uid: string; onClose: () 
   const sister = p.gender === 'f' && p.can.hi === 'sister';
   const cur = currentCircle();
   const canInvite = !self && cur && !p.shared.includes(cur.code) && p.can.hi !== 'sister' && p.can.hi !== 'closed';
-  const startAsk = (k: AskKind, i?: Intent) => { setAsk({ k, i }); setText(askTemplate(k, p.name, i)); setMsg(''); };
-  const send = async () => {
-    if (!ask) return;
-    const r = await sendAsk(p.uid, ask.k, text.trim());
-    if (r === 'ok') { setAsk(null); setP({ ...p, asked: true }); setMsg(_t("Отправлено. Когда {0} ответит, у вас откроется чат в «Кругах».", p.name.split(' ')[0])); }
-    else setMsg(r === 'already' ? _t("Ты уже написал. Ждём ответа.") : r === 'slow' ? _t("Сегодня уже много сообщений. Попробуй завтра.") : r === 'sister' ? _t("Сёстрам могут писать только сёстры.") : _t("Не удалось отправить."));
+  // «Написать» starts with a topic: the person sees what you want and decides; about a published intent the topic is known.
+  const startAsk = (k: AskKind, i?: Intent) => { setAsk({ k, i }); setTopic(''); setText(k === 'hi' ? '' : askTemplate(k, p.name, i)); setMsg(''); };
+  const first = p.name.split(' ')[0];
+  const minLen = ask?.k === 'hi' ? 20 : 10;
+  const send = async (kind?: AskKind) => {
+    const k = kind ?? ask?.k;
+    if (!k || k === 'hi') return;
+    const r = await sendAsk(p.uid, k, text.trim());
+    if (r === 'ok') { setAsk(null); setP({ ...p, asked: true }); setMsg(_t("Просьба отправлена. Когда {0} примет её, у вас откроется чат в «Кругах».", first)); }
+    else setMsg(r === 'already' ? _t("Ты уже написал. Ждём ответа.") : r === 'slow' ? _t("Сегодня уже 5 просьб. Попробуй завтра.") : r === 'sister' ? _t("Сёстрам могут писать только сёстры.")
+      : r === 'later' ? _t("{0} уже ответил «не сейчас». Написать снова можно через 30 дней.", first) : r === 'circles' ? _t("{0} принимает просьбы только от людей из своих кругов.", first)
+      : r === 'short' ? _t("Напиши чуть подробнее, что ты хочешь.") : r === 'closed' ? _t("{0} сейчас не принимает просьбы.", first) : _t("Не удалось отправить."));
   };
+  if (settings) return <PathSettingsPage state={state} update={update} today={dayKey(new Date())} onBack={() => setSettings(false)} />;
   const invite = async () => {
     if (!cur) return;
     const r = await sendInvite(cur.code, p.uid);
@@ -131,12 +142,25 @@ function PersonPage({ uid, onClose, onSeek, state }: { uid: string; onClose: () 
         )}
       </div>
       {msg && <p className="pp-msg">{msg}</p>}
-      {ask && (
+      {ask && ask.k === 'hi' && (
+        <div className="pp-ask pp-topic">
+          <b>{_t("О чём ты хочешь написать?")}</b>
+          <small>{_t("Выбери тему. {0} увидит тему, твоё имя и это сообщение, и сам решит, отвечать или нет.", first)}</small>
+          <div className="pp-why" role="radiogroup" aria-label={_t("Тема")}>
+            {TOPICS.map((t) => <button key={t.k} type="button" role="radio" aria-checked={topic === t.k} onClick={() => setTopic(t.k)}>{t.l}</button>)}
+          </div>
+          <textarea rows={4} maxLength={300} value={text} onChange={(e) => setText(e.target.value)} placeholder={_t("Ассаляму алейкум! Коротко: кто ты и чего хочешь")} />
+          <small className="pp-cnt">{_tj("{0} / 300 · минимум {1} знаков", text.trim().length, minLen)}</small>
+          <div className="pp-row"><button type="button" className="link-btn" onClick={() => setAsk(null)}>{_t("Отмена")}</button><button type="button" className="gold-btn" disabled={!topic || text.trim().length < minLen} onClick={() => send(topic as AskKind)}>{_t("Отправить просьбу")}</button></div>
+          <small>{_t("🔒 Номер телефона и почту никто не видит. В день можно отправить 5 просьб. После «Не сейчас» тому же человеку можно написать снова через 30 дней.")}</small>
+        </div>
+      )}
+      {ask && ask.k !== 'hi' && (
         <div className="pp-ask">
-          <b>{ask.k === 'hi' ? _t("Первое сообщение") : _t("Сообщение {0}", ASK_LABEL[ask.k])}</b>
+          <b>{_t("Сообщение {0}", ASK_LABEL[ask.k])}</b>
           <textarea rows={4} maxLength={300} value={text} onChange={(e) => setText(e.target.value)} autoFocus />
-          <small>{_t("Если {0} согласится, у вас откроется чат на двоих. Номер телефона никто не увидит.", p.name.split(' ')[0])}</small>
-          <div className="pp-row"><button type="button" className="link-btn" onClick={() => setAsk(null)}>{_t("Отмена")}</button><button type="button" className="pri-btn" disabled={text.trim().length < 5} onClick={send}>{_t("Отправить")}</button></div>
+          <small>{_t("Если {0} согласится, у вас откроется чат на двоих. Номер телефона никто не увидит.", first)}</small>
+          <div className="pp-row"><button type="button" className="link-btn" onClick={() => setAsk(null)}>{_t("Отмена")}</button><button type="button" className="pri-btn" disabled={text.trim().length < 10} onClick={() => send()}>{_t("Отправить")}</button></div>
         </div>
       )}
       {(visible.length > 0 || self) && (
@@ -160,6 +184,7 @@ function PersonPage({ uid, onClose, onSeek, state }: { uid: string; onClose: () 
           {self && umrahHint && !visible.some((i) => i.kind === 'umrah') && <p className="pp-empty">{_t("У тебя поездка {0}. Можно показать её в профиле.", umrahHint)}</p>}
         </div>
       )}
+      <PathView uid={p.uid} self={self} onSettings={() => setSettings(true)} />
       {sister && <p className="pp-lock">{_t("🔒 Фото, «Написать» и сообщения от братьев закрыты. Это настройки сестры. Никах только через её вали.")}</p>}
       {shared.length > 0 && (
         <div className="pp-sec">
@@ -305,32 +330,65 @@ export function IntentsFeed({ onBack }: { onBack?: () => void }) {
   );
 }
 
-/** People who asked to get in touch with me: yes opens a chat of two. */
+/** «Просят написать»: the topic, the note and what helps to decide; nothing reaches me until I accept. */
 export function AsksBox({ list, reload }: { list: Ask[]; reload: () => void }) {
   const [busy, setBusy] = useState('');
-  if (!list.length) return null;
+  const [menu, setMenu] = useState('');
+  const [note, setNote] = useState('');
+  if (!list.length) return note ? <p className="pp-msg">{note}</p> : null;
   const answer = async (a: Ask, yes: boolean) => {
     setBusy(a.id);
     const r = await answerAsk(a.id, yes);
     setBusy('');
+    window.dispatchEvent(new Event('lm-asks-changed'));
     if (yes && r) { openCircleChat(r); return; }
+    if (!yes) setNote(_t("Хорошо. {0} не узнает причину, а снова написать сможет через 30 дней.", a.from.name.split(' ')[0]));
     reload();
   };
+  const report = async (a: Ask) => {
+    setMenu('');
+    if (!confirm(_t("Пожаловаться на {0}? Просьба закроется, и он больше не сможет тебе писать.", a.from.name))) return;
+    if (await reportAsk(a.id)) { window.dispatchEvent(new Event('lm-asks-changed')); setNote(_t("Спасибо. Мы посмотрим, а {0} больше не сможет писать тебе.", a.from.name.split(' ')[0])); reload(); }
+  };
+  const block = async (a: Ask) => {
+    setMenu('');
+    if (!confirm(_t("Заблокировать {0}? Он не сможет писать и звать тебя, и ты не увидишь его профиль.", a.from.name))) return;
+    if (await blockUser(a.from.uid)) { window.dispatchEvent(new Event('lm-asks-changed')); reload(); }
+  };
+  const mine = new Map(myCircles().map((c) => [c.code, c.title]));
   return (
-    <div className="ak-box">
-      {list.map((a) => (
-        <div key={a.id} className="ak">
-          <button type="button" className="ak-who" onClick={() => openPerson(a.from.uid)}>
-            <Ava pick={a.from.avatar} color={a.from.color} photo={a.from.photo} name={a.from.name} size={40} />
-            <span><b>{a.from.name}</b><small>{a.kind === 'hi' ? ASK_LABEL.hi : _t("пишет тебе {0}", ASK_LABEL[a.kind])}</small></span>
-          </button>
-          {a.note && <q>{a.note}</q>}
-          <div className="pp-row">
-            <button type="button" className="link-btn" disabled={busy === a.id} onClick={() => answer(a, false)}>{_t("Не сейчас")}</button>
-            <button type="button" className="pri-btn" disabled={busy === a.id} onClick={() => answer(a, true)}>{_t("Ответить в чате")}</button>
+    <div className="ak-box" id="lm-asks">
+      <h4 className="ak-h">{_tj("📩 Просят написать · {0}", list.length)}</h4>
+      <small className="ak-sub">{_t("Пока ты не примешь, сообщение не придёт и чата не будет.")}</small>
+      {list.map((a) => {
+        const sh = (a.from.shared ?? []).map((c) => mine.get(c)).filter(Boolean);
+        return (
+          <div key={a.id} className="ak">
+            <div className="ak-top">
+              <button type="button" className="ak-who" onClick={() => openPerson(a.from.uid)}>
+                <Ava pick={a.from.avatar} color={a.from.color} photo={a.from.photo} name={a.from.name} size={40} />
+                <span><b>{a.from.name}</b><small>{[a.from.city, a.from.since && sinceLine(a.from.since), ago(a.created)].filter(Boolean).join(' · ')}</small></span>
+              </button>
+              <button type="button" className="ak-more" aria-label={_t("Ещё")} onClick={() => setMenu(menu === a.id ? '' : a.id)}>⋯</button>
+            </div>
+            {menu === a.id && (
+              <div className="pp-menu ak-menu">
+                <button type="button" onClick={() => report(a)}>{_t("⚠️ Пожаловаться")}</button>
+                <button type="button" onClick={() => block(a)}>{_t("🚫 Заблокировать")}</button>
+                <button type="button" onClick={() => setMenu('')}>{_t("Закрыть")}</button>
+              </div>
+            )}
+            <span className="ak-topic">{topicLabel(a.kind) ?? (a.kind === 'hi' ? _t("💬 Написать") : `${ASK_LABEL[a.kind]}`)}</span>
+            {a.note && <q>{a.note}</q>}
+            <small className="ak-ctx">{sh.length ? _t("👥 Общий круг: {0}", sh.join(', ')) : _t("Нет общих кругов")}</small>
+            <div className="pp-row">
+              <button type="button" className="link-btn" disabled={busy === a.id} onClick={() => answer(a, false)}>{_t("Не сейчас")}</button>
+              <button type="button" className="pri-btn" disabled={busy === a.id} onClick={() => answer(a, true)}>{_t("Принять и ответить")}</button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+      {note && <p className="pp-msg">{note}</p>}
     </div>
   );
 }

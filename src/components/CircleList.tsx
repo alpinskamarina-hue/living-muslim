@@ -60,6 +60,11 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
   const [q, setQ] = useState('');
   const personOn = usePersonReady();
   const asks = useAsks(personOn);
+  useEffect(() => {
+    if (!asks.list.length) return;
+    let go = false; try { go = !!sessionStorage.getItem('lm.asksGo'); sessionStorage.removeItem('lm.asksGo'); } catch { /* */ }
+    if (go) setTimeout(() => document.getElementById('lm-asks')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150);
+  }, [asks.list.length]);
   const [seekers, setSeekers] = useState(false);
   useEffect(() => { if (!seekers) return; history.pushState({ lmSeek: 1 }, ''); const f = (e: Event) => { e.stopImmediatePropagation(); setSeekers(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [seekers]);
   const [f, setF] = useState<'all' | 'unread' | string>('all');

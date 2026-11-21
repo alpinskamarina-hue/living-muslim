@@ -5,14 +5,14 @@ import type { AvatarPick } from './avatar';
 import { _t } from './i18n';
 
 export type IntentKind = 'umrah' | 'nikah' | 'job' | 'biz' | 'study';
-export type AskKind = 'hi' | 'umrah' | 'job' | 'biz' | 'study';
+export type AskKind = 'hi' | 'umrah' | 'job' | 'biz' | 'study' | 'meet' | 'question' | 'learn' | 'dua' | 'other';
 export interface Intent { kind: IntentKind; mode: string; title: string; note: string; vis: 'circles' | 'all'; updated: string; until: string }
 export interface Person {
   uid: string; name: string; nick: string | null; bio: string; avatar: AvatarPick; color: string; gender: string; city: string; since: string; photo: string;
-  shared: string[]; intents: Intent[]; can: Record<AskKind, string>; asked: boolean; chat: string | null;
+  shared: string[]; intents: Intent[]; can: Partial<Record<AskKind, string>>; asked: boolean; chat: string | null;
 }
 export interface FeedItem { uid: string; name: string; nick: string | null; color: string; avatar: AvatarPick; gender: string; city: string; photo: string; code: string | null; kind: IntentKind; mode: string; title: string; note: string; updated: string }
-export interface Ask { id: string; kind: AskKind; note: string; created: string; from: { uid: string; name: string; nick: string | null; color: string; avatar: AvatarPick; city: string; photo: string } }
+export interface Ask { id: string; kind: AskKind; note: string; created: string; from: { uid: string; name: string; nick: string | null; color: string; avatar: AvatarPick; city: string; photo: string; since?: string; shared?: string[] } }
 
 interface Mode { id: string; label: string; tag: string; btn: string }
 export interface IntentMeta { ic: string; label: string; sub: string; cls: string; modes: Mode[]; ph: string; ph2: string }
@@ -30,7 +30,8 @@ export const INTENTS: Record<IntentKind, IntentMeta> = {
 };
 export const KINDS: IntentKind[] = ['umrah', 'nikah', 'job', 'biz', 'study'];
 export const modeOf = (i: { kind: IntentKind; mode: string }) => INTENTS[i.kind].modes.find((m) => m.id === i.mode) ?? INTENTS[i.kind].modes[0];
-export const ASK_LABEL: Record<AskKind, string> = { hi: _t("хочет написать тебе"), umrah: _t("про умру"), job: _t("про работу"), biz: _t("про бизнес"), study: _t("про учёбу") };
+export const ASK_LABEL: Record<AskKind, string> = { hi: _t("хочет написать тебе"), umrah: _t("про умру"), job: _t("про работу"), biz: _t("про бизнес"), study: _t("про учёбу"),
+  meet: _t("хочет познакомиться"), question: _t("с вопросом"), learn: _t("про учёбу вместе"), dua: _t("с просьбой о дуа"), other: _t("хочет написать тебе") };
 
 let readyP: Promise<boolean> | null = null;
 export function personReady(): Promise<boolean> {
@@ -58,6 +59,7 @@ export const myIntents = () => meRpc<{ city: string; list: Intent[] } | null>('l
 export const setIntent = (kind: IntentKind, p: Partial<Intent> | null) => meRpc<string>('lm_intent_set', { p_kind: kind, p }).catch(() => 'error');
 export const setCity = (city: string) => meRpc<boolean>('lm_city_set', { p_city: city }).catch(() => false);
 export const intentsFeed = () => meRpc<FeedItem[] | null>('lm_intents_feed').then((x) => x ?? []).catch(() => [] as FeedItem[]);
+export const reportAsk = (id: string) => meRpc<boolean>('lm_ask_report', { p_id: id }).catch(() => false);
 export const sendAsk = (to: string, kind: AskKind, note: string) => meRpc<string>('lm_ask', { p_to: to, p_kind: kind, p_note: note }).catch(() => 'error');
 export async function answerAsk(id: string, yes: boolean): Promise<CircleRef | null | false> {
   const r = await meRpc<{ ok: boolean; code?: string; title?: string } | null>('lm_ask_answer', { p_id: id, p_yes: yes }).catch(() => null);
@@ -74,7 +76,7 @@ export async function loadAsks(): Promise<Ask[]> {
   for (const o of r.out ?? []) if (!have.has(o.code)) addCircleQuiet({ code: o.code, title: o.title || _t("Чат"), kind: 'friends' });
   return r.in ?? [];
 }
-export function useAsks(on: boolean) {
+export function useAsks(on: boolean, pollMs = 0) {
   const [list, setList] = useState<Ask[]>([]);
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -83,6 +85,13 @@ export function useAsks(on: boolean) {
     loadAsks().then((x) => { if (alive) setList(x); });
     return () => { alive = false; };
   }, [on, n]);
+  useEffect(() => {
+    if (!on || !pollMs) return;
+    const t = setInterval(() => { if (document.visibilityState === 'visible') setN((x) => x + 1); }, pollMs);
+    const f = () => setN((x) => x + 1);
+    window.addEventListener('lm-asks-changed', f);
+    return () => { clearInterval(t); window.removeEventListener('lm-asks-changed', f); };
+  }, [on, pollMs]);
   return { list, reload: () => setN((x) => x + 1) };
 }
 

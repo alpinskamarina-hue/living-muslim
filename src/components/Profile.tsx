@@ -22,11 +22,12 @@ import { RamadanPushFields } from './Ramadan';
 import { AdhanSettings, tryAdhan } from './Adhan';
 import { adhanOf, reciterName } from '../adhan';
 import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone, onInstallChange, promptInstall, pushSupported } from '../push';
-import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
+import { isCloud, nicksReady, forgetIdentity, signupName, cloudMe } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import { NikahPage } from './Nikah';
 import { SeekPage, IntentsFeed } from './Person';
-import { usePersonReady } from '../person';
+import { usePersonReady, openPerson } from '../person';
+import { usePathReady } from '../path';
 import { AssistantSettings, IdeasPage, PingsPage } from './Assistant';
 import { PlansPage, takePlanStart } from './Plans';
 import { dayPlans, weekStart, addDays as plAdd, planRings } from '../plans';
@@ -57,6 +58,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const [, bump] = useState(0);
   const [nicks, setNicks] = useState(false);
   const nikahOn = useNikahReady();
+  const pathOn = usePathReady();
   const personOn = usePersonReady();
   const nk = useNikahMe(nikahOn);
   const nkTodo = nikahTodo(nk);
@@ -152,6 +154,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
         <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
         {isCloud && nikahOn && <Row icon="💍" title={_t("Никах")} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}
+        {isCloud && personOn && pathOn && <Row icon="🛤" title={_t("Мой путь в профиле")} sub={_t("Намаз, привычки, учёба, благие дела: что видят другие")} onClick={() => { const id = cloudMe()?.uid; if (id) openPerson(id); }} />}
         {isCloud && personOn && <Row icon="🔎" title={_t("Что я сейчас ищу")} sub={_t("Умра, никах, работа, бизнес, учёба: видно в твоём профиле")} onClick={() => go('seek')} />}
         {isCloud && personOn && <Row icon="🧭" title={_t("Кто что ищет")} sub={_t("Чем можно помочь людям из твоих кругов")} onClick={() => go('seekers')} />}
         {isCloud && nicks && <Row icon="🪪" title={_t("Мой профиль")} sub={prof?.nick ? _t("@{0} · фото, приватность", prof.nick) : _t("Ник, фото, кто может звать в круги")} onClick={() => go('me')} />}

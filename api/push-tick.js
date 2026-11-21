@@ -301,6 +301,29 @@ async function umrahPush(secret) {
   return sent;
 }
 
+// «Просят написать»: a new message request, once each (supabase/profile-path.sql)
+async function askPush(secret) {
+  let list;
+  try { list = (await rpc('lm_ask_push', { p_secret: secret })) || []; } catch { return 0; } // profile-path.sql not run yet
+  const RU = { meet: 'познакомиться', question: 'с вопросом', umrah: 'про умру', learn: 'учиться вместе', job: 'про работу', biz: 'про бизнес', dua: 'с просьбой о дуа', study: 'про учёбу' };
+  const EN = { meet: 'to get to know you', question: 'with a question', umrah: 'about umrah', learn: 'to study together', job: 'about work', biz: 'about business', dua: 'asking for dua', study: 'about studies' };
+  let sent = 0;
+  for (const p of list) {
+    const prefs = p.prefs || {};
+    const en = prefs.lang === 'en';
+    const msg = { title: en ? `📩 ${p.who} asks to write to you` : `📩 ${p.who} просит написать тебе`,
+      body: en ? `Topic: ${EN[p.kind] || 'a message'}. Nothing reaches you until you accept.` : `Тема: ${RU[p.kind] || 'сообщение'}. Пока ты не примешь, ничего не придёт.` };
+    if (prefs.quiet) { msg.title = en ? 'Living Muslim' : 'Living Muslim'; msg.body = en ? 'Open the app to see it.' : 'Открой приложение, чтобы посмотреть.'; }
+    try {
+      await webpush.sendNotification({ endpoint: p.endpoint, keys: { p256dh: p.p256dh, auth: p.auth } }, JSON.stringify({ ...msg, tag: 'ask', url: '/app/?asks=1' }), { TTL: 3600 });
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 404 || err.statusCode === 410) await rpc('lm_push_delete', { p_endpoint: p.endpoint }).catch(() => {});
+    }
+  }
+  return sent;
+}
+
 export default async function handler(req, res) {
   const secret = process.env.PUSH_SECRET;
   if (!secret || req.headers['x-push-secret'] !== secret) return res.status(401).json({ error: 'unauthorized' });
@@ -332,5 +355,6 @@ export default async function handler(req, res) {
   const chat = await chatPush(secret, subs, now);
   const ai = await aiPush(secret);
   const um = await umrahPush(secret);
-  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai, um });
+  const asks = await askPush(secret);
+  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai, um, asks });
 }
