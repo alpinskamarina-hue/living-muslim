@@ -68,7 +68,14 @@ async function join(pg, code) {
     await B.locator('.sk-ed input').nth(0).fill('Халяль-кофейня в Казани');
     await B.locator('.sk-ed input').nth(1).fill('Нужен партнёр с опытом в общепите');
     await B.locator('.sk-ed .pri-btn').click(); await wait(1500);
+    // Учёба: switch on with no words at all, then just close
+    await B.locator('.sk-row', { hasText: 'Учёба' }).locator('.sk-sw').click(); await wait(1200);
+    await B.locator('.sk-ed .link-btn').click(); await wait(800);
+    const stOn = await B.locator('.sk-row', { hasText: 'Учёба' }).locator('.sk-sw').getAttribute('aria-checked');
+    if (stOn !== 'true') throw new Error('study switch did not stay on: ' + stOn);
     await shot(B, 'pp-2-seek-saved');
+    const st = await Q(`select mode, title from intents where kind = 'study'`);
+    if (!st.length) throw new Error('study intent not saved');
     say('intents:', await Q('select kind, mode, title, vis from intents order by kind'));
     say('in events:', await Q(`select body, ref from chat_msgs where ref->>'t' = 'in'`));
 
