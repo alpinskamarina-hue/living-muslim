@@ -463,9 +463,10 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
               out.push(<div key={`p${m.id}`} className="cc-per"><span>{PRAYER[per[1]]} · {hm(new Date(per[0]).toISOString())}</span></div>);
             }
           }
-          if (!newLine && chat.seenAtOpen && m.id > chat.seenAtOpen && m.uid !== me && !m.pending) {
+          if (!newLine && chat.seenAtOpen != null && m.id > chat.seenAtOpen && m.uid !== me && !m.pending) {
             newLine = true;
-            out.push(<div key={`n${m.id}`} className="cc-new"><span>{_t("Новые сообщения")}</span></div>);
+            const nNew = chat.msgs.filter((x) => x.id > (chat.seenAtOpen ?? 0) && x.uid !== me && !x.pending && !x.deleted).length;
+            out.push(<div key={`n${m.id}`} className="cc-new"><span>{nNew > 0 ? `${nNew} ${plural(nNew, _t("непрочитанное сообщение"), _t("непрочитанных сообщения"), _t("непрочитанных сообщений"))}` : _t("Новые сообщения")}</span></div>);
           }
           const mine = m.uid === me;
           const rs = Object.entries(m.reacts || {});
