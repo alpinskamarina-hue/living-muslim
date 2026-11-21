@@ -5045,3 +5045,59 @@ body.pp-on { overflow: hidden; }
 .cc-in-card .cc-ev-row { margin-top: 4px; }
 .cc-ava, .cc-who { cursor: pointer; }
 .wa-asks { display: block; width: calc(100% - 20px); margin: 8px 10px 0; border: 0; background: var(--green-soft); color: var(--green-2); border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 700; text-align: left; box-shadow: 0 1px .5px rgba(0,0,0,.13); }
+
+/* «Путь» in the profile and «Что видят другие» (src/components/PathView.tsx) */
+.pa { background: var(--surface); margin-top: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.pa-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pa-h h4 { margin: 0; font-size: 13.5px; color: var(--ink-2); font-weight: 600; }
+.pa-sec { background: var(--surface-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.pa-t { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pa-t b { font-size: 14.5px; } .pa-t small { color: var(--ink-2); font-size: 12px; }
+.pa-pr { display: flex; align-items: center; gap: 14px; }
+.pa-ring { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.pa-ring > span { width: 60px; height: 60px; border-radius: 50%; background: var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; }
+.pa-ring b { font-size: 17px; color: var(--green-2); } .pa-ring small { font-size: 10.5px; color: var(--ink-2); }
+.pa-bars { flex: 1; display: flex; justify-content: space-between; align-items: flex-end; gap: 4px; height: 76px; }
+.pa-bars > span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; font-size: 10px; color: var(--ink-2); height: 100%; }
+.pa-bars i { width: 14px; border-radius: 5px 5px 2px 2px; background: var(--green-2); opacity: .85; }
+.pa-run { font-size: 12.5px; color: var(--ink-2); } .pa-run b { color: var(--gold, #b8860b); }
+.pa-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pa-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; font-weight: 600; gap: 2px; }
+.pa-txt small { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+.pa-n { text-align: right; font-weight: 700; color: var(--green-2); font-size: 14px; display: flex; flex-direction: column; line-height: 1.1; white-space: nowrap; }
+.pa-n small { font-weight: 400; font-size: 11px; color: var(--ink-2); }
+.pa-pb { display: block; height: 5px; border-radius: 3px; background: var(--line); margin-top: 4px; overflow: hidden; }
+.pa-pb i { display: block; height: 100%; background: var(--green-2); border-radius: 3px; }
+.pa-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; }
+.pa-tiles span { background: var(--surface); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; font-size: 11.5px; color: var(--ink-2); text-align: center; }
+.pa-tiles b { font-size: 18px; color: var(--green-2); }
+.pa-note { margin: 0; font-size: 12px; color: var(--ink-2); text-align: center; }
+.pa-set .pa-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.pa-hint { margin: 0; background: var(--green-soft); color: var(--green-2); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; line-height: 1.4; }
+.pa-card { background: var(--surface); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.pa-ct { font-size: 14.5px; }
+.pa-vis { display: flex; flex-direction: column; gap: 6px; }
+.pa-vis > span { display: flex; flex-direction: column; font-weight: 600; font-size: 14.5px; }
+.pa-vis > span small { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+.pa-three { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface-2); border-radius: 999px; padding: 3px; gap: 2px; }
+.pa-three button { border: 0; background: none; border-radius: 999px; padding: 6px 4px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.pa-three button[aria-checked="true"] { background: var(--green-2); color: #fff; }
+.pa-chk { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.pa-chk input { width: 18px; height: 18px; accent-color: var(--green-2); }
+.pa-small { font-size: 12px; color: var(--ink-2); }
+.pa-saved { margin: 0; text-align: center; font-size: 13px; color: var(--green-2); font-weight: 600; }
+
+/* «Написать» with a topic, and «Просят написать» */
+.pp-why { display: flex; flex-wrap: wrap; gap: 6px; }
+.pp-why button { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 999px; padding: 6px 11px; font-size: 13px; font-weight: 600; }
+.pp-why button[aria-checked="true"] { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+.pp-cnt { text-align: right; }
+.ak-h { margin: 4px 0 0; font-size: 15px; }
+.ak-sub { font-size: 12.5px; color: var(--ink-2); margin-top: -4px; }
+.ak { position: relative; }
+.ak-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ak-more { border: 0; background: none; color: var(--ink-2); font-size: 20px; padding: 0 6px; line-height: 1; }
+.ak-menu { top: 40px; right: 6px; }
+.ak-topic { align-self: flex-start; background: var(--surface); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; font-weight: 700; color: var(--green-2); }
+.ak q { font-size: 14px; line-height: 1.4; quotes: none; }
+.ak-ctx { font-size: 12px; color: var(--ink-2); }

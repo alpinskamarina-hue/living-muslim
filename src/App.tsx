@@ -67,7 +67,8 @@ import { npOf } from './newpath';
 import { lazyNamed } from './lazy';
 import type { OutGo } from './components/NewPathScreens';
 import { PersonHost } from './components/Person';
-import { usePersonReady } from './person';
+import { usePersonReady, useAsks } from './person';
+import { syncPath, usePathReady } from './path';
 const PathScreen = lazyNamed(() => import('./components/NewPathScreens').then((m) => m.PathScreen));
 
 type Tab = 'today' | 'practice' | 'circle' | 'umrah' | 'progress' | 'profile';
@@ -88,6 +89,7 @@ export function App() {
   const [tab, setTab] = useState<Tab>(() => {
     try { const t = sessionStorage.getItem('lm.tab'); sessionStorage.removeItem('lm.tab'); if (t === 'circle') return 'circle' as Tab; } catch { /* */ }
     try { const q = new URLSearchParams(location.search); if (q.get('c')) { if (q.has('umrah')) sessionStorage.setItem('lm.umrahGo', '1'); return 'circle' as Tab; } if (q.has('umrah') || q.get('course')) return 'practice' as Tab; } catch { /* */ }
+    try { if (new URLSearchParams(location.search).has('asks')) { sessionStorage.setItem('lm.asksGo', '1'); return 'circle' as Tab; } } catch { /* */ }
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     return 'today';
   });
@@ -346,6 +348,18 @@ export function App() {
 
   // Guide buttons: open any part of the app.
   const personOn = usePersonReady();
+  // «Просят написать»: one line on Today, the request itself waits in «Круги» until I accept.
+  const pAsks = useAsks(personOn && isCloud, 180000);
+  if (pAsks.list.length) support.push({ cls: 'invite',
+    text: pAsks.list.length === 1 ? _t("📩 {0} просит написать тебе", pAsks.list[0].from.name || _t("Брат")) : _t("📩 Просят написать тебе: {0}", pAsks.list.length),
+    onOpen: () => { window.scrollTo(0, 0); try { sessionStorage.setItem('lm.asksGo', '1'); } catch { /* */ } setTab('circle'); window.dispatchEvent(new Event('lm-open-asks')); } });
+  // «Путь» in my profile: a short summary of the good things, sent when it changes (at most every 10 minutes).
+  const pathOn = usePathReady();
+  useEffect(() => {
+    if (!pathOn) return;
+    const t = setTimeout(() => { syncPath(state, today); }, 4000);
+    return () => clearTimeout(t);
+  }, [pathOn, state, today]);
   const go = (t: GoTo) => {
     window.scrollTo(0, 0);
     if ('tab' in t) { if (t.tab === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); setTab(t.tab); return; }
@@ -471,7 +485,7 @@ export function App() {
         <span className="nav-ind" aria-hidden="true" style={{ '--i': Math.max(0, tabs.indexOf(tab)) } as CSSProperties} />
       </nav>
 
-      {personOn && <PersonHost state={state} onSeek={() => go({ profile: 'seek' })} />}
+      {personOn && <PersonHost state={state} update={update} onSeek={() => go({ profile: 'seek' })} />}
       <WordsLayer state={state} today={today} />
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}

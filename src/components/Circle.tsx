@@ -13,6 +13,7 @@ import { KhatmSection } from './Khatm';
 import type { IftarApi } from '../iftar';
 import { IftarSection } from './Iftar';
 import { CloudSetup, CloudInvite } from './CloudCircle';
+import { AsksBox } from './Person';
 import { InviteByNick, InviteInbox } from './Nick';
 import { nicksReady, meRpc, serverHas, leaveCircle } from '../cloud';
 import { shareInvite } from './CloudCircle';
@@ -107,9 +108,15 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const asks = useAsks(personOn && isCloud);
   const [listOn, setListOn] = useState(() => {
     if (!isCloud || !myCircles().length) return false;
+    try { if (sessionStorage.getItem('lm.asksGo')) return true; } catch { /* */ }
     try { if (sessionStorage.getItem('lm.chat') === chatCode || new URLSearchParams(location.search).get('c') || sessionStorage.getItem('lm.umrahGo') || sessionStorage.getItem('lm.autojoin')) return false; } catch { /* */ }
     return true;
   });
+  useEffect(() => {
+    const f = () => { if (isCloud && myCircles().length) setListOn(true); };
+    window.addEventListener('lm-open-asks', f);
+    return () => window.removeEventListener('lm-open-asks', f);
+  }, []);
   const depth = useRef(0);
   const pushNav = () => { try { history.pushState({ lm: 'circle' }, ''); depth.current++; } catch { /* */ } };
   const goBack = (fallback: () => void) => { if (depth.current > 0) history.back(); else fallback(); };
@@ -168,7 +175,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   if (status === 'loading')
     return <div className="page"><h1 className="page-h">{_t("Круг")}</h1><p className="page-sub">{_t("Подключаюсь…")}</p></div>;
 
-  if (status === 'off' && isCloud) return <CloudSetup />;
+  if (status === 'off' && isCloud) return asks.list.length ? <><div className="page"><AsksBox list={asks.list} reload={asks.reload} /></div><CloudSetup /></> : <CloudSetup />;
   if (isCloud && pendingInvite() && !myCircles().some((c) => c.code === pendingInvite())) return <CloudSetup onCancel={() => { try { sessionStorage.removeItem('lm.invite'); } catch { /* */ } location.reload(); }} />;
 
   if (status === 'off')
