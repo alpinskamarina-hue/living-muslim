@@ -438,6 +438,81 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
 .rgrid .ic { background: rgba(217,173,85,.16); }
 .rgrid h3 { margin: 10px 0 4px; font-size: 17px; }
 .rgrid p { margin: 0; color: rgba(246,236,212,.75); font-size: 14.5px; }
+/* landing v2 (21.11): practices, assistant, 3 plans */
+/* assistant */
+.ai-s{background:radial-gradient(900px 500px at 15% 0%,#1f7a4d 0%,transparent 60%),var(--green);color:var(--cream);position:relative;overflow:hidden}
+.ai-s .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;position:relative;z-index:1}
+.ai-s .lead{color:rgba(246,236,212,.82)}
+.ai-s h2 em{font-style:normal;color:var(--gold-2)}
+.who{display:flex;gap:12px;margin:22px 0 8px}
+.who div{flex:1;display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.07);border:1px solid rgba(246,236,212,.18);border-radius:18px;padding:12px}
+.med{width:52px;height:52px;border-radius:50%;flex:none;display:grid;place-items:center;font:700 22px 'Cormorant Garamond',serif;color:#f6ecd4;background:radial-gradient(circle at 35% 30%,#2f9a64,#0f5132 70%);box-shadow:0 0 0 3px #d9ad55,0 0 0 5px rgba(217,173,85,.25),0 8px 18px rgba(0,0,0,.3)}
+.who b{display:block;font-size:16px}.who small{opacity:.75;font-size:13px}
+.ai-steps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.ai-steps div{background:rgba(255,255,255,.06);border:1px solid rgba(246,236,212,.15);border-radius:16px;padding:14px}
+.ai-steps i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--gold-2);color:#1d1606;font-weight:800;font-size:13px;margin-bottom:8px}
+.ai-steps b{display:block;font-size:15px;margin-bottom:3px}.ai-steps p{margin:0;font-size:13.5px;opacity:.78;line-height:1.4}
+.chat{background:#f4f1e8;color:#14261c;border-radius:30px;border:7px solid #1c2b22;padding:16px 14px;max-width:360px;justify-self:center;width:100%;box-shadow:0 30px 60px rgba(0,0,0,.35);display:grid;gap:10px;font-size:14px}
+.chat .ch{display:flex;gap:10px;align-items:center;padding-bottom:10px;border-bottom:1px solid #e3ddcc}
+.chat .ch .med{width:38px;height:38px;font-size:17px}
+.chat .ch b{font-size:15px}.chat .ch small{display:block;color:#4f6357;font-size:12px}
+.bu{justify-self:end;background:#0f5132;color:#fff;border-radius:16px 16px 4px 16px;padding:9px 12px;max-width:84%;line-height:1.4}
+.ba{justify-self:start;background:#fff;border:1px solid #e6e0d0;border-radius:16px 16px 16px 4px;padding:9px 12px;max-width:88%;line-height:1.45}
+.act{display:flex;gap:8px;align-items:center;background:#e1efe5;border-radius:10px;padding:6px 9px;margin-top:6px;font-size:12.5px;font-weight:700;color:#0f5132}
+.act .u{margin-left:auto;color:#b88a2c;font-weight:800}
+.mic{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid #e3ddcc;border-radius:22px;padding:8px 8px 8px 14px;color:#8a8f86;font-size:13px}
+.mic i{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#b88a2c;display:grid;place-items:center;color:#fff;font-style:normal}
+.uses{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px;position:relative;z-index:1}
+.uses div{background:rgba(255,255,255,.06);border:1px solid rgba(246,236,212,.15);border-radius:18px;padding:16px}
+.uses .e{font-size:22px}.uses b{display:block;margin:6px 0 4px;font-size:15.5px}.uses p{margin:0;font-size:13.5px;opacity:.8;line-height:1.4}
+.honest{margin-top:16px;font-size:13.5px;opacity:.78;position:relative;z-index:1;text-align:center}
+@media(max-width:860px){.ai-s .wrap{grid-template-columns:1fr}.uses{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.uses,.ai-steps{grid-template-columns:1fr}.who{flex-direction:column}}
+/* practices */
+.big3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+.bp{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.bp .new{align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:1.3px;background:var(--gold-soft);color:#7a5a12;padding:3px 8px;border-radius:6px}
+.bp h3{margin:0;font-family:var(--f-serif);font-size:26px;line-height:1.1}
+.bp p{margin:0;color:var(--ink-2);font-size:14.5px}
+.scr{margin-top:auto;background:#fbfaf6;border-radius:16px;box-shadow:inset 0 0 0 1px #e3e8e2;padding:12px;font-size:12.5px;display:grid;gap:7px}
+.scr .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ok{background:#e1efe5;color:#0f5132;font-weight:800;border-radius:8px;padding:3px 8px;font-size:11.5px}
+.warn{background:#fbe9df;color:#9a3d1f;font-weight:800;border-radius:8px;padding:3px 8px;font-size:11.5px}
+.ln{height:6px;border-radius:4px;background:#e6ece7}.ln i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#1f7a4d,#d9ad55)}
+.ar{font-family:var(--f-ar);font-size:17px;direction:rtl;text-align:right;color:#4f6357}
+.food{display:grid;grid-template-columns:54px 1fr;gap:10px;align-items:center}
+.food .ph{height:54px;border-radius:12px;background:radial-gradient(circle at 40% 40%,#f2c27a,#c9772e 55%,#6b8f3a 56%,#3f6b2a)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.tl2{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px}
+.tl2 .ic{width:40px;height:40px;flex:none;border-radius:12px;background:#f3ead8;display:grid;place-items:center;font-size:20px}
+.tl2 b{display:block;font-size:14.5px;line-height:1.25}.tl2 small{display:block;color:var(--ink-2);font-size:12.5px;line-height:1.35;margin-top:2px}
+.tl2 .nw{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:1px;color:#b88a2c;margin-left:4px;vertical-align:2px}
+@media(max-width:900px){.big3{grid-template-columns:1fr}.tiles{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.tiles{grid-template-columns:1fr}}
+/* pricing v2 */
+.free-now{display:flex;gap:14px;align-items:center;margin-top:26px;background:var(--green);color:var(--cream);border-radius:20px;padding:16px 20px}
+.free-now .e{font-size:26px}.free-now b{display:block;font-size:17px}.free-now div>span{font-size:14px;opacity:.85}
+.plans3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:22px}
+.plans3 .plan.ultra{background:#13211a;color:#f6ecd4;border-color:#13211a;position:relative}
+.plans3 .plan.ultra .alt{color:rgba(246,236,212,.7)}
+.plans3 .plan.ultra li::before{color:#d9ad55}
+.plans3 .plan.ultra .tag{background:#d9ad55;color:#1d1606}
+.plans3 .plan .price{font-size:36px}
+.plans3 .plan h3{display:flex;gap:8px;align-items:center}
+.aiq{display:flex;gap:8px;align-items:center;margin-top:12px;padding:9px 11px;border-radius:12px;background:rgba(15,81,50,.07);font-size:13.5px;font-weight:700}
+.plan.ultra .aiq{background:rgba(217,173,85,.14)}
+.plan.ultra .med{width:26px;height:26px;font-size:12px;box-shadow:0 0 0 2px #d9ad55}
+.aiq .med{width:26px;height:26px;font-size:12px;box-shadow:0 0 0 2px #d9ad55}
+.btn.ghost{background:rgba(255,255,255,.08);color:inherit;border:1.5px solid rgba(246,236,212,.4)}
+.fam{display:flex;gap:16px;align-items:center;margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 20px}
+.fam .e{font-size:28px}.fam b{font-size:16px}.fam div>span{color:var(--ink-2);font-size:14px}
+.fam .fp{margin-left:auto;font-weight:800;font-size:20px;white-space:nowrap}
+@media(max-width:900px){.plans3{grid-template-columns:1fr}.fam{flex-wrap:wrap}.fam .fp{margin-left:0}}
+.ai-s .wrap.uses{grid-template-columns:repeat(4,1fr)}@media(max-width:860px){.ai-s .wrap.uses{grid-template-columns:1fr 1fr}}@media(max-width:520px){.ai-s .wrap.uses{grid-template-columns:1fr}}
+.ai-s .wrap.honest{display:block}
+
+@media (prefers-color-scheme: dark){.scr{background:#0f1c15;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink)}.ar{color:var(--ink-2)}.tl2 .ic{background:#2a2416}.bp .new{color:var(--gold)}.plans3 .plan.ultra{background:#08100c;border-color:#2b3a30}.aiq{background:rgba(255,255,255,.06)}.ln{background:#22362b}}
+
 </style>
 </head>
 <body>
@@ -450,6 +525,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
     </a>
     <nav>
       <a class="lnk" href="#how"><span lang="ru">Как работает</span><span lang="en">How it works</span></a>
+      <a class="lnk" href="#assistant"><span lang="ru">Помощник</span><span lang="en">Assistant</span></a>
       <a class="lnk" href="#circle"><span lang="ru">Круг</span><span lang="en">Circle</span></a>
       <a class="lnk" href="#umrah"><span lang="ru">Умра</span><span lang="en">Umrah</span></a>
       <a class="lnk" href="#pricing"><span lang="ru">Тарифы</span><span lang="en">Pricing</span></a>
@@ -634,6 +710,73 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   </div>
 </section>
 
+<section id="practice">
+  <div class="wrap">
+    <p class="eyebrow"><span lang="ru">Практика</span><span lang="en">Practice</span></p>
+    <h2><span lang="ru">Всё, что помогает жить по вере, в одном месте</span><span lang="en">Everything that helps you live your faith, in one place</span></h2>
+    <p class="lead"><span lang="ru">Выбери свои 4–6 практик, остальные ждут в «Все практики». Ничего лишнего на экране, всё под рукой, когда нужно.</span><span lang="en">Pick your 4–6 practices, the rest wait under “All practices”. Nothing extra on screen, everything at hand when you need it.</span></p>
+    <div class="big3">
+      <div class="bp"><span class="new"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span><h3><span lang="ru">Халяль-сканер</span><span lang="en">Halal scanner</span></h3><p><span lang="ru">Наведи камеру на штрихкод в магазине. Покажем состав и отметим сомнительные добавки: E120, желатин, спирт.</span><span lang="en">Point your camera at a barcode in the shop. We show the ingredients and flag doubtful additives: E120, gelatin, alcohol.</span></p>
+        <div class="scr" aria-hidden="true"><div class="row"><b><span lang="ru">Мармелад «Фрукты»</span><span lang="en">“Fruit” gummies</span></b><span class="warn"><span lang="ru">Сомнительно</span><span lang="en">Doubtful</span></span></div><div style="color:#4f6357"><span lang="ru">Желатин (свиной или говяжий?) · E120 кармин</span><span lang="en">Gelatin (pork or beef?) · E120 carmine</span></div><div class="row"><b><span lang="ru">Йогурт натуральный</span><span lang="en">Plain yoghurt</span></b><span class="ok">☪ <span lang="ru">Халяль</span><span lang="en">Halal</span></span></div><div style="color:#4f6357"><span lang="ru">Проверено общиной · 14 отметок</span><span lang="en">Checked by the community · 14 marks</span></div></div></div>
+      <div class="bp"><span class="new"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span><h3><span lang="ru">Хутба на твоём языке</span><span lang="en">Khutbah in your language</span></h3><p><span lang="ru">В пятницу в мечети на арабском или турецком? Включи живой перевод: текст идёт на экране, пока имам говорит.</span><span lang="en">Friday khutbah in Arabic or Turkish? Turn on live translation: the text runs on your screen while the imam speaks.</span></p>
+        <div class="scr" aria-hidden="true"><div class="ar">اتَّقُوا اللَّهَ حَقَّ تُقَاتِهِ</div><div><b><span lang="ru">«Бойтесь Аллаха должным образом…»</span><span lang="en">“Fear Allah as He should be feared…”</span></b></div><div style="color:#4f6357"><span lang="ru">Имам говорит о терпении в трудные дни. Пророк ﷺ сказал…</span><span lang="en">The imam speaks about patience in hard days. The Prophet ﷺ said…</span></div><div class="row"><span style="color:#b88a2c;font-weight:800">● <span lang="ru">Идёт перевод</span><span lang="en">Translating</span></span><span style="color:#4f6357"><span lang="ru">арабский → русский</span><span lang="en">Arabic → English</span></span></div></div></div>
+      <div class="bp"><span class="new"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span><h3><span lang="ru">Еда по фото</span><span lang="en">Food from a photo</span></h3><p><span lang="ru">Сфотографируй тарелку, и приложение посчитает калории и белок. Режимы питания, сухур и ифтар, сканер продуктов.</span><span lang="en">Snap your plate and the app counts calories and protein. Eating styles, suhoor and iftar, a product scanner.</span></p>
+        <div class="scr" aria-hidden="true"><div class="food"><div class="ph"></div><div><b><span lang="ru">Плов с курицей</span><span lang="en">Chicken plov</span></b><div style="color:#4f6357"><span lang="ru">≈ 620 ккал · белок 28 г</span><span lang="en">≈ 620 kcal · protein 28 g</span></div></div></div><div class="row"><span><span lang="ru">Сегодня 1 340 из 2 000 ккал</span><span lang="en">Today 1,340 of 2,000 kcal</span></span></div><div class="ln"><i style="width:67%"></i></div><div class="row"><span style="color:#4f6357"><span lang="ru">Режим: Сунна (1/3 еда, 1/3 вода)</span><span lang="en">Style: Sunnah (1/3 food, 1/3 water)</span></span></div></div></div>
+    </div>
+    <div class="tiles">
+      <div class="tl2"><div class="ic">🏃</div><div><b><span lang="ru">Тренировки</span><span lang="en">Workouts</span><span class="nw"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span></b><small><span lang="ru">Своя тренировка, таймер с голосом, серия недели</span><span lang="en">Your own workout, voice timer, weekly streak</span></small></div></div>
+      <div class="tl2"><div class="ic">📿</div><div><b><span lang="ru">Азкары утро и вечер</span><span lang="en">Morning &amp; evening adhkar</span></b><small><span lang="ru">С переводом и счётчиком, после Фаджра и Асра</span><span lang="en">With translation and a counter, after Fajr and Asr</span></small></div></div>
+      <div class="tl2"><div class="ic">🧭</div><div><b><span lang="ru">Кибла и мечети рядом</span><span lang="en">Qibla &amp; mosques nearby</span><span class="nw"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span></b><small><span lang="ru">Компас и ближайшие мечети на карте</span><span lang="en">A compass and the nearest mosques on a map</span></small></div></div>
+      <div class="tl2"><div class="ic">🔊</div><div><b><span lang="ru">Азан с чтецами</span><span lang="en">Adhan with reciters</span></b><small><span lang="ru">Выбери голос: Мекка, Медина, Стамбул</span><span lang="en">Pick a voice: Makkah, Madinah, Istanbul</span></small></div></div>
+      <div class="tl2"><div class="ic">🌱</div><div><b><span lang="ru">Хочу оставить</span><span lang="en">Let it go</span><span class="nw"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span></b><small><span lang="ru">Отказ от вредной привычки: дни без неё и дуа</span><span lang="en">Quit a bad habit: days without it and dua</span></small></div></div>
+      <div class="tl2"><div class="ic">ع</div><div><b><span lang="ru">Арабский по дням</span><span lang="en">Arabic day by day</span></b><small><span lang="ru">Курс A1 со звуком, транскрипцией и записью голоса</span><span lang="en">A1 course with audio, transliteration and voice recording</span></small></div></div>
+      <div class="tl2"><div class="ic">📚</div><div><b><span lang="ru">Книги по главам</span><span lang="en">Books by chapter</span></b><small><span lang="ru">Подробный пересказ, одна глава в день</span><span lang="en">A detailed summary, one chapter a day</span></small></div></div>
+      <div class="tl2"><div class="ic">✅</div><div><b><span lang="ru">Тесты</span><span lang="en">Self-checks</span><span class="nw"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span></b><small><span lang="ru">«Что мне даётся труднее», «Готов ли я к умре»</span><span lang="en">“What is hardest for me”, “Am I ready for Umrah”</span></small></div></div>
+      <div class="tl2"><div class="ic">✈️</div><div><b><span lang="ru">Сафар</span><span lang="en">Safar</span><span class="nw"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span></b><small><span lang="ru">Любой город мира: намазы в пути, масх, дуа дороги</span><span lang="en">Any city in the world: prayers on the road, masah, travel dua</span></small></div></div>
+      <div class="tl2"><div class="ic">🗓</div><div><b><span lang="ru">Планы</span><span lang="en">Plans</span><span class="nw"><span lang="ru">НОВОЕ</span><span lang="en">NEW</span></span></b><small><span lang="ru">Свой календарь с напоминаниями вокруг намазов</span><span lang="en">Your own calendar with reminders around prayers</span></small></div></div>
+      <div class="tl2"><div class="ic">🌙</div><div><b><span lang="ru">Новый путь</span><span lang="en">New path</span></b><small><span lang="ru">Для новых мусульман: первые шаги и намаз по фото</span><span lang="en">For new Muslims: first steps and prayer in photos</span></small></div></div>
+      <div class="tl2"><div class="ic">🎓</div><div><b><span lang="ru">Курсы</span><span lang="en">Courses</span></b><small><span lang="ru">Уроки по 10 минут, круг курса, отзывы и значки</span><span lang="en">10-minute lessons, a course circle, reviews and badges</span></small></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="ai-s" id="assistant">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow" style="color:var(--gold-2)"><span lang="ru">Помощник</span><span lang="en">Assistant</span></p>
+      <h2><span lang="ru">Помощник, который <em>знает твой день</em></span><span lang="en">An assistant that <em>knows your day</em></span></h2>
+      <p class="lead"><span lang="ru">Спроси голосом или текстом. Он видит твои намазы, привычки и цели, поэтому отвечает по делу, а не общими словами. И сам делает то, что ты попросил.</span><span lang="en">Ask by voice or text. It sees your prayers, habits and goals, so it answers to the point, not in general words. And it does what you asked.</span></p>
+      <div class="who">
+        <div><span class="med"><span lang="ru">Ю</span><span lang="en">Y</span></span><span><b><span lang="ru">Юсуф</span><span lang="en">Yusuf</span></b><small><span lang="ru">помогает братьям</span><span lang="en">helps brothers</span></small></span></div>
+        <div><span class="med"><span lang="ru">М</span><span lang="en">M</span></span><span><b><span lang="ru">Марьям</span><span lang="en">Maryam</span></b><small><span lang="ru">помогает сёстрам</span><span lang="en">helps sisters</span></small></span></div>
+      </div>
+      <div class="ai-steps">
+        <div><i>1</i><b><span lang="ru">Скажи как другу</span><span lang="en">Talk like to a friend</span></b><p><span lang="ru">«Запиши обед», «напомни про Аль-Кахф», «что почитать после Иша?»</span><span lang="en">“Log my lunch”, “remind me about Al-Kahf”, “what should I read after Isha?”</span></p></div>
+        <div><i>2</i><b><span lang="ru">Он знает контекст</span><span lang="en">It knows the context</span></b><p><span lang="ru">Время намазов в твоём городе, серии, цели, что ты уже сделал сегодня</span><span lang="en">Prayer times in your city, streaks, goals, what you have already done today</span></p></div>
+        <div><i>3</i><b><span lang="ru">Делает сам</span><span lang="en">It does it for you</span></b><p><span lang="ru">Отмечает, записывает, ставит напоминания. Любое действие можно отменить</span><span lang="en">Marks, logs, sets reminders. Any action can be undone</span></p></div>
+        <div><i>4</i><b><span lang="ru">Помнит важное</span><span lang="en">It remembers what matters</span></b><p><span lang="ru">Твои правила и цели. Память можно посмотреть, исправить или стереть</span><span lang="en">Your rules and goals. You can view, fix or erase its memory</span></p></div>
+      </div>
+    </div>
+    <div class="chat" aria-hidden="true">
+      <div class="ch"><span class="med"><span lang="ru">Ю</span><span lang="en">Y</span></span><div><b><span lang="ru">Юсуф</span><span lang="en">Yusuf</span></b><small><span lang="ru">знает твой день · онлайн</span><span lang="en">knows your day · online</span></small></div></div>
+      <div class="bu"><span lang="ru">Запиши обед: плов. И напомни в пятницу прочитать Аль-Кахф</span><span lang="en">Log lunch: plov. And remind me to read Al-Kahf on Friday</span></div>
+      <div class="ba"><span lang="ru">Готово 👍 Обед записал, это примерно 620 ккал. В пятницу напомню после Фаджра.</span><span lang="en">Done 👍 Lunch logged, about 620 kcal. I will remind you on Friday after Fajr.</span>
+        <div class="act">✓ <span lang="ru">Еда · Плов, 620 ккал</span><span lang="en">Food · Plov, 620 kcal</span> <span class="u"><span lang="ru">Отменить</span><span lang="en">Undo</span></span></div>
+        <div class="act">⏰ <span lang="ru">Пт после Фаджра · Аль-Кахф</span><span lang="en">Fri after Fajr · Al-Kahf</span> <span class="u"><span lang="ru">Отменить</span><span lang="en">Undo</span></span></div></div>
+      <div class="bu"><span lang="ru">Как не пропускать Фаджр?</span><span lang="en">How do I stop missing Fajr?</span></div>
+      <div class="ba"><span lang="ru">На этой неделе ты прочитал Фаджр вовремя 4 раза из 7. Все пропуски после поздних ночей. Давай поставим цель «Отбой до 23:00» и привяжем к Иша?</span><span lang="en">This week you prayed Fajr on time 4 times out of 7. Every miss came after a late night. Shall we set a goal “In bed by 23:00” and tie it to Isha?</span></div>
+      <div class="mic"><span lang="ru">Спроси или скажи голосом…</span><span lang="en">Ask, or say it out loud…</span> <i>🎙</i></div>
+    </div>
+  </div>
+  <div class="wrap uses">
+    <div><span class="e">🌱</span><b><span lang="ru">Первый день</span><span lang="en">Your first day</span></b><p><span lang="ru">Новичку покажет приложение за 2 минуты и поможет выбрать первые привычки</span><span lang="en">Shows a newcomer the app in 2 minutes and helps pick the first habits</span></p></div>
+    <div><span class="e">📖</span><b><span lang="ru">Объяснит</span><span lang="en">Explains</span></b><p><span lang="ru">Аят, хадис или правило простыми словами и с источником</span><span lang="en">An ayah, a hadith or a ruling in plain words, with the source</span></p></div>
+    <div><span class="e">🍽</span><b><span lang="ru">Еда и спорт одной фразой</span><span lang="en">Food and sport in one line</span></b><p><span lang="ru">«Съел шаурму», «пробежал 3 км», и всё уже записано</span><span lang="en">“Had a shawarma”, “ran 3 km”, and it is logged</span></p></div>
+    <div><span class="e">🤲</span><b><span lang="ru">В твоём Круге</span><span lang="en">In your Circle</span></b><p><span lang="ru">Напиши в чате круга «@Помощник», и он ответит всем</span><span lang="en">Write “@Assistant” in your circle chat and it answers everyone</span></p></div>
+  </div>
+  <p class="honest wrap"><span lang="ru">Честно: помощник не муфтий и не выдаёт фетвы. Не видит чужих данных и ничего не отправляет без тебя.</span><span lang="en">Honestly: the assistant is not a mufti and gives no fatwas. It never sees other people’s data and sends nothing without you.</span></p>
+</section>
+
 <section id="circle">
   <div class="wrap">
     <div class="chead">
@@ -809,7 +952,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
   <div class="wrap">
     <p class="eyebrow"><span lang="ru">Тарифы</span><span lang="en">Pricing</span></p>
     <h2><span lang="ru">Поклонение бесплатно. Навсегда.</span><span lang="en">Worship is free. Forever.</span></h2>
-    <p class="lead"><span lang="ru">Намазы, Коран, Рамадан и садака бесплатны для всех. Pro для тех, кто хочет расти дальше. Вот что он даёт на деле.</span><span lang="en">Prayers, Quran, Ramadan and sadaqah are free for everyone. Pro is for going further. Here is what it actually gives you.</span></p>
+    <p class="lead"><span lang="ru">Намазы, Коран, Рамадан и садака бесплатны для всех. Pro и Ультра для тех, кто хочет расти дальше. Вот что даёт Pro на деле.</span><span lang="en">Prayers, Quran, Ramadan and sadaqah are free for everyone. Pro and Ultra are for going further. Here is what Pro actually gives you.</span></p>
 
     <div class="prox">
       <div class="px">
@@ -870,45 +1013,22 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: 
       </div>
     </div>
 
-    <h3 class="cmp-h"><span lang="ru">Бесплатно или Pro</span><span lang="en">Free or Pro</span></h3>
-    <div class="cmp" role="table">
-      <div class="cr hd" role="row"><span></span><b><span lang="ru">Бесплатно</span><span lang="en">Free</span></b><b>Pro</b></div>
-      <div class="cr" role="row"><span><span lang="ru">Намазы, Коран, тасбих, Рамадан, садака</span><span lang="en">Prayers, Quran, tasbih, Ramadan, sadaqah</span></span><i>✓</i><i class="p">✓</i></div>
-      <div class="cr" role="row"><span><span lang="ru">Активные привычки</span><span lang="en">Active habits</span></span><i>3</i><i class="p">5 + <span lang="ru">очередь</span><span lang="en">queue</span></i></div>
-      <div class="cr" role="row"><span><span lang="ru">Круги</span><span lang="en">Circles</span></span><i>3</i><i class="p"><span lang="ru">до 20</span><span lang="en">up to 20</span></i></div>
-      <div class="cr" role="row"><span><span lang="ru">Активные цели с вехами</span><span lang="en">Active goals with milestones</span></span><i>3</i><i class="p">5</i></div>
-      <div class="cr" role="row"><span><span lang="ru">Книги в библиотеке</span><span lang="en">Books in your library</span></span><i>3</i><i class="p"><span lang="ru">без ограничений</span><span lang="en">unlimited</span></i></div>
-      <div class="cr" role="row"><span><span lang="ru">Видеокурсы</span><span lang="en">Video courses</span></span><i>3</i><i class="p"><span lang="ru">без ограничений</span><span lang="en">unlimited</span></i></div>
-      <div class="cr" role="row"><span><span lang="ru">Общий хатм, ифтары, совместная умра</span><span lang="en">Group khatm, iftars, shared Umrah</span></span><i>✓</i><i class="p">✓</i></div>
+    <div class="free-now"><span class="e">🎁</span><div><b><span lang="ru">Сейчас, на старте, всё открыто бесплатно</span><span lang="en">Right now, at launch, everything is open for free</span></b><span lang="ru">Карта не нужна. Когда включим оплату, предупредим заранее, а первые пользователи получат скидку.</span><span lang="en">No card needed. We will tell you well before payments start, and early users get a discount.</span></div></div>
+    <div class="plans3">
+      <div class="plan"><h3><span lang="ru">Бесплатно</span><span lang="en">Free</span></h3><div class="price">€0 <small><span lang="ru">навсегда</span><span lang="en">forever</span></small></div><div class="alt"><span lang="ru">для всех</span><span lang="en">for everyone</span></div>
+        <div class="aiq"><span class="med">✦</span> <span lang="ru">Помощник: знакомство и подсказки</span><span lang="en">Assistant: welcome tour and tips</span></div>
+        <ul><li><span lang="ru">Намазы, Коран, тасбих, Рамадан, садака</span><span lang="en">Prayers, Quran, tasbih, Ramadan, sadaqah</span></li><li><span lang="ru">По 3 привычки, круга и цели</span><span lang="en">3 habits, circles and goals</span></li><li><span lang="ru">По 3 книги и курса</span><span lang="en">3 books and courses</span></li><li><span lang="ru">Сафар, кибла, азан, халяль-сканер</span><span lang="en">Safar, qibla, adhan, halal scanner</span></li></ul>
+        <a class="btn line" href="#join"><span lang="ru">Начать бесплатно</span><span lang="en">Start for free</span></a></div>
+      <div class="plan pro"><span class="tag"><span lang="ru">ПОПУЛЯРНЫЙ</span><span lang="en">POPULAR</span></span><h3>Pro</h3><div class="price">€3.99 <small><span lang="ru">в месяц</span><span lang="en">/ month</span></small></div><div class="alt"><span lang="ru">или €29.99 в год: €2.50 в месяц, −37%</span><span lang="en">or €29.99 a year: €2.50 a month, −37%</span></div>
+        <div class="aiq"><span class="med">✦</span> <span lang="ru">Помощник: 3 совета в день</span><span lang="en">Assistant: 3 answers a day</span></div>
+        <ul><li><span lang="ru">Всё из бесплатного</span><span lang="en">Everything in Free</span></li><li><span lang="ru">Привычки и цели без ограничений</span><span lang="en">Unlimited habits and goals</span></li><li><span lang="ru">До 20 кругов</span><span lang="en">Up to 20 circles</span></li><li><span lang="ru">Книги и курсы без ограничений</span><span lang="en">Unlimited books and courses</span></li><li><span lang="ru">Вся история и поиск по мухасабе</span><span lang="en">Full history and muhasabah search</span></li></ul>
+        <a class="btn gold" href="#join"><span lang="ru">Попробовать</span><span lang="en">Try it</span></a></div>
+      <div class="plan ultra"><span class="tag"><span lang="ru">ЛИЧНЫЙ ПОМОЩНИК</span><span lang="en">PERSONAL ASSISTANT</span></span><h3><span lang="ru">Ультра</span><span lang="en">Ultra</span></h3><div class="price" style="color:#f6ecd4">€19.99 <small style="color:rgba(246,236,212,.7)"><span lang="ru">в месяц</span><span lang="en">/ month</span></small></div><div class="alt"><span lang="ru">или €149 в год</span><span lang="en">or €149 a year</span></div>
+        <div class="aiq"><span class="med">✦</span> <span lang="ru">Помощник без ограничений</span><span lang="en">Unlimited assistant</span></div>
+        <ul><li><span lang="ru">Всё из Pro</span><span lang="en">Everything in Pro</span></li><li><span lang="ru">Помнит тебя и твои цели</span><span lang="en">Remembers you and your goals</span></li><li><span lang="ru">Наставник: Коран, арабский, английский</span><span lang="en">Tutor: Quran, Arabic, English</span></li><li><span lang="ru">Помощник в твоих кругах</span><span lang="en">Assistant in your circles</span></li><li><span lang="ru">Своё имя, облик и характер</span><span lang="en">Its own name, look and character</span></li><li><span lang="ru">Сопровождает в поездке на умру</span><span lang="en">Travels with you on Umrah</span></li></ul>
+        <a class="btn ghost" href="#join"><span lang="ru">Узнать первым</span><span lang="en">Be the first to know</span></a></div>
     </div>
-    <p class="per"><span lang="ru">Pro стоит <b>€2.50 в месяц</b> при оплате за год. Сейчас, на старте, все функции открыты бесплатно, карта не нужна.</span><span lang="en">Pro is <b>€2.50 a month</b> billed yearly. Right now, at launch, every feature is open for free, no card needed.</span></p>
-    <div class="plans">
-      <div class="plan free">
-        <h3><span lang="ru">Бесплатно</span><span lang="en">Free</span></h3>
-        <div class="price">€0</div>
-        <div class="alt"><span lang="ru">навсегда</span><span lang="en">forever</span></div>
-        <ul>
-          <li><span lang="ru">Намазы, Коран, тасбих, Рамадан, садака: навсегда</span><span lang="en">Prayers, Quran, tasbih, Ramadan, sadaqah: forever</span></li>
-          <li><span lang="ru">По 3: привычки, круги, цели</span><span lang="en">3 each: habits, circles, goals</span></li>
-          <li><span lang="ru">По 3: книги и видеокурсы</span><span lang="en">3 each: books and video courses</span></li>
-          <li><span lang="ru">Сафар, умра-гид, общий хатм</span><span lang="en">Travel mode, Umrah guide, group khatm</span></li>
-        </ul>
-        <a class="btn" href="#join"><span lang="ru">Начать бесплатно</span><span lang="en">Start for free</span></a>
-      </div>
-      <div class="plan pro">
-        <span class="tag">PRO</span>
-        <h3>Living Muslim Pro</h3>
-        <div class="price">€29.99 <small><span lang="ru">в год</span><span lang="en">/ year</span></small></div>
-        <div class="alt"><span lang="ru">первый год −37%: €2.50 в месяц вместо €3.99 · семья до 5 человек €44.99/год</span><span lang="en">first year −37%: €2.50 a month instead of €3.99 · family of up to 5: €44.99 / year</span></div>
-        <ul>
-          <li><span lang="ru">До 5 привычек и очередь «Скоро»</span><span lang="en">Up to 5 habits plus a “Next” queue</span></li>
-          <li><span lang="ru">До 20 кругов и 5 активных целей</span><span lang="en">Up to 20 circles and 5 active goals</span></li>
-          <li><span lang="ru">Книги и видеокурсы без ограничений</span><span lang="en">Unlimited books and video courses</span></li>
-          <li><span lang="ru">Всё новое в Pro первым</span><span lang="en">Every new Pro feature first</span></li>
-        </ul>
-        <a class="btn" href="#join"><span lang="ru">Начать бесплатно</span><span lang="en">Start for free</span></a>
-      </div>
-    </div>
+    <div class="fam"><span class="e">👨‍👩‍👧</span><div><b><span lang="ru">Семья: Pro для 5 человек</span><span lang="en">Family: Pro for 5 people</span></b><br><span><span lang="ru">Один платёж, у каждого свой профиль и свои данные</span><span lang="en">One payment, everyone keeps their own profile and data</span></span></div><span class="fp">€44.99 / <span lang="ru">год</span><span lang="en">year</span></span></div>
     <div class="gift">
       <div><b>🎁 <span lang="ru">Подари Pro как садаку</span><span lang="en">Gift Pro as sadaqah</span></b><p><span lang="ru">Год Pro брату или сестре. А если сейчас трудно с деньгами, просто попроси Pro бесплатно.</span><span lang="en">A year of Pro for a brother or sister. And if money is tight right now, just ask for Pro for free.</span></p></div>
     </div>
