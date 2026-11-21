@@ -6775,4 +6775,7 @@ export const EN: Record<string, string> = {
   "Заявка на проверке · открыть": "Application being checked · open",
   "Подать заявку: проверим диплом и рекомендацию ›": "Apply: we check the diploma and recommendation ›",
   "в круге «{0}» · открыть ›": "in the circle «{0}» · open ›",
+  "Номера телефонов, почту и ссылки на мессенджеры мы скрываем: люди пишут тебе через чат приложения.": "We hide phone numbers, emails and messenger links: people write to you through the app chat.",
+  "Номер телефона не пиши: договоритесь в чате приложения.": "Do not write a phone number: agree in the app chat.",
+  "Кто рекомендует: имам, мечеть, контакт (контакт видит только владелец)": "Who recommends you: imam, mosque, contact (only the owner sees the contact)",
 };

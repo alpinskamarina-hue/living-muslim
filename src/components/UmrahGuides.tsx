@@ -6,7 +6,7 @@ import { _t, _tj } from '../i18n';
 import { openPerson } from '../person';
 import { shrink } from '../foodphoto';
 import {
-  guideAnswer, guideApply, guideCall, guideGet, guideMine, guidePause, guideReview,
+  hideContacts as hc, guideAnswer, guideApply, guideCall, guideGet, guideMine, guidePause, guideReview,
   type Apply, type Guide, type GuideFull, type MyGuide, type Place, type Service,
 } from '../guides';
 
@@ -88,7 +88,7 @@ function MyGuideCard({ g, onEdit, reload }: { g: MyGuide; onEdit: () => void; re
       {pending.map((c) => (
         <div key={c.id} className="ug-call">
           <b>{_tj("{0} зовёт тебя в поездку", c.name)}</b>
-          {c.note && <p>«{c.note}»</p>}
+          {c.note && <p>«{hc(c.note)}»</p>}
           <div className="uo-b">
             <button type="button" className="gold-btn" disabled={busy === c.id} onClick={() => answer(c.id, true)}>{_t("Принять")}</button>
             <button type="button" className="ghost-btn" disabled={busy === c.id} onClick={() => answer(c.id, false)}>{_t("Не в этот раз")}</button>
@@ -116,13 +116,13 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
   if (g === undefined) return <div className="ug">{back}<p className="tiny">{_t("Загружаю…")}</p></div>;
   if (!g) return <div className="ug">{back}<p className="tiny">{_t("Этот гид сейчас недоступен.")}</p></div>;
   const call = async () => {
-    const r = await guideCall(g.uid, code, note);
+    const r = await guideCall(g.uid, code, hc(note));
     setMsg(r === 'ok' ? _tj("✓ Отправлено. {0} ответит здесь же, а если примет, придёт в круг поездки.", g.name)
       : r === 'already' ? _t("Ты уже позвал, ждём ответа.") : r === 'limit' ? _t("Сегодня уже много приглашений. Попробуй завтра.")
       : r === 'closed' ? _t("Гид сейчас не принимает приглашения.") : _t("Не получилось отправить. Проверь интернет."));
     if (r === 'ok') { setAsk(false); load(); }
   };
-  const review = async () => { const r = await guideReview(g.uid, stars, text); setMsg(r === 'ok' ? _t("✓ Спасибо за отзыв") : _t("Не получилось сохранить отзыв.")); if (r === 'ok') load(); };
+  const review = async () => { const r = await guideReview(g.uid, stars, hc(text)); setMsg(r === 'ok' ? _t("✓ Спасибо за отзыв") : _t("Не получилось сохранить отзыв.")); if (r === 'ok') load(); };
   const st = g.mine?.status;
   return (
     <div className="ug ug-prof">
@@ -137,12 +137,12 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
         <h4>{_t("Проверено Living Muslim")}</h4>
         <p className={g.checks.diploma ? 'ok' : ''}><b>{g.school}</b>{[g.field, g.grad].filter(Boolean).map((x) => `, ${x}`).join('')}{g.checks.diploma ? _t(" · диплом") : ''}</p>
         {g.license && <p className="ok">{_t("Лицензия гида Минтуризма КСА")}</p>}
-        {g.imam && <p className={g.checks.imam ? 'ok' : ''}>{_tj("Рекомендация: {0}", g.imam)}</p>}
+        {g.imam && <p className={g.checks.imam ? 'ok' : ''}>{_tj("Рекомендация: {0}", hc(g.imam))}</p>}
       </div>
-      {g.about && <p className="ug-about">{g.about}</p>}
-      {g.services.length > 0 && <div className="ug-serv">{g.services.map((s, i) => <div key={i}><span>{s.t}</span><small>{price(s)}</small></div>)}</div>}
-      {g.list.map((r, i) => <blockquote key={i} className="ug-rev">«{r.text || '★'.repeat(r.stars)}»<small>{r.name} · ★ {r.stars}</small></blockquote>)}
-      {g.free && <div className="ug-free"><b>{_t("Свободен:")}</b> {g.free}</div>}
+      {g.about && <p className="ug-about">{hc(g.about)}</p>}
+      {g.services.length > 0 && <div className="ug-serv">{g.services.map((s, i) => <div key={i}><span>{hc(s.t)}</span><small>{price(s)}</small></div>)}</div>}
+      {g.list.map((r, i) => <blockquote key={i} className="ug-rev">«{hc(r.text) || '★'.repeat(r.stars)}»<small>{r.name} · ★ {r.stars}</small></blockquote>)}
+      {g.free && <div className="ug-free"><b>{_t("Свободен:")}</b> {hc(g.free)}</div>}
       {msg && <p className="uo-msg" role="status">{msg}</p>}
       {g.can_review && (
         <div className="ug-revf">
@@ -155,6 +155,7 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
       {ask && (
         <div className="ug-ask">
           <textarea value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder={_t("Когда едете, сколько вас, что нужно (обряды, зиярат)")} />
+          <small className="tiny">{_t("Номер телефона не пиши: договоритесь в чате приложения.")}</small>
           <button type="button" className="pri-btn" onClick={call}>{_t("Отправить приглашение")}</button>
         </div>
       )}
@@ -195,7 +196,7 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
   const photo = async (f: File | undefined, to: (s: string) => void) => { if (!f) return; try { to((await shrink(f, 1200)).data); } catch { setMsg(_t("Не получилось прочитать фото.")); } };
   const send = async () => {
     setBusy(true);
-    const r = await guideApply({ ...p, services: p.services.filter((s) => s.t.trim()) }, dip, lic);
+    const r = await guideApply({ ...p, about: hc(p.about), free: hc(p.free), services: p.services.filter((s) => s.t.trim()).map((s) => ({ ...s, t: hc(s.t) })) }, dip, lic);
     setBusy(false);
     if (r === 'ok') { setMsg(_t("✓ Заявка отправлена. Проверяем 2–3 дня, ответ придёт сюда же.")); setTimeout(onBack, 1500); }
     else setMsg(r === 'school' ? _t("Впиши, где ты учился.") : r === 'big' ? _t("Фото слишком большое, выбери другое.") : _t("Не получилось отправить. Проверь интернет."));
@@ -206,6 +207,7 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
       <label className="ug-f"><small>{_t("Имя, как тебя увидят")}</small><input value={p.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} /></label>
       <div className="uo-chips">{LANGS.map((l) => <button key={l} type="button" aria-pressed={p.langs.includes(l)} onClick={() => set({ langs: p.langs.includes(l) ? p.langs.filter((x) => x !== l) : [...p.langs, l] })}>{l}</button>)}</div>
       <label className="ug-f"><small>{_t("Коротко о себе")}</small><textarea value={p.about} maxLength={600} onChange={(e) => set({ about: e.target.value })} /></label>
+      <p className="tiny">{_t("Номера телефонов, почту и ссылки на мессенджеры мы скрываем: люди пишут тебе через чат приложения.")}</p>
       <label className="chk"><input type="checkbox" checked={p.sisters} onChange={(e) => set({ sisters: e.target.checked })} /> {_t("Я гид для сестёр")}</label>
     </>,
     <>
@@ -239,7 +241,7 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
       <label className="ug-f ug-file"><small>{_t("Фото диплома или иджазы")}</small><input type="file" accept="image/*" onChange={(e) => photo(e.target.files?.[0], setDip)} />{(dip || mine?.has_diploma) && <em>{_t("✓ есть")}</em>}</label>
       <label className="chk"><input type="checkbox" checked={p.license} onChange={(e) => set({ license: e.target.checked })} /> {_t("У меня есть лицензия гида Минтуризма КСА")}</label>
       {p.license && <label className="ug-f ug-file"><small>{_t("Фото лицензии")}</small><input type="file" accept="image/*" onChange={(e) => photo(e.target.files?.[0], setLic)} />{lic && <em>{_t("✓ есть")}</em>}</label>}
-      <label className="ug-f"><small>{_t("Кто рекомендует: имам, мечеть, контакт")}</small><input value={p.imam} maxLength={120} placeholder={_t("имам мечети «Марджани», Казань")} onChange={(e) => set({ imam: e.target.value })} /></label>
+      <label className="ug-f"><small>{_t("Кто рекомендует: имам, мечеть, контакт (контакт видит только владелец)")}</small><input value={p.imam} maxLength={120} placeholder={_t("имам мечети «Марджани», Казань")} onChange={(e) => set({ imam: e.target.value })} /></label>
       <p className="tiny">{_t("Фото документов видит только владелец приложения. После проверки фото удаляются, остаётся лишь отметка «проверено». Паспорт мы не просим.")}</p>
     </>,
   ];

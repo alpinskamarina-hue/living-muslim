@@ -68,3 +68,14 @@ async function admin<T>(fn: string, args: Record<string, unknown>): Promise<T> {
 export interface QueueGuide extends Guide { email: string | null; diploma_photo: string | null; license_photo: string | null; created: string; updated: string }
 export const guideQueue = () => admin<QueueGuide[] | null>('lm_guide_queue', {});
 export const guideDecide = (uid: string, ok: boolean, checks: Record<string, boolean>, note: string) => admin('lm_guide_decide', { p_guide: uid, p_ok: ok, p_checks: checks, p_note: note });
+
+/** Phone numbers, emails and messenger links are hidden in guide texts, calls and reviews:
+ *  people talk through the app chat (Nasim, 21.11). The owner's check still sees the raw application. */
+const HIDE = '•••';
+export function hideContacts(t: string): string {
+  if (!t) return t;
+  return t
+    .replace(/(?:https?:\/\/)?(?:www\.)?(?:wa\.me|t\.me|telegram\.me|api\.whatsapp\.com|chat\.whatsapp\.com|viber\.click|invite\.viber\.com)\/\S*/gi, HIDE)
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, HIDE)
+    .replace(/(?:\+|00)?\d[\d\s().-]{5,}\d/g, (m) => ((m.match(/\d/g) ?? []).length >= 7 ? HIDE : m));
+}

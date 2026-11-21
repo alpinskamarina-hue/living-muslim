@@ -55,7 +55,7 @@ async function guides(pg) {
     check(await G.locator('.ug-steps button').count() === 5, '5 application steps');
     await G.locator('.ug-f input').first().fill('Абдуррахман');
     await G.locator('.uo-chips button', { hasText: 'AR' }).click();
-    await G.locator('.ug-f textarea').fill('Провожу умру с 2014 года, объясняю каждый шаг.');
+    await G.locator('.ug-f textarea').fill('Провожу умру с 2014 года, объясняю каждый шаг. Звоните +7 917 123-45-67 или guide@mail.ru');
     await G.locator('.ug-next').click(); await wait(300);
     await G.locator('.ug-f input').nth(0).fill('Исламский университет Медины');
     await G.locator('.ug-f input').nth(1).fill('шариат');
@@ -144,10 +144,11 @@ async function guides(pg) {
     await guides(S);
     await S.locator('.ug-card').first().click(); await wait(1500);
     check(await S.locator('.ug-revf').count() === 1, 'review form after accept');
-    await S.locator('.ug-revf textarea').fill('Объяснил каждый шаг тавафа. Ни минуты суеты.');
+    await S.locator('.ug-revf textarea').fill('Объяснил каждый шаг тавафа. Ни минуты суеты. Пишите ему wa.me/79171234567');
     await S.locator('.ug-revf .pri-btn').click(); await wait(1500);
     const p2 = await S.locator('.ug-prof').innerText();
     check(p2.includes('★ 5') && p2.includes('Объяснил'), 'review shown with stars');
+    check(!/917|mail\.ru|wa\.me/.test(p2) && p2.includes('•••') && p2.includes('2014'), 'phones, email and WhatsApp links hidden, years kept');
     await shot(S, 'gd-7-review');
 
     // 7. «Найти гида» on the path step.
