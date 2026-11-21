@@ -155,6 +155,14 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
   const del = (id: string) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: (x.log?.[today] ?? []).filter((i) => i.id !== id) } })));
   const label = (m: Meal) => slots.find((x) => x.id === m)?.l ?? m;
   const [, bump] = useState(0);
+  // «Сохранить» right under the field (Nasim: typing by hand must not need the camera). The best match from
+  // the table goes in at once; a dish that is not there opens the short form, where calories may stay empty.
+  const top = mine[0] ?? hits[0];
+  const quickSave = () => {
+    if (q.trim().length < 2) return;
+    if (top) add(itemFrom(top, mine[0] ? (parsed.grams ?? top.g) : gramsFor(top), meal));
+    else setOwn({ n: parsed.text || q.trim(), k: '', p: '' });
+  };
   const addMany = (l: FoodItem[]) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), ...l] } })));
   const bar = (v: number, of: number, l: string) => (
     <div className="fd-bar"><small>{l}</small><i><u style={{ width: `${Math.min(100, of ? (v / of) * 100 : 0)}%` }} /></i><small>{_tj("{0} / {1} г", Math.round(v), of)}</small></div>
@@ -176,9 +184,14 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
       {!chosen && !own && (
         <div className="fd-find">
           <div className="fd-findrow">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("Что съел? Например: плов 300 или 2 яйца")} aria-label={_t("Что съел")} />
+            <input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); quickSave(); } }} enterKeyHint="done" placeholder={_t("Что съел? Например: плов 300 или 2 яйца")} aria-label={_t("Что съел")} />
             <PhotoEntry today={today} meal={meal} mealLabel={label(meal)} onAdd={addMany} onChange={() => bump((n) => n + 1)} />
           </div>
+          {q.trim().length > 1 && (
+            <button type="button" className="pri-btn fd-save" onClick={quickSave}>
+              {top ? _tj("Сохранить в «{0}»: {1}, {2} ккал", label(meal), top.n, Math.round((top.k * (mine[0] ? (parsed.grams ?? top.g) : gramsFor(top))) / 100)) : _tj("Сохранить в «{0}»", label(meal))}
+            </button>
+          )}
           {!q && <PhotoLine today={today} />}
           {mine.length > 0 && (<>
             <small className="fd-lbl">{_t("Недавно сканировал")}</small>
@@ -216,7 +229,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
           {num(chosen.g) > 0 && <small>{_tj("{0} ккал · белок {1} г · жиры {2} г · углеводы {3} г", Math.round((chosen.row.k * num(chosen.g)) / 100), Math.round((chosen.row.p * num(chosen.g)) / 100), Math.round((chosen.row.f * num(chosen.g)) / 100), Math.round((chosen.row.c * num(chosen.g)) / 100))}</small>}
           <div className="fd-actions">
             <button type="button" className="link-btn" onClick={() => setChosen(null)}>{_t("Назад")}</button>
-            <button type="button" className="pri-btn" disabled={!(num(chosen.g) > 0 && num(chosen.g) < 3000)} onClick={() => add(itemFrom(chosen.row, num(chosen.g), meal))}>{_tj("Записать в «{0}»", label(meal))}</button>
+            <button type="button" className="pri-btn" disabled={!(num(chosen.g) > 0 && num(chosen.g) < 3000)} onClick={() => add(itemFrom(chosen.row, num(chosen.g), meal))}>{_tj("Сохранить в «{0}»", label(meal))}</button>
           </div>
         </div>
       )}
@@ -224,13 +237,13 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
         <div className="fd-chosen">
           <div className="fd-nums">
             <label className="wide"><small>{_t("Блюдо")}</small><input value={own.n} maxLength={40} onChange={(e) => setOwn({ ...own, n: e.target.value })} /></label>
-            <label><small>{_t("ккал")}</small><input inputMode="numeric" value={own.k} onChange={(e) => setOwn({ ...own, k: e.target.value })} placeholder="400" /></label>
+            <label><small>{_t("ккал")}</small><input inputMode="numeric" value={own.k} onChange={(e) => setOwn({ ...own, k: e.target.value })} placeholder={_t("не знаю")} /></label>
             <label><small>{_t("белок, г")}</small><input inputMode="numeric" value={own.p} onChange={(e) => setOwn({ ...own, p: e.target.value })} placeholder={_t("не знаю")} /></label>
           </div>
-          <small className="fd-muted">{_t("Калории обычно есть на упаковке или в меню.")}</small>
+          <small className="fd-muted">{_t("Калории обычно есть на упаковке или в меню. Можно сохранить и без них.")}</small>
           <div className="fd-actions">
             <button type="button" className="link-btn" onClick={() => setOwn(null)}>{_t("Назад")}</button>
-            <button type="button" className="pri-btn" disabled={!(own.n.trim() && num(own.k) > 0 && num(own.k) < 5000)} onClick={() => add({ id: `fi-${Date.now().toString(36)}`, n: own.n.trim(), g: 0, k: Math.round(num(own.k)), p: num(own.p) > 0 ? Math.round(num(own.p)) : 0, f: 0, c: 0, m: meal })}>{_tj("Записать в «{0}»", label(meal))}</button>
+            <button type="button" className="pri-btn" disabled={!(own.n.trim() && num(own.k) >= 0 && num(own.k) < 5000)} onClick={() => add({ id: `fi-${Date.now().toString(36)}`, n: own.n.trim(), g: 0, k: num(own.k) > 0 ? Math.round(num(own.k)) : 0, p: num(own.p) > 0 ? Math.round(num(own.p)) : 0, f: 0, c: 0, m: meal })}>{num(own.k) > 0 ? _tj("Сохранить в «{0}»", label(meal)) : _t("Сохранить без калорий")}</button>
           </div>
         </div>
       )}
