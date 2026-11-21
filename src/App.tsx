@@ -183,7 +183,7 @@ export function App() {
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
   // ?umrah opens the umrah app right away (the phone shortcut and /umrah links).
   const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>(() => {
-    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) { const r = q.get('umrah') || undefined; if (r === 'open') try { sessionStorage.setItem('lm.umOpen', '1'); } catch { /* */ } return { n: 0, mode: 'umrah', ref: r === 'open' ? 'group' : r }; } if (q.get('course')) return { n: 0, mode: 'videos', ref: q.get('course') || undefined }; } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) { const r = q.get('umrah') || undefined; if (r === 'open' || r === 'guides' || r === 'become') try { sessionStorage.setItem('lm.umOpen', r === 'open' ? '1' : r); } catch { /* */ } return { n: 0, mode: 'umrah', ref: r === 'open' || r === 'guides' || r === 'become' ? 'group' : r }; } if (q.get('course')) return { n: 0, mode: 'videos', ref: q.get('course') || undefined }; } catch { /* */ }
     return { n: 0 };
   });
   const [reviewOpen, setReviewOpen] = useState(false);

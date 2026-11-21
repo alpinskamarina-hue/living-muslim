@@ -6769,4 +6769,9 @@ export const EN: Record<string, string> = {
   "проверенные гиды в Мекке, Медине и готовые вылететь ›": "verified guides in Makkah, Madinah and ready to fly ›",
   "Гиды · {0}": "Guides · {0}",
   "Гиды": "Guides",
+  "Я гид по умре": "I am an umrah guide",
+  "✓ Ты в списке гидов · открыть": "✓ You are in the guides list · open",
+  "Заявка не прошла · исправить": "Application not approved · fix it",
+  "Заявка на проверке · открыть": "Application being checked · open",
+  "Подать заявку: проверим диплом и рекомендацию ›": "Apply: we check the diploma and recommendation ›",
 };

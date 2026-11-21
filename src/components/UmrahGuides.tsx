@@ -25,13 +25,14 @@ function Face({ g, big }: { g: Pick<Guide, 'name' | 'color'>; big?: boolean }) {
 type Filter = '' | Place | 'sisters' | string;
 
 /** The whole «Гиды» pane inside «Люди». */
-export function GuidesPane({ list, reload, code }: { list: Guide[] | null; reload: () => void; code: string | null }) {
+export function GuidesPane({ list, reload, code, becomeFirst }: { list: Guide[] | null; reload: () => void; code: string | null; becomeFirst?: boolean }) {
   const [open, setOpen] = useState<string | null>(null);
-  const [become, setBecome] = useState(false);
+  const [become, setBecome] = useState(Boolean(becomeFirst));
   const [mine, setMine] = useState<MyGuide | null | undefined>(undefined);
   const [f, setF] = useState<Filter>('');
   const loadMine = () => guideMine().then((m) => setMine(m ?? null));
   useEffect(() => { loadMine(); }, []);
+  if (become && mine === undefined) return <p className="tiny">{_t("Загружаю…")}</p>;
   if (become) return <BecomeGuide mine={mine ?? null} onBack={() => { setBecome(false); loadMine(); }} />;
   if (open) return <GuideProfile uid={open} code={code} onBack={() => { setOpen(null); reload(); }} />;
   if (!list) return <p className="tiny">{_t("Загружаю гидов…")}</p>;

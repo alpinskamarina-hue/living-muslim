@@ -10,6 +10,7 @@ import {
 } from '../person';
 import type { AppState } from '../types';
 import { plural } from '../dates';
+import { guideMine, guidesOk, type MyGuide } from '../guides';
 import { _t, _tj, LOC } from '../i18n';
 import { PathView, PathSettingsPage, TOPICS, topicLabel } from './PathView';
 import { dayKey } from '../dates';
@@ -210,6 +211,8 @@ export function SeekPage({ state, onNikah }: { state: AppState; onNikah: () => v
   const [msg, setMsg] = useState('');
   const nkOn = useNikahReady();
   const nk = useNikahMe(nkOn);
+  const [gd, setGd] = useState<MyGuide | null | undefined>(undefined);
+  useEffect(() => { guideMine().then((m) => { if (guidesOk !== false) setGd(m ?? null); }); }, []);
   const reload = () => myIntents().then((r) => { setList(r?.list ?? []); if (r) setCityV(r.city || ''); });
   useEffect(() => { reload(); }, []);
   if (!list) return <p className="tiny">{_t("Загружаю…")}</p>;
@@ -287,6 +290,12 @@ export function SeekPage({ state, onNikah }: { state: AppState; onNikah: () => v
           </div>
         );
       })}
+      {gd !== undefined && (
+        <a className="sk-row sk-guide" href="/app/?umrah=become"><span className="sk-h">
+          <span className="sk-e">🧭</span>
+          <span className="sk-x"><b>{_t("Я гид по умре")}</b><small>{gd ? (gd.status === 'ok' ? _t("✓ Ты в списке гидов · открыть") : gd.status === 'no' ? _t("Заявка не прошла · исправить") : _t("Заявка на проверке · открыть")) : _t("Подать заявку: проверим диплом и рекомендацию ›")}</small></span>
+        </span></a>
+      )}
       <p className="sk-foot">{_t("Через 60 дней пункт скроется сам, и мы спросим, актуально ли ещё. Номер телефона и почта в профиле не показываются никогда: связь только через чат в приложении.")}</p>
       <button type="button" className="pri-btn sk-see" onClick={() => { const id = cloudMe()?.uid; if (id) openPerson(id); }}>{_t("👁 Как мой профиль видят другие")}</button>
     </div>

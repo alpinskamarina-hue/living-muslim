@@ -42,6 +42,13 @@ async function guides(pg) {
     // 1. The guide applies.
     const G = await L.phone(br, 'G');
     await signup(G, 'Абдуррахман', 'guide@test.dev');
+    // entry from Profile → «Что я сейчас ищу»
+    await nav(G, 'Профиль');
+    await G.locator('button', { hasText: 'Что я сейчас ищу' }).first().click(); await wait(1500);
+    check(await G.locator('.sk-guide').count() === 1, 'Profile «Что я ищу» has «Я гид по умре»');
+    await shot(G, 'gd-0-profile-entry');
+    await G.locator('.sk-guide').click(); await wait(3000);
+    check(await G.locator('.ug-steps').count() === 1, '«Я гид» opens the application');
     await guides(G);
     say('empty list:', flat(await G.locator('.ug').innerText()).slice(0, 200));
     await G.locator('.ug-become').click(); await wait(600);

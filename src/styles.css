@@ -5257,3 +5257,5 @@ body.pp-on { overflow: hidden; }
 .ug-svc { display: grid; grid-template-columns: 1fr 64px 72px; gap: 6px; }
 .ug-wrap { flex-wrap: wrap; }
 .ug-next { width: 100%; }
+.sk-guide { display: block; text-decoration: none; color: var(--ink); }
+.sk-guide .sk-e { background: var(--gold-soft); }
