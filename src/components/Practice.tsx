@@ -1,5 +1,7 @@
 import { Hint } from './Guide';
 import { PIcon } from './PIcon';
+import { openPath } from './NewPath';
+import { pathNow } from '../newpath';
 import { history as halalHistory, mineHalal } from '../halal';
 import { say, type Trigger } from '../words';
 import { useEffect, useRef, useState } from 'react';
@@ -271,6 +273,10 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
             </button>
             {testsOpen && <div className="psub">{['tests', 'testUmrah', 'testSalah'].map(row)}</div>}
             {shown(['quit']).map(row)}
+            <button type="button" className="prow" onClick={() => openPath({ v: 'list' })}>
+              <PIcon k="moon" />
+              <span><b>{_t("Новый путь")}</b><small>{state.newpath?.on ? _t("День {0} из 40 · учитель намаза, суры", pathNow(state, today).day) : _t("Для тех, кто недавно принял ислам")}</small></span><em>›</em>
+            </button>
           </div>
         </>
       )}

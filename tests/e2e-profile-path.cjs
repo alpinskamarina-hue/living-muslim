@@ -91,7 +91,7 @@ const idOf = async (pg) => JSON.parse(await ls(pg, 'lm.cloud'));
 
     // B: «Что видят другие» → habits for nobody, ask only from circles
     await nav(B, 'Профиль');
-    await B.locator('.menu-row', { hasText: 'Мой путь в профиле' }).click(); await wait(2000);
+    await B.locator('.pf-btns button', { hasText: 'Как видят другие' }).click(); await wait(2000);
     await shot(B, 'pa-2-self');
     await B.locator('.pa-h .link-btn').click(); await wait(1500);
     await B.locator('.pa-vis', { hasText: 'Привычки' }).locator('button', { hasText: 'Никто' }).click(); await wait(800);

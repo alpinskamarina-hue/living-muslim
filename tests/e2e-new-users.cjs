@@ -38,7 +38,7 @@ const shot = (pg, n) => pg.screenshot({ path: OUT + n + '.png', fullPage: true }
     say('A bound:', await L.q(`select u.name, a.email from users u join auth.users a on a.id = u.auth_id`));
     const setNick = async (pg, nick) => {
       await nav(pg, 'Профиль');
-      await pg.locator('button', { hasText: 'Мой профиль' }).first().click(); await wait(600);
+      await pg.locator('.pf-btns button', { hasText: 'Изменить' }).first().click(); await wait(600);
       await pg.locator('.nk-in input').fill(nick); await wait(900);
       await pg.locator('.nk-save').click(); await wait(1200);
       say(`[${pg.label}] nick msg:`, (await pg.locator('main').innerText()).match(/Сохранено[^\n]*|занят[^\n]*|ошибк[^\n]*/i)?.[0] || '(no msg)');
@@ -94,7 +94,7 @@ const shot = (pg, n) => pg.screenshot({ path: OUT + n + '.png', fullPage: true }
 
     // ── B signs out on phone B (keep data), then a new person Yusuf signs up there ──
     await nav(B, 'Профиль');
-    await B.locator('button', { hasText: 'Аккаунт' }).first().click(); await wait(500);
+    await B.locator('.pf-btns button', { hasText: 'Изменить' }).first().click(); await wait(500);
     B.answers = [true, true];
     await B.locator('.acct button', { hasText: 'Выйти' }).click(); await wait(2500);
     say('B dialogs:', B.dialogs);
@@ -109,7 +109,7 @@ const shot = (pg, n) => pg.screenshot({ path: OUT + n + '.png', fullPage: true }
 
     // ── E: phone C keeps its data on sign-out, then another email signs in there ──
     await nav(C, 'Профиль');
-    await C.locator('button', { hasText: 'Аккаунт' }).first().click(); await wait(500);
+    await C.locator('.pf-btns button', { hasText: 'Изменить' }).first().click(); await wait(500);
     C.answers = [true, false];
     await C.locator('.acct button', { hasText: 'Выйти' }).click(); await wait(2500);
     await signup(C, '', 'zaid@test.dev', true);
@@ -133,7 +133,7 @@ const shot = (pg, n) => pg.screenshot({ path: OUT + n + '.png', fullPage: true }
     say('F joined:', idF?.circles, 'members now:', (await L.q(`select count(*) n from members where code = $1`, [code]))[0].n);
     await shot(F, 'f2-joined');
     await nav(F, 'Профиль');
-    await F.locator('button', { hasText: 'Аккаунт' }).first().click(); await wait(500); await F.locator('a.acct').first().click(); await wait(1500);
+    await F.locator('.pf-btns button', { hasText: 'Изменить' }).first().click(); await wait(500); await F.locator('a.acct').first().click(); await wait(1500);
     say('F login url:', F.url());
     const f = F.locator('.js-signup').first();
     await f.locator('input[name=email]').fill('bilal@test.dev');

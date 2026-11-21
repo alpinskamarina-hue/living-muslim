@@ -8,10 +8,8 @@ import type { GoTo } from '../guide';
 import { WordCard } from './Words';
 import { LogoLockup } from './Logo';
 import { ProPlans } from './Pro';
-import { ADVISED, LIMITS_ON, SOFT, usePlan } from '../plan';
+import { LIMITS_ON, SOFT, usePlan } from '../plan';
 import { Advice } from './Plan';
-import { openPath } from './NewPath';
-import { pathNow } from '../newpath';
 import { GiftPass } from './GiftPass';
 import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
@@ -26,11 +24,11 @@ import { isCloud, nicksReady, forgetIdentity, signupName, cloudMe } from '../clo
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import { NikahPage } from './Nikah';
 import { SeekPage, IntentsFeed } from './Person';
-import { usePersonReady, openPerson } from '../person';
-import { usePathReady } from '../path';
+import { usePersonReady, openPerson, myIntents, INTENTS, modeOf, type Intent } from '../person';
+import { usePathReady, buildPath } from '../path';
 import { AssistantSettings, IdeasPage, PingsPage } from './Assistant';
 import { PlansPage, takePlanStart } from './Plans';
-import { dayPlans, weekStart, addDays as plAdd, planRings } from '../plans';
+import { dayPlans, planRings } from '../plans';
 import { aiName } from '../assistant';
 import { useNikahReady, useNikahMe, nikahTodo } from '../nikah';
 import type { Anchor, AppState, Habit, MethodId } from '../types';
@@ -66,63 +64,142 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const plan = usePlan();
   useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
-  const go = (p: Page) => { setPage(p); window.scrollTo(0, 0); };
-  const back = () => go('main');
+  // Pages opened from «Настройки» go back there; everything else goes back to the profile.
+  const [parent, setParent] = useState<Page>('main');
+  const [sq, setSq] = useState('');
+  const [seek, setSeek] = useState<Intent[]>([]);
+  useEffect(() => {
+    if (!isCloud || !personOn || page !== 'main') return;
+    let alive = true;
+    myIntents().then((r) => { if (alive && r) setSeek(r.list.filter((i) => !i.until || i.until >= dayKey(new Date()))); });
+    return () => { alive = false; };
+  }, [personOn, page]);
+  const go = (p: Page) => { setParent(page === 'settings' ? 'settings' : 'main'); setPage(p); window.scrollTo(0, 0); };
+  const back = () => { setPage(page === 'settings' ? 'main' : parent); setParent('main'); window.scrollTo(0, 0); };
+  const bl = parent === 'settings' && page !== 'settings' ? _t("← Настройки") : undefined;
+  const pathNowSum = page === 'main' ? buildPath(state, dayKey(new Date())) : null;
+  const bestRun = Math.max(0, ...(pathNowSum?.habits ?? []).map((h) => h.run));
+  const studyN = pathNowSum?.study?.length ?? 0;
 
-  if (page === 'garden') return <Sub title={_t("Мой сад")} onBack={back}><Garden state={state} today={dayKey(new Date())} /><WordCard t="garden" state={state} today={dayKey(new Date())} /></Sub>;
+  if (page === 'garden') return <Sub title={_t("Мой сад")} onBack={back} label={bl}><Garden state={state} today={dayKey(new Date())} /><WordCard t="garden" state={state} today={dayKey(new Date())} /></Sub>;
   if (page === 'pro') return <ProPlans onBack={back} />;
-  if (page === 'gift') return <Sub title={_t("Садака")} onBack={back}><GiftPass /></Sub>;
-  if (page === 'prayer') return <Sub title={_t("Намазы")} onBack={back}><PrayerSettings s={s} set={set} times={times} /></Sub>;
-  if (page === 'habits') return <Sub title={_t("Мои привычки")} onBack={back}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
-  if (page === 'adhan') return <Sub title={_t("Азан")} onBack={back}><AdhanSettings s={s} set={set} times={times} onTry={tryAdhan} /></Sub>;
-  if (page === 'remind') return <Sub title={_t("Напоминания")} onBack={back}><RemindPage s={s} set={set} times={times} /></Sub>;
-  if (page === 'words') return <Sub title={_t("Фразы и напоминания")} onBack={back}><WordsSettings s={s} set={set} /></Sub>;
-  if (page === 'lang') return <Sub title="Язык · Language" onBack={back}><LangSettings s={s} set={set} /></Sub>;
-  if (page === 'look') return <Sub title={_t("Внешний вид")} onBack={back}><LookSettings s={s} set={set} /></Sub>;
-  if (page === 'data') return <Sub title={_t("Данные")} onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
-  if (page === 'seek') return <Sub title={_t("Что я сейчас ищу")} onBack={back}><SeekPage state={state} onNikah={() => go('nikah')} /></Sub>;
+  if (page === 'gift') return <Sub title={_t("Садака")} onBack={back} label={bl}><GiftPass /></Sub>;
+  if (page === 'prayer') return <Sub title={_t("Намазы")} onBack={back} label={bl}><PrayerSettings s={s} set={set} times={times} /></Sub>;
+  if (page === 'habits') return <Sub title={_t("Мои привычки")} onBack={back} label={bl}><HabitsSettings state={state} update={update} onEdit={onEdit} /></Sub>;
+  if (page === 'adhan') return <Sub title={_t("Азан")} onBack={back} label={bl}><AdhanSettings s={s} set={set} times={times} onTry={tryAdhan} /></Sub>;
+  if (page === 'remind') return <Sub title={_t("Напоминания")} onBack={back} label={bl}><RemindPage s={s} set={set} times={times} /></Sub>;
+  if (page === 'words') return <Sub title={_t("Фразы и напоминания")} onBack={back} label={bl}><WordsSettings s={s} set={set} /></Sub>;
+  if (page === 'lang') return <Sub title="Язык · Language" onBack={back} label={bl}><LangSettings s={s} set={set} /></Sub>;
+  if (page === 'look') return <Sub title={_t("Вид и тон")} onBack={back} label={bl}><LookSettings s={s} set={set} /><h3 className="pf-sub">{_t("Фразы и тон")}</h3><WordsSettings s={s} set={set} /></Sub>;
+  if (page === 'data') return <Sub title={_t("Данные")} onBack={back} label={bl}><DataSettings state={state} replace={replace} /></Sub>;
+  if (page === 'seek') return <Sub title={_t("Что я сейчас ищу")} onBack={back} label={bl}><SeekPage state={state} onNikah={() => go('nikah')} /></Sub>;
   if (page === 'seekers') return <IntentsFeed onBack={back} />;
-  if (page === 'nikah') return <Sub title={_t("Никах")} onBack={back}><NikahPage /></Sub>;
-  if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back}><AdminPage /></Sub>;
-  if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
-  if (page === 'assistant') return <Sub title={aiName(s)} onBack={back}><AssistantSettings s={s} set={set} admin={admin} onOpen={() => onGo?.({ assistant: true })} /></Sub>;
-  if (page === 'plans') return <Sub title={_t("Планы")} onBack={back}><PlansPage state={state} update={update} today={dayKey(new Date())} start={takePlanStart()} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
-  if (page === 'pings') return <Sub title={_t("Мои напоминания")} onBack={back}><PingsPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} onRemind={() => go('remind')} /></Sub>;
-  if (page === 'ideas') return <Sub title={_t("Мои идеи")} onBack={back}><IdeasPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
-  if (page === 'help') return <Sub title={_t("Помощь")} onBack={back}><HelpPage /></Sub>;
-  if (page === 'me') return <Sub title={_t("Мой профиль")} onBack={back}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} /></Sub>;
-  if (page === 'account') return <Sub title={_t("Аккаунт")} onBack={back}><AccountPage s={s} set={set} /></Sub>;
+  if (page === 'nikah') return <Sub title={_t("Никах")} onBack={back} label={bl}><NikahPage /></Sub>;
+  if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back} label={bl}><AdminPage /></Sub>;
+  if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back} label={bl}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
+  if (page === 'assistant') return <Sub title={aiName(s)} onBack={back} label={bl}><AssistantSettings s={s} set={set} admin={admin} onOpen={() => onGo?.({ assistant: true })} /></Sub>;
+  if (page === 'plans') return <Sub title={_t("Планы")} onBack={back} label={bl}><PlansPage state={state} update={update} today={dayKey(new Date())} start={takePlanStart()} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
+  if (page === 'pings') return <Sub title={_t("Мои напоминания")} onBack={back} label={bl}><PingsPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} onRemind={() => go('remind')} /></Sub>;
+  if (page === 'ideas') return <Sub title={_t("Мои идеи")} onBack={back} label={bl}><IdeasPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
+  if (page === 'help') return <Sub title={_t("Помощь")} onBack={back} label={bl}><HelpPage /></Sub>;
+  if (page === 'me') return <Sub title={_t("Аккаунт и приватность")} onBack={back} label={bl}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} />{!onClaude && <><h3 className="pf-sub">{_t("Вход по почте")}</h3><AccountCard /></>}</Sub>;
+  if (page === 'account') return <Sub title={_t("Аккаунт")} onBack={back} label={bl}><AccountPage s={s} set={set} /></Sub>;
 
   const me = authMe();
   const prof = isCloud ? cachedProfile() : null;
   const st = stats(state);
-  const gd = garden(journey(state, dayKey(new Date())).lit);
+  const today = dayKey(new Date());
+  const gd = garden(journey(state, today).lit);
   const used = slotsUsed(state);
   const name = s.name.trim() || me?.name || signupName() || _t("Друг");
   const methodName = METHODS.find((m) => m.id === s.method)?.ru ?? '';
   const theme = themeLabel(themeMode(s)).toLowerCase();
+  const myUid = cloudMe()?.uid;
+  const editMe = () => go(isCloud && nicks ? 'me' : 'account');
+  const pings = (state.pings ?? []).filter((p) => p.at > Date.now()).length + planRings(state).filter((p) => p.at > Date.now()).length;
+  const plansToday = dayPlans(state, today).length;
+
+  if (page === 'settings') {
+    const groups: [string, { icon: string; title: string; sub: string; go: () => void; keys?: string }[]][] = [
+      [_t("Намаз"), [
+        { icon: '🕌', title: _t("Время намазов"), sub: `${s.place} · ${methodName}`, go: () => go('prayer'), keys: 'намаз город метод prayer' },
+        { icon: '📢', title: _t("Азан"), sub: adhanOf(s).on ? _tj("Включён · {0}", reciterName(adhanOf(s).reciter)) : _t("Выключен · выбери чтеца"), go: () => go('adhan'), keys: 'adhan' },
+        ...(isCloud ? [{ icon: '🔔', title: _t("Уведомления"), sub: s.reminders?.on ? _t("Включены · {0} из 5 намазов", s.reminders.prayers.length) : (isStandalone() ? _t("Выключены") : _t("Установить на телефон, напоминания")), go: () => go('remind'), keys: 'пуш напоминания push установить' }] : []),
+      ]],
+      [_t("Приложение"), [
+        { icon: '🌐', title: 'Язык · Language', sub: LANG === 'en' ? 'English' : 'Русский', go: () => go('lang'), keys: 'english' },
+        { icon: '🎨', title: _t("Вид и тон"), sub: _t("Тема {0} · фразы {1}", theme, (s.words ?? 'calm') === 'normal' ? _t("обычно") : (s.words ?? 'calm') === 'calm' ? _t("спокойно") : _t("только фразы")), go: () => go('look'), keys: 'тема тёмная шрифт текст фразы брат сестра внешний вид' },
+      ]],
+      [_t("Аккаунт"), [
+        onClaude ? { icon: '👤', title: _t("Имя"), sub: name, go: () => go('account') }
+          : { icon: '👤', title: isCloud && nicks ? _t("Аккаунт и приватность") : _t("Аккаунт"), sub: isCloud && nicks ? (prof?.nick ? _t("@{0} · почта, фото, кто может писать", prof.nick) : _t("Ник, почта, фото, кто может писать")) : me ? _t("{0} · имя «{1}»", me.email, name) : _t("Войти по почте, имя"), go: editMe, keys: 'почта ник фото вход email профиль' },
+        { icon: '💾', title: _t("Данные"), sub: _t("Резервная копия, перенос, удаление"), go: () => go('data'), keys: 'копия удалить' },
+      ]],
+      [_t("Помощь"), [
+        { icon: '📖', title: _t("Как пользоваться"), sub: _t("Гид по всем разделам и частые вопросы"), go: () => go('guide'), keys: 'гид' },
+        { icon: '🤝', title: SUPPORT_EMAIL ? _t("Написать нам") : _t("Помощь"), sub: SUPPORT_EMAIL ? _t("Поделиться приложением, конфиденциальность") : _t("Поделиться приложением, конфиденциальность"), go: () => go('help'), keys: 'помощь поддержка' },
+      ]],
+    ];
+    const q = sq.trim().toLowerCase();
+    const hit = (r: { title: string; sub: string; keys?: string }) => !q || `${r.title} ${r.sub} ${r.keys ?? ''}`.toLowerCase().includes(q);
+    const shown = groups.map(([g, rows]) => [g, rows.filter(hit)] as const).filter(([, rows]) => rows.length);
+    return (
+      <Sub title={_t("Настройки")} onBack={back} label={bl}>
+        <input className="pf-search" type="search" value={sq} onChange={(e) => setSq(e.target.value)} placeholder={_t("🔍 Найти настройку: азан, тема, язык…")} />
+        {shown.map(([g, rows]) => (
+          <div key={g}>
+            <div className="pf-h">{g}</div>
+            <div className="menu">{rows.map((r) => <Row key={r.title} icon={r.icon} title={r.title} sub={r.sub} onClick={r.go} />)}</div>
+          </div>
+        ))}
+        {!shown.length && <p className="tiny">{_t("Ничего не нашлось. Попробуй другое слово.")}</p>}
+        <LogoLockup />
+        <p className="tiny ver">{_t("Версия 0.2")}<br />{_t("«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»")}</p>
+      </Sub>
+    );
+  }
+
+  const tiles: { icon: string; title: string; sub: string; n?: number; go: () => void }[] = [
+    { icon: '✨', title: aiName(s), sub: _t("спросить"), go: () => onGo ? onGo({ assistant: true }) : go('assistant') },
+    { icon: '🗓', title: _t("Планы"), sub: plansToday ? _t("сегодня {0}", plansToday) : _t("день и неделя"), go: () => go('plans') },
+    { icon: '⏰', title: _t("Напоминания"), sub: pings ? _t("впереди {0}", pings) : _t("мои и намазы"), n: pings || undefined, go: () => go('pings') },
+    { icon: '💡', title: _t("Идеи"), sub: state.ideas?.length ? String(state.ideas.length) : _t("записать"), go: () => go('ideas') },
+    { icon: '🌱', title: _t("Привычки"), sub: _t("активных: {0}", used), go: () => go('habits') },
+    { icon: '🌳', title: _t("Мой сад"), sub: _tj("{0} {1}", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев"))), go: () => go('garden') },
+  ];
+  const people = isCloud && (nikahOn || personOn);
 
   return (
     <div className="page">
-      <div className="me-card">
-        <button type="button" className="me-top me-edit" onClick={() => go(isCloud && nicks ? 'me' : 'account')} aria-label={_t("Изменить профиль")}>
-          {isCloud && nicks && prof?.avatar ? <Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} />
-            : <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
-          <span className="me-txt">
-            <b>{name}</b>
-            <small>{prof?.nick ? `@${prof.nick}` : me?.email ?? _t("Вход по почте не выполнен")}</small>
-            {prof?.bio ? <small>{prof.bio}</small> : <small>{_tj("С нами {0}  {1}", st.days, plural(st.days, _t("день"), _t("дня"), _t("дней")))}</small>}
-          </span>
-          <span className="me-pen">{_t("✎ Изменить")}</span>
-        </button>
-        <div className="me-stats">
-          <div><b>{st.onTime}<i>/35</i></b><small>{_t("намазов вовремя за неделю")}</small></div>
-          <div><b>{st.formed}</b><small>{plural(st.formed, _t("привычка закреплена"), _t("привычки закреплены"), _t("привычек закреплено"))}</small></div>
-          <div><b>{st.chapters}</b><small>{plural(st.chapters, _t("глава прочитана"), _t("главы прочитаны"), _t("глав прочитано"))}</small></div>
+      <div className="me-card pf-card">
+        <div className="me-top">
+          <button type="button" className="pf-who" onClick={editMe} aria-label={_t("Изменить профиль")}>
+            {isCloud && nicks && prof?.avatar ? <Ava pick={prof.avatar} color={prof.color} photo={prof.photo} name={name} size={56} />
+              : <span className="me-av" aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>}
+            <span className="me-txt">
+              <b>{name}</b>
+              <small>{[prof?.nick ? `@${prof.nick}` : (!isCloud || !nicks) && me?.email, _tj("с нами {0}  {1}", st.days, plural(st.days, _t("день"), _t("дня"), _t("дней")))].filter(Boolean).join(' · ')}</small>
+              {prof?.bio && <small>{prof.bio}</small>}
+            </span>
+          </button>
+          <button type="button" className="pf-gear" onClick={() => go('settings')} aria-label={_t("Настройки")}><Ic e="⚙" /></button>
+        </div>
+        {isCloud && personOn && (
+          <div className="pf-chips">
+            {seek.map((i) => <button key={i.kind} type="button" className="pf-chip" onClick={() => go('seek')}>{INTENTS[i.kind].ic} {i.kind === 'nikah' ? _t("Ищу никах") : modeOf(i).tag}</button>)}
+            <button type="button" className="pf-chip add" onClick={() => go('seek')}>{seek.length ? _t("✎ Что я ищу") : _t("+ Что я сейчас ищу")}</button>
+          </div>
+        )}
+        <div className="pf-path">
+          <div><b>{Math.round((st.onTime / 35) * 100)}%</b><small>{_t("намазов вовремя за неделю")}</small></div>
+          <div><b>{bestRun}</b><small>{_t("лучшая серия привычки")}</small></div>
+          <div><b>{studyN}</b><small>{_t("изучаю сейчас")}</small></div>
+        </div>
+        <div className="pf-btns">
+          <button type="button" onClick={editMe}>{_t("✎ Изменить")}</button>
+          {isCloud && personOn && myUid && <button type="button" onClick={() => openPerson(myUid)}>{pathOn ? _t("👁 Как видят другие") : _t("👁 Мой профиль")}</button>}
         </div>
       </div>
-
-      <BadgeShelf state={state} update={update} onOpen={onGo ? () => onGo({ practice: 'videos' }) : undefined} />
 
       {admin && (
         <button type="button" className="pro-entry adm-entry" onClick={() => go('admin')}>
@@ -140,45 +217,37 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
       </button>
       )}
 
-      <button type="button" className="pro-entry gp-pentry" onClick={() => go('gift')}>
-        <span className="pro-badge gp-badge">€10</span>
-        <span><b>{_t("Подари пропуск на умру")}</b><small>{_t("Садака тому, кто едет к Каабе, но не может оплатить")}</small></span>
-        <i aria-hidden="true">›</i>
-      </button>
-
-      <div className="menu">
-        <Row icon="✨" title={aiName(s)} sub={admin ? _t("Аватар, имя, как говорит и обучение") : _t("Аватар, имя и как он говорит")} onClick={() => go('assistant')} />
-        <Row icon="🗓" title={_t("Планы")} sub={(() => { const t = dayKey(new Date()); const n = dayPlans(state, t).length; let w = 0; const mon = weekStart(t); for (let i = 0; i < 7; i++) w += dayPlans(state, plAdd(mon, i)).length; return n || w ? _t("Сегодня {0} · на неделе {1}", n, w) : _t("Дела на день и неделю, между намазами"); })()} onClick={() => go('plans')} />
-        <Row icon="⏰" title={_t("Мои напоминания")} sub={(() => { const n = (state.pings ?? []).filter((p) => p.at > Date.now()).length + planRings(state).filter((p) => p.at > Date.now()).length; return n ? _t("Впереди: {0}", n) : _t("Скажи помощнику «напомни…»"); })()} onClick={() => go('pings')} />
-        <Row icon="💡" title={_t("Мои идеи")} sub={state.ideas?.length ? _t("Записано: {0}", state.ideas.length) : _t("Идеи и мысли, которые записал ты или помощник")} onClick={() => go('ideas')} />
-        <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
-        <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
-        {isCloud && nikahOn && <Row icon="💍" title={_t("Никах")} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}
-        {isCloud && personOn && pathOn && <Row icon="🛤" title={_t("Мой путь в профиле")} sub={_t("Намаз, привычки, учёба, благие дела: что видят другие")} onClick={() => { const id = cloudMe()?.uid; if (id) openPerson(id); }} />}
-        {isCloud && personOn && <Row icon="🔎" title={_t("Что я сейчас ищу")} sub={_t("Умра, никах, работа, бизнес, учёба: видно в твоём профиле")} onClick={() => go('seek')} />}
-        {isCloud && personOn && <Row icon="🧭" title={_t("Кто что ищет")} sub={_t("Чем можно помочь людям из твоих кругов")} onClick={() => go('seekers')} />}
-        {isCloud && nicks && <Row icon="🪪" title={_t("Мой профиль")} sub={prof?.nick ? _t("@{0} · фото, приватность", prof.nick) : _t("Ник, фото, кто может звать в круги")} onClick={() => go('me')} />}
-        {!onClaude && <Row icon="👤" title={_t("Аккаунт")} sub={me ? _t("{0} · имя «{1}»", me.email, name) : _t("Войти по почте, имя")} onClick={() => go('account')} />}
-        {onClaude && <Row icon="👤" title={_t("Имя")} sub={name} onClick={() => go('account')} />}
-        <Row icon="🌙" title={_t("Новый путь")} sub={state.newpath?.on ? _t("День {0} из 40 · учитель намаза, суры", pathNow(state, dayKey(new Date())).day) : _t("Для тех, кто недавно принял ислам")} onClick={() => openPath({ v: 'list' })} />
-        <Row icon="🕌" title={_t("Намазы")} sub={`${s.place} · ${methodName}`} onClick={() => go('prayer')} />
-        <Row icon="📢" title={_t("Азан")} sub={adhanOf(s).on ? _tj("Включён · {0}", reciterName(adhanOf(s).reciter)) : _t("Выключен · выбери чтеца")} onClick={() => go('adhan')} />
-        {isCloud && <Row icon="🔔" title={_t("Напоминания")} sub={s.reminders?.on ? _t("Включены · {0} из 5 намазов", s.reminders.prayers.length) : (isStandalone() ? _t("Выключены") : _t("Установить на телефон, напоминания"))} onClick={() => go('remind')} />}
-        <Row icon="🌱" title={_t("Мои привычки")} sub={SOFT ? _t("Активных: {0} · рекомендуем до {1}", used, ADVISED) : _t("{0} из {1} мест занято", used, activeLimit())} onClick={() => go('habits')} />
-        <Row icon="🤲" title={_t("Фразы и напоминания")} sub={`${s.me === 'f' ? _t("Я сестра") : s.me === 'm' ? _t("Я брат") : _t("Брат или сестра?")} · ${(s.words ?? 'calm') === 'normal' ? _t("обычно") : (s.words ?? 'calm') === 'calm' ? _t("спокойно") : _t("только фразы")}`} onClick={() => go('words')} />
-        <Row icon="🌐" title="Язык · Language" sub={LANG === 'en' ? 'English' : 'Русский'} onClick={() => go('lang')} />
-        <Row icon="🎨" title={_t("Внешний вид")} sub={_t("Тема {0} · текст {1}", theme, s.textScale && s.textScale > 1 ? _t("крупнее") : _t("обычный"))} onClick={() => go('look')} />
-        <Row icon="💾" title={_t("Данные")} sub={_t("Резервная копия, перенос, удаление")} onClick={() => go('data')} />
-        <Row icon="🤝" title={_t("Помощь")} sub={SUPPORT_EMAIL ? _t("Написать нам, поделиться, конфиденциальность") : _t("Поделиться приложением, конфиденциальность")} onClick={() => go('help')} />
+      <div className="pf-h">{_t("Каждый день")}</div>
+      <div className="pf-tiles">
+        {tiles.map((t) => (
+          <button key={t.title} type="button" className="pf-tile" onClick={t.go}>
+            {t.n ? <em className="pf-dot">{t.n}</em> : null}
+            <span className="mi" aria-hidden="true"><Ic e={t.icon} /></span>
+            <b>{t.title}</b><small>{t.sub}</small>
+          </button>
+        ))}
       </div>
 
-      <LogoLockup />
-      <p className="tiny ver">{_t("Версия 0.2")}<br />{_t("«Самые любимые дела у Аллаха — самые постоянные, даже если их мало»")}</p>
+      {people && (
+        <>
+          <div className="pf-h">{_t("Люди")}</div>
+          <div className="menu">
+            {nikahOn && <Row icon="💍" title={_t("Никах")} n={nkTodo.props + nkTodo.wali.length} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}
+            {personOn && <Row icon="🧭" title={_t("Кто что ищет")} sub={_t("Чем можно помочь людям из твоих кругов")} onClick={() => go('seekers')} />}
+          </div>
+        </>
+      )}
+
+      <BadgeShelf state={state} update={update} onOpen={onGo ? () => onGo({ practice: 'videos' }) : undefined} />
+
+      <button type="button" className="pf-gift" onClick={() => go('gift')}>
+        <b>€10</b><span>{_t("Подари пропуск на умру тому, кто не может оплатить")}</span><i aria-hidden="true">›</i>
+      </button>
     </div>
   );
 }
 
-export type Page = 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'settings' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -195,20 +264,20 @@ function stats(state: AppState) {
   return { onTime, formed: state.habits.filter((h) => h.formed).length, chapters: state.summaryRead?.length ?? 0, days };
 }
 
-function Row({ icon, title, sub, onClick }: { icon: string; title: string; sub: string; onClick: () => void }) {
+function Row({ icon, title, sub, n, onClick }: { icon: string; title: string; sub: string; n?: number; onClick: () => void }) {
   return (
     <button type="button" className="menu-row" onClick={onClick}>
       <span className="mi" aria-hidden="true"><Ic e={icon} /></span>
       <span className="mt"><b>{title}</b><small>{sub}</small></span>
-      <i aria-hidden="true">›</i>
+      {n ? <em className="pf-n">{n}</em> : <i aria-hidden="true">›</i>}
     </button>
   );
 }
 
-function Sub({ title, onBack, children }: { title: string; onBack: () => void; children: React.ReactNode }) {
+function Sub({ title, onBack, label, children }: { title: string; onBack: () => void; label?: string; children: React.ReactNode }) {
   return (
     <div className="page">
-      <button type="button" className="link-btn pro-back" onClick={onBack}>{_t("← Профиль")}</button>
+      <button type="button" className="link-btn pro-back" onClick={onBack}>{label ?? _t("← Профиль")}</button>
       <h1 className="page-h">{title}</h1>
       {children}
     </div>

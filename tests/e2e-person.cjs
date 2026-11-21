@@ -56,7 +56,7 @@ async function join(pg, code) {
     // B: Profile → «Что я сейчас ищу» → Работа
     await B.reload(); await wait(3000);
     await nav(B, 'Профиль');
-    await B.locator('.menu-row', { hasText: 'Что я сейчас ищу' }).click(); await wait(1500);
+    await B.locator('.pf-chip.add').click(); await wait(1500);
     await B.locator('.sk-city input').fill('Казань'); await B.locator('.sk-city input').blur(); await wait(500);
     await B.locator('.sk-row', { hasText: 'Работа' }).locator('.sk-sw').click(); await wait(400);
     const ins = B.locator('.sk-ed input');
