@@ -337,6 +337,8 @@ export interface UmrahState {
   agency?: string;
   /** The one readiness number (heart + tasks + money), kept so Goals and Practice show the same figure. */
   ready?: number;
+  /** The circle where my group trip lives, so the trip is found from any circle. */
+  tripAt?: { code: string; title: string };
 }
 
 export type GoalSource = 'quran' | 'pages' | 'bookch' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz' | 'steps';

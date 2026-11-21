@@ -88,10 +88,12 @@ export function myCircles(): CircleRef[] { return load()?.circles ?? []; }
 export function currentCircle(): CircleRef | null { const me = load(); return me?.circles?.find((c) => c.code === me.circle) ?? null; }
 
 /** Makes another of my circles the open one. The page reloads to reconnect. */
-export function switchCircle(code: string) {
+/** Makes another of my circles the current one; `to` opens that page instead of the Circle tab (e.g. the umrah). */
+export function switchCircle(code: string, to?: string) {
   const me = load();
   if (!me || !me.circles?.some((c) => c.code === code)) return;
   save({ ...me, circle: code });
+  if (to) { location.assign(to); return; }
   try { sessionStorage.setItem('lm.tab', 'circle'); } catch { /* */ }
   location.reload();
 }

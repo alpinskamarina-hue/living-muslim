@@ -151,6 +151,29 @@ async function signup(pg, name, email) {
     say('A chat:', flat(await A.locator('.cc-list').innerText().catch(() => '-')));
     await shot(A, 'mp-10-people-a', true);
 
+    // 2b. The trip is found from another circle: A makes a second circle, the path points back to «Братья».
+    const readyBefore = await A.evaluate(() => JSON.parse(localStorage.getItem('qadam.v1') || '{}').umrah?.ready);
+    await A.goto(BASE + '/app/'); await wait(2000); await nav(A, 'Круг');
+    await A.locator('.wa-fab').first().click(); await wait(800);
+    await shot(A, 'mp-dbg-new', true);
+    await A.locator('button', { hasText: 'Семья' }).first().click().catch(() => {});
+    const t2 = A.locator('input[placeholder^="Например"]'); if (await t2.count()) await t2.fill('Семья');
+    await A.locator('button', { hasText: 'Создать круг' }).click(); await wait(2500);
+    const cur2 = JSON.parse(await A.evaluate(() => localStorage.getItem('lm.cloud'))).circle;
+    say('current circle now', cur2, 'trip circle', code);
+    await A.goto(BASE + '/app/?umrah'); await wait(3000);
+    await unav(A, 'Путь');
+    const away = A.locator('.mp-away');
+    say('away card:', flat(await away.innerText().catch(() => 'none')));
+    check(cur2 !== code && await away.count() === 1, 'another circle: «Моя поездка в круге «Братья»» card');
+    const readyAway = await A.evaluate(() => JSON.parse(localStorage.getItem('qadam.v1') || '{}').umrah?.ready);
+    check(readyAway === readyBefore, 'readiness kept while in another circle');
+    await shot(A, 'mp-12-away', true);
+    await away.click(); await wait(3500);
+    const cur3 = JSON.parse(await A.evaluate(() => localStorage.getItem('lm.cloud'))).circle;
+    say('after tap circle', cur3, 'title', await A.locator('.um-title h1').first().innerText().catch(() => '-'));
+    check(cur3 === code && await A.locator('.um-app').count() === 1, 'tap opens the umrah in the trip circle');
+
     // 3. On site: 5 keys with SOS
     const C = await L.phone(br, 'C');
     await C.goto(BASE + '/app/?umrah'); await wait(2000);

@@ -6774,4 +6774,5 @@ export const EN: Record<string, string> = {
   "Заявка не прошла · исправить": "Application not approved · fix it",
   "Заявка на проверке · открыть": "Application being checked · open",
   "Подать заявку: проверим диплом и рекомендацию ›": "Apply: we check the diploma and recommendation ›",
+  "в круге «{0}» · открыть ›": "in the circle «{0}» · open ›",
 };

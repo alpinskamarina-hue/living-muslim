@@ -166,16 +166,25 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const goingIds = groupHost ? groupMembers.filter((id) => rsvp[id]?.[groupHost]?.s === 'go' || id === groupHost) : [];
   const model = pathModel(state, groupHost ? { api: rawApi, host: groupHost, going: goingIds } : null);
   const mode = model.mode;
+  const away = !groupHost && u.tripAt && u.tripAt.code !== chatCode && myCircles().some((c) => c.code === u.tripAt!.code) ? u.tripAt : null;
 
   // The one number lives in the state (Goals, Practice) and in my answer to each trip (the group sees it);
   // the group's chosen dates become my dates, so the Profile and the countdowns read the same days.
   useEffect(() => {
     const p: Partial<UmrahState> = {};
-    if (u.ready !== model.ready) p.ready = model.ready;
+    if (u.ready !== model.ready && !away) p.ready = model.ready;
     if (groupDates && (u.from !== groupDates.from || u.to !== groupDates.to)) { p.from = groupDates.from; p.to = groupDates.to; }
+    if (groupHost && chatCode && u.tripAt?.code !== chatCode) p.tripAt = { code: chatCode, title: currentCircle()?.title ?? '' };
     if (Object.keys(p).length) update((s) => patch(s, p));
     if (me) for (const h of myTrips) if (rsvp[me]?.[h]?.ready !== model.ready) rawApi.respond(h, { ready: model.ready });
-  }, [model.ready, groupDates?.from, groupDates?.to, me, myTrips.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [model.ready, groupDates?.from, groupDates?.to, me, myTrips.join(','), groupHost, chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // My trip lives in another of my circles: one tap opens it there.
+  const awayCard = away ? (
+    <button type="button" className="um-card mp-away" onClick={() => switchCircle(away.code, '/app/?umrah')}>
+      <b>🕋 {_t("Моя поездка")}</b><small>{_tj("в круге «{0}» · открыть ›", away.title || _t("Круг"))}</small>
+    </button>
+  ) : null;
 
   if (step) return <div className={`um-app${dark ? ' um-dk' : ''}`}><StepView step={step} state={state} update={update} asks={asks.map((a) => ({ ...a, who: nameOf(a.who) }))} onBack={() => setStep(null)}
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} /></div>;
@@ -417,7 +426,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       {tab === 'path' && !mode && !tripHost && phase === 'none' && (
         <div className="um-sec">
           <div className="um-title"><h1>{_t("Моя умра")}</h1><small>{_t("Одна поездка, один путь: от намерения до возвращения")}</small></div>
-          {phase === 'none' && isCloud && myCircles().length > 1 && (
+          {awayCard}
+          {!away && phase === 'none' && isCloud && myCircles().length > 1 && (
             <div className="um-other">
               <b>{_tj("Поездки группы живут в Круге. Сейчас открыт «{0}», здесь поездок нет.", currentCircle()?.title ?? _t("Круг"))}</b>
               <small>{_t("Если поездка в другом круге, открой его:")}</small>
@@ -441,6 +451,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       {tab === 'path' && (mode || tripHost || phase !== 'none') && (
         <div className="um-sec">
           <div className="um-title"><h1>{title}</h1>{sub && <small>{sub}</small>}</div>
+          {awayCard}
           {people}
           {unread > 0 && <button type="button" className="um-card um-unread" onClick={() => go('people')}><b>💬 {_tj("Новых в чате группы: {0}", unread)}</b><small>{_t("Открыть ›")}</small></button>}
           {u.ihram && <button type="button" className="um-ihram" onClick={() => setMiqat(true)}><b>{_t("Ты в ихраме")}</b><small>{_t("тальбия и запреты ›")}</small></button>}
@@ -557,7 +568,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       )}
 
       {tab === 'people' && (
-        <PeopleTab becomeFirst={umOpen === 'become'} code={chatCode} onAccepted={(uid, name) => callTo(uid, name, me)} view={peopleView} setView={setPeopleView} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick}
+        <PeopleTab away={awayCard} becomeFirst={umOpen === 'become'} code={chatCode} onAccepted={(uid, name) => callTo(uid, name, me)} view={peopleView} setView={setPeopleView} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick}
           people={<>{people}{rollCall}</>} myReady={model.ready} nameOf={nameOf} onInvite={chatCode && tripHost ? () => setInviting('sheet') : undefined}
           radar={onSite && groupHost && me ? <GroupRadar state={state} update={update} api={rawApi} host={groupHost} members={groupMembers} nameOf={nameOf} /> : null}
           chat={chatOn && tripHost && circle?.me ? (
@@ -687,8 +698,8 @@ function InviteSheet({ code, title, onNick, onClose }: { code: string; title: st
 }
 
 /** «Люди»: my group (faces, roll call, chat) and the groups that look for people, behind one switch. */
-function PeopleTab({ becomeFirst, code, onAccepted, view, setView, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onInvite }: {
-  becomeFirst?: boolean; code?: string; onAccepted: (uid: string, name: string) => void; view: PView; setView: (v: PView) => void;
+function PeopleTab({ away, becomeFirst, code, onAccepted, view, setView, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onInvite }: {
+  away?: React.ReactNode; becomeFirst?: boolean; code?: string; onAccepted: (uid: string, name: string) => void; view: PView; setView: (v: PView) => void;
   api: UmrahApi; me: string | null; tripHost: string | null; hosts: string[]; onPick: (h: string) => void; people: React.ReactNode; myReady: number;
   nameOf: (id: string) => string; chat: React.ReactNode; noChat: string; radar: React.ReactNode; onInvite?: () => void;
 }) {
@@ -708,7 +719,7 @@ function PeopleTab({ becomeFirst, code, onAccepted, view, setView, api, me, trip
   if (view === 'open' && seg && oOn) return <div className="um-sec um-group">{head}{seg}<OpenGroups list={open.list} reload={open.reload} /></div>;
   if (view === 'guides' && seg && gOn) return <div className="um-sec um-group">{head}{seg}<GuidesPane becomeFirst={becomeFirst} list={guides.list} reload={guides.reload} code={tripHost && code ? code : null} /></div>;
   if (!me) return <div className="um-sec">{head}{seg}<p className="tiny">{noChat}</p></div>;
-  if (!tripHost) return <div className="um-sec">{head}{seg}<UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded /></div>;
+  if (!tripHost) return <div className="um-sec">{head}{seg}{away}<UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded /></div>;
   const trip = api.trips[tripHost];
   const going = 1 + Object.keys(api.rsvp).filter((id) => id !== tripHost && api.rsvp[id]?.[tripHost]?.s === 'go').length;
   const myAsks = me && api.trips[me] ? <AsksToMe asks={asks.to_me} title={api.trips[me].title} onAccepted={onAccepted} /> : null;
