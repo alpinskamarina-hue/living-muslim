@@ -89,6 +89,57 @@ Copy the ingredient list from the photo exactly as printed, in its original lang
 Say whether a halal logo or the word halal/helal/حلال is clearly printed. Never judge whether the product is halal or haram.
 If no ingredient list is readable, set ok=false, ingredients="" and give a short reason in why, in the requested language.`;
 
+// «Что съел?» by hand, dish not in the table: a rough guess from the words alone («кофе со сливками»).
+// Text is cheap, so it does not take from the 10 photos a day; it still needs sign-in.
+const TEXT_MODEL = 'claude-haiku-5-5';
+const TEXT_SCHEMA = {
+  type: 'object',
+  properties: {
+    food: { type: 'boolean', description: 'true if the words describe food or drink' },
+    name: { type: 'string', description: 'short tidy dish name in the requested language' },
+    grams: { type: 'number', description: 'the portion meant (from the words, else one typical serving), grams or ml' },
+    kcal: { type: 'number', description: 'calories of that portion, middle estimate' },
+    protein: { type: 'number' }, fat: { type: 'number' }, carbs: { type: 'number' },
+    portion: { type: 'string', description: 'the assumed portion in a few words in the requested language, e.g. «чашка 250 мл, 2 ст. л. сливок»' },
+  },
+  required: ['food', 'name', 'grams', 'kcal', 'protein', 'fat', 'carbs', 'portion'],
+  additionalProperties: false,
+};
+const TEXT_SYSTEM = `You estimate one food or drink from a short text for the nutrition diary of Living Muslim.
+If the text gives an amount (300 г, 2 шт, большая чашка), use it; otherwise assume one ordinary serving and say which in portion.
+Give calories for that portion as one middle estimate and protein, fat and carbs in grams. Home cooking of Central Asia, the Caucasus, the Middle East, Russia and Europe is common.
+Write name and portion in the requested language. If the text is not food or drink, set food=false and zeros.`;
+
+async function textGuess(b, res) {
+  const text = String(b.text || '').trim().slice(0, 120);
+  if (text.length < 2) return res.status(400).json({ error: 'text' });
+  try {
+    const r = await client.beta.messages.create({
+      model: TEXT_MODEL,
+      max_tokens: 600,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
+      output_config: { format: { type: 'json_schema', schema: TEXT_SCHEMA } },
+      system: TEXT_SYSTEM,
+      messages: [{ role: 'user', content: `Language: ${b.lang === 'en' ? 'English' : 'Russian'}. Food: ${text}` }],
+    });
+    logUsage('food-text', TEXT_MODEL, r.usage);
+    const raw = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('');
+    let out;
+    try { out = JSON.parse(raw); } catch { out = null; }
+    if (r.stop_reason === 'refusal' || !out || !out.food) return res.status(200).json({ food: false });
+    const n = (v, max) => Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
+    return res.status(200).json({
+      food: true, name: String(out.name || text).slice(0, 40), grams: n(out.grams, 3000), k: n(out.kcal, 5000),
+      p: n(out.protein, 500), f: n(out.fat, 500), c: n(out.carbs, 1000), portion: String(out.portion || '').slice(0, 80),
+    });
+  } catch (e) {
+    const status = e?.status || 500;
+    console.error('food-text failed', status, e?.message);
+    return res.status(status === 429 || status === 529 ? 503 : 502).json({ error: 'model' });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
@@ -97,6 +148,13 @@ export default async function handler(req, res) {
   let b = req.body;
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   b = b || {};
+  if (b.task === 'text') {
+    const tk = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').slice(0, 4000);
+    const u = await who(tk).catch(() => undefined);
+    if (u === undefined) return res.status(502).json({ error: 'auth' });
+    if (!u) return res.status(401).json({ error: 'signin' });
+    return textGuess(b, res);
+  }
   const img = typeof b.image === 'string' ? b.image.replace(/^data:image\/\w+;base64,/, '') : '';
   const type = ['image/jpeg', 'image/png', 'image/webp'].includes(b.type) ? b.type : 'image/jpeg';
   if (!img || img.length > MAX_B64 || !/^[A-Za-z0-9+/=]+$/.test(img.slice(0, 200))) return res.status(400).json({ error: 'image' });

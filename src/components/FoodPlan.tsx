@@ -5,7 +5,8 @@ import type { AppState, FoodBody, FoodItem, FoodState, Meal } from '../types';
 import { ACT, FOODS, MODES, itemFrom, lastWeight, parseQuery, search, sum, target, type FoodRow } from '../foodcalc';
 import { _t, _tj } from '../i18n';
 import { PhotoEntry, PhotoLine } from './FoodPhoto';
-import { PHOTO_LIMIT, photosLeft } from '../foodphoto';
+import { PHOTO_LIMIT, photosLeft, guessText } from '../foodphoto';
+import { signInUrl } from '../auth';
 import { scannedRows } from '../barcode';
 
 type Update = (fn: (s: AppState) => AppState) => void;
@@ -146,12 +147,26 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
   const [q, setQ] = useState('');
   const [meal, setMeal] = useState<Meal>(cur);
   const [chosen, setChosen] = useState<{ row: FoodRow; g: string } | null>(null);
-  const [own, setOwn] = useState<{ n: string; k: string; p: string } | null>(null);
+  const [own, setOwn] = useState<{ n: string; k: string; p: string; f?: number; c?: number; g?: number } | null>(null);
+  // Rough calories for a dish that is not in the table, asked as soon as the short form opens.
+  const [guess, setGuess] = useState<{ st: 'wait' | 'done' | 'fail' | 'signin' | 'notfood'; portion?: string; of?: string } | null>(null);
+  const ask = useRef(0);
+  const estimate = (name: string) => {
+    const id = ++ask.current;
+    setGuess({ st: 'wait', of: name });
+    guessText(name).then((r) => {
+      if (id !== ask.current) return;
+      if (typeof r === 'string') { setGuess({ st: r === 'signin' ? 'signin' : r === 'notfood' ? 'notfood' : 'fail', of: name }); return; }
+      setGuess({ st: 'done', portion: r.portion, of: name });
+      setOwn((o) => (o ? { ...o, k: String(r.k), p: r.p ? String(r.p) : '', f: r.f, c: r.c, g: r.grams } : o));
+    });
+  };
+  const openOwn = (name: string) => { setOwn({ n: name, k: '', p: '' }); estimate(name); };
   const parsed = parseQuery(q);
   const hits = q.trim().length > 1 ? search(parsed.text) : [];
   const mine = q.trim().length > 1 ? search(parsed.text, scannedRows()).slice(0, 3) : [];
   const gramsFor = (row: FoodRow) => parsed.grams ?? (parsed.count ? parsed.count * row.g : row.g);
-  const add = (it: FoodItem) => { update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), it] } }))); setQ(''); setChosen(null); setOwn(null); };
+  const add = (it: FoodItem) => { update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), it] } }))); setQ(''); setChosen(null); setOwn(null); setGuess(null); ask.current++; };
   const del = (id: string) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: (x.log?.[today] ?? []).filter((i) => i.id !== id) } })));
   const label = (m: Meal) => slots.find((x) => x.id === m)?.l ?? m;
   const [, bump] = useState(0);
@@ -161,7 +176,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
   const quickSave = () => {
     if (q.trim().length < 2) return;
     if (top) add(itemFrom(top, mine[0] ? (parsed.grams ?? top.g) : gramsFor(top), meal));
-    else setOwn({ n: parsed.text || q.trim(), k: '', p: '' });
+    else openOwn(q.trim());
   };
   const addMany = (l: FoodItem[]) => update((s) => patch(s, (x) => ({ log: { ...(x.log ?? {}), [today]: [...(x.log?.[today] ?? []), ...l] } })));
   const bar = (v: number, of: number, l: string) => (
@@ -214,7 +229,7 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
             </ul>
           )}
           {q.trim().length > 1 && (
-            <button type="button" className="link-btn fd-ownbtn" onClick={() => setOwn({ n: parsed.text || q.trim(), k: '', p: '' })}>{hits.length || mine.length ? _t("Нет в списке? Записать своё блюдо") : _t("Не нашёл. Записать своё блюдо с калориями")}</button>
+            <button type="button" className="link-btn fd-ownbtn" onClick={() => openOwn(q.trim())}>{hits.length || mine.length ? _t("Нет в списке? Записать своё блюдо") : _t("Не нашёл. Записать своё блюдо с калориями")}</button>
           )}
         </div>
       )}
@@ -237,13 +252,20 @@ export function Tracker({ state, update, today, slots, cur }: { state: AppState;
         <div className="fd-chosen">
           <div className="fd-nums">
             <label className="wide"><small>{_t("Блюдо")}</small><input value={own.n} maxLength={40} onChange={(e) => setOwn({ ...own, n: e.target.value })} /></label>
-            <label><small>{_t("ккал")}</small><input inputMode="numeric" value={own.k} onChange={(e) => setOwn({ ...own, k: e.target.value })} placeholder={_t("не знаю")} /></label>
+            <label><small>{_t("ккал")}</small><input inputMode="numeric" value={own.k} onChange={(e) => setOwn({ ...own, k: e.target.value, f: undefined, c: undefined })} placeholder={guess?.st === 'wait' ? '…' : _t("не знаю")} /></label>
             <label><small>{_t("белок, г")}</small><input inputMode="numeric" value={own.p} onChange={(e) => setOwn({ ...own, p: e.target.value })} placeholder={_t("не знаю")} /></label>
           </div>
-          <small className="fd-muted">{_t("Калории обычно есть на упаковке или в меню. Можно сохранить и без них.")}</small>
+          {guess?.st === 'wait' && <small className="fd-muted fd-guess">{_t("Примерно считаю калории…")}</small>}
+          {guess?.st === 'done' && <small className="fd-guess">{_tj("≈ Примерно, ±20%: {0}. Можно поправить цифры.", guess.portion || _t("обычная порция"))}</small>}
+          {guess?.st === 'signin' && <small className="fd-muted">{_t("Примерный подсчёт работает после входа по почте.")} <a href={signInUrl}>{_t("Войти")}</a></small>}
+          {(guess?.st === 'fail' || guess?.st === 'notfood') && <small className="fd-muted">{guess.st === 'notfood' ? _t("Не понял, что это за блюдо. Впиши калории сам или сохрани без них.") : _t("Не получилось посчитать. Впиши калории сам или сохрани без них.")}</small>}
+          {own.n.trim().length > 1 && guess?.st !== 'wait' && guess?.of !== own.n.trim() && (
+            <button type="button" className="link-btn fd-ownbtn" onClick={() => estimate(own.n.trim())}>{_t("Посчитать примерно")}</button>
+          )}
+          {!guess && <small className="fd-muted">{_t("Калории обычно есть на упаковке или в меню. Можно сохранить и без них.")}</small>}
           <div className="fd-actions">
-            <button type="button" className="link-btn" onClick={() => setOwn(null)}>{_t("Назад")}</button>
-            <button type="button" className="pri-btn" disabled={!(own.n.trim() && num(own.k) >= 0 && num(own.k) < 5000)} onClick={() => add({ id: `fi-${Date.now().toString(36)}`, n: own.n.trim(), g: 0, k: num(own.k) > 0 ? Math.round(num(own.k)) : 0, p: num(own.p) > 0 ? Math.round(num(own.p)) : 0, f: 0, c: 0, m: meal })}>{num(own.k) > 0 ? _tj("Сохранить в «{0}»", label(meal)) : _t("Сохранить без калорий")}</button>
+            <button type="button" className="link-btn" onClick={() => { setOwn(null); setGuess(null); ask.current++; }}>{_t("Назад")}</button>
+            <button type="button" className="pri-btn" disabled={!(own.n.trim() && num(own.k) >= 0 && num(own.k) < 5000)} onClick={() => add({ id: `fi-${Date.now().toString(36)}`, n: own.n.trim(), g: own.g ?? 0, k: num(own.k) > 0 ? Math.round(num(own.k)) : 0, p: num(own.p) > 0 ? Math.round(num(own.p)) : 0, f: own.f ?? 0, c: own.c ?? 0, m: meal })}>{num(own.k) > 0 ? _tj("Сохранить в «{0}»", label(meal)) : _t("Сохранить без калорий")}</button>
           </div>
         </div>
       )}

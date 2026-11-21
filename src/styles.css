@@ -4715,3 +4715,4 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .dl-plans .pn-it:last-child { margin-bottom: 0; }
 .dl-hint { margin: -2px 16px 12px 68px; }
 .pn-move { display: block; margin-top: 6px; padding: 0; }
+.fd-guess { display: block; font-size: 13px; color: var(--green); font-weight: 600; }

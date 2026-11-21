@@ -88,3 +88,22 @@ export async function readIngredients(data: string, today: string, signal?: Abor
     return { ok: false, why: 'net' };
   }
 }
+
+export interface TextGuess { name: string; grams: number; k: number; p: number; f: number; c: number; portion: string }
+/** «Что съел?» by hand, dish not in the table: a rough estimate from the words (does not use the photo limit). */
+export async function guessText(text: string, signal?: AbortSignal): Promise<TextGuess | 'signin' | 'notfood' | 'fail'> {
+  const t = await accessToken();
+  if (!t) return 'signin';
+  try {
+    const r = await fetch('/api/food-photo', {
+      method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ task: 'text', text, lang: LANG }),
+    });
+    if (r.status === 401) return 'signin';
+    if (!r.ok) return 'fail';
+    const j = await r.json().catch(() => ({}));
+    if (!j.food) return 'notfood';
+    return { name: String(j.name || text), grams: Number(j.grams) || 0, k: Number(j.k) || 0, p: Number(j.p) || 0, f: Number(j.f) || 0, c: Number(j.c) || 0, portion: String(j.portion || '') };
+  } catch { return 'fail'; }
+}
