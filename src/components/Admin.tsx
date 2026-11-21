@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { halalDecide, halalQueue, type QueueItem } from '../halalCloud';
-import { guideDecide, guideQueue, type QueueGuide } from '../guides';
+import { guideDecide, guideQueue, guideReportDone, guideReports, type GuideReport, type QueueGuide } from '../guides';
 import { accessToken, authMe } from '../auth';
 import { AdminCourses } from './AdminCourses';
 import { setOwner } from '../plan';
@@ -264,16 +264,18 @@ function AdminGuides() {
   };
   if (err) return <p className="tiny">{err}</p>;
   if (!list) return <p className="tiny">Загружаю…</p>;
-  if (!list.length) return <p className="tiny">Новых заявок гидов нет.</p>;
+  if (!list.length) return <div className="adm-rep"><GuideReportsBox /><p className="tiny">Новых заявок гидов нет.</p></div>;
   return (
     <div className="adm-rep">
-      <p className="tiny">Поставь галочки только за то, что действительно проверил. После решения фото документов удаляются, остаются лишь галочки. Одобрить можно, только если стоит галочка «диплом».</p>
+      <GuideReportsBox />
+      <p className="tiny">Поставь галочки только за то, что действительно проверил. После решения фото документов удаляются, остаются лишь галочки. Одобрить можно с галочкой «диплом», а гида на месте ещё и с галочкой «лицензия КСА».</p>
       {list.map((g) => {
         const t = ticks[g.uid] ?? {};
         return (
           <div key={g.uid} className="adm-card adm-halal">
             <b>{g.name}</b>
             <small>{g.email || 'без почты'} · {g.langs.join(', ')} · {new Date(g.updated).toLocaleDateString('ru-RU')}</small>
+            <small><b>Вид:</b> {g.kind === 'mentor' ? 'Наставник онлайн (лицензия не нужна)' : `Гид на месте · лицензия КСА${g.lic_until ? ` до ${g.lic_until}` : ''}`}</small>
             <small><b>Знание:</b> {g.school}{g.field ? `, ${g.field}` : ''}{g.grad ? `, ${g.grad}` : ''} · {g.years} лет · {g.groups} групп</small>
             <small><b>Где:</b> {g.place === 'makkah' ? 'Мекка' : g.place === 'madinah' ? 'Медина' : `готов вылететь${g.city ? ` из ${g.city}` : ''}`}{g.until ? ` до ${g.until}` : ''}{g.sisters ? ' · для сестёр' : ''}</small>
             {g.services.length > 0 && <small><b>Услуги:</b> {g.services.map((s) => `${s.t} €${s.price}${s.per ? `/${s.per}` : ''}`).join(' · ')}</small>}
@@ -284,16 +286,42 @@ function AdminGuides() {
               {g.license_photo && <img src={`data:image/jpeg;base64,${g.license_photo}`} alt="Лицензия" />}
             </div>
             <label className="chk"><input type="checkbox" checked={Boolean(t.diploma)} onChange={() => tick(g.uid, 'diploma')} /> Диплом или иджаза проверены</label>
-            {g.license && <label className="chk"><input type="checkbox" checked={Boolean(t.license)} onChange={() => tick(g.uid, 'license')} /> Лицензия КСА проверена</label>}
+            {g.license && g.kind !== 'mentor' && <label className="chk"><input type="checkbox" checked={Boolean(t.license)} onChange={() => tick(g.uid, 'license')} /> Лицензия КСА проверена и действует</label>}
             {g.imam && <label className="chk"><input type="checkbox" checked={Boolean(t.imam)} onChange={() => tick(g.uid, 'imam')} /> Рекомендацию подтвердил</label>}
             <input placeholder="Заметка для гида (если отклоняешь)" value={notes[g.uid] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [g.uid]: e.target.value }))} />
             <div className="adm-act">
-              <button type="button" className="pri-btn" disabled={!t.diploma} onClick={() => decide(g.uid, true)}>Одобрить</button>
+              <button type="button" className="pri-btn" disabled={!t.diploma || (g.kind !== 'mentor' && !t.license)} onClick={() => decide(g.uid, true)}>Одобрить</button>
               <button type="button" className="ghost-btn" onClick={() => decide(g.uid, false)}>Отклонить</button>
             </div>
           </div>
         );
       })}
     </div>
+  );
+}
+
+/** Reports on guides from pilgrims: close, or close and take the guide out of the list. */
+function GuideReportsBox() {
+  const [list, setList] = useState<GuideReport[] | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  useEffect(() => { guideReports().then((r) => setList(r ?? [])).catch(() => setList([])); }, []);
+  if (!list?.length) return null;
+  const done = async (id: string, hide: boolean) => { await guideReportDone(id, hide, notes[id] ?? '').catch(() => null); setList((l) => (l ?? []).filter((x) => x.id !== id)); };
+  return (
+    <>
+      <h3>⚑ Жалобы на гидов: {list.length}</h3>
+      {list.map((r) => (
+        <div key={r.id} className="adm-card adm-halal">
+          <b>{r.gname}</b>
+          <small>от {r.from} · {new Date(r.created).toLocaleDateString('ru-RU')}{r.status === 'no' ? ' · уже скрыт' : ''}</small>
+          <small className="adm-ing">{r.text}</small>
+          <input placeholder="Причина для гида (если скрываешь)" value={notes[r.id] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [r.id]: e.target.value }))} />
+          <div className="adm-act">
+            <button type="button" className="ghost-btn" onClick={() => done(r.id, false)}>Закрыть жалобу</button>
+            <button type="button" className="pri-btn" onClick={() => done(r.id, true)}>Скрыть гида</button>
+          </div>
+        </div>
+      ))}
+    </>
   );
 }

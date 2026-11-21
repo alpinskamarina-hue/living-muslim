@@ -6,13 +6,14 @@ import { _t, _tj } from '../i18n';
 import { openPerson } from '../person';
 import { shrink } from '../foodphoto';
 import {
-  hideContacts as hc, guideAnswer, guideApply, guideCall, guideGet, guideMine, guidePause, guideReview,
-  type Apply, type Guide, type GuideFull, type MyGuide, type Place, type Service,
+  hideContacts as hc, guideAnswer, guideApply, guideCall, guideGet, guideMine, guidePause, guideReport, guideReview,
+  type Apply, type Guide, type Kind, type GuideFull, type MyGuide, type Place, type Service,
 } from '../guides';
 
 const ini = (n: string) => { const w = n.trim().split(/\s+/).filter(Boolean); return (w.length > 1 ? w[0][0] + w[1][0] : (w[0] ?? '').slice(0, 2)).toUpperCase() || '؟'; };
 const PLACE = (): Record<Place, string> => ({ makkah: _t("🕋 Сейчас в Мекке"), madinah: _t("🌴 Сейчас в Медине"), fly: _t("✈ Готов вылететь") });
-const placeLine = (g: Guide) => g.place === 'fly'
+const KIND = (): Record<Kind, string> => ({ guide: _t("Гид на месте"), mentor: _t("Наставник") });
+const placeLine = (g: Guide) => g.kind === 'mentor' ? _t("💻 Онлайн до поездки") + (g.free ? ` · ${g.free}` : '') : g.place === 'fly'
   ? (g.city ? _tj("✈ Вылетит из {0}", g.city) : _t("✈ Готов вылететь")) + (g.free ? ` · ${g.free}` : '')
   : PLACE()[g.place] + (g.until ? _tj(" · до {0}", g.until) : '');
 const plur = (n: number, a: string, b: string, c: string) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
@@ -22,7 +23,9 @@ function Face({ g, big }: { g: Pick<Guide, 'name' | 'color'>; big?: boolean }) {
   return <span className={`ug-face${big ? ' big' : ''}`} style={{ background: g.color || 'var(--green-2)' }}>{ini(g.name)}<i aria-label={_t("проверен")}>✓</i></span>;
 }
 
-type Filter = '' | Place | 'sisters' | string;
+type Filter = '' | Kind | 'sisters' | string;
+const dmy = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(_t("ru-RU"), { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+const Badge = ({ onClick }: { onClick?: () => void }) => <span className="ug-vb" role={onClick ? 'button' : undefined} onClick={onClick}>{_t("✓ Документы проверены")}{onClick ? ' ⓘ' : ''}</span>;
 
 /** The whole «Гиды» pane inside «Люди». */
 export function GuidesPane({ list, reload, code, becomeFirst }: { list: Guide[] | null; reload: () => void; code: string | null; becomeFirst?: boolean }) {
@@ -37,8 +40,8 @@ export function GuidesPane({ list, reload, code, becomeFirst }: { list: Guide[] 
   if (open) return <GuideProfile uid={open} code={code} onBack={() => { setOpen(null); reload(); }} />;
   if (!list) return <p className="tiny">{_t("Загружаю гидов…")}</p>;
   const langs = Array.from(new Set(list.flatMap((g) => g.langs))).slice(0, 4);
-  const shown = list.filter((g) => !f || (f === 'sisters' ? g.sisters : f === 'makkah' || f === 'madinah' || f === 'fly' ? g.place === f : g.langs.includes(f)));
-  const chips: [Filter, string][] = [['', _t("Все")], ['makkah', _t("🕋 В Мекке")], ['madinah', _t("🌴 В Медине")], ['fly', _t("✈ Готов вылететь")], ...langs.map((l): [Filter, string] => [l, l]), ['sisters', _t("Для сестёр")]];
+  const shown = list.filter((g) => !f || (f === 'sisters' ? g.sisters : f === 'guide' || f === 'mentor' ? (g.kind ?? 'guide') === f : g.langs.includes(f)));
+  const chips: [Filter, string][] = [['', _t("Все")], ['guide', _t("🕋 Гид на месте")], ['mentor', _t("💻 Наставник онлайн")], ...langs.map((l): [Filter, string] => [l, l]), ['sisters', _t("Для сестёр")]];
   return (
     <div className="ug">
       {mine && <MyGuideCard g={mine} onEdit={() => setBecome(true)} reload={loadMine} />}
@@ -55,10 +58,10 @@ export function GuidesPane({ list, reload, code, becomeFirst }: { list: Guide[] 
         <button key={g.uid} type="button" className="ug-card" onClick={() => setOpen(g.uid)}>
           <Face g={g} />
           <span className="ug-main">
-            <b>{g.name}{g.sisters && <em className="ug-sis">{_t("для сестёр")}</em>}</b>
+            <b>{g.name}<em className={`ug-kind ${g.kind ?? 'guide'}`}>{KIND()[g.kind ?? 'guide']}</em>{g.sisters && <em className="ug-sis">{_t("для сестёр")}</em>}</b>
             <small>{g.school}{g.field ? ` · ${g.field}` : ''}</small>
             <small>{[g.years ? _tj("{0} {1} в знании", g.years, plur(g.years, _t("год"), _t("года"), _t("лет"))) : '', g.groups ? _tj("{0} групп", g.groups) : '', g.reviews ? `★ ${g.stars} (${g.reviews})` : ''].filter(Boolean).join(' · ')}</small>
-            <i className={`ug-tag ${g.place}`}>{placeLine(g)}</i>
+            <span className="ug-tags"><Badge /><i className={`ug-tag ${g.kind === 'mentor' ? 'fly' : g.place}`}>{placeLine(g)}</i></span>
           </span>
           <span className="ug-side">
             <small>{g.langs.join(' · ')}</small>
@@ -66,7 +69,7 @@ export function GuidesPane({ list, reload, code, becomeFirst }: { list: Guide[] 
           </span>
         </button>
       ))}
-      <p className="tiny ug-note">{_t("✓ проверен: диплом и рекомендацию смотрели мы. Отзывы только от тех, кого гид принял в поездку через приложение. Оплата гиду напрямую, мы деньги не держим.")}</p>
+      <p className="tiny ug-note">{_t("Сначала гиды с действующей лицензией КСА, потом по отзывам. «Документы проверены» значит: мы посмотрели документы. Это не гарантия качества услуг. Отзывы только от тех, кого гид принял в поездку через приложение. Оплата гиду напрямую, мы деньги не держим.")}</p>
       {mine === null && <button type="button" className="ghost-btn ug-become" onClick={() => setBecome(true)}>{_t("Я гид · подать заявку")}</button>}
     </div>
   );
@@ -110,6 +113,10 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
   const [msg, setMsg] = useState('');
   const [stars, setStars] = useState(5);
   const [text, setText] = useState('');
+  const [ver, setVer] = useState(false);
+  const [warn, setWarn] = useState<null | (() => void)>(null);
+  const [rep, setRep] = useState<'' | 'open' | 'sent'>('');
+  const [repText, setRepText] = useState('');
   const load = () => guideGet(uid).then((r) => { setG(r); if (r?.my_review) { setStars(r.my_review.stars); setText(r.my_review.text); } });
   useEffect(() => { load(); }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
   const back = <button type="button" className="link-btn ug-back" onClick={onBack}>{_t("← Все гиды")}</button>;
@@ -124,20 +131,46 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
   };
   const review = async () => { const r = await guideReview(g.uid, stars, hc(text)); setMsg(r === 'ok' ? _t("✓ Спасибо за отзыв") : _t("Не получилось сохранить отзыв.")); if (r === 'ok') load(); };
   const st = g.mine?.status;
+  // The warning is shown once before the first message or call to a guide, with one button «Понятно».
+  const seen = () => { try { return localStorage.getItem('lm.gWarn') === '1'; } catch { return false; } };
+  const gate = (fn: () => void) => () => { if (seen()) fn(); else setWarn(() => fn); };
+  const okWarn = () => { try { localStorage.setItem('lm.gWarn', '1'); } catch { /* */ } const fn = warn; setWarn(null); fn?.(); };
+  const report = async () => { const r = await guideReport(g.uid, repText); if (r === 'ok') { setRep('sent'); setRepText(''); } else setMsg(r === 'limit' ? _t("Сегодня уже много жалоб. Попробуй завтра.") : _t("Не получилось отправить. Проверь интернет.")); };
+  const warning = (
+    <div className="ug-warn">
+      <b>{_t("Перед тем как договориться")}</b> {_t("Гид самостоятельный, не сотрудник Living Muslim. Мы проверили его документы, но не отвечаем за его услуги. Договариваетесь и платите вы напрямую.")}
+      <ul>
+        <li>{_t("Не платите всю сумму вперёд, договоритесь об оплате по частям.")}</li>
+        <li>{_t("Никому не отдавайте паспорт.")}</li>
+        <li>{_t("Визу и пакет умры оформляйте только через лицензированные компании, их можно проверить в Nusuk.")}</li>
+        <li>{_t("Если что-то смущает, нажмите «Пожаловаться» ниже.")}</li>
+      </ul>
+    </div>
+  );
+  if (warn) return (
+    <div className="ug ug-prof">
+      {warning}
+      <button type="button" className="pri-btn" onClick={okWarn}>{_t("Понятно")}</button>
+      <button type="button" className="link-btn" onClick={() => setWarn(null)}>{_t("Назад")}</button>
+    </div>
+  );
   return (
     <div className="ug ug-prof">
       {back}
-      <div className="ug-ph"><Face g={g} big /><span><h2>{g.name}</h2><small>{_t("Гид по умре и зиярату")}{g.langs.length ? ` · ${g.langs.join(' · ')}` : ''}</small><i className={`ug-tag ${g.place}`}>{placeLine(g)}</i></span></div>
+      <div className="ug-ph"><Face g={g} big /><span><h2>{g.name}</h2><small>{KIND()[g.kind ?? 'guide']}{g.langs.length ? ` · ${g.langs.join(' · ')}` : ''}</small><span className="ug-tags"><Badge onClick={() => setVer(!ver)} /><i className={`ug-tag ${g.kind === 'mentor' ? 'fly' : g.place}`}>{placeLine(g)}</i></span></span></div>
+      {ver && (
+        <div className="ug-ver">
+          <h4>{g.decided ? _tj("Что мы проверили · {0}", dmy(g.decided)) : _t("Что мы проверили")}</h4>
+          <p className={g.checks.diploma ? 'ok' : ''}>{_t("Диплом:")} <b>{g.school}</b>{[g.field, g.grad].filter(Boolean).map((x) => `, ${x}`).join('')}</p>
+          {g.license && <p className="ok">{_t("Лицензия гида Минтуризма КСА")}{g.lic_until ? _tj(", действует до {0}", g.lic_until) : ''}</p>}
+          {g.imam && <p className={g.checks.imam ? 'ok' : ''}>{_tj("Рекомендация: {0}", hc(g.imam))}</p>}
+          <small>{_t("Это проверка документов, а не гарантия качества услуг гида.")}</small>
+        </div>
+      )}
       <div className="ug-stats">
         <span><b>{g.years}</b><small>{_t("лет в знании")}</small></span>
         <span><b>{g.groups}</b><small>{_t("групп провёл")}</small></span>
         <span><b>{g.reviews ? `★ ${g.stars}` : '—'}</b><small>{g.reviews ? _tj("{0} отзывов", g.reviews) : _t("нет отзывов")}</small></span>
-      </div>
-      <div className="ug-ver">
-        <h4>{_t("Проверено Living Muslim")}</h4>
-        <p className={g.checks.diploma ? 'ok' : ''}><b>{g.school}</b>{[g.field, g.grad].filter(Boolean).map((x) => `, ${x}`).join('')}{g.checks.diploma ? _t(" · диплом") : ''}</p>
-        {g.license && <p className="ok">{_t("Лицензия гида Минтуризма КСА")}</p>}
-        {g.imam && <p className={g.checks.imam ? 'ok' : ''}>{_tj("Рекомендация: {0}", hc(g.imam))}</p>}
       </div>
       {g.about && <p className="ug-about">{hc(g.about)}</p>}
       {g.services.length > 0 && <div className="ug-serv">{g.services.map((s, i) => <div key={i}><span>{hc(s.t)}</span><small>{price(s)}</small></div>)}</div>}
@@ -159,50 +192,87 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
           <button type="button" className="pri-btn" onClick={call}>{_t("Отправить приглашение")}</button>
         </div>
       )}
+      {warning}
       <div className="ug-act">
-        <button type="button" className="ghost-btn" onClick={() => openPerson(g.uid)}>{_t("✉ Написать")}</button>
+        <button type="button" className="ghost-btn" onClick={gate(() => openPerson(g.uid))}>{_t("✉ Написать")}</button>
         {st === 'pending' ? <span className="uo-sent">{_t("✓ Приглашение отправлено")}</span>
           : st === 'accepted' ? <span className="uo-ok">{_t("✓ Гид принял приглашение")}</span>
-          : !ask && <button type="button" className="pri-btn" onClick={() => { setAsk(true); setMsg(''); }}>{_t("Позвать в поездку")}</button>}
+          : !ask && <button type="button" className="pri-btn" onClick={gate(() => { setAsk(true); setMsg(''); })}>{_t("Позвать в поездку")}</button>}
       </div>
+      {rep === 'sent' ? <p className="uo-msg" role="status">{_t("✓ Жалоба отправлена. Владелец приложения разберётся и, если нужно, скроет профиль.")}</p>
+        : rep === 'open' ? (
+          <div className="ug-ask">
+            <textarea value={repText} maxLength={600} onChange={(e) => setRepText(e.target.value)} placeholder={_t("Что случилось? Например: просил паспорт, требовал всю сумму вперёд")} />
+            <button type="button" className="pri-btn" disabled={repText.trim().length < 5} onClick={report}>{_t("Отправить жалобу")}</button>
+          </div>
+        ) : <button type="button" className="link-btn ug-rep" onClick={() => setRep('open')}>{_t("⚑ Пожаловаться")}</button>}
     </div>
   );
 }
 
-const EMPTY: Apply = { name: '', langs: ['RU'], about: '', school: '', field: '', grad: '', years: '', groups: '', place: 'fly', city: '', until: '', free: '', services: [{ t: '', price: 0, per: _t("день") }], sisters: false, license: false, imam: '' };
+const EMPTY: Apply = { kind: 'guide', lic_until: '', terms: false, consent: false, name: '', langs: ['RU'], about: '', school: '', field: '', grad: '', years: '', groups: '', place: 'fly', city: '', until: '', free: '', services: [{ t: '', price: 0, per: _t("день") }], sisters: false, license: true, imam: '' };
 const LANGS = ['RU', 'EN', 'AR', 'TT', 'UZ', 'KZ', 'TR'];
 
-/** «Стать гидом»: 5 steps, then the owner's check. */
+/** The terms for guides and mentors (legal thread, 21.11), shown in full from the application. */
+const TERMS = () => [
+  _t("Living Muslim (НАВО МОТЪРС БЪЛГАРИЯ ЕООД, ЕИК 200117125) — площадка, которая помогает паломникам найти гида или наставника. Мы не туроператор, не сторона вашего договора с паломником и не принимаем за вас оплату."),
+  _t("Вы оказываете услуги самостоятельно и сами отвечаете за их качество, безопасность, цены, налоги и соблюдение законов страны, где работаете, в том числе Саудовской Аравии."),
+  _t("Вы подтверждаете, что документы подлинные и принадлежат вам. Если лицензия истекла или отозвана, сообщите нам в течение 3 дней."),
+  _t("Гид на месте работает только с действующей лицензией КСА. Наставник не предлагает платное сопровождение на месте."),
+  _t("Нельзя: брать у паломников паспорта, обещать визу или «гарантированную умру», давать неверные сведения о себе, просить отзывы за вознаграждение."),
+  _t("Отзывы оставляют только паломники, которых вы приняли в поездку через приложение. За критику отзывы не удаляем. Удаляем оскорбления и доказанную ложь."),
+  _t("Мы можем скрыть или убрать профиль, если документы недействительны, есть обоснованные жалобы или нарушены условия. Причину сообщим письменно, вы можете ответить и попросить пересмотра."),
+  _t("Порядок в списке: сначала гиды с действующей лицензией, затем по отзывам и числу поездок. Если появится платный «Гид Pro», который поднимает выше, он будет помечен."),
+  _t("Если введём плату за проверку или «Гид Pro», либо изменим условия, сообщим минимум за 15 дней."),
+  _t("Применяется право Болгарии. Споры сначала решаем переговорами."),
+];
+const CONSENT = () => _t("Я соглашаюсь, что Living Muslim (НАВО МОТЪРС БЪЛГАРИЯ ЕООД) обработает фото моих документов (диплом или иджаза, лицензия КСА, рекомендация) только для проверки заявки. Я понимаю, что диплом исламского учебного заведения может указывать на мои религиозные убеждения, и даю на это явное согласие. Фото видит только владелец приложения. Они хранятся на серверах в ЕС (Ирландия) и удаляются сразу после решения по заявке, а без решения не позже 30 дней. Остаётся только отметка: что проверено и когда. Я могу отозвать согласие, написав нам, тогда заявка закрывается.");
+
+/** «Стать гидом»: kind, about, knowledge, where and services, check and consent; then the owner's check. */
 function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => void }) {
   const [p, setP] = useState<Apply>(() => mine ? {
+    kind: mine.kind ?? 'guide', lic_until: mine.lic_until ?? '', terms: false, consent: false,
     name: mine.name, langs: mine.langs, about: mine.about, school: mine.school, field: mine.field, grad: mine.grad ? String(mine.grad) : '',
     years: String(mine.years || ''), groups: String(mine.groups || ''), place: mine.place, city: mine.city, until: mine.until, free: mine.free,
-    services: mine.services.length ? mine.services : EMPTY.services, sisters: mine.sisters, license: mine.license, imam: mine.imam,
+    services: mine.services.length ? mine.services : EMPTY.services, sisters: mine.sisters, license: (mine.kind ?? 'guide') === 'guide', imam: mine.imam,
   } : EMPTY);
   const [step, setStep] = useState(0);
   const [dip, setDip] = useState<string | null>(null);
   const [lic, setLic] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState<'' | 'terms' | 'consent'>('');
   const set = (x: Partial<Apply>) => setP((o) => ({ ...o, ...x }));
+  const guide = p.kind === 'guide';
+  const hadLic = Boolean(mine && (mine.kind ?? 'guide') === 'guide' && (mine.license || mine.status === 'pending'));
   const STEPS = [
+    [_t("Кем ты будешь"), _t("гид на месте или наставник онлайн")],
     [_t("О себе"), _t("имя, языки, коротко о себе")],
     [_t("Знание"), _t("университет или медресе, год, специальность, сколько лет")],
-    [_t("Где я"), _t("в Мекке · в Медине · готов вылететь из города")],
-    [_t("Услуги и цены"), _t("обряды, зиярат, онлайн-урок")],
-    [_t("Проверка"), _t("фото диплома, лицензия КСА если есть, рекомендация имама")],
+    [_t("Где я и услуги"), guide ? _t("в Мекке, в Медине или готов вылететь; цены") : _t("свободные даты, уроки и цены")],
+    [_t("Проверка и согласие"), guide ? _t("диплом, лицензия КСА, рекомендация имама, две галочки") : _t("диплом, рекомендация имама, две галочки")],
   ];
-  const okStep = [p.name.trim().length > 1 && p.langs.length > 0, p.school.trim().length >= 3, true, p.services.some((s) => s.t.trim()), Boolean(dip || mine?.has_diploma)];
+  const okStep = [true, p.name.trim().length > 1 && p.langs.length > 0, p.school.trim().length >= 3, p.services.some((s) => s.t.trim()),
+    Boolean(dip || mine?.has_diploma) && (!guide || Boolean(lic || hadLic)) && p.terms && p.consent];
   const photo = async (f: File | undefined, to: (s: string) => void) => { if (!f) return; try { to((await shrink(f, 1200)).data); } catch { setMsg(_t("Не получилось прочитать фото.")); } };
   const send = async () => {
     setBusy(true);
-    const r = await guideApply({ ...p, about: hc(p.about), free: hc(p.free), services: p.services.filter((s) => s.t.trim()).map((s) => ({ ...s, t: hc(s.t) })) }, dip, lic);
+    const r = await guideApply({ ...p, license: guide, about: hc(p.about), free: hc(p.free), services: p.services.filter((s) => s.t.trim()).map((s) => ({ ...s, t: hc(s.t) })) }, dip, guide ? lic : null);
     setBusy(false);
     if (r === 'ok') { setMsg(_t("✓ Заявка отправлена. Проверяем 2–3 дня, ответ придёт сюда же.")); setTimeout(onBack, 1500); }
-    else setMsg(r === 'school' ? _t("Впиши, где ты учился.") : r === 'big' ? _t("Фото слишком большое, выбери другое.") : _t("Не получилось отправить. Проверь интернет."));
+    else setMsg(r === 'school' ? _t("Впиши, где ты учился.") : r === 'big' ? _t("Фото слишком большое, выбери другое.")
+      : r === 'license' ? _t("Для гида на месте нужно фото действующей лицензии КСА.") : r === 'consent' ? _t("Отметь обе галочки.") : _t("Не получилось отправить. Проверь интернет."));
   };
   const svc = (i: number, x: Partial<Service>) => set({ services: p.services.map((s, j) => (j === i ? { ...s, ...x } : s)) });
   const body = [
+    <>
+      {([['guide', '🕋', _t("Гид на месте"), _t("Сопровождаю за плату в Мекке и Медине. Нужна действующая лицензия гида Минтуризма КСА или мутаввифа. Без неё заявку не принимаем.")],
+        ['mentor', '💻', _t("Наставник онлайн"), _t("Готовлю к умре до поездки: уроки, ответы на вопросы. Лицензия КСА не нужна. Платное сопровождение на месте не предлагаю.")]] as [Kind, string, string, string][]).map(([k, ic, t, d]) => (
+        <button key={k} type="button" className={`ug-kc${p.kind === k ? ' on' : ''}`} aria-pressed={p.kind === k} onClick={() => set({ kind: k, license: k === 'guide' })}>
+          <span className="ic">{ic}</span><span><b>{t}</b><small>{d}</small></span>
+        </button>
+      ))}
+    </>,
     <>
       <label className="ug-f"><small>{_t("Имя, как тебя увидят")}</small><input value={p.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} /></label>
       <div className="uo-chips">{LANGS.map((l) => <button key={l} type="button" aria-pressed={p.langs.includes(l)} onClick={() => set({ langs: p.langs.includes(l) ? p.langs.filter((x) => x !== l) : [...p.langs, l] })}>{l}</button>)}</div>
@@ -220,16 +290,16 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
       </div>
     </>,
     <>
-      <div className="uo-chips ug-wrap">{([['makkah', _t("🕋 Живу в Мекке")], ['madinah', _t("🌴 Живу в Медине")], ['fly', _t("✈ Готов вылететь")]] as [Place, string][]).map(([k, t]) => <button key={k} type="button" aria-pressed={p.place === k} onClick={() => set({ place: k })}>{t}</button>)}</div>
-      {p.place === 'fly'
-        ? <label className="ug-f"><small>{_t("Из какого города")}</small><input value={p.city} maxLength={60} placeholder={_t("Казань")} onChange={(e) => set({ city: e.target.value })} /></label>
-        : <label className="ug-f"><small>{_t("В КСА до")}</small><input value={p.until} maxLength={20} placeholder={_t("20 марта 2027")} onChange={(e) => set({ until: e.target.value })} /></label>}
+      {guide && <>
+        <div className="uo-chips ug-wrap">{([['makkah', _t("🕋 Живу в Мекке")], ['madinah', _t("🌴 Живу в Медине")], ['fly', _t("✈ Готов вылететь")]] as [Place, string][]).map(([k, t]) => <button key={k} type="button" aria-pressed={p.place === k} onClick={() => set({ place: k })}>{t}</button>)}</div>
+        {p.place === 'fly'
+          ? <label className="ug-f"><small>{_t("Из какого города")}</small><input value={p.city} maxLength={60} placeholder={_t("Казань")} onChange={(e) => set({ city: e.target.value })} /></label>
+          : <label className="ug-f"><small>{_t("В КСА до")}</small><input value={p.until} maxLength={20} placeholder={_t("20 марта 2027")} onChange={(e) => set({ until: e.target.value })} /></label>}
+      </>}
       <label className="ug-f"><small>{_t("Свободные даты")}</small><input value={p.free} maxLength={120} placeholder={_t("1–10 февраля · 15–25 марта")} onChange={(e) => set({ free: e.target.value })} /></label>
-    </>,
-    <>
       {p.services.map((s, i) => (
         <div key={i} className="ug-svc">
-          <input value={s.t} maxLength={60} placeholder={_t("Сопровождение обрядов умры")} onChange={(e) => svc(i, { t: e.target.value })} />
+          <input value={s.t} maxLength={60} placeholder={guide ? _t("Сопровождение обрядов умры") : _t("Урок онлайн до поездки")} onChange={(e) => svc(i, { t: e.target.value })} />
           <input inputMode="numeric" value={s.price || ''} placeholder="€" onChange={(e) => svc(i, { price: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
           <input value={s.per} maxLength={20} placeholder={_t("день")} onChange={(e) => svc(i, { per: e.target.value })} />
         </div>
@@ -239,10 +309,20 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
     </>,
     <>
       <label className="ug-f ug-file"><small>{_t("Фото диплома или иджазы")}</small><input type="file" accept="image/*" onChange={(e) => photo(e.target.files?.[0], setDip)} />{(dip || mine?.has_diploma) && <em>{_t("✓ есть")}</em>}</label>
-      <label className="chk"><input type="checkbox" checked={p.license} onChange={(e) => set({ license: e.target.checked })} /> {_t("У меня есть лицензия гида Минтуризма КСА")}</label>
-      {p.license && <label className="ug-f ug-file"><small>{_t("Фото лицензии")}</small><input type="file" accept="image/*" onChange={(e) => photo(e.target.files?.[0], setLic)} />{lic && <em>{_t("✓ есть")}</em>}</label>}
+      {guide && <>
+        <label className="ug-f ug-file"><small>{_t("Фото лицензии КСА · обязательно")}</small><input type="file" accept="image/*" onChange={(e) => photo(e.target.files?.[0], setLic)} />{(lic || hadLic) && <em>{_t("✓ есть")}</em>}</label>
+        <label className="ug-f"><small>{_t("Лицензия действует до")}</small><input value={p.lic_until} maxLength={20} placeholder="03.2027" onChange={(e) => set({ lic_until: e.target.value })} /></label>
+      </>}
       <label className="ug-f"><small>{_t("Кто рекомендует: имам, мечеть, контакт (контакт видит только владелец)")}</small><input value={p.imam} maxLength={120} placeholder={_t("имам мечети «Марджани», Казань")} onChange={(e) => set({ imam: e.target.value })} /></label>
-      <p className="tiny">{_t("Фото документов видит только владелец приложения. После проверки фото удаляются, остаётся лишь отметка «проверено». Паспорт мы не просим.")}</p>
+      <div className="ug-cbs">
+        <label className="ug-cb"><input type="checkbox" checked={p.terms} onChange={(e) => set({ terms: e.target.checked })} />
+          <span>{_t("Я принимаю условия для гидов и наставников: Living Muslim только площадка, услуги и оплату я веду сам.")} <button type="button" className="link-btn" onClick={() => setShow(show === 'terms' ? '' : 'terms')}>{_t("Условия")}</button></span></label>
+        {show === 'terms' && <ol className="ug-terms">{TERMS().map((t, i) => <li key={i}>{t}</li>)}</ol>}
+        <label className="ug-cb"><input type="checkbox" checked={p.consent} onChange={(e) => set({ consent: e.target.checked })} />
+          <span>{_t("Я даю явное согласие на обработку фото документов для проверки. Понимаю, что диплом может указывать на мою веру. Фото видит только владелец, хранятся в ЕС и удаляются сразу после решения (не позже 30 дней).")} <button type="button" className="link-btn" onClick={() => setShow(show === 'consent' ? '' : 'consent')}>{_t("Подробнее")}</button></span></label>
+        {show === 'consent' && <p className="ug-terms">{CONSENT()}</p>}
+      </div>
+      <p className="tiny">{_t("Паспорт мы не просим. Отправить заявку можно, когда обе галочки отмечены.")}</p>
     </>,
   ];
   return (

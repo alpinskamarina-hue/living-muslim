@@ -5259,3 +5259,24 @@ body.pp-on { overflow: hidden; }
 .ug-next { width: 100%; }
 .sk-guide { display: block; text-decoration: none; color: var(--ink); }
 .sk-guide .sk-e { background: var(--gold-soft); }
+.ug-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; align-items: center; }
+.ug-tags .ug-tag { margin-top: 0; }
+.ug-vb { font-size: 12px; font-weight: 800; color: var(--green-2); background: var(--green-soft); border-radius: 999px; padding: 3px 9px; cursor: default; }
+.ug-vb[role="button"] { cursor: pointer; }
+.ug-kind { font-style: normal; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--gold-soft); color: var(--um-gold-ink, #8a6418); }
+.ug-kind.mentor { background: rgba(60, 100, 190, .12); color: #33539b; }
+.ug-ver small { display: block; margin-top: 6px; color: var(--ink-2); font-size: 12.5px; }
+.ug-warn { background: rgba(233, 180, 80, .14); border: 1px solid rgba(201, 154, 62, .45); border-radius: 16px; padding: 12px 14px; font-size: 13.5px; line-height: 1.45; }
+.ug-warn ul { margin: 6px 0 0; padding-left: 18px; }
+.ug-rep { align-self: center; color: #c2432e; }
+.ug-kc { display: flex; gap: 12px; text-align: left; width: 100%; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 16px; padding: 12px; }
+.ug-kc.on { border-color: var(--green-2); box-shadow: 0 0 0 3px rgba(42, 143, 91, .15); }
+.ug-kc .ic { font-size: 26px; }
+.ug-kc span { display: flex; flex-direction: column; gap: 2px; }
+.ug-kc small { color: var(--ink-2); font-size: 12.5px; line-height: 1.4; }
+.ug-cbs { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 4px 12px; }
+.ug-cb { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; font-size: 13px; line-height: 1.4; border-bottom: 1px solid var(--line); }
+.ug-cb:last-of-type { border-bottom: 0; }
+.ug-cb input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.ug-terms { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin: 0 0 8px; padding-left: 18px; }
+p.ug-terms { padding-left: 0; }

@@ -53,6 +53,10 @@ async function guides(pg) {
     say('empty list:', flat(await G.locator('.ug').innerText()).slice(0, 200));
     await G.locator('.ug-become').click(); await wait(600);
     check(await G.locator('.ug-steps button').count() === 5, '5 application steps');
+    check(await G.locator('.ug-kc').count() === 2, 'step 1: guide on site or mentor');
+    await G.locator('.ug-kc', { hasText: 'Гид на месте' }).click();
+    await shot(G, 'gd-1-apply-kind');
+    await G.locator('.ug-next').click(); await wait(300);
     await G.locator('.ug-f input').first().fill('Абдуррахман');
     await G.locator('.uo-chips button', { hasText: 'AR' }).click();
     await G.locator('.ug-f textarea').fill('Провожу умру с 2014 года, объясняю каждый шаг. Звоните +7 917 123-45-67 или guide@mail.ru');
@@ -66,8 +70,6 @@ async function guides(pg) {
     await G.locator('.uo-chips button', { hasText: 'Живу в Медине' }).click();
     await G.locator('.ug-f input').nth(0).fill('20 марта 2027');
     await G.locator('.ug-f input').nth(1).fill('1–10 февраля · 15–25 марта');
-    await shot(G, 'gd-1-apply-where');
-    await G.locator('.ug-next').click(); await wait(300);
     await G.locator('.ug-svc input').nth(0).fill('Сопровождение обрядов умры');
     await G.locator('.ug-svc input').nth(1).fill('40');
     await G.locator('.link-btn', { hasText: 'Ещё услуга' }).click();
@@ -75,16 +77,22 @@ async function guides(pg) {
     await G.locator('.ug-svc input').nth(4).fill('30');
     await G.locator('.ug-next').click(); await wait(300);
     await G.locator('.ug-file input[type=file]').first().setInputFiles(OUT + 'mp-0-start.png'); await wait(1200);
-    await G.locator('label.chk', { hasText: 'лицензия' }).click(); await wait(200);
+    check(await G.locator('.ug-next').isDisabled(), 'send is off without the KSA licence and the two ticks');
     await G.locator('.ug-file input[type=file]').nth(1).setInputFiles(OUT + 'mp-1-path.png'); await wait(1200);
+    await G.locator('.ug-f input:not([type=file])').nth(0).fill('03.2027');
     await G.locator('.ug-f input:not([type=file])').last().fill('имам мечети «Марджани», Казань');
+    await G.locator('.ug-cb input').nth(0).check();
+    check(await G.locator('.ug-next').isDisabled(), 'send is still off with one tick');
+    await G.locator('.ug-cb .link-btn', { hasText: 'Условия' }).click(); await wait(200);
+    check(await G.locator('ol.ug-terms li').count() === 10, 'the 10 terms open in place');
+    await G.locator('.ug-cb input').nth(1).check();
     await shot(G, 'gd-2-apply-check');
     await G.locator('.ug-next').click(); await wait(2500);
     say('after send:', flat(await G.locator('.ug').innerText()).slice(0, 200));
     check(await G.locator('.ug-mine').count() === 1 && (await G.locator('.ug-mine').innerText()).includes('на проверке'), 'my guide card says «на проверке»');
-    const row = (await L.db.query(`select status, diploma_photo is not null d, license_photo is not null l, services from umrah_guides`)).rows[0];
+    const row = (await L.db.query(`select status, kind, lic_until, terms_at is not null t, consent_at is not null c, diploma_photo is not null d, license_photo is not null l, services from umrah_guides`)).rows[0];
     say('db:', row.status, row.d, row.l, JSON.stringify(row.services));
-    check(row.status === 'pending' && row.d && row.l && row.services.length === 2, 'application saved with photos and 2 services');
+    check(row.status === 'pending' && row.kind === 'guide' && row.lic_until === '03.2027' && row.t && row.c && row.d && row.l && row.services.length === 2, 'application saved: kind, licence date, both ticks, photos, 2 services');
 
     // 2. A pilgrim does not see the pending guide.
     const S = await L.phone(br, 'S');
@@ -102,6 +110,7 @@ async function guides(pg) {
     check(await O.locator('.adm-ph img').count() === 2, 'owner sees diploma and licence photos');
     check(await O.locator('.adm-act .pri-btn').isDisabled(), 'approve is off until the diploma tick');
     await O.locator('label.chk', { hasText: 'Диплом' }).click();
+    check(await O.locator('.adm-act .pri-btn').isDisabled(), 'a guide on site needs the licence tick too');
     await O.locator('label.chk', { hasText: 'Лицензия' }).click();
     await O.locator('label.chk', { hasText: 'Рекомендацию' }).click();
     await shot(O, 'gd-3-admin');
@@ -115,18 +124,25 @@ async function guides(pg) {
     const cards = await S.locator('.ug-card').allInnerTexts();
     say('cards:', cards.map(flat));
     check(cards.length === 1 && cards[0].includes('Медине') && cards[0].includes('€40'), 'guide listed with place and price');
-    await S.locator('.ug-chips button', { hasText: 'Готов вылететь' }).click(); await wait(300);
-    check(await S.locator('.ug-card').count() === 0, 'filter «Готов вылететь» hides a Medina guide');
-    await S.locator('.ug-chips button', { hasText: 'В Медине' }).click(); await wait(300);
-    check(await S.locator('.ug-card').count() === 1, 'filter «В Медине» shows him');
+    await S.locator('.ug-chips button', { hasText: 'Наставник' }).click(); await wait(300);
+    check(await S.locator('.ug-card').count() === 0, 'filter «Наставник» hides a guide on site');
+    await S.locator('.ug-chips button', { hasText: 'Гид на месте' }).click(); await wait(300);
+    check(await S.locator('.ug-card').count() === 1, 'filter «Гид на месте» shows him');
     await shot(S, 'gd-4-list');
     await S.locator('.ug-card').first().click(); await wait(1500);
     const prof = await S.locator('.ug-prof').innerText();
     say('profile:', flat(prof).slice(0, 400));
-    check(/проверено living muslim/i.test(prof) && prof.includes('Лицензия гида') && prof.includes('Свободен'), 'profile shows checks, licence, free dates');
+    check(prof.includes('Документы проверены') && prof.includes('Перед тем как договориться') && prof.includes('Свободен'), 'profile: badge, warning, free dates');
+    await S.locator('.ug-prof .ug-vb').click(); await wait(300);
+    const ver = await S.locator('.ug-ver').innerText();
+    say('ver:', flat(ver));
+    check(ver.includes('03.2027') && ver.includes('не гарантия') && /\d{4}/.test(ver), 'badge shows what and when was checked, licence date, «не гарантия»');
     check(await S.locator('.ug-revf').count() === 0, 'no review form before the guide accepts');
     await shot(S, 'gd-5-profile');
     await S.locator('.ug-act .pri-btn', { hasText: 'Позвать в поездку' }).click(); await wait(300);
+    check(await S.locator('.ug-prof .pri-btn', { hasText: 'Понятно' }).count() === 1, 'warning before the first contact');
+    await shot(S, 'gd-5b-warning');
+    await S.locator('.ug-prof .pri-btn', { hasText: 'Понятно' }).click(); await wait(300);
     await S.locator('.ug-ask textarea').fill('Едем в феврале, нас 4 брата');
     await S.locator('.ug-ask .pri-btn').click(); await wait(1500);
     say('msg:', await S.locator('.uo-msg').innerText().catch(() => '-'));
@@ -150,6 +166,19 @@ async function guides(pg) {
     check(p2.includes('★ 5') && p2.includes('Объяснил'), 'review shown with stars');
     check(!/917|mail\.ru|wa\.me/.test(p2) && p2.includes('•••') && p2.includes('2014'), 'phones, email and WhatsApp links hidden, years kept');
     await shot(S, 'gd-7-review');
+    await S.locator('.ug-rep').click(); await wait(200);
+    await S.locator('.ug-ask textarea').last().fill('Просил прислать паспорт заранее');
+    await S.locator('.ug-ask .pri-btn', { hasText: 'Отправить жалобу' }).click(); await wait(1200);
+    check((await S.locator('.ug-prof').innerText()).includes('Жалоба отправлена'), 'report sent');
+    await O.reload(); await wait(2500); await nav(O, 'Профиль');
+    await O.locator('.adm-entry').click(); await wait(800);
+    await O.locator('button', { hasText: '🧭 Гиды' }).click(); await wait(1500);
+    const rp = await O.locator('.adm-rep').innerText();
+    check(rp.includes('Жалобы на гидов: 1') && rp.includes('паспорт'), 'owner sees the report');
+    await shot(O, 'gd-8-report');
+    await O.locator('.adm-act .pri-btn', { hasText: 'Скрыть гида' }).click(); await wait(1200);
+    const r3 = (await L.db.query(`select status from umrah_guides`)).rows[0];
+    check(r3.status === 'no', '«Скрыть гида» takes him out of the list');
 
     // 7. «Найти гида» on the path step.
     await S.goto(BASE + '/app/?umrah'); await wait(2500);
@@ -159,7 +188,7 @@ async function guides(pg) {
     await S.locator('.mp-tl button', { hasText: 'Собраться' }).click(); await wait(1500);
     check(await S.locator('.um-card', { hasText: 'Найти гида' }).count() === 1, '«Найти гида» card in the gather step');
     await S.locator('.um-card', { hasText: 'Найти гида' }).click(); await wait(1500);
-    check(await S.locator('.ug-card').count() === 1, 'it opens the guides');
+    check(await S.locator('.ug').count() === 1, 'it opens the guides');
   } finally {
     say('errors:', L.errors.slice(0, 10));
     say(fails ? `${fails} checks failed` : 'all checks passed');
