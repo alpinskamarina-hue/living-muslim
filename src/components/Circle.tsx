@@ -7,7 +7,7 @@ import type { UmrahApi } from '../umrahCircle';
 import { lazyNamed } from '../lazy';
 const UmrahHub = lazyNamed(() => import('./UmrahHub').then((m) => m.UmrahHub));
 import type { HubTab } from './UmrahHub';
-import { UmrahBanner } from './UmrahBanner';
+import { UmrahBanner, umrahCall } from './UmrahBanner';
 import type { KhatmApi } from '../khatm';
 import { KhatmSection } from './Khatm';
 import type { IftarApi } from '../iftar';
@@ -227,6 +227,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   for (const [from, map] of Object.entries(reacts)) for (const [to, r] of Object.entries(map ?? {})) if (to !== from && !to.startsWith('n:') && r?.e === '🤲' && r.day === today) duas++;
   const lit = (m: Member) => (range === 'week' ? (m.week?.p ?? 0) + (m.week?.h ?? 0) > 0 : m.day === today && (m.done > 0 || m.prayers > 0));
   const nm = (id: string) => (id === me ? _t("Ты") : names[id]?.name || _t("Участник"));
+  // A personal call to an umrah trip waiting for my answer, and opening a trip from the chat or the strip
+  // (not answered yet: «Сейчас» opens with «Еду» on top; already going: the group).
+  const uCall = joined ? umrahCall(umrah, reacts, today) : null;
+  const openTrip = (host: string) => { try { sessionStorage.setItem('lm.umHost', host); } catch { /* */ } setUmra(me && umrah.rsvp[me]?.[host]?.s === 'go' ? 'trip' : 'now'); window.scrollTo(0, 0); };
   // Who is thanked: a brother or a sister. From the profile, else from the kind of circle; unknown = ask with two buttons.
   const toOf = (id: string): To | '' => { const gd = names[id]?.gender; return gd === 'm' || gd === 'f' ? gd : kind === 'sisters' ? 'f' : kind === 'brothers' ? 'm' : ''; };
 
@@ -531,8 +535,15 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         </header>
         {isCloud && nicks && <InviteInbox />}
         {asks.list.length > 0 && <button type="button" className="wa-asks" onClick={() => { setListOn(true); window.scrollTo(0, 0); }}>{_tj("📩 {0} хочет написать тебе ›", asks.list.length === 1 ? asks.list[0].from.name : _t("{0} человека", asks.list.length))}</button>}
+        {uCall && (
+          <button type="button" className="um-call" onClick={() => openTrip(uCall.h)}>
+            <i aria-hidden="true">🕋</i>
+            <span><small>{_tj("{0} зовёт тебя на умру", nm(uCall.c))}</small><b>{umrah.trips[uCall.h]?.title || _t("Умра")}</b></span>
+            <em>{_t("Открыть ›")}</em>
+          </button>
+        )}
         <CircleChat chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
-          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} />
+          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} onUmrah={openTrip} />
 
         {sheet === 'dua' && (
           <>
@@ -597,7 +608,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       )}
       {chatOn && view === 'chat' ? (
         <CircleChat chat={chat} me={me!} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update}
-          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} />
+          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} onUmrah={openTrip} />
       ) : (<>
       {body}      </>)}
     </div>

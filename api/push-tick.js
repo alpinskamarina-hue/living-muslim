@@ -277,6 +277,30 @@ async function aiPush(secret) {
   return sent;
 }
 
+/** «Ищут людей» (supabase/umrah-open.sql): a new request for the amir, the amir's answer for the person who asked. */
+async function umrahPush(secret) {
+  let list;
+  try { list = (await rpc('lm_umrah_push', { p_secret: secret })) || []; } catch { return 0; } // umrah-open.sql not run yet
+  let sent = 0;
+  for (const p of list) {
+    const prefs = p.prefs || {};
+    const en = prefs.lang === 'en';
+    const t = p.title || (en ? 'Umrah' : 'Умра');
+    const msg = p.k === 'ask' ? { title: en ? '🕋 Asks to join your umrah' : '🕋 Просятся в поездку', body: en ? `${p.who} asks to join «${t}»` : `${p.who} просится в «${t}»` }
+      : p.k === 'accepted' ? { title: en ? '🕋 You are in!' : '🕋 Тебя приняли', body: en ? `${p.who} accepted you into «${t}». Open the Circle invite.` : `${p.who} принял тебя в «${t}». Приглашение в круг ждёт в «Круге».` }
+      : p.k === 'declined' ? { title: en ? 'Umrah group' : 'Группа на умру', body: en ? `«${t}»: not this time. Other groups are in «Looking for people».` : `«${t}»: не в этот раз. Другие группы есть в «Ищут людей».` }
+      : { title: en ? `🕋 ${p.who} replied` : `🕋 ${p.who} ответил`, body: String(p.reply || '').slice(0, 140) };
+    if (prefs.quiet) { msg.title = en ? 'Umrah' : 'Умра'; msg.body = en ? 'Open the app to see it.' : 'Открой приложение, чтобы посмотреть.'; }
+    try {
+      await webpush.sendNotification({ endpoint: p.endpoint, keys: { p256dh: p.p256dh, auth: p.auth } }, JSON.stringify({ ...msg, tag: `um-${p.k}`, url: p.k === 'accepted' ? '/app/' : p.k === 'ask' ? '/app/?umrah=group' : '/app/?umrah=open' }), { TTL: 3600 });
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 404 || err.statusCode === 410) await rpc('lm_push_delete', { p_endpoint: p.endpoint }).catch(() => {});
+    }
+  }
+  return sent;
+}
+
 export default async function handler(req, res) {
   const secret = process.env.PUSH_SECRET;
   if (!secret || req.headers['x-push-secret'] !== secret) return res.status(401).json({ error: 'unauthorized' });
@@ -307,5 +331,6 @@ export default async function handler(req, res) {
   }));
   const chat = await chatPush(secret, subs, now);
   const ai = await aiPush(secret);
-  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai });
+  const um = await umrahPush(secret);
+  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai, um });
 }

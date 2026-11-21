@@ -11,11 +11,12 @@ const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const LS = 'lm.cloud';
 const POLL_MS = 8000;
 
-export type CircleKind = 'family' | 'brothers' | 'sisters' | 'biz' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
+export type CircleKind = 'umrah' | 'family' | 'brothers' | 'sisters' | 'biz' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
 export interface CircleRef { code: string; title: string; kind?: CircleKind }
 export interface CloudId { uid: string; token: string; name: string; circle?: string; circles?: CircleRef[] }
 
 export const CIRCLE_KINDS: { id: CircleKind; ru: string; ic: string; hint: string; old?: boolean; fresh?: boolean }[] = [
+  { id: 'umrah', ru: _t("Умра"), ic: '🕋', hint: _t("Поехать на умру вместе: даты, билеты, жильё, общая касса и чат группы. Друзей позовёшь по ссылке или по нику"), fresh: true },
   { id: 'family', ru: _t("Семья"), ic: '🏡', hint: _t("Намаз вместе дома, детские профили, семейный сад") },
   { id: 'brothers', ru: _t("Братья"), ic: '🤝', hint: _t("Держать друг друга в намазе и делах") },
   { id: 'sisters', ru: _t("Сёстры"), ic: '🌸', hint: _t("Закрытый круг только для своих") },

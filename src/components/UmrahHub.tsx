@@ -24,6 +24,9 @@ import { UmrahBook } from './UmrahBook';
 import { PassCard } from './UmrahPlan';
 import { GroupDash, GroupPass, RollCall, DayPlan, activeRoll } from './UmrahDash';
 import { UmrahDocs } from './UmrahDocs';
+import { umrahCall } from './UmrahBanner';
+import { AsksToMe, OpenGroups, OpenSwitch, useOpenList } from './UmrahOpen';
+import { useUmrahAsks } from '../umrahOpen';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
@@ -90,7 +93,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   // The trip I look at in «Группа»: the one I go on, else one I answered, else the newest.
   const answered = me ? Object.keys(rsvp[me] ?? {}).filter((h) => trips[h]) : [];
   const newest = Object.keys(trips).sort((a, b) => (trips[b].created ?? '').localeCompare(trips[a].created ?? ''));
-  const [pick, setPick] = useState<string | null>(null);
+  // Opened from a call («Насим зовёт тебя на умру»): show that trip.
+  const [pick, setPick] = useState<string | null>(() => { try { const h = sessionStorage.getItem('lm.umHost'); sessionStorage.removeItem('lm.umHost'); return h; } catch { return null; } });
   const tripHost = (pick && trips[pick] ? pick : null) ?? myTrips[0] ?? answered[0] ?? newest[0] ?? null;
 
   // The trip chat: a branch of the Circle chat, so it needs the Circle and the chat server.
@@ -119,6 +123,18 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       return rawApi.saveTrip(tr);
     },
   }), [rawApi, me, chatOn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Just made an umrah circle: make its trip once the circle is connected, then offer «Позвать» right away.
+  useEffect(() => {
+    if (!rawApi.ready || !me) return;
+    let n: { title: string; month: string } | null = null;
+    try { n = JSON.parse(sessionStorage.getItem('lm.umNew') || 'null'); } catch { /* */ }
+    if (!n) return;
+    try { sessionStorage.removeItem('lm.umNew'); } catch { /* */ }
+    if (!rawApi.trips[me]) rawApi.saveTrip({ title: n.title || _t("Умра с братьями"), month: n.month, city: '', tasks: [], created: new Date().toISOString() });
+    rawApi.respond(me, { s: 'go', ready: prepPct(state) });
+    setPick(me); setTab('group'); setInviting('sheet');
+  }, [rawApi.ready, me]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePrep = (id: string) => update((s) => patch(s, { prep: umrahOf(s).prep.includes(id) ? umrahOf(s).prep.filter((x) => x !== id) : [...umrahOf(s).prep, id] }));
   const heart = PREP.filter((p) => HEART.includes(p.id));
@@ -149,19 +165,24 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     onNext={() => { const i = STEPS.findIndex((x) => x.id === step.id); setStep(STEPS[i + 1] ?? null); }} /></div>;
   if (lost) return <LostCard state={state} onClose={() => setLost(false)} />;
   if (miqat) return <div className={`um-app${dark ? ' um-dk' : ''}`}><MiqatView state={state} update={update} onBack={() => setMiqat(false)} /></div>;
+  // The call to a trip: a mark the person sees in the Circle and on Today (a second tap the same day must not take it back),
+  // and a line in the circle's main chat that brings a notification and an unread mark, even if another circle is open.
+  const callTo = (uid: string, name: string, host: string | null = tripHost) => {
+    const mine = (me && circle?.reacts[me]) || {};
+    if (!(mine[`u:${uid}`]?.e === '🕋' && mine[`u:${uid}`].day === today)) circle?.react(`u:${uid}`, '🕋', today);
+    if (chatOn && host) chat.send(_tj("🕋 Зовёт на умру «{0}»: {1}", trips[host]?.title ?? _t("Умра"), name || _t("Участник")), { um: host, to: uid }, 'event');
+  };
   if (inviting === 'nick' && chatCode) {
     const t = tripHost ? trips[tripHost] : null;
     const url = `${inviteLink(chatCode)}&umrah=group`;
-    const called = me && circle ? Object.keys(circle.reacts[me] ?? {}).filter((k) => k.startsWith('u:')).map((k) => k.slice(2)) : [];
+    const mine = (me && circle?.reacts[me]) || {};
+    const called = Object.keys(mine).filter((k) => k.startsWith('u:') && diff(mine[k].day, today) <= 30).map((k) => k.slice(2));
     return (
       <div className={`um-app${dark ? ' um-dk' : ''}`}>
         <InviteByNick code={chatCode} onBack={() => { setInviting(''); window.scrollTo(0, 0); }}
           trip={{ title: t?.title ?? _t("Умра"), url, called,
             text: _tj("Ассаляму алейкум! Собираемся на умру вместе: «{0}». Присоединяйся, там даты, задачи и наш чат:", t?.title ?? _t("Умра")),
-            onCall: (uid, name) => {
-              circle?.react(`u:${uid}`, '🕋', today);
-              if (tripHost) emit(tripHost, _tj("позвал в поездку: {0}", name || _t("Участник")));
-            } }} />
+            onCall: (uid, name) => callTo(uid, name) }} />
       </div>
     );
   }
@@ -203,7 +224,24 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const title = tab === 'now' && trip && myTrips.includes(tripHost!) ? trip.title : _t("Умра");
   const sub = onSite ? _t("Ляббайк, Аллахумма ляббайк") : from && left! > 0 ? _tj("Вылет через {0} {1} · {2}{3}", left, plural(left!, _t("день"), _t("дня"), _t("дней")), dLabel(from), to ? ` – ${dLabel(to)}` : '') : '';
 
-  const people = tripHost ? <People host={tripHost} api={api} names={circle?.names} nameOf={nameOf} onInvite={chatCode ? () => setInviting('sheet') : undefined} onOpen={() => go('group')} /> : null;
+  // Called or looking at someone else's trip and not answered yet: the answer comes first, where it can't be missed.
+  const myS = me && tripHost ? rsvp[me]?.[tripHost]?.s : undefined;
+  const call = circle ? umrahCall(rawApi, circle.reacts, today) : null;
+  const caller = call && call.h === tripHost ? call.c : tripHost;
+  const answer = (s: 'go' | 'maybe' | 'no') => { if (tripHost) api.respond(tripHost, { s, ready: prepPct(state) }); };
+  const ask = trip && tripHost && me && me !== tripHost && myS !== 'go' && myS !== 'no' ? (
+    <div className="um-ask">
+      <small>{caller && call?.h === tripHost ? _tj("{0} зовёт тебя на умру", nameOf(caller)) : _tj("{0} собирает умру", nameOf(tripHost))}</small>
+      <b>{trip.title}</b>
+      {trip.month && <span>{trip.month}{trip.city ? _t(" · из {0}", trip.city) : ''}</span>}
+      <div className="um-ask-b">
+        <button type="button" className="gold-btn" onClick={() => answer('go')}>{_t("Еду")}</button>
+        <button type="button" className="ghost-btn" aria-pressed={myS === 'maybe'} onClick={() => answer('maybe')}>{myS === 'maybe' ? _t("Думаю ✓") : _t("Думаю")}</button>
+        <button type="button" className="link-btn" onClick={() => answer('no')}>{_t("Не в этот раз")}</button>
+      </div>
+    </div>
+  ) : null;
+  const people = tripHost ? <>{ask}<People host={tripHost} api={api} names={circle?.names} nameOf={nameOf} onInvite={chatCode ? () => setInviting('sheet') : undefined} onOpen={() => go('group')} /></> : null;
 
   const ritesList = (
     <>
@@ -248,6 +286,11 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       {tab === 'now' && (
         <div className="um-sec">
           {people}
+          {!tripHost && isCloud && (
+            <button type="button" className="um-card" onClick={() => { try { sessionStorage.setItem('lm.umOpen', '1'); } catch { /* */ } go('group'); }}>
+              <b>👥 {_t("Группы на умру")}</b><small>{_t("ищут людей ›")}</small>
+            </button>
+          )}
           {unread > 0 && <button type="button" className="um-card um-unread" onClick={() => go('group')}><b>💬 {_tj("Новых в чате группы: {0}", unread)}</b><small>{_t("Открыть ›")}</small></button>}
           {groupHost && <GroupDash api={rawApi} host={groupHost} going={goingIds} me={me} nameOf={nameOf} onStep={openStep} onDocs={() => go('docs')} />}
           {groupHost && <GroupPass going={goingIds} me={me} nameOf={nameOf} />}
@@ -431,7 +474,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
       )}
 
       {tab === 'group' && (
-        <GroupTab sub={gsub} setSub={setGsub} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick} people={<>{people}{rollCall}</>} myReady={prepPct(state)} nameOf={nameOf}
+        <GroupTab code={chatCode} onAccepted={(uid, name) => callTo(uid, name, me)} sub={gsub} setSub={setGsub} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick} people={<>{people}{rollCall}</>} myReady={prepPct(state)} nameOf={nameOf}
           onSite={onSite} radar={onSite && groupHost && me ? <GroupRadar state={state} update={update} api={rawApi} host={groupHost} members={groupMembers} nameOf={nameOf} /> : null}
           chat={chatOn && tripHost && circle?.me ? (
             <CircleChat chat={chat} me={circle.me} names={circle.names} members={circle.members} reacts={circle.reacts} today={today} isOwner={circle.isOwner} state={state} update={update}
@@ -558,17 +601,39 @@ function InviteSheet({ code, title, onNick, onClose }: { code: string; title: st
   );
 }
 
-function GroupTab({ sub: sub0, setSub, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onSite }: {
+function GroupTab({ code, onAccepted, sub: sub0, setSub, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onSite }: {
+  code?: string; onAccepted: (uid: string, name: string) => void;
   sub: 'chat' | 'trip' | null; setSub: (v: 'chat' | 'trip') => void; api: UmrahApi; me: string | null; tripHost: string | null; hosts: string[]; onPick: (h: string) => void; people: React.ReactNode; myReady: number;
   nameOf: (id: string) => string; chat: React.ReactNode; noChat: string; radar: React.ReactNode; onSite: boolean;
 }) {
   const sub = !chat ? 'trip' : sub0 ?? 'chat';
-  if (!me) return <div className="um-sec"><p className="tiny">{noChat}</p></div>;
-  if (!tripHost) return <div className="um-sec"><UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded /></div>;
+  // «Моя поездка» or «Ищут людей» (open groups of other circles). Hidden until the server has umrah-open.sql.
+  const [view, setView] = useState<'mine' | 'open'>(() => { try { const v = sessionStorage.getItem('lm.umOpen'); sessionStorage.removeItem('lm.umOpen'); return v ? 'open' : 'mine'; } catch { return 'mine'; } });
+  const asks = useUmrahAsks(isCloud);
+  const open = useOpenList(isCloud);
+  const seg = isCloud && asks.ok !== false ? (
+    <div className="seg uo-seg">
+      <button type="button" aria-pressed={view === 'mine'} onClick={() => setView('mine')}>{_t("Моя поездка")}</button>
+      <button type="button" aria-pressed={view === 'open'} onClick={() => { setView('open'); open.reload(); }}>{open.list?.length ? _tj("Ищут людей · {0}", open.list.length) : _t("Ищут людей")}</button>
+    </div>
+  ) : null;
+  const myAsks = me && api.trips[me] ? <AsksToMe asks={asks.to_me} title={api.trips[me].title} onAccepted={onAccepted} /> : null;
+  if (view === 'open' && seg) return (
+    <div className="um-sec um-group">
+      <div className="um-title"><h1>{_t("Группы на умру")}</h1></div>
+      {seg}
+      <OpenGroups list={open.list} reload={open.reload} />
+    </div>
+  );
+  if (!me) return <div className="um-sec">{seg}<p className="tiny">{noChat}</p></div>;
+  if (!tripHost) return <div className="um-sec">{seg}<UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded /></div>;
   const trip = api.trips[tripHost];
+  const going = 1 + Object.keys(api.rsvp).filter((id) => id !== tripHost && api.rsvp[id]?.[tripHost]?.s === 'go').length;
   return (
     <div className="um-sec um-group">
       <div className="um-title"><h1>{trip.title}</h1><small>{_tj("{0}{1}", trip.month, trip.city ? _t(" · из {0}", trip.city) : '')}</small></div>
+      {seg}
+      {myAsks}
       {hosts.length > 1 && (
         <div className="um-trips">{hosts.map((h) => <button key={h} type="button" aria-pressed={h === tripHost} onClick={() => onPick(h)}>{api.trips[h].title}</button>)}</div>
       )}
@@ -582,6 +647,7 @@ function GroupTab({ sub: sub0, setSub, api, me, tripHost, hosts, onPick, people,
       {sub === 'chat' && chat}
       {sub === 'trip' && (
         <div className="umrah-page">
+          {tripHost === me && code && asks.ok !== false && <OpenSwitch code={code} going={going} />}
           <TripCard host={tripHost} trip={trip} api={api} nameOf={nameOf} myReady={myReady} open onToggle={() => {}} />
           <UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded />
         </div>

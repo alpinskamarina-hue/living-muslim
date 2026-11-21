@@ -22,6 +22,20 @@ function toRamadan(today: string): number | null {
   } catch { return null; }
 }
 
+/** A personal call to an umrah trip («Позвать в поездку») that I have not answered with «Еду» or «Не еду»:
+ *  who called me and the trip. Calls older than 30 days are dropped. Shared by the banner, the chat strip and Today. */
+export function umrahCall(api: UmrahApi, reacts: CircleApi['reacts'], today: string): { c: string; h: string; answered: boolean } | null {
+  const { me, trips, rsvp } = api;
+  if (!me) return null;
+  const st = (id: string, h: string) => rsvp[id]?.[h]?.s;
+  const hosts = Object.keys(trips).sort((a, b) => (trips[b].created ?? '').localeCompare(trips[a].created ?? ''));
+  const callers = Object.keys(reacts).filter((from) => from !== me && reacts[from]?.[`u:${me}`] && diff(reacts[from][`u:${me}`].day, today) <= 30)
+    .sort((a, b) => (reacts[b][`u:${me}`].day).localeCompare(reacts[a][`u:${me}`].day));
+  const x = callers.map((c) => ({ c, h: hosts.find((h) => (h === c ? st(c, h) !== 'no' : st(c, h) === 'go')) ?? '' }))
+    .find((y) => y.h && st(me, y.h) !== 'no' && st(me, y.h) !== 'go');
+  return x ? { ...x, answered: Boolean(st(me, x.h)) } : null;
+}
+
 export function UmrahBanner({ api, names, reacts, today, family, myReady, unread, onOpen, onEvent }: {
   api: UmrahApi; names: CircleApi['names']; reacts: CircleApi['reacts']; today: string; family: boolean; myReady: number; unread: (host: string) => number;
   onOpen: (tab: HubTab) => void; onEvent: (host: string, text: string) => void;
@@ -102,8 +116,7 @@ export function UmrahBanner({ api, names, reacts, today, family, myReady, unread
   }
 
   // 2: someone is gathering a trip and I have not said «go». A personal call («Позвать в поездку») comes first and is never hidden.
-  const callers = Object.keys(reacts).filter((from) => from !== me && reacts[from]?.[`u:${me}`] && diff(reacts[from][`u:${me}`].day, today) <= 30);
-  const calledTo = callers.map((c) => ({ c, h: hosts.find((h) => h === c ? st(c, h) !== 'no' : st(c, h) === 'go') })).find((x) => x.h && st(me, x.h) !== 'no');
+  const calledTo = umrahCall(api, reacts, today);
   if (hidden && !calledTo) return null;
   const open = calledTo?.h ?? hosts.find((h) => st(me, h) !== 'no');
   if (open) {

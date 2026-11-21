@@ -7,6 +7,7 @@ import { ProGate } from './Plan';
 import { limitOf } from '../plan';
 import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 import { _t, _tj } from '../i18n';
+import { authMe, signInUrl } from '../auth';
 import { ShareRow } from './ShareRow';
 
 function InboxIfReady() {
@@ -24,6 +25,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const [name, setN] = useState(me?.name || signupName());
   const [code, setCode] = useState(inv && !mineCodes.includes(inv) ? inv : '');
   const [title, setTitle] = useState('');
+  const [month, setMonth] = useState('');
   const [kind, setKind] = useState<CircleKind>('brothers');
   const [pick, setPick] = useState<number[]>(BIZ_DEFAULT);
   const [busy, setBusy] = useState(false);
@@ -32,6 +34,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const full = mineCodes.length >= limitOf('circles');
   const k = kindOf(kind)!;
   const invited = Boolean(code && code === inv);
+  const umrahCall = (() => { try { return Boolean(sessionStorage.getItem('lm.umrahGo')); } catch { return false; } })();
   const run = async (fn: () => Promise<boolean | string>) => {
     if (!ok) { setErr(_t("Напиши имя, хотя бы две буквы.")); return; }
     setBusy(true); setErr('');
@@ -49,9 +52,17 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   return (
     <div className="page">
       {onCancel && <button type="button" className="link-btn pro-back" onClick={onCancel}>{_t("← Мои круги")}</button>}
-      <h1 className="page-h">{invited ? _t("Приглашение") : onCancel ? _t("Новый круг") : _t("Круг")}</h1>
+      <h1 className="page-h">{invited ? (umrahCall ? _t("Тебя зовут на умру") : _t("Приглашение")) : onCancel ? _t("Новый круг") : _t("Круг")}</h1>
+      {invited && umrahCall && <p className="page-sub">{_tj("Поездка собирается в круге «{0}». Вступи в круг, и сразу откроется поездка: даты, задачи и общий чат.", meta.title || _t("Круг друзей"))}</p>}
+      {invited && !authMe() && (
+        <div className="cl-acc">
+          <b>{_t("Уже пользуешься Living Muslim?")}</b>
+          <p>{_t("Сначала войди по почте, тогда круг и поездка попадут в твой аккаунт и будут видны в приложении на телефоне. Иначе здесь появится второй, новый профиль.")}</p>
+          <a className="ghost-btn" href={signInUrl}>{_t("Войти по почте")}</a>
+        </div>
+      )}
       {!onCancel && !invited && <InboxIfReady />}
-      <p className="page-sub">{invited ? _t("Тебя позвали в круг. Друзья увидят только итог твоего дня: сколько намазов и привычек отмечено.") : _t("Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек и заметок.")}</p>
+      {!(invited && umrahCall) && <p className="page-sub">{invited ? _t("Тебя позвали в круг. Друзья увидят только итог твоего дня: сколько намазов и привычек отмечено.") : _t("Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек и заметок.")}</p>}
       <div className="join cl-setup">
         <label className="cl-f">
           <span>{_t("Как тебя будут видеть в кругу")}</span>
@@ -82,10 +93,21 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
             <p className="tiny">{k.hint}</p>
             <label className="cl-f">
               <span>{_t("Название")}</span>
-              <input value={title} maxLength={40} placeholder={kind === 'family' ? _t("Например: Семья Насима") : kind === 'masjid' ? _t("Например: Халака по субботам") : kind === 'biz' ? _t("Например: Партнёры") : _t("Например: {0}", k.ru)} onChange={(e) => setTitle(e.target.value)} />
+              <input value={title} maxLength={40} placeholder={kind === 'umrah' ? _t("Например: Умра с братьями") : kind === 'family' ? _t("Например: Семья Насима") : kind === 'masjid' ? _t("Например: Халака по субботам") : kind === 'biz' ? _t("Например: Партнёры") : _t("Например: {0}", k.ru)} onChange={(e) => setTitle(e.target.value)} />
             </label>
             {kind === 'biz' && <BizPick pick={pick} setPick={setPick} />}
-            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => createCircle(name, title || k.ru, kind))}>{_t("Создать круг")}</button>
+            {kind === 'umrah' && (
+              <label className="cl-f">
+                <span>{_t("Когда примерно")}</span>
+                <input value={month} maxLength={40} placeholder={_t("Например: март 2027")} onChange={(e) => setMonth(e.target.value)} />
+              </label>
+            )}
+            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(async () => {
+              const c = await createCircle(name, title || (kind === 'umrah' ? _t("Умра с братьями") : k.ru), kind);
+              // An umrah circle: after the reload the trip is made and the umrah screen opens on «Позвать».
+              if (c && kind === 'umrah') { try { sessionStorage.setItem('lm.umNew', JSON.stringify({ title: title.trim() || _t("Умра с братьями"), month: month.trim() })); sessionStorage.setItem('lm.umrahGo', '1'); } catch { /* */ } }
+              return c;
+            })}>{kind === 'umrah' ? _t("Собрать поездку") : _t("Создать круг")}</button>
             {kind === 'biz' && <p className="tiny bz-note">{_t("Суммы денег в круге не видны никогда.")}</p>}
             <p>{_t("Или вставь код приглашения от друга:")}</p>
             <div className="cl-row">

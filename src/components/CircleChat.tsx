@@ -255,7 +255,7 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, other }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other }: {
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
@@ -265,6 +265,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   other?: string;
   /** The circle's main screen: «＋» opens these actions, prayer quick buttons, ayah of the day. */
   actions?: ChatAction[];
+  /** Opens the umrah trip someone was called to from the chat («Насим зовёт на умру»). */
+  onUmrah?: (host: string) => void;
 }) {
   const main = Boolean(actions);
   const [plus, setPlus] = useState(false);
@@ -530,6 +532,20 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                 <small className="cc-time">{hm(m.at)}</small>
               </div>,
             );
+            return out;
+          }
+          if (m.kind === 'event' && m.ref?.um) {
+            // A call to an umrah trip: the person called gets a card with a button, the others a plain line.
+            const forMe = m.ref.to === me;
+            out.push(forMe && !m.deleted ? (
+              <div key={m.id} className="cc-um">
+                <i aria-hidden="true">🕋</i>
+                <span><small>{_tj("{0} зовёт тебя на умру", nm(m.uid))}</small><b>{/«(.+)»/.exec(m.body)?.[1] ?? _t("Умра")}</b></span>
+                {onUmrah && <button type="button" onClick={() => onUmrah(m.ref!.um!)}>{_t("Открыть")}</button>}
+              </div>
+            ) : (
+              <div key={m.id} className="cc-sys cc-trip">{mine ? _t("Ты") : nm(m.uid)}: {m.body}{onUmrah && !m.deleted && <> · <button type="button" className="link-btn" onClick={() => onUmrah(m.ref!.um!)}>{_t("поездка ›")}</button></>}</div>
+            ));
             return out;
           }
           if (m.kind === 'event') {
