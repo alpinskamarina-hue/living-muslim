@@ -8,7 +8,7 @@ import { _t, _tj } from '../i18n';
 
 const NEXT: Record<string, PrayerMark | null> = { none: 'ontime', ontime: 'late', late: null };
 
-interface Props {
+export interface PrayerProps {
   state: AppState;
   update: (fn: (s: AppState) => AppState) => void;
   today: string;
@@ -16,17 +16,40 @@ interface Props {
   times: DayTimes;
 }
 
-/** Five prayers of the day. Tap: on time → late → not marked. Prayers whose time has not come are locked. */
-export function PrayerStrip({ state, update, today, now, times }: Props) {
+/** Marking prayers: tap cycles on time → late → not marked; prayers whose time has not come are locked (a traveller who joins may mark Asr/Isha early). */
+export function prayerCtl({ state, update, today, now, times }: PrayerProps) {
   const day = state.prayers[today] ?? {};
-  const prayed = ANCHORS.filter((a) => day[a]).length;
   const tap = (a: Anchor) => update((s) => setPrayer(s, today, a, NEXT[day[a] ?? 'none']));
   const travel = travelStatus(state, today);
   const canJoin = travel.traveler && state.settings.madhab === 'shafi';
   const passed = (a: Anchor) => times[a].getTime() <= now.getTime();
-  // Joining early: Asr may be prayed in Dhuhr's time, Isha in Maghrib's.
-  const unlocked = (a: Anchor) => passed(a) || (canJoin && ((a === 'asr' && passed('dhuhr')) || (a === 'isha' && passed('maghrib'))));
+  const unlocked = (a: Anchor) => passed(a) || Boolean(canJoin && ((a === 'asr' && passed('dhuhr')) || (a === 'isha' && passed('maghrib'))));
   const join = (a: Anchor, b: Anchor) => update((s) => setPrayer(setPrayer(s, today, a, 'ontime'), today, b, 'ontime'));
+  return { day, tap, travel, canJoin, passed, unlocked, join };
+}
+
+/** «Ты в пути»: the travel line with joining buttons. */
+export function TravelBar(props: PrayerProps) {
+  const { day, travel, canJoin, passed, join } = prayerCtl(props);
+  if (!travel.why) return null;
+  return (
+    <div className="safar-bar">
+      <span>🧭 <b>{travel.traveler ? _t("Ты в пути.") : _t("Поездка.")}</b> {travel.why}</span>
+      {canJoin && (passed('dhuhr') || passed('maghrib')) && (
+        <div className="row2">
+          {passed('dhuhr') && !(day.dhuhr && day.asr) && <button type="button" onClick={() => join('dhuhr', 'asr')}>{_t("Зухр + Аср вместе")}</button>}
+          {passed('maghrib') && !(day.maghrib && day.isha) && <button type="button" onClick={() => join('maghrib', 'isha')}>{_t("Магриб + Иша вместе")}</button>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Five prayers of the day in a row (kept for screens other than Today). */
+export function PrayerStrip(props: PrayerProps) {
+  const { day, tap, travel, unlocked } = prayerCtl(props);
+  const { times } = props;
+  const prayed = ANCHORS.filter((a) => day[a]).length;
 
   return (
     <section className="prayers" aria-label={_t("Намазы сегодня")}>
@@ -59,17 +82,7 @@ export function PrayerStrip({ state, update, today, now, times }: Props) {
           );
         })}
       </div>
-      {travel.why && (
-        <div className="safar-bar">
-          <span>🧭 <b>{travel.traveler ? _t("Ты в пути.") : _t("Поездка.")}</b> {travel.why}</span>
-          {canJoin && (passed('dhuhr') || passed('maghrib')) && (
-            <div className="row2">
-              {passed('dhuhr') && !(day.dhuhr && day.asr) && <button type="button" onClick={() => join('dhuhr', 'asr')}>{_t("Зухр + Аср вместе")}</button>}
-              {passed('maghrib') && !(day.maghrib && day.isha) && <button type="button" onClick={() => join('maghrib', 'isha')}>{_t("Магриб + Иша вместе")}</button>}
-            </div>
-          )}
-        </div>
-      )}
+      <TravelBar {...props} />
       <p className="prayers-hint">{_t("Касание: вовремя (две галочки), ещё касание: с опозданием (одна), ещё: снять.")}</p>
     </section>
   );

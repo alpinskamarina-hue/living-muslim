@@ -1,4 +1,4 @@
-import { QuitToday, QuitCheck, QuitScreen, type QuitView } from './components/Quit';
+import { QuitCheck, QuitScreen, type QuitView } from './components/Quit';
 import { useEffect, useMemo, useState } from 'react';
 import { WordCard, WordsLayer } from './components/Words';
 import { todayTrigger, useWordsWatch } from './wordsWatch';
@@ -13,7 +13,7 @@ import { workoutRings } from './health';
 import { AdhanPlayer, AdhanToast, useAdhanClock } from './components/Adhan';
 import { adhanServer } from './adhan';
 import { Today } from './components/Today';
-import { PlansCard, PlansPage, usePlansCloud, setPlanStart } from './components/Plans';
+import { PlansPage, usePlansCloud, setPlanStart } from './components/Plans';
 import { HabitSheet } from './components/HabitSheet';
 import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
@@ -401,13 +401,11 @@ export function App() {
           <Today state={state} update={update} today={today} now={now} times={times}
             circleLine={joined && circleToday.length ? { names: circleToday.map((m) => circle.names[m.id]?.name || _t("Участник")), onOpen: () => setTab('circle') } : undefined}
             onEdit={(h) => setSheet({ editing: h, anchor: h.anchor })} onAdd={(a) => setSheet({ anchor: a })} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onAssistant={state.settings.aiFab === false ? () => setAiOpen(true) : undefined} onQibla={(t) => setQiblaOpen(t)} onRamadan={(t?: unknown) => setRamadan(typeof t === 'string' ? t : 'auto')} onGarden={openGarden} support={support} plan={<TrialDial />}
-            plans={<PlansCard state={state} update={update} today={today} onOpen={() => go({ profile: 'plans' })} />}
-            quits={<QuitToday state={state} today={today} onOpen={(id) => setQuitOpen({ id, view: 'home' })} />}
+            onPlans={() => go({ profile: 'plans' })} onQuit={(id) => setQuitOpen({ id, view: 'home' })}
+            notes={<><WordCard t={todayTrigger(now, times)} state={state} today={today} /><GiftNudge today={today} /></>}
             quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn || (onbFor && !onbOver) ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
             onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
         )}
-        {tab === 'today' && <WordCard t={todayTrigger(now, times)} state={state} today={today} />}
-        {tab === 'today' && <GiftNudge today={today} />}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />

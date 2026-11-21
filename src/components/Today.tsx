@@ -1,7 +1,7 @@
 import { InstallBanner } from './InstallBanner';
 import { ThemeSwitch } from './ThemeSwitch';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { dayLight, journey } from '../gamify';
 import type { Anchor, AppState, Habit, Mark } from '../types';
 import { ANCHORS, ANCHOR_LABEL } from '../types';
@@ -12,9 +12,11 @@ import { HabitCard, Ticks } from './HabitCard';
 import { Ornament } from './Ornament';
 import { Lamps } from './Lamps';
 import { LogoMark } from './Logo';
-import { PrayerStrip } from './PrayerStrip';
+import { prayerCtl, TravelBar } from './PrayerStrip';
+import { PlanItem, PlansLate } from './Plans';
+import { blockOf, dayPlans, isDone } from '../plans';
+import { activeQuits, cleanDays } from '../quit';
 import { here, tripOn } from '../safar';
-import { progress } from '../goals';
 import { isReviewDay } from './Goals';
 import { RamadanToday } from './Ramadan';
 import { ramadanHidden, ramadanMode } from '../rplan';
@@ -43,17 +45,20 @@ interface Props {
   onGarden: () => void;
   support?: { text: string; onOpen: () => void; cls?: string }[];
   plan?: React.ReactNode;
-  /** «Хочу оставить» lines under the plan, and the evening question next to the muhasaba. */
-  quits?: React.ReactNode;
-  /** «Планы на сегодня». */
-  plans?: React.ReactNode;
+  /** Open «Хочу оставить» for one habit. */
+  onQuit: (id: string) => void;
+  /** Open the plans page. */
+  onPlans: () => void;
+  /** The evening question next to the muhasaba. */
   quitCheck?: React.ReactNode;
+  /** Cards from outside (word of the day, gift a pass) that also go to «Главное сейчас». */
+  notes?: React.ReactNode;
   onQibla: (tab: QiblaTab) => void;
   /** «Новый путь»: the path card, or the choice for someone new. */
   pathCard?: React.ReactNode;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onKhutba, onAssistant, onGoal, onReview, onRamadan, onGarden, support, firstWeek, plan, quits, plans, quitCheck, onQibla, pathCard }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onKhutba, onAssistant, onReview, onRamadan, onGarden, support, firstWeek, plan, onQuit, onPlans, quitCheck, notes, onQibla, pathCard }: Props) {
   const { current, next, end } = windowState(times, now);
   const [khHidden, setKhHidden] = useState(() => { try { return localStorage.getItem('lm.khutbaHide') ?? ''; } catch { return ''; } });
   const [open, setOpen] = useState<Anchor | null>(null);
@@ -125,7 +130,136 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
   const sky = skyOf(times, now);
   const prayedToday = ANCHORS.filter((a) => state.prayers[today]?.[a]).length;
   const hardOn = (state.hard[today] ?? []).includes(nowAnchor);
-  const others = ANCHORS.filter((a) => a !== nowAnchor);
+  const pc = prayerCtl({ state, update, today, now, times });
+  // A few days of marking teach the circles; the hint goes away then.
+  const newToPrayers = Object.keys(state.prayers).filter((k) => Object.keys(state.prayers[k] ?? {}).length).length < 3;
+  const evening = current === 'isha' || current === 'maghrib';
+
+  // Plans stand at their prayer; without a time, at the current one. A plan ticked just now stays a moment.
+  const [freshPlans, setFreshPlans] = useState<string[]>([]);
+  const tickPlan = (id: string, done: boolean) => {
+    if (!done) return;
+    setFreshPlans((f) => [...f, id]);
+    setTimeout(() => setFreshPlans((f) => f.filter((x) => x !== id)), 1400);
+  };
+  const dayList = dayPlans(state, today).filter((p) => !isDone(p, today) || freshPlans.includes(p.id));
+  const plansAt = (a: Anchor) => dayList.filter((p) => (blockOf(state.settings, p, today) ?? nowAnchor) === a);
+  const quitList = activeQuits(state);
+  const khutbaOn = Boolean(onKhutba && fridayWindow(now, times.asr) && khHidden !== today);
+
+  // Everything that is not the day itself: one card at a time in «Главное сейчас», most pressing first.
+  const slot = [
+    <RamadanToday key="rm" state={state} update={update} today={today} now={now} times={times} onOpen={onRamadan} />,
+    khutbaOn && onKhutba && <KhutbaCard key="kh" onOpen={onKhutba} onHide={() => { try { localStorage.setItem('lm.khutbaHide', today); } catch { /* */ } setKhHidden(today); }} />,
+    <MosqueCard key="mq" state={state} update={update} today={today} now={now} times={times} next={next} onOpen={onQibla} />,
+    plan ? <Fragment key="pl">{plan}</Fragment> : null,
+    firstWeek ? <Fragment key="fw">{firstWeek}</Fragment> : null,
+    isReviewDay(state, today) && (
+      <button key="rv" type="button" className="g-review-cta" onClick={onReview} style={{ margin: '10px 14px 0', width: 'calc(100% - 28px)' }}>
+        <b>{_t("Пересмотр недели")}</b><small>{_t("Пятница. 2 минуты: что продвинулось и какой шаг на неделю")}</small>
+      </button>
+    ),
+    <PlansLate key="late" state={state} update={update} today={today} onOpen={onPlans} />,
+    ...(support ?? []).map((x, i) => (
+      <button key={`sp${i}`} type="button" className={`circle-line support${x.cls ? ` ${x.cls}` : ""}`} onClick={x.onOpen}>
+        <span>{x.text}</span><span aria-hidden="true">›</span>
+      </button>
+    )),
+    circleLine && (
+      <button key="cl" type="button" className="circle-line" onClick={circleLine.onOpen}>
+        <span><b>{circleLine.names.slice(0, 2).join(_t(" и "))}</b>{_tj("{0} уже {1} сегодня", circleLine.names.length > 2 ? _t(" и ещё {0}", circleLine.names.length - 2) : '', circleLine.names.length > 1 ? _t("отметились") : _t("отметился"))}</span>
+        <span aria-hidden="true">›</span>
+      </button>
+    ),
+    (j.streak > 0 || j.lit > 0) && (
+      <button key="st" type="button" className="streak-line" onClick={onGarden}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21V11M12 11C12 7 9 5 5 5c0 4 3 6 7 6zM12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z" /></svg>
+        <span>
+          <b>{j.streak > 0 ? _t("Серия {0} {1}", j.streak, plural(j.streak, _t("день"), _t("дня"), _t("дней"))) : _t("Начни серию сегодня")}</b>
+          <small>
+            {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
+          </small>
+        </span>
+        <i aria-hidden="true">›</i>
+      </button>
+    ),
+    notes ? <Fragment key="nt">{notes}</Fragment> : null,
+    <InstallBanner key="ib" />,
+  ];
+
+  const quitChip = (q: (typeof quitList)[number]) => {
+    const n = cleanDays(q, today);
+    return (
+      <button key={q.id} type="button" className="dl-chip q" onClick={() => onQuit(q.id)}>
+        🛡 {_t("{0}: {1} {2}", q.what, n, plural(n, _t("день"), _t("дня"), _t("дней")))}
+      </button>
+    );
+  };
+
+  // One prayer of the day: its circle (mark the prayer), what belongs to it, and the current one open.
+  const node = (a: Anchor) => {
+    const cur = a === nowAnchor;
+    const st = cur ? 'now' : windowStatus(a, current);
+    const list = active.filter((h) => h.anchor === a);
+    const done = list.filter((h) => isCounted(log[h.id])).length;
+    const pl = plansAt(a);
+    const qs = a === 'isha' ? quitList : [];
+    const expanded = cur || open === a;
+    const m = pc.day[a];
+    const locked = !pc.unlocked(a) && !m;
+    const undone = list.some((h) => !isCounted(log[h.id]));
+    const sum = list.length
+      ? (done === list.length ? <span className="tk"><Ticks />{_tj("{0} из {1}", done, list.length)}</span> : <span className="n">{done}/{list.length}</span>)
+      : pl.length ? <span className="n">{_t("{0} {1}", pl.length, plural(pl.length, _t("план"), _t("плана"), _t("планов")))}</span> : null;
+    return (
+      <div key={a} className={`dl-node ${st}${expanded ? ' open' : ''}`}>
+        <button type="button" className="dl-dot" data-m={m ?? (locked ? 'locked' : 'none')} disabled={locked} onClick={() => pc.tap(a)}
+          aria-label={`${ANCHOR_LABEL[a].ru}: ${m === 'ontime' ? _t("вовремя") : m === 'late' ? _t("с опозданием") : _t("не отмечен")}`}>
+          {m === 'ontime' && <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M1 6.5l3 3 6-7M7 9.5l1 .5 7-8" /></svg>}
+          {m === 'late' && <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M4 6.5l3 3 7-8" /></svg>}
+          {!m && <span className="ar">{ANCHOR_LABEL[a].ar}</span>}
+        </button>
+        <div className="dl-main">
+          {cur ? (
+            <div className="dl-h">
+              <span><b>{ANCHOR_LABEL[a].ru}</b><small>{current ? _t("сейчас · до {0}", hhmm(end(a))) : _t("скоро · {0}", hhmm(times.fajr))}</small></span>
+              {(hardOn || undone) && (
+                <button type="button" className="hard" aria-pressed={hardOn} onClick={() => update((s) => toggleHard(s, today, nowAnchor))}>{_t("Тяжёлый день")}</button>
+              )}
+            </div>
+          ) : (
+            <button type="button" className="dl-h" onClick={() => setOpen(open === a ? null : a)} aria-expanded={expanded}>
+              <span><b>{ANCHOR_LABEL[a].ru}</b><small>{hhmm(times[a])}</small></span>
+              {sum}
+            </button>
+          )}
+          {!expanded && (list.length > 0 || pl.length > 0 || qs.length > 0) && (
+            <div className="dl-chips">
+              {list.map((h) => <span key={h.id} className={`dl-chip${isCounted(log[h.id]) ? ' ok' : ''}`}>{isCounted(log[h.id]) ? '✓ ' : ''}{h.action}</span>)}
+              {pl.map((p) => <span key={p.id} className="dl-chip pl">☐ {p.text}</span>)}
+              {qs.map(quitChip)}
+            </div>
+          )}
+          {expanded && (
+            <div className="dl-box">
+              {(list.length > 0 || cur || (pl.length === 0 && qs.length === 0)) && renderCards(a)}
+              {pl.length > 0 && (
+                <div className="dl-plans">
+                  {pl.map((p) => <PlanItem key={p.id} state={state} p={p} k={today} update={update} onOpen={onPlans} onTick={tickPlan} />)}
+                </div>
+              )}
+              {qs.length > 0 && <div className="dl-chips">{qs.map(quitChip)}</div>}
+              {cur && undone && <div className="dl-tip">{_t("Касание по кружку — сделал. Свайп влево — минимум или позже. Касание по названию — изменить.")}</div>}
+              {cur && evening && quitCheck}
+              {cur && evening && active.length > 0 && (
+                <Muhasaba value={state.notes[today] ?? ''} onChange={(v) => update((s) => ({ ...s, notes: { ...s.notes, [today]: v } }))} />
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -161,53 +295,8 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
       </header>
 
       <div className="scroll">
-        {onKhutba && fridayWindow(now, times.asr) && khHidden !== today && <KhutbaCard onOpen={onKhutba} onHide={() => { try { localStorage.setItem('lm.khutbaHide', today); } catch { /* */ } setKhHidden(today); }} />}
-        <MosqueCard state={state} update={update} today={today} now={now} times={times} next={next} onOpen={onQibla} />
         {pathCard}
-        {plan}
-        {plans}
-        {quits}
-        {(j.streak > 0 || j.lit > 0) && (
-          <button type="button" className="streak-line" onClick={onGarden}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21V11M12 11C12 7 9 5 5 5c0 4 3 6 7 6zM12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z" /></svg>
-            <span>
-              <b>{j.streak > 0 ? _t("Серия {0} {1}", j.streak, plural(j.streak, _t("день"), _t("дня"), _t("дней"))) : _t("Начни серию сегодня")}</b>
-              <small>
-                {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
-              </small>
-            </span>
-            <i aria-hidden="true">›</i>
-          </button>
-        )}
-        {(support ?? []).map((x, i) => (
-          <button key={i} type="button" className={`circle-line support${x.cls ? ` ${x.cls}` : ""}`} onClick={x.onOpen}>
-            <span>{x.text}</span><span aria-hidden="true">›</span>
-          </button>
-        ))}
-        {(() => {
-          const g = (state.goals ?? []).find((x) => x.status === 'active');
-          if (!g) return null;
-          const p = progress(state, g, today);
-          return (
-            <button type="button" className="gline" onClick={() => onGoal(g.id)}>
-              <span aria-hidden="true">🎯</span><span className="nm">{g.title}</span><span className="bar2"><i style={{ width: `${p.pct}%` }} /></span><b>{p.pct}%</b>
-            </button>
-          );
-        })()}
-        {isReviewDay(state, today) && (
-          <button type="button" className="g-review-cta" onClick={onReview} style={{ marginBottom: 10, width: '100%' }}>
-            <b>{_t("Пересмотр недели")}</b><small>{_t("Пятница. 2 минуты: что продвинулось и какой шаг на неделю")}</small>
-          </button>
-        )}
-        <RamadanToday state={state} update={update} today={today} now={now} times={times} onOpen={onRamadan} />
-        <PrayerStrip state={state} update={update} today={today} now={now} times={times} />
-        {firstWeek}
-        {circleLine && (
-          <button type="button" className="circle-line" onClick={circleLine.onOpen}>
-            <span><b>{circleLine.names.slice(0, 2).join(_t(" и "))}</b>{_tj("{0} уже {1} сегодня", circleLine.names.length > 2 ? _t(" и ещё {0}", circleLine.names.length - 2) : '', circleLine.names.length > 1 ? _t("отметились") : _t("отметился"))}</span>
-            <span aria-hidden="true">›</span>
-          </button>
-        )}
+        <NowSlot>{slot}</NowSlot>
         {active.length === 0 && state.settings.path && !state.newpath?.on && (
           <div className="welcome">
             <h2>{_tj("Ас-саляму алейкум{0}", state.settings.name ? `, ${state.settings.name}` : '')}</h2>
@@ -216,73 +305,55 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
             <button type="button" className="pri-btn" onClick={() => onAdd(nowAnchor)}>{_t("Добавить первую привычку")}</button>
           </div>
         )}
-
-        {others.filter((a) => windowStatus(a, current) === 'past').map((a) => (
-          <WindowRow key={a} a={a} active={active} log={log} time={times[a]} open={open === a} onToggle={() => setOpen(open === a ? null : a)}>
-            {renderCards(a)}
-          </WindowRow>
-        ))}
-
-        <div className="sec">
-          <h3>
-            {ANCHOR_LABEL[nowAnchor].after}
-            <small>{current ? _t("сейчас · до {0}", hhmm(end(nowAnchor))) : _t("скоро · {0}", hhmm(times.fajr))}</small>
-          </h3>
-          {(hardOn || active.some((h) => h.anchor === nowAnchor && !isCounted(log[h.id]))) && (
-            <button type="button" className="hard" aria-pressed={hardOn} onClick={() => update((s) => toggleHard(s, today, nowAnchor))}>
-              {_t("Тяжёлый день")}
-            </button>
-          )}
-        </div>
-        {renderCards(nowAnchor)}
-        {active.some((h) => h.anchor === nowAnchor && !isCounted(log[h.id])) && (
-          <div className="hint">{_t("Касание по кружку — сделал. Свайп влево — минимум или позже. Касание по названию — изменить.")}</div>
-        )}
-
-        {others.some((a) => windowStatus(a, current) === 'future') && (
-          <div className="later">
-            <h4>{_t("Дальше сегодня")}</h4>
-            {others.filter((a) => windowStatus(a, current) === 'future').map((a) => (
-              <WindowRow key={a} a={a} active={active} log={log} time={times[a]} open={open === a} onToggle={() => setOpen(open === a ? null : a)} future>
-                {renderCards(a)}
-              </WindowRow>
-            ))}
-          </div>
-        )}
-
-        {(current === 'isha' || current === 'maghrib') && quitCheck}
-        {(current === 'isha' || current === 'maghrib') && active.length > 0 && (
-          <Muhasaba value={state.notes[today] ?? ''} onChange={(v) => update((s) => ({ ...s, notes: { ...s.notes, [today]: v } }))} />
-        )}
-        <InstallBanner />
+        <TravelBar state={state} update={update} today={today} now={now} times={times} />
+        <section className="dayline" aria-label={_t("День по намазам")}>
+          {ANCHORS.map(node)}
+        </section>
+        {newToPrayers && <p className="dl-tip dl-hint">{_t("Кружок слева — намаз: касание — вовремя (две галочки), ещё касание — с опозданием (одна), ещё — снять.")}</p>}
       </div>
     </>
   );
 }
 
-function WindowRow(props: {
-  a: Anchor; active: Habit[]; log: Record<string, Mark>; time: Date; open: boolean; onToggle: () => void; future?: boolean; children: React.ReactNode;
-}) {
-  const { a, active, log, time, open, onToggle, future, children } = props;
-  const list = active.filter((h) => h.anchor === a);
-  const done = list.filter((h) => isCounted(log[h.id])).length;
-  const all = list.length > 0 && done === list.length;
+/** «Главное сейчас»: one card at a time out of everything Today has to say; arrows or a swipe show the next. */
+function NowSlot({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [n, setN] = useState(0);
+  const [i, setI] = useState(0);
+  const at = useRef(0);
+  at.current = i;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Cards decide themselves whether to show (and hide on ✕), so count what is really on the page.
+    const apply = () => {
+      const kids = Array.from(el.children);
+      setN(kids.length);
+      const k = Math.min(at.current, Math.max(0, kids.length - 1));
+      kids.forEach((c, j) => c.classList.toggle('ns-off', j !== k));
+    };
+    apply();
+    const mo = new MutationObserver(apply);
+    mo.observe(el, { childList: true });
+    return () => mo.disconnect();
+  });
+  const k = Math.min(i, Math.max(0, n - 1));
+  const go = (d: number) => setI((k + d + n) % n);
+  const x0 = useRef<number | null>(null);
   return (
-    <div className="win">
-      <button type="button" className={`lw${open ? ' open' : ''}`} onClick={onToggle} aria-expanded={open}>
-        <span className="ar">{ANCHOR_LABEL[a].ar}</span>
-        <span className="x">
-          {ANCHOR_LABEL[a].after} · {hhmm(time)}
-          {list.length > 0 && <small>{list.map((h) => h.action).join(' · ')}</small>}
-        </span>
-        {all ? (
-          <span className="tk"><Ticks />{_tj("{0} из {1}", done, list.length)}</span>
-        ) : (
-          <span className="n">{list.length ? `${done}/${list.length}` : future ? '' : '—'}</span>
-        )}
-      </button>
-      {open && <div className="win-body">{children}</div>}
-    </div>
+    <>
+      <div ref={ref} className="now-slot" onTouchStart={(e) => { x0.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => { if (x0.current == null || n < 2) return; const dx = e.changedTouches[0].clientX - x0.current; x0.current = null; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); }}>
+        {children}
+      </div>
+      {n > 1 && (
+        <div className="ns-nav">
+          <button type="button" onClick={() => go(-1)} aria-label={_t("Назад")}>‹</button>
+          <span aria-label={_t("{0} из {1}", k + 1, n)}>{n <= 8 ? Array.from({ length: n }, (_, j) => <i key={j} className={j === k ? 'on' : ''} />) : _tj("{0} из {1}", k + 1, n)}</span>
+          <button type="button" onClick={() => go(1)} aria-label={_t("Дальше")}>›</button>
+        </div>
+      )}
+    </>
   );
 }
 
