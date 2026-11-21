@@ -278,7 +278,7 @@ function AdminGuides() {
             <small><b>Вид:</b> {g.kind === 'mentor' ? 'Наставник онлайн (лицензия не нужна)' : `Гид на месте · лицензия КСА${g.lic_until ? ` до ${g.lic_until}` : ''}`}</small>
             <small><b>Знание:</b> {g.school}{g.field ? `, ${g.field}` : ''}{g.grad ? `, ${g.grad}` : ''} · {g.years} лет · {g.groups} групп</small>
             <small><b>Где:</b> {g.place === 'makkah' ? 'Мекка' : g.place === 'madinah' ? 'Медина' : `готов вылететь${g.city ? ` из ${g.city}` : ''}`}{g.until ? ` до ${g.until}` : ''}{g.sisters ? ' · для сестёр' : ''}</small>
-            {g.services.length > 0 && <small><b>Услуги:</b> {g.services.map((s) => `${s.t} €${s.price}${s.per ? `/${s.per}` : ''}`).join(' · ')}</small>}
+            {g.services.length > 0 && <small><b>Услуги:</b> {g.services.map((s) => s.t).join(' · ')}</small>}
             {g.imam && <small><b>Рекомендует:</b> {g.imam}</small>}
             {g.about && <small className="adm-ing">{g.about}</small>}
             <div className="adm-ph">

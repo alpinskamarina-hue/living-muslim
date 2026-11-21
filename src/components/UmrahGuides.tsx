@@ -17,7 +17,6 @@ const placeLine = (g: Guide) => g.kind === 'mentor' ? _t("💻 Онлайн до
   ? (g.city ? _tj("✈ Вылетит из {0}", g.city) : _t("✈ Готов вылететь")) + (g.free ? ` · ${g.free}` : '')
   : PLACE()[g.place] + (g.until ? _tj(" · до {0}", g.until) : '');
 const plur = (n: number, a: string, b: string, c: string) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
-const price = (s: Service) => `€${s.price}${s.per ? ` / ${s.per}` : ''}`;
 
 function Face({ g, big }: { g: Pick<Guide, 'name' | 'color'>; big?: boolean }) {
   return <span className={`ug-face${big ? ' big' : ''}`} style={{ background: g.color || 'var(--green-2)' }}>{ini(g.name)}<i aria-label={_t("проверен")}>✓</i></span>;
@@ -65,11 +64,10 @@ export function GuidesPane({ list, reload, code, becomeFirst }: { list: Guide[] 
           </span>
           <span className="ug-side">
             <small>{g.langs.join(' · ')}</small>
-            {g.services[0] && <><b>€{g.services[0].price}</b><small>{g.services[0].per}</small></>}
           </span>
         </button>
       ))}
-      <p className="tiny ug-note">{_t("Сначала гиды с действующей лицензией КСА, потом по отзывам. «Документы проверены» значит: мы посмотрели документы. Это не гарантия качества услуг. Отзывы только от тех, кого гид принял в поездку через приложение. Оплата гиду напрямую, мы деньги не держим.")}</p>
+      <p className="tiny ug-note">{_t("Сначала гиды с действующей лицензией КСА, потом по отзывам. «Документы проверены» значит: мы посмотрели документы. Это не гарантия качества услуг. Отзывы только от тех, кого гид принял в поездку через приложение. Цены не указываем: о цене договоритесь с гидом в чате заранее. Мы деньги не держим.")}</p>
       {mine === null && <button type="button" className="ghost-btn ug-become" onClick={() => setBecome(true)}>{_t("Я гид · подать заявку")}</button>}
     </div>
   );
@@ -140,6 +138,7 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
     <div className="ug-warn">
       <b>{_t("Перед тем как договориться")}</b> {_t("Гид самостоятельный, не сотрудник Living Muslim. Мы проверили его документы, но не отвечаем за его услуги. Договариваетесь и платите вы напрямую.")}
       <ul>
+        <li>{_t("О цене и условиях договоритесь в чате до начала, лучше письменно.")}</li>
         <li>{_t("Не платите всю сумму вперёд, договоритесь об оплате по частям.")}</li>
         <li>{_t("Никому не отдавайте паспорт.")}</li>
         <li>{_t("Визу и пакет умры оформляйте только через лицензированные компании, их можно проверить в Nusuk.")}</li>
@@ -173,7 +172,7 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
         <span><b>{g.reviews ? `★ ${g.stars}` : '—'}</b><small>{g.reviews ? _tj("{0} отзывов", g.reviews) : _t("нет отзывов")}</small></span>
       </div>
       {g.about && <p className="ug-about">{hc(g.about)}</p>}
-      {g.services.length > 0 && <div className="ug-serv">{g.services.map((s, i) => <div key={i}><span>{hc(s.t)}</span><small>{price(s)}</small></div>)}</div>}
+      {g.services.length > 0 && <div className="ug-serv">{g.services.map((s, i) => <div key={i}><span>{hc(s.t)}</span></div>)}</div>}
       {g.list.map((r, i) => <blockquote key={i} className="ug-rev">«{hc(r.text) || '★'.repeat(r.stars)}»<small>{r.name} · ★ {r.stars}</small></blockquote>)}
       {g.free && <div className="ug-free"><b>{_t("Свободен:")}</b> {hc(g.free)}</div>}
       {msg && <p className="uo-msg" role="status">{msg}</p>}
@@ -210,7 +209,7 @@ function GuideProfile({ uid, code, onBack }: { uid: string; code: string | null;
   );
 }
 
-const EMPTY: Apply = { kind: 'guide', lic_until: '', terms: false, consent: false, name: '', langs: ['RU'], about: '', school: '', field: '', grad: '', years: '', groups: '', place: 'fly', city: '', until: '', free: '', services: [{ t: '', price: 0, per: _t("день") }], sisters: false, license: true, imam: '' };
+const EMPTY: Apply = { kind: 'guide', lic_until: '', terms: false, consent: false, name: '', langs: ['RU'], about: '', school: '', field: '', grad: '', years: '', groups: '', place: 'fly', city: '', until: '', free: '', services: [{ t: '', price: 0, per: '' }], sisters: false, license: true, imam: '' };
 const LANGS = ['RU', 'EN', 'AR', 'TT', 'UZ', 'KZ', 'TR'];
 
 /** The terms for guides and mentors (legal thread, 21.11), shown in full from the application. */
@@ -219,6 +218,7 @@ const TERMS = () => [
   _t("Вы оказываете услуги самостоятельно и сами отвечаете за их качество, безопасность, цены, налоги и соблюдение законов страны, где работаете, в том числе Саудовской Аравии."),
   _t("Вы подтверждаете, что документы подлинные и принадлежат вам. Если лицензия истекла или отозвана, сообщите нам в течение 3 дней."),
   _t("Гид на месте работает только с действующей лицензией КСА. Наставник не предлагает платное сопровождение на месте."),
+  _t("Цены в приложении не публикуются. Цену и условия называйте паломнику заранее, до начала услуг, и не меняйте их в поездке."),
   _t("Нельзя: брать у паломников паспорта, обещать визу или «гарантированную умру», давать неверные сведения о себе, просить отзывы за вознаграждение."),
   _t("Отзывы оставляют только паломники, которых вы приняли в поездку через приложение. За критику отзывы не удаляем. Удаляем оскорбления и доказанную ложь."),
   _t("Мы можем скрыть или убрать профиль, если документы недействительны, есть обоснованные жалобы или нарушены условия. Причину сообщим письменно, вы можете ответить и попросить пересмотра."),
@@ -249,7 +249,7 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
     [_t("Кем ты будешь"), _t("гид на месте или наставник онлайн")],
     [_t("О себе"), _t("имя, языки, коротко о себе")],
     [_t("Знание"), _t("университет или медресе, год, специальность, сколько лет")],
-    [_t("Где я и услуги"), guide ? _t("в Мекке, в Медине или готов вылететь; цены") : _t("свободные даты, уроки и цены")],
+    [_t("Где я и услуги"), guide ? _t("в Мекке, в Медине или готов вылететь; что делаю") : _t("свободные даты и уроки")],
     [_t("Проверка и согласие"), guide ? _t("диплом, лицензия КСА, рекомендация имама, две галочки") : _t("диплом, рекомендация имама, две галочки")],
   ];
   const okStep = [true, p.name.trim().length > 1 && p.langs.length > 0, p.school.trim().length >= 3, p.services.some((s) => s.t.trim()),
@@ -257,7 +257,7 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
   const photo = async (f: File | undefined, to: (s: string) => void) => { if (!f) return; try { to((await shrink(f, 1200)).data); } catch { setMsg(_t("Не получилось прочитать фото.")); } };
   const send = async () => {
     setBusy(true);
-    const r = await guideApply({ ...p, license: guide, about: hc(p.about), free: hc(p.free), services: p.services.filter((s) => s.t.trim()).map((s) => ({ ...s, t: hc(s.t) })) }, dip, guide ? lic : null);
+    const r = await guideApply({ ...p, license: guide, about: hc(p.about), free: hc(p.free), services: p.services.filter((s) => s.t.trim()).map((s) => ({ t: hc(s.t), price: 0, per: '' })) }, dip, guide ? lic : null);
     setBusy(false);
     if (r === 'ok') { setMsg(_t("✓ Заявка отправлена. Проверяем 2–3 дня, ответ придёт сюда же.")); setTimeout(onBack, 1500); }
     else setMsg(r === 'school' ? _t("Впиши, где ты учился.") : r === 'big' ? _t("Фото слишком большое, выбери другое.")
@@ -300,12 +300,10 @@ function BecomeGuide({ mine, onBack }: { mine: MyGuide | null; onBack: () => voi
       {p.services.map((s, i) => (
         <div key={i} className="ug-svc">
           <input value={s.t} maxLength={60} placeholder={guide ? _t("Сопровождение обрядов умры") : _t("Урок онлайн до поездки")} onChange={(e) => svc(i, { t: e.target.value })} />
-          <input inputMode="numeric" value={s.price || ''} placeholder="€" onChange={(e) => svc(i, { price: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
-          <input value={s.per} maxLength={20} placeholder={_t("день")} onChange={(e) => svc(i, { per: e.target.value })} />
         </div>
       ))}
-      {p.services.length < 6 && <button type="button" className="link-btn" onClick={() => set({ services: [...p.services, { t: '', price: 0, per: _t("час") }] })}>{_t("+ Ещё услуга")}</button>}
-      <p className="tiny">{_t("Оплату ты получаешь напрямую от людей. Приложение деньги не держит и процент не берёт.")}</p>
+      {p.services.length < 6 && <button type="button" className="link-btn" onClick={() => set({ services: [...p.services, { t: '', price: 0, per: '' }] })}>{_t("+ Ещё услуга")}</button>}
+      <p className="tiny">{_t("Цены в приложении не указываются. О цене и условиях договоритесь с человеком в чате заранее, до начала. Оплату ты получаешь напрямую, приложение деньги не держит и процент не берёт.")}</p>
     </>,
     <>
       <label className="ug-f ug-file"><small>{_t("Фото диплома или иджазы")}</small><input type="file" accept="image/*" onChange={(e) => photo(e.target.files?.[0], setDip)} />{(dip || mine?.has_diploma) && <em>{_t("✓ есть")}</em>}</label>

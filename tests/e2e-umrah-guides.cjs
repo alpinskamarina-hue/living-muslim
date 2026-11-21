@@ -71,10 +71,8 @@ async function guides(pg) {
     await G.locator('.ug-f input').nth(0).fill('20 марта 2027');
     await G.locator('.ug-f input').nth(1).fill('1–10 февраля · 15–25 марта');
     await G.locator('.ug-svc input').nth(0).fill('Сопровождение обрядов умры');
-    await G.locator('.ug-svc input').nth(1).fill('40');
     await G.locator('.link-btn', { hasText: 'Ещё услуга' }).click();
-    await G.locator('.ug-svc input').nth(3).fill('Зиярат по Медине');
-    await G.locator('.ug-svc input').nth(4).fill('30');
+    await G.locator('.ug-svc input').nth(1).fill('Зиярат по Медине');
     await G.locator('.ug-next').click(); await wait(300);
     await G.locator('.ug-file input[type=file]').first().setInputFiles(OUT + 'mp-0-start.png'); await wait(1200);
     check(await G.locator('.ug-next').isDisabled(), 'send is off without the KSA licence and the two ticks');
@@ -84,7 +82,7 @@ async function guides(pg) {
     await G.locator('.ug-cb input').nth(0).check();
     check(await G.locator('.ug-next').isDisabled(), 'send is still off with one tick');
     await G.locator('.ug-cb .link-btn', { hasText: 'Условия' }).click(); await wait(200);
-    check(await G.locator('ol.ug-terms li').count() === 10, 'the 10 terms open in place');
+    check(await G.locator('ol.ug-terms li').count() === 11, 'the 11 terms open in place');
     await G.locator('.ug-cb input').nth(1).check();
     await shot(G, 'gd-2-apply-check');
     await G.locator('.ug-next').click(); await wait(2500);
@@ -123,7 +121,7 @@ async function guides(pg) {
     await guides(S);
     const cards = await S.locator('.ug-card').allInnerTexts();
     say('cards:', cards.map(flat));
-    check(cards.length === 1 && cards[0].includes('Медине') && cards[0].includes('€40'), 'guide listed with place and price');
+    check(cards.length === 1 && cards[0].includes('Медине') && !cards[0].includes('€'), 'guide listed with place, no price');
     await S.locator('.ug-chips button', { hasText: 'Наставник' }).click(); await wait(300);
     check(await S.locator('.ug-card').count() === 0, 'filter «Наставник» hides a guide on site');
     await S.locator('.ug-chips button', { hasText: 'Гид на месте' }).click(); await wait(300);
@@ -132,7 +130,7 @@ async function guides(pg) {
     await S.locator('.ug-card').first().click(); await wait(1500);
     const prof = await S.locator('.ug-prof').innerText();
     say('profile:', flat(prof).slice(0, 400));
-    check(prof.includes('Документы проверены') && prof.includes('Перед тем как договориться') && prof.includes('Свободен'), 'profile: badge, warning, free dates');
+    check(!prof.includes('€') && prof.includes('договоритесь в чате до начала') && prof.includes('Документы проверены') && prof.includes('Перед тем как договориться') && prof.includes('Свободен'), 'profile: badge, warning, free dates');
     await S.locator('.ug-prof .ug-vb').click(); await wait(300);
     const ver = await S.locator('.ug-ver').innerText();
     say('ver:', flat(ver));
