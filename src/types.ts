@@ -331,6 +331,12 @@ export interface UmrahState {
   /** Talbiya phrases I know by heart (indexes 0..3). */
   talbiyaKnown?: number[];
   funds?: { id: string; goal: number; cur: string; by?: string; for?: string; entries: { d: string; amt: number; who?: string }[] }[];
+  /** How I go: with a group, alone, with an agency, or only dreaming for now (the first question of «Моя умра»). */
+  mode?: 'group' | 'solo' | 'agency' | 'dream';
+  /** The agency's name when I go with one. */
+  agency?: string;
+  /** The one readiness number (heart + tasks + money), kept so Goals and Practice show the same figure. */
+  ready?: number;
 }
 
 export type GoalSource = 'quran' | 'pages' | 'bookch' | 'chapters' | 'course' | 'prayers' | 'fasts' | 'workouts' | 'umrah' | 'habits' | 'manual' | 'video' | 'hifz' | 'steps';

@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
 import { setMark } from '../store';
 import { Quran } from './Quran';
-import { prepPct } from './Umrah';
+import { umrahReady } from '../umrah/path';
 import type { UmrahApi } from '../umrahCircle';
 import type { CircleApi } from '../circle';
 import type { HubTab } from './UmrahHub';
@@ -85,7 +85,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onFood={() => setMode('food')} />;
   if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} onHealth={() => setMode('health')} />;
-  if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} start={uStart ?? umrahStart} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
+  if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} start={uStart ?? umrahStart ?? 'rites'} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
   if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={vref} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'body') return (
     <div className="page">
@@ -125,7 +125,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
     langs: { ic: 'lang', badge: due, title: _t("Языки"), sub: state.course ? _t("Английский A1: день {0}{1}", state.course.day + 1, due ? _t(" · {0} к повторению", due) : '') : state.courseAr ? _t("Арабский A1: день {0}{1}", state.courseAr.day + 1, due ? _t(" · {0} к повторению", due) : '') : due ? _t("{0} карточек к повторению", due) : isEn ? _t("Арабский A1, карточки слов") : _t("Курсы английского и арабского, карточки слов"), pct: state.course ? (state.course.day + 1) / A1.length : state.courseAr ? (state.courseAr.day + 1) / 30 : undefined, open: () => setMode('langs') },
     body: { ic: 'leaf', title: _t("Здоровье и питание"), sub: _t("Вода {0}/{1} · еда {2} из 3 · сон, посты", health(state).water[today] ?? 0, health(state).waterGoal, Object.keys(foodOf(state).meals[today] ?? {}).length), open: () => setMode('food') },
     focus: { ic: 'timer', title: _t("Фокус-таймер"), sub: _t("Засечь время на любое дело"), open: () => setMode('focus') },
-    umrah: { ic: 'kaaba', title: _t("Умра"), sub: state.umrah?.prep?.length ? _t("Подготовка {0}%", prepPct(state)) : _t("Обряды со счётчиком, подготовка, дуа"), open: () => setMode('umrah') },
+    umrah: { ic: 'kaaba', title: _t("Умра"), sub: state.umrah?.prep?.length || state.umrah?.ready ? _t("Готовность {0}%", umrahReady(state)) : _t("Обряды со счётчиком, подготовка, дуа"), open: () => setMode('umrah') },
     quit: { ic: 'shield', title: _t("Хочу оставить"), sub: (() => { const a = activeQuits(state); return a.length ? a.map((q) => _t("{0}: {1} дн.", q.what, cleanDays(q, today))).join(' · ') : _t("Оставить вредную привычку, тайно"); })(), open: () => onQuit?.() },
     tests: { ic: 'test', title: _t("Тест: что мне даётся труднее"), sub: (() => { const r = lastRun(state); if (!r) return _t("3 минуты · сильная сторона и план на месяц"); const l = repeatIn(r, today); return l <= 0 ? _t("Прошло 30 дней: пора пройти снова") : _t("Пройден {0} · повтор через {1} дн.", r.day.slice(8, 10) + '.' + r.day.slice(5, 7), l); })(), open: () => setMode('tests') },
     testUmrah: { ic: 'test', title: _t("Тест: готовность к умре"), sub: (() => { const r = lastRun(state, UMRAH_TEST); if (!r) return _t("3 минуты · что осталось сделать до поездки"); const l = repeatIn(r, today); return l <= 0 ? _tj("{0} из 24 · пора пройти снова", uTotal(r.a)) : _tj("{0} из 24 · повтор через {1} дн.", uTotal(r.a), l); })(), open: () => setMode('test-umrah') },

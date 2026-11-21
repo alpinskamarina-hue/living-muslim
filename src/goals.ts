@@ -2,7 +2,7 @@ import type { AppState, Goal, GoalSource } from './types';
 import { addDays, daysBetween } from './dates';
 import { consistency } from './store';
 import { health } from './health';
-import { prepPct } from './components/Umrah';
+import { umrahReady } from './umrah/path';
 import { isCounted } from './store';
 import { catalog } from './videos';
 
@@ -28,7 +28,7 @@ export const SOURCES: SourceDef[] = [
   { id: 'prayers', label: _t("Намазы вовремя"), hint: _t("доля за 30 дней"), unit: '%', target: 100, counter: false, identity: true },
   { id: 'fasts', label: _t("Посты сунны"), hint: _t("из раздела Здоровье"), unit: _t("постов"), target: 12, counter: true },
   { id: 'workouts', label: _t("Тренировки"), hint: _t("из раздела Здоровье"), unit: _t("тренировок"), target: 20, counter: true },
-  { id: 'umrah', label: _t("Подготовка к умре"), hint: _t("из раздела Умра"), unit: '%', target: 100, counter: false },
+  { id: 'umrah', label: _t("Готовность к умре"), hint: _t("сердце, дела и деньги из раздела Умра"), unit: '%', target: 100, counter: false },
   { id: 'habits', label: _t("Образ себя по привычкам"), hint: _t("доля дней за 30 дней"), unit: '%', target: 100, counter: false, identity: true },
   { id: 'manual', label: _t("Своё число"), hint: _t("ввожу сам: деньги, вес, шаги"), unit: '', target: 100, counter: false },
   { id: 'video', label: _t("Видеокурс"), hint: _t("просмотренные уроки"), unit: _t("уроков"), target: 20, counter: false },
@@ -111,7 +111,7 @@ export function rawValue(s: AppState, g: Pick<Goal, 'source' | 'habitIds' | 'man
     }
     case 'fasts': return Object.keys(health(s).fasts).length;
     case 'workouts': return Object.values(health(s).workouts).reduce((a, l) => a + l.length, 0);
-    case 'umrah': return prepPct(s);
+    case 'umrah': return umrahReady(s);
     case 'habits': {
       const hs = s.habits.filter((h) => g.habitIds.includes(h.id));
       if (!hs.length) return 0;
@@ -194,7 +194,7 @@ export const TEMPLATES: Template[] = ([
   { group: 'faith', ic: '🕌', sub: _t("доля намазов вовремя за 30 дней"), title: _t("Все намазы вовремя"), source: 'prayers', identity: _t("Я тот, кто встречает намаз, а не догоняет"), habits: [{ action: _t("Вуду сразу после азана"), min: _t("встать после азана"), anchor: 'asr', sphere: 'faith' }, { action: _t("Лечь спать до 23:00"), min: _t("телефон убран в 22:30"), anchor: 'isha', sphere: 'body' }] },
   { group: 'faith', ic: 'حفظ', ar: true, sub: _t("Любые суры: последние 10, Джуз Амма, аль-Мульк…"), title: _t("Выучить суры"), source: 'hifz', identity: _t("Я тот, кто носит Коран в сердце"), habits: [{ action: _t("Повторить выученные аяты"), min: _t("1 аят"), anchor: 'fajr', sphere: 'faith' }] },
   { group: 'faith', ic: '🌙', sub: _t("понедельник и четверг"), title: _t("Посты сунны"), source: 'fasts', target: 8, identity: _t("Я тот, кто держит пост по понедельникам и четвергам"), habits: [] },
-  { group: 'faith', ic: '🕋', sub: _t("по списку подготовки"), title: _t("Готов к умре"), source: 'umrah', identity: _t("Я тот, кто едет к Каабе подготовленным"), habits: [] },
+  { group: 'faith', ic: '🕋', sub: _t("сердце, дела и деньги"), title: _t("Готов к умре"), source: 'umrah', identity: _t("Я тот, кто едет к Каабе подготовленным"), habits: [] },
   { group: 'mind', ic: '▶', sub: _t("Сира, сподвижники, бизнес · по просмотрам"), title: _t("Пройти видеокурс"), source: 'video', identity: _t("Я тот, кто учится каждый день"), habits: [{ action: _t("Один урок"), min: _t("5 минут видео"), anchor: 'isha', sphere: 'mind' }] },
   { group: 'mind', ic: '📖', sub: _t("по главам или по страницам"), title: _t("Прочитать книгу"), source: 'bookch', target: 12, identity: _t("Я тот, кто читает каждый день"), habits: [BOOK_HABIT.bookch] },
   { group: 'mind', ic: 'Aa', sub: _t("30 уроков по дням"), title: _t("Английский A1 за 30 дней"), source: 'course', identity: _t("Я тот, кто говорит по-английски без страха"), habits: [{ action: _t("Урок английского"), min: _t("5 фраз вслух"), anchor: 'asr', sphere: 'mind' }] },
@@ -265,7 +265,7 @@ export function todayStep(s: AppState, g: Goal, today: string): Step {
       if (!next) return { text: _t("Все шаги сделаны, альхамдулиллях"), sub: _t("{0} из {0} шагов", st.length), btn: _t("✓ Цель достигнута"), action: 'add' };
       return { text: next.text, sub: _t("Следующий шаг · {0} из {1} сделано", p.value, st.length), btn: _t("✓ Сделано"), action: 'add' };
     }
-    case 'umrah': return { text: _t("Подготовка: {0}%", p.value), sub: _t("следующий пункт из списка умры"), btn: _t("Открыть"), action: 'umrah' };
+    case 'umrah': return { text: _t("Готовность: {0}%", p.value), sub: _t("следующий шаг пути умры"), btn: _t("Открыть"), action: 'umrah' };
     case 'hifz': {
       const n = Math.max(1, Math.ceil(perDay || 1));
       const refs = hifzRefs(g.ref);
