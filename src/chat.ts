@@ -37,6 +37,21 @@ export function chatReady(): Promise<boolean> {
   return readyP;
 }
 
+/** Read ticks need supabase/chat-reads.sql; until it is run, my messages show one tick as before. */
+let readsP: Promise<boolean> | null = null;
+export function readsReady(): Promise<boolean> {
+  if (!isCloud) return Promise.resolve(false);
+  try { if (sessionStorage.getItem('lm.reads.ok') === '1') return Promise.resolve(true); } catch { /* */ }
+  readsP ??= serverHas('lm_chat_reads', { p_uid: null, p_token: null, p_code: null }).then((ok) => {
+    if (ok) try { sessionStorage.setItem('lm.reads.ok', '1'); } catch { /* */ }
+    return ok;
+  });
+  return readsP;
+}
+/** How far my message got: 'sent' nobody has read it yet, 'some' read by some, 'all' read by everyone it was sent to. */
+export type ReadState = 'sent' | 'some' | 'all';
+export function readStateOf(rd: number, tot: number): ReadState { return rd <= 0 ? 'sent' : rd >= tot ? 'all' : 'some'; }
+
 let linked = false;
 /** Ties this phone's push subscription to me, so the server can announce new messages. */
 async function linkPush() {
@@ -63,6 +78,8 @@ export interface ChatApi {
   msgs: Msg[];
   /** Last message id I had seen when the chat was opened (for the «new» line). */
   seenAtOpen: number | null;
+  /** For my message: how far it got, and who has read it (null until chat-reads.sql is run). */
+  readOf: (m: Msg) => { state: ReadState; by: string[]; tot: number } | null;
   /** Last message id marked as seen for this circle. */
   seen: number;
   unread: number;
@@ -98,6 +115,10 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   const [seen, setSeen] = useState(0);
   const [seenAtOpen, setSeenAtOpen] = useState<number | null>(null);
   const wantSeen = useRef(false);
+  // others' read marks: uid → [last message read, joined at (ms)]
+  const [reads, setReads] = useState<Record<string, [number, number]> | null>(null);
+  const readsOn = useRef(false);
+  useEffect(() => { readsReady().then((ok) => { readsOn.current = ok; }); }, []);
   const [voiceOn, setVoiceOn] = useState(true);
   const [owner, setOwner] = useState('');
   const [more, setMore] = useState(false);
@@ -127,6 +148,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     try {
       const r = await meRpc<ListRes | null>('lm_chat_list', { p_code: code, p_after: full ? 0 : last.current, p_before: 0 });
       if (!r) return;
+      if (open && readsOn.current) meRpc<Record<string, [number, number]> | null>('lm_chat_reads', { p_code: code }).then((x) => { if (x) setReads(x); }).catch(() => {});
       setVoiceOn(r.voice !== false); setOwner(r.owner || ''); setSeen((s) => Math.max(s, r.seen || 0)); setError('');
       if (wantSeen.current) { wantSeen.current = false; setSeenAtOpen(r.seen || 0); }
       if (full) { setMore(r.msgs.length >= 60); if (open) loadAi(); }
@@ -172,6 +194,13 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   }, [open, code, top, seen]);
 
   const unread = msgs.filter((m) => m.id > seen && m.uid !== me && !m.deleted && !m.pending).length;
+  const readOf = useCallback((m: Msg) => {
+    if (!reads || m.pending || m.id <= 0) return null;
+    const at = Date.parse(m.at);
+    const to = Object.entries(reads).filter(([, [, j]]) => !j || j <= at + 1000);
+    const by = to.filter(([, [l]]) => l >= m.id).map(([u]) => u);
+    return { state: readStateOf(by.length, to.length), by, tot: to.length };
+  }, [reads]);
 
   const tmp = useRef(-1);
   const send = async (body: string, ref: MsgRef | null = null, kind: 'text' | 'event' = 'text') => {
@@ -314,7 +343,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     return ok;
   };
 
-  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
+  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, readOf, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
 }
 
 /** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */

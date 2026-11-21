@@ -5280,3 +5280,12 @@ body.pp-on { overflow: hidden; }
 .ug-cb input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
 .ug-terms { font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin: 0 0 8px; padding-left: 18px; }
 p.ug-terms { padding-left: 0; }
+
+/* Read ticks like WhatsApp: one = sent, two grey = read by some, two blue = read by everyone */
+.cc-tick { display: inline-block; vertical-align: -1px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; color: var(--ink-2); }
+.cc-tick.t-all { color: #1a8fd0; }
+.wa-l2 .cc-tick { vertical-align: -1px; margin-right: 1px; }
+.cc-read { margin: 0 0 6px; font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.cc-read small { flex-basis: 100%; font-size: 12px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cc-tick.t-all { color: #53bdeb; } }
+:root[data-theme="dark"] .cc-tick.t-all { color: #53bdeb; }

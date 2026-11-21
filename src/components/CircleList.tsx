@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { meRpc, myCircles, currentCircle, kindOf, type CircleRef } from '../cloud';
 import type { Member } from '../circle';
-import type { Msg } from '../chat';
-import { shortOf } from './CircleChat';
+import { readsReady, readStateOf, type Msg } from '../chat';
+import { Ticks, shortOf } from './CircleChat';
 import { _t, LOC } from '../i18n';
 import { openPerson, usePersonReady, useAsks } from '../person';
 import { AsksBox, IntentsFeed } from './Person';
 import { InviteInbox } from './Nick';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
-interface Row { last: Msg | null; who: Record<string, string> }
+interface Row { last: Msg | null; who: Record<string, string>; rd: [number, number] | null }
 
 const KIND_BG: Record<string, string> = { family: '#fdeee0', brothers: '#e8f3ec', sisters: '#fbe8f0', biz: '#e7eefb', friends: '#eef0f3', masjid: '#efe7fb', study: '#e6f4f6', work: '#e7eefb', other: '#f6f0dc' };
 
@@ -31,6 +31,7 @@ function useLastMessages(circles: CircleRef[]) {
     const who: Record<string, Record<string, string>> = {};
     const load = async (first: boolean) => {
       const out: Record<string, Row> = {};
+      const rd = (await readsReady()) ? await meRpc<Record<string, [number, number]> | null>('lm_chat_reads', { p_code: null }).catch(() => null) : null;
       await Promise.all(circles.map(async (c) => {
         if (first || !who[c.code]) {
           const s = await meRpc<{ members: { uid: string; name: string }[] } | null>('lm_state', { p_code: c.code }).catch(() => null);
@@ -38,7 +39,7 @@ function useLastMessages(circles: CircleRef[]) {
         }
         const r = await meRpc<{ msgs: Msg[] } | null>('lm_chat_list', { p_code: c.code }).catch(() => null);
         const msgs = (r?.msgs ?? []).filter((m) => !m.deleted);
-        out[c.code] = { last: msgs[msgs.length - 1] ?? null, who: who[c.code] };
+        out[c.code] = { last: msgs[msgs.length - 1] ?? null, who: who[c.code], rd: rd ? rd[c.code] ?? [0, 0] : null };
       }));
       if (alive) setRows(out);
     };
@@ -124,7 +125,7 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
               <span className="wa-av" style={{ background: KIND_BG[c.kind ?? 'other'] ?? '#eef0f3' }}>{kindOf(c.kind)?.ic ?? '👥'}</span>
               <span className="wa-rt">
                 <span className="wa-l1"><b>{c.title}</b>{m && <time className={n ? 'new' : ''}>{timeOf(m.at)}</time>}</span>
-                <span className="wa-l2"><span>{m?.uid === me && m.kind !== 'event' ? '✓✓ ' : ''}{text}</span>{n > 0 && <em>{n > 99 ? '99+' : n}</em>}</span>
+                <span className="wa-l2"><span>{m?.uid === me && m.kind !== 'event' ? <><Ticks s={r.rd ? readStateOf(r.rd[0], r.rd[1]) : 'sent'} /> </> : ''}{text}</span>{n > 0 && <em>{n > 99 ? '99+' : n}</em>}</span>
               </span>
             </button>
           );
