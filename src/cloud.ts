@@ -95,6 +95,28 @@ export function switchCircle(code: string) {
   location.reload();
 }
 
+const DM = 'lm.dm';
+/** Chats of two opened by an ask: joined without the «Присоединиться» card. */
+export function isDm(code?: string): boolean { try { return Boolean(code) && (JSON.parse(localStorage.getItem(DM) || '[]') as string[]).includes(code!); } catch { return false; } }
+function markDm(code: string) { try { const l = JSON.parse(localStorage.getItem(DM) || '[]') as string[]; if (!l.includes(code)) localStorage.setItem(DM, JSON.stringify([...l, code].slice(-200))); } catch { /* */ } }
+/** Adds a circle to my list without opening it (a chat of two that someone accepted). */
+export function addCircleQuiet(ref: CircleRef) {
+  const me = load();
+  if (!me) return;
+  markDm(ref.code);
+  if (me.circles?.some((c) => c.code === ref.code)) return;
+  save({ ...me, circle: me.circle ?? ref.code, circles: [...(me.circles ?? []), ref] });
+}
+/** Adds a circle and opens its chat (the page reloads). */
+export function openCircleChat(ref: CircleRef) {
+  const me = load();
+  if (!me) return;
+  markDm(ref.code);
+  if (!me.circles?.some((c) => c.code === ref.code)) save({ ...me, circles: [...(me.circles ?? []), ref] });
+  try { sessionStorage.setItem('lm.chat', ref.code); } catch { /* */ }
+  switchCircle(ref.code);
+}
+
 /** Renames a circle for me (the name travels with new invite links). */
 export function renameCircle(code: string, title: string, kind?: CircleKind) {
   const me = load();

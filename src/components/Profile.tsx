@@ -25,6 +25,8 @@ import { canPrompt, DEFAULT_PREFS, disablePush, enablePush, isIOS, isStandalone,
 import { isCloud, nicksReady, forgetIdentity, signupName } from '../cloud';
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import { NikahPage } from './Nikah';
+import { SeekPage, IntentsFeed } from './Person';
+import { usePersonReady } from '../person';
 import { AssistantSettings, IdeasPage, PingsPage } from './Assistant';
 import { PlansPage, takePlanStart } from './Plans';
 import { dayPlans, weekStart, addDays as plAdd, planRings } from '../plans';
@@ -55,6 +57,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const [, bump] = useState(0);
   const [nicks, setNicks] = useState(false);
   const nikahOn = useNikahReady();
+  const personOn = usePersonReady();
   const nk = useNikahMe(nikahOn);
   const nkTodo = nikahTodo(nk);
   const admin = useIsAdmin();
@@ -75,6 +78,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'lang') return <Sub title="Язык · Language" onBack={back}><LangSettings s={s} set={set} /></Sub>;
   if (page === 'look') return <Sub title={_t("Внешний вид")} onBack={back}><LookSettings s={s} set={set} /></Sub>;
   if (page === 'data') return <Sub title={_t("Данные")} onBack={back}><DataSettings state={state} replace={replace} /></Sub>;
+  if (page === 'seek') return <Sub title={_t("Что я сейчас ищу")} onBack={back}><SeekPage state={state} onNikah={() => go('nikah')} /></Sub>;
+  if (page === 'seekers') return <IntentsFeed onBack={back} />;
   if (page === 'nikah') return <Sub title={_t("Никах")} onBack={back}><NikahPage /></Sub>;
   if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
@@ -147,6 +152,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         <Row icon="📖" title={_t("Как пользоваться")} sub={_t("Гид по всем разделам и частые вопросы")} onClick={() => go('guide')} />
         <Row icon="🌳" title={_t("Мой сад")} sub={_t("{0} {1} · до плода {2} {3} · вехи", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев")), gd.toFruit, plural(gd.toFruit, _t("день"), _t("дня"), _t("дней")))} onClick={() => go('garden')} />
         {isCloud && nikahOn && <Row icon="💍" title={_t("Никах")} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}
+        {isCloud && personOn && <Row icon="🔎" title={_t("Что я сейчас ищу")} sub={_t("Умра, никах, работа, бизнес, учёба: видно в твоём профиле")} onClick={() => go('seek')} />}
+        {isCloud && personOn && <Row icon="🧭" title={_t("Кто что ищет")} sub={_t("Чем можно помочь людям из твоих кругов")} onClick={() => go('seekers')} />}
         {isCloud && nicks && <Row icon="🪪" title={_t("Мой профиль")} sub={prof?.nick ? _t("@{0} · фото, приватность", prof.nick) : _t("Ник, фото, кто может звать в круги")} onClick={() => go('me')} />}
         {!onClaude && <Row icon="👤" title={_t("Аккаунт")} sub={me ? _t("{0} · имя «{1}»", me.email, name) : _t("Войти по почте, имя")} onClick={() => go('account')} />}
         {onClaude && <Row icon="👤" title={_t("Имя")} sub={name} onClick={() => go('account')} />}
@@ -168,7 +175,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
