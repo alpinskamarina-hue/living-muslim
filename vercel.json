@@ -16,5 +16,10 @@
       "destination": "/app/?umrah",
       "permanent": false
     }
-  ]
+  ],
+  "functions": {
+    "api/invest-lead.js": {
+      "includeFiles": "landing/investors-deck.pdf"
+    }
+  }
 }

@@ -9,4 +9,5 @@ mkdirSync('dist/guide', { recursive: true });
 copyFileSync('landing/guide.html', 'dist/guide/index.html');
 mkdirSync('dist/investors', { recursive: true });
 copyFileSync('landing/investors.html', 'dist/investors/index.html');
+copyFileSync('landing/investors-deck.pdf', 'dist/investors/LivingMuslim-deck-q7m4x2.pdf');
 console.log('landing at /, app at /app/');

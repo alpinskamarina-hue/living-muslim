@@ -365,7 +365,7 @@ footer .disc { border-top: 1px solid var(--sand); padding-top: 22px; }
   <div>
     <div class="eyebrow"><span lang="ru">Знакомство</span><span lang="en">Get in touch</span></div>
     <h2><span lang="ru">Запросить презентацию</span><span lang="en">Request the deck</span></h2>
-    <p class="sub"><span lang="ru">Оставьте контакт — основатель свяжется с вами лично, расскажет о проекте и ответит на вопросы.</span><span lang="en">Leave your details and the founder will reach out personally, walk you through the project and answer questions.</span></p>
+    <p class="sub"><span lang="ru">Оставьте почту — презентация для инвесторов сразу придёт вам на почту, а основатель свяжется лично и ответит на вопросы.</span><span lang="en">Leave your email and the investor presentation will arrive in your inbox right away; the founder will then reach out personally and answer questions.</span></p>
     <div class="direct">
       <a href="https://wa.me/359885282094" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.8 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.2.1-1.9-.1-2.9-1-4.8-3.9-5-4.1-.1-.2-1.2-1.6-1.2-3s.7-2.2 1-2.5c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.5z"/></svg><span><small lang="ru">WhatsApp</small><small lang="en">WhatsApp</small><b>+359 88 528 2094</b></span></a>
       <a href="/app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg><span><small lang="ru">Ник в приложении</small><small lang="en">Nick in the app</small><b>@ilgiz_yusupov</b></span></a>
@@ -375,12 +375,14 @@ footer .disc { border-top: 1px solid var(--sand); padding-top: 22px; }
   <form id="lead">
     <div class="row2">
       <label><span lang="ru">Имя</span><span lang="en">Name</span><input name="name" maxlength="60" required></label>
-      <label><span lang="ru">Почта или телефон</span><span lang="en">Email or phone</span><input name="contact" maxlength="120" required></label>
+      <label><span lang="ru">Почта</span><span lang="en">Email</span><input name="email" type="email" maxlength="120" autocomplete="email" required></label>
     </div>
     <div class="row2">
+      <label><span lang="ru">Телефон или WhatsApp</span><span lang="en">Phone or WhatsApp</span><input name="phone" type="tel" maxlength="40" autocomplete="tel"></label>
       <label><span lang="ru">Страна</span><span lang="en">Country</span><input name="country" maxlength="60"></label>
-      <label><span lang="ru">Интересующая сумма</span><span lang="en">Amount of interest</span><select name="amount"><option>€5 000 – 10 000</option><option>€10 000 – 25 000</option><option>€25 000 – 50 000</option><option>€50 000+</option></select></label>
     </div>
+    <label><span lang="ru">Интересующая сумма</span><span lang="en">Amount of interest</span><select name="amount"><option>€5 000 – 10 000</option><option>€10 000 – 25 000</option><option>€25 000 – 50 000</option><option>€50 000+</option></select></label>
+    <input name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px">
     <label><span lang="ru">Пара слов о вас</span><span lang="en">A few words about you</span><textarea name="about" rows="3" maxlength="1000"></textarea></label>
     <label class="chk"><input type="checkbox" required><span lang="ru">Согласен, чтобы со мной связались по поводу участия в проекте</span><span lang="en">I agree to be contacted about joining the project</span></label>
     <button class="send"><span lang="ru">Отправить</span><span lang="en">Send</span></button>
@@ -446,23 +448,23 @@ document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-set]').forEach(x => x.classList.toggle('on', x === b));
 });
 
-// Deck requests go to Supabase (supabase/invest.sql); only the owner reads them.
+// Deck requests go to /api/invest-lead: saved in Supabase (supabase/invest.sql) and the deck is emailed via Brevo.
 (function () {
-  var SB = 'https://pbpllsoiesquknuibyyj.supabase.co', KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
   var f = document.getElementById('lead'), m = document.getElementById('lead-msg');
   var T = {
-    ru: { ok: 'Спасибо! Основатель свяжется с вами в ближайшие дни, иншаАллах.', err: 'Не получилось отправить. Попробуйте ещё раз чуть позже.' },
-    en: { ok: 'Thank you! The founder will contact you within a few days, insha’Allah.', err: 'Could not send. Please try again a little later.' }
+    ru: { ok: 'Спасибо! Презентация отправлена вам на почту (проверьте папку «Спам»). Основатель свяжется с вами в ближайшие дни, иншаАллах.', saved: 'Спасибо! Заявка принята, основатель пришлёт презентацию и свяжется с вами в ближайшие дни, иншаАллах.', err: 'Не получилось отправить. Попробуйте ещё раз чуть позже.' },
+    en: { ok: 'Thank you! The presentation has been sent to your email (check the spam folder). The founder will contact you within a few days, insha’Allah.', saved: 'Thank you! Your request is saved; the founder will send the presentation and contact you within a few days, insha’Allah.', err: 'Could not send. Please try again a little later.' }
   };
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     var l = document.documentElement.dataset.l === 'en' ? 'en' : 'ru', d = new FormData(f), b = f.querySelector('button');
     b.disabled = true;
-    fetch(SB + '/rest/v1/rpc/lm_invest_lead', { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_name: d.get('name'), p_contact: d.get('contact'), p_country: d.get('country'), p_amount: d.get('amount'), p_about: d.get('about'), p_lang: l }) })
+    fetch('/api/invest-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: d.get('name'), email: d.get('email'), phone: d.get('phone'), country: d.get('country'), amount: d.get('amount'), about: d.get('about'), website: d.get('website'), lang: l }) })
       .then(function (r) { return r.ok ? r.json() : false; })
-      .then(function (ok) {
-        m.hidden = false; m.className = ok ? 'msg' : 'msg err'; m.textContent = ok ? T[l].ok : T[l].err;
+      .then(function (j) {
+        var ok = !!(j && j.ok);
+        m.hidden = false; m.className = ok ? 'msg' : 'msg err'; m.textContent = ok ? (j.mailed ? T[l].ok : T[l].saved) : T[l].err;
         if (ok) { f.reset(); f.querySelectorAll('input,select,textarea').forEach(function (x) { x.disabled = true; }); } else b.disabled = false;
       })
       .catch(function () { m.hidden = false; m.className = 'msg err'; m.textContent = T[l].err; b.disabled = false; });
