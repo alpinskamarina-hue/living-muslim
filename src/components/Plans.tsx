@@ -18,7 +18,7 @@ function Check({ done, onClick }: { done: boolean; onClick: () => void }) {
   return <button type="button" className={`pn-ck${done ? ' on' : ''}`} aria-pressed={done} aria-label={done ? _t("Сделано") : _t("Отметить сделанным")} onClick={(e) => { e.stopPropagation(); onClick(); }}>{done ? '✓' : ''}</button>;
 }
 
-function Item({ state, p, k, update, onOpen, onTick }: { state: AppState; p: Plan; k: string; update: Up; onOpen?: (p: Plan) => void; onTick?: (id: string, done: boolean) => void }) {
+export function PlanItem({ state, p, k, update, onOpen, onTick }: { state: AppState; p: Plan; k: string; update: Up; onOpen?: (p: Plan) => void; onTick?: (id: string, done: boolean) => void }) {
   const done = isDone(p, k);
   return (
     <div className={`pn-it${done ? ' done' : ''}`} role="button" tabIndex={0} onClick={() => onOpen?.(p)} onKeyDown={(e) => { if (e.key === 'Enter') onOpen?.(p); }}>
@@ -28,6 +28,19 @@ function Item({ state, p, k, update, onOpen, onTick }: { state: AppState; p: Pla
         <small>{p.list && <span className={`pn-tag ${listTone(state, p.list)}`}>{p.list}</span>}{whenLabel(state.settings, p, k)}</small>
       </div>
     </div>
+  );
+}
+
+/** Today, «Главное сейчас»: undone plans from earlier days, with moving them to today. */
+export function PlansLate({ state, update, today, onOpen }: { state: AppState; update: Up; today: string; onOpen: () => void }) {
+  const late = overdue(state, today);
+  if (!late.length) return null;
+  return (
+    <section className="pn-card">
+      <div className="pn-card-h"><b>🗓 {_t("Не сделано раньше: {0}", late.length)}</b><button type="button" className="link-btn" onClick={onOpen}>{_t("Все")} ›</button></div>
+      <small className="pn-card-f">{late.slice(0, 3).map((p) => p.text).join(' · ')}</small>
+      <button type="button" className="link-btn pn-move" onClick={() => update((s) => late.reduce((acc, p) => movePlan(acc, p.id, today), s))}>{_t("Перенести на сегодня")}</button>
+    </section>
   );
 }
 
@@ -52,7 +65,7 @@ export function PlansCard({ state, update, today, onOpen }: { state: AppState; u
   return (
     <section className="pn-card">
       <div className="pn-card-h"><b>🗓 {_t("Планы на сегодня")}</b><button type="button" className="link-btn" onClick={onOpen}>{_t("Все")} ›</button></div>
-      {list.slice(0, 5).map((p) => <Item key={p.id} state={state} p={p} k={today} update={update} onOpen={onOpen} onTick={tick} />)}
+      {list.slice(0, 5).map((p) => <PlanItem key={p.id} state={state} p={p} k={today} update={update} onOpen={onOpen} onTick={tick} />)}
       {late.length > 0 && (
         <div className="pn-late">
           <span>{_t("Не сделано раньше: {0}", late.length)}</span>
@@ -155,21 +168,21 @@ function DayView({ state, update, today, k, setK, onOpen }: { state: AppState; u
       {free.length > 0 && (
         <>
           <div className="pn-pr"><span>{_t("В течение дня")}</span></div>
-          {free.map((p) => <Item key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />)}
+          {free.map((p) => <PlanItem key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />)}
         </>
       )}
       {showPr ? ANCHORS.map((a) => (
         <div key={a}>
           <div className="pn-pr"><span>{a === 'dhuhr' && fri ? _t("Зухр · Джума") : ANCHOR_LABEL[a].ru}</span><i>{hm(t[a].getTime())}</i></div>
-          {by[a].filter((p) => !pre.includes(p)).map((p) => <Item key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />)}
+          {by[a].filter((p) => !pre.includes(p)).map((p) => <PlanItem key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />)}
           {a === 'dhuhr' && fri && <div className="pn-jum">🕌 <span><b>{_t("Джума")}</b><small>{_t("пятничный намаз")}</small></span></div>}
           {by[a].length === 0 && !(a === 'dhuhr' && fri) && <p className="pn-free">{_t("Свободно")}</p>}
         </div>
-      )) : list.filter((p) => !free.includes(p)).map((p) => <Item key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />)}
+      )) : list.filter((p) => !free.includes(p)).map((p) => <PlanItem key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />)}
       {wk.length > 0 && (
         <>
           <div className="pn-pr"><span>{_t("На этой неделе")}</span></div>
-          {wk.map((p) => <Item key={p.id} state={state} p={p} k={p.date} update={update} onOpen={onOpen} />)}
+          {wk.map((p) => <PlanItem key={p.id} state={state} p={p} k={p.date} update={update} onOpen={onOpen} />)}
         </>
       )}
       {list.length === 0 && <p className="tiny">{_t("Добавь план или скажи помощнику: «завтра после Зухра забронировать отель».")}</p>}
@@ -252,7 +265,7 @@ function MonthView({ state, update, today, k, setK, onOpen }: { state: AppState;
       </div>
       <p className="tiny"><span className="pn-dot" /> {_t("план")} · <span className="pn-dot go" /> {_t("пятница")}</p>
       <div className="pn-pr"><span>{dayLabel(k, { weekday: 'long', day: 'numeric', month: 'long' })}</span></div>
-      {list.length ? list.map((p) => <Item key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />) : <p className="pn-free">{_t("Свободно")}</p>}
+      {list.length ? list.map((p) => <PlanItem key={p.id} state={state} p={p} k={k} update={update} onOpen={onOpen} />) : <p className="pn-free">{_t("Свободно")}</p>}
     </>
   );
 }

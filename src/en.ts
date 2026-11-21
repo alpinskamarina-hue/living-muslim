@@ -6262,4 +6262,8 @@ export const EN: Record<string, string> = {
   "Не получилось сохранить, проверь интернет.": "Couldn't save; check your connection.",
   "Сохранить в общую базу": "Save to the shared base",
   "Состав добавили люди по фото упаковки.": "Ingredients added by people from a photo of the pack.",
+  "плана": "plans",
+  "планов": "plans",
+  "День по намазам": "The day by prayers",
+  "Кружок слева — намаз: касание — вовремя (две галочки), ещё касание — с опозданием (одна), ещё — снять.": "The circle on the left is the prayer: tap for on time (two ticks), again for late (one), again to clear.",
 };
