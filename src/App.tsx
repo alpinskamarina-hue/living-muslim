@@ -24,6 +24,7 @@ import { effectiveTheme, themeMode, setCurrentTheme, sysPrefersDark } from './th
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
+import { umrahTabOn } from './umrahTab';
 import { umrahCall } from './components/UmrahBanner';
 import { UmrahMadeCard } from './components/UmrahMade';
 import { GiftNudge } from './components/GiftPass';
@@ -66,16 +67,18 @@ import { lazyNamed } from './lazy';
 import type { OutGo } from './components/NewPathScreens';
 const PathScreen = lazyNamed(() => import('./components/NewPathScreens').then((m) => m.PathScreen));
 
-type Tab = 'today' | 'practice' | 'circle' | 'progress' | 'profile';
+type Tab = 'today' | 'practice' | 'circle' | 'umrah' | 'progress' | 'profile';
+const UmrahHub = lazyNamed(() => import('./components/UmrahHub').then((m) => m.UmrahHub));
 
 const ICONS: Record<Tab, JSX.Element> = {
   today: <path d="M12 3l2.6 5.4L20 9.2l-4 4 .9 5.8L12 16.3 7.1 19l.9-5.8-4-4 5.4-.8z" />,
   practice: <path d="M4 5.5A1.5 1.5 0 015.5 4H11v16H5.5A1.5 1.5 0 014 18.5zM13 4h5.5A1.5 1.5 0 0120 5.5v13a1.5 1.5 0 01-1.5 1.5H13z" />,
   circle: <><circle cx="9" cy="8" r="3.5" /><circle cx="17" cy="9" r="2.5" /><path d="M2.5 20a6.5 6.5 0 0113 0M15 20a5 5 0 017-4.5" /></>,
+  umrah: <><path d="M4 7l8-4 8 4v10l-8 4-8-4z" /><path d="M4 7l8 4 8-4M12 11v10M4 10.5l8 4 8-4" /></>,
   progress: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></>,
   profile: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0116 0" /></>,
 };
-const LABELS: Record<Tab, string> = { today: _t("Сегодня"), practice: _t("Практика"), circle: _t("Круг"), progress: _t("Цели"), profile: _t("Профиль") };
+const LABELS: Record<Tab, string> = { today: _t("Сегодня"), practice: _t("Практика"), circle: _t("Круг"), umrah: _t("Умра"), progress: _t("Цели"), profile: _t("Профиль") };
 
 export function App() {
   const [state, update, replace] = useAppState();
@@ -85,6 +88,7 @@ export function App() {
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     return 'today';
   });
+  const [umStart, setUmStart] = useState(0);
   const chatUnread = useChatUnread();
   const chatTotal = Object.values(chatUnread).reduce((a, n) => a + n, 0);
   // A chat notification was tapped: open that circle's chat (switching circle reloads the page).
@@ -283,7 +287,7 @@ export function App() {
   const uCall = joined && circle.me ? umrahCall(umrah, circle.reacts, today) : null;
   if (uCall && !uCall.answered) support.push({ cls: 'invite',
     text: _t("🕋 {0} зовёт тебя на умру «{1}»", circle.names[uCall.c]?.name || umrah.names[uCall.c] || _t("Брат"), umrah.trips[uCall.h]?.title || _t("Умра")),
-    onOpen: () => { window.scrollTo(0, 0); try { sessionStorage.setItem('lm.umHost', uCall.h); } catch { /* */ } setPracticeStart((x) => ({ n: x.n + 1, mode: 'umrah' })); setTab('practice'); } });
+    onOpen: () => { window.scrollTo(0, 0); try { sessionStorage.setItem('lm.umHost', uCall.h); } catch { /* */ } setUmStart((n) => n + 1); setTab('umrah'); } });
   const nkTodo = nikahTodo(nk);
   if (nkTodo.wali.length) support.push({ cls: 'invite', text: _t("💍 {0} просит тебя быть вали в поиске пары", nkTodo.wali[0].name), onOpen: () => go({ profile: 'nikah' }) });
   if (nkTodo.props) support.push({ cls: 'invite', text: _t("💍 {0} для никаха", nkTodo.props === 1 ? _t("Новое предложение") : _t("{0} новых предложения", nkTodo.props)), onOpen: () => go({ profile: 'nikah' }) });
@@ -397,6 +401,11 @@ export function App() {
     setTab('today'); setSheet({ anchor: current });
   };
 
+  // «Умра» in the bottom bar while an umrah is ahead; gone once it is made.
+  const umTab = umrahTabOn(state, umrah, Boolean(uCall && !uCall.answered), today);
+  const tabs = (Object.keys(LABELS) as Tab[]).filter((t) => t !== 'umrah' || umTab);
+  useEffect(() => { if (tab === 'umrah' && !umTab) setTab('today'); }, [tab, umTab]);
+
   const nextUp = state.habits.find((h) => h.status === 'active' && h.anchor === current && !state.log[today]?.[h.id]);
 
   return (
@@ -416,6 +425,7 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
+        {tab === 'umrah' && <UmrahHub key={umStart} state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} backLabel="Living Muslim" onExit={() => { setTab('today'); window.scrollTo(0, 0); }} />}
         {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onHalal={() => setHalal('cam')} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
           <div className="page">
@@ -441,14 +451,14 @@ export function App() {
 
       {!aiOpen && <AssistantFab s={state.settings} onOpen={() => setAiOpen(true)} />}
 
-      <nav className="nav" aria-label={_t("Разделы")}>
-        {(Object.keys(LABELS) as Tab[]).map((t) => (
-          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? _t("{0}, приглашений: {1}", LABELS[t], invites.length) : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); setTab(t); }}>
+      <nav className={`nav${tabs.length > 5 ? ' six' : ''}`} aria-label={_t("Разделы")} style={{ '--tabs': tabs.length } as CSSProperties}>
+        {tabs.map((t) => (
+          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? _t("{0}, приглашений: {1}", LABELS[t], invites.length) : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); if (t === 'umrah') { setUmStart((n) => n + 1); window.scrollTo(0, 0); } setTab(t); }}>
             <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'practice' && planN > 0 && <i className="nav-badge gold">{planN}</i>}{t === 'progress' && goalsN > 0 && <i className="nav-badge gold">{goalsN}</i>}{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
             <small>{LABELS[t]}</small>
           </button>
         ))}
-        <span className="nav-ind" aria-hidden="true" style={{ '--i': Math.max(0, (Object.keys(LABELS) as Tab[]).indexOf(tab)) } as CSSProperties} />
+        <span className="nav-ind" aria-hidden="true" style={{ '--i': Math.max(0, tabs.indexOf(tab)) } as CSSProperties} />
       </nav>
 
       <WordsLayer state={state} today={today} />

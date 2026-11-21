@@ -147,6 +147,26 @@ async function callByNick(A, nick, who) {
     check(tr.length === 1 && tr[0].t === 'Умра весной' && tr[0].m === 'март 2027', `trip made: ${JSON.stringify(tr)}`);
     check(await E.locator('.um-app').count() > 0 && await E.locator('.um-sheet').count() > 0, `umrah screen with «Позвать в поездку»: ${await txt(E, '.um-sheet')}`);
     await shot(E, 'ui-9-new-umrah');
+
+    // 5. «Умра» in the bottom bar while an umrah is ahead, gone once it is made.
+    const tabsOf = async (pg) => (await pg.locator('nav.nav button small').allInnerTexts()).join(' · ');
+    await E.goto(BASE + '/app/'); await wait(3000);
+    let et = await tabsOf(E);
+    check(/Умра/.test(et), `E (gathers a trip) has the tab: ${et}`);
+    await E.locator('nav.nav button', { hasText: 'Умра' }).click(); await wait(2500);
+    check(await E.locator('.um-app').count() > 0, 'the tab opens the umrah screen');
+    await shot(E, 'ui-10-tab-open');
+    await E.locator('.um-out').click(); await wait(1200);
+    await shot(E, 'ui-11-nav-six');
+    await B.goto(BASE + '/app/'); await wait(3000);
+    check(/Умра/.test(await tabsOf(B)), `B (going, his own circle open) has the tab: ${await tabsOf(B)}`);
+    const F = await L.phone(br, 'F');
+    await signup(F, 'Тимур', 'timur@test.dev');
+    check(!/Умра/.test(await tabsOf(F)), `a user with no umrah has no tab: ${await tabsOf(F)}`);
+    await L.q(`update docs set data = data || '{"dates":[{"id":"d1","from":"2026-10-01","to":"2026-10-10"}],"chosen":"d1"}'::jsonb where coll = 'umrahTrip' and key = (select uid from users where name = 'Рустам')`);
+    await E.goto(BASE + '/app/'); await wait(3500);
+    et = await tabsOf(E);
+    check(!/Умра/.test(et), `after the return day the tab is gone: ${et}`);
   } finally {
     say('errors:', L.errors.filter((e) => !/favicon/.test(e)).slice(0, 10));
     say(fails ? `FAILED: ${fails}` : 'ALL OK');
