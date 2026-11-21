@@ -62,7 +62,7 @@ export interface ChatApi {
   filesOn: boolean;
   msgs: Msg[];
   /** Last message id I had seen when the chat was opened (for the «new» line). */
-  seenAtOpen: number;
+  seenAtOpen: number | null;
   /** Last message id marked as seen for this circle. */
   seen: number;
   unread: number;
@@ -96,7 +96,8 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   const [ready, setReady] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [seen, setSeen] = useState(0);
-  const [seenAtOpen, setSeenAtOpen] = useState(0);
+  const [seenAtOpen, setSeenAtOpen] = useState<number | null>(null);
+  const wantSeen = useRef(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [owner, setOwner] = useState('');
   const [more, setMore] = useState(false);
@@ -127,6 +128,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       const r = await meRpc<ListRes | null>('lm_chat_list', { p_code: code, p_after: full ? 0 : last.current, p_before: 0 });
       if (!r) return;
       setVoiceOn(r.voice !== false); setOwner(r.owner || ''); setSeen((s) => Math.max(s, r.seen || 0)); setError('');
+      if (wantSeen.current) { wantSeen.current = false; setSeenAtOpen(r.seen || 0); }
       if (full) { setMore(r.msgs.length >= 60); if (open) loadAi(); }
       if (full || r.msgs.length) {
         setMsgs((old) => {
@@ -157,7 +159,8 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   }, [ready, code, open, pull]);
 
   useEffect(() => { if (ready && open) linkPush(); }, [ready, open]);
-  useEffect(() => { if (open) setSeenAtOpen(seen); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the «new messages» line: what I had read before opening; if nothing was loaded yet, take it from the first answer
+  useEffect(() => { if (open) { setSeenAtOpen(seen || null); wantSeen.current = !seen; } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // mark as read while the chat is open
   const top = msgs.filter((m) => !m.pending).reduce((a, m) => Math.max(a, m.id), 0);
