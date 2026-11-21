@@ -196,6 +196,16 @@ export function SeekPage({ state, onNikah }: { state: AppState; onNikah: () => v
     setDraft(i ? { ...i } : { mode: INTENTS[k].modes[0].id, title: um, note: '', vis: 'circles' });
     setTell(!i); setOpen(k); setMsg('');
   };
+  /** The switch turns on at once (no title needed); the editor stays open to pick a mode or add words. */
+  const turnOn = async (k: IntentKind) => {
+    const um = k === 'umrah' && state.umrah?.from ? rangeOf(state.umrah.from, state.umrah.to, LOC) : '';
+    const d = { mode: INTENTS[k].modes[0].id, title: um, note: '', vis: 'circles' as const };
+    setList((l) => [...(l ?? []).filter((x) => x.kind !== k), { ...d, kind: k, until: '9999-12-31' } as Intent]);
+    setDraft(d); setTell(true); setOpen(k); setMsg('');
+    const r = await setIntent(k, d);
+    if (r !== 'ok') { setMsg(_t("Не удалось сохранить.")); }
+    reload();
+  };
   const save = async (k: IntentKind) => {
     const r = await setIntent(k, { mode: draft.mode ?? '', title: draft.title ?? '', note: draft.note ?? '', vis: draft.vis ?? 'circles' });
     if (r !== 'ok') { setMsg(_t("Не удалось сохранить.")); return; }
@@ -230,7 +240,7 @@ export function SeekPage({ state, onNikah }: { state: AppState; onNikah: () => v
                 {old && <small className="pp-old">{_t("Срок вышел, никто не видит. Нажми «Сохранить», чтобы продлить на 60 дней")}</small>}
               </button>
               <button type="button" role="switch" aria-checked={on} aria-label={m.label} className={`sk-sw${on ? ' on' : ''}`}
-                onClick={() => { if (on) off(k); else if (k === 'nikah') { if (nkActive) setIntent('nikah', { mode: '', title: '', note: '', vis: 'circles' }).then(reload); else onNikah(); } else edit(k); }} />
+                onClick={() => { if (on) off(k); else if (k === 'nikah') { if (nkActive) setIntent('nikah', { mode: '', title: '', note: '', vis: 'circles' }).then(reload); else onNikah(); } else turnOn(k); }} />
             </div>
             {k === 'nikah' && !nkActive && <p className="sk-note">{_t("Сначала заполни анкету в Профиль → Никах. Значок увидят только круги, которые ты там выберешь.")} <button type="button" className="link-btn" onClick={onNikah}>{_t("Открыть «Никах»")}</button></p>}
             {open === k && k !== 'nikah' && (
@@ -244,8 +254,8 @@ export function SeekPage({ state, onNikah }: { state: AppState; onNikah: () => v
                 </div>
                 <label className="sk-tell"><input type="checkbox" checked={tell} onChange={(e) => setTell(e.target.checked)} /><span>{_t("Сказать моим кругам в чате, чтобы подсказали")}</span></label>
                 <div className="pp-row">
-                  <button type="button" className="link-btn" onClick={() => setOpen('')}>{_t("Отмена")}</button>
-                  <button type="button" className="pri-btn" disabled={!(draft.title ?? '').trim()} onClick={() => save(k)}>{_t("Сохранить")}</button>
+                  <button type="button" className="link-btn" onClick={() => setOpen('')}>{_t("Закрыть")}</button>
+                  <button type="button" className="pri-btn" onClick={() => save(k)}>{_t("Сохранить")}</button>
                 </div>
               </div>
             )}
