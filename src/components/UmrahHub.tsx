@@ -24,6 +24,7 @@ import { UmrahBook } from './UmrahBook';
 import { PassCard } from './UmrahPlan';
 import { GroupDash, GroupPass, RollCall, DayPlan, activeRoll } from './UmrahDash';
 import { UmrahDocs } from './UmrahDocs';
+import { umrahCall } from './UmrahBanner';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
@@ -90,7 +91,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   // The trip I look at in «Группа»: the one I go on, else one I answered, else the newest.
   const answered = me ? Object.keys(rsvp[me] ?? {}).filter((h) => trips[h]) : [];
   const newest = Object.keys(trips).sort((a, b) => (trips[b].created ?? '').localeCompare(trips[a].created ?? ''));
-  const [pick, setPick] = useState<string | null>(null);
+  // Opened from a call («Насим зовёт тебя на умру»): show that trip.
+  const [pick, setPick] = useState<string | null>(() => { try { const h = sessionStorage.getItem('lm.umHost'); sessionStorage.removeItem('lm.umHost'); return h; } catch { return null; } });
   const tripHost = (pick && trips[pick] ? pick : null) ?? myTrips[0] ?? answered[0] ?? newest[0] ?? null;
 
   // The trip chat: a branch of the Circle chat, so it needs the Circle and the chat server.
@@ -152,15 +154,18 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   if (inviting === 'nick' && chatCode) {
     const t = tripHost ? trips[tripHost] : null;
     const url = `${inviteLink(chatCode)}&umrah=group`;
-    const called = me && circle ? Object.keys(circle.reacts[me] ?? {}).filter((k) => k.startsWith('u:')).map((k) => k.slice(2)) : [];
+    const mine = (me && circle?.reacts[me]) || {};
+    const called = Object.keys(mine).filter((k) => k.startsWith('u:') && diff(mine[k].day, today) <= 30).map((k) => k.slice(2));
     return (
       <div className={`um-app${dark ? ' um-dk' : ''}`}>
         <InviteByNick code={chatCode} onBack={() => { setInviting(''); window.scrollTo(0, 0); }}
           trip={{ title: t?.title ?? _t("Умра"), url, called,
             text: _tj("Ассаляму алейкум! Собираемся на умру вместе: «{0}». Присоединяйся, там даты, задачи и наш чат:", t?.title ?? _t("Умра")),
             onCall: (uid, name) => {
-              circle?.react(`u:${uid}`, '🕋', today);
-              if (tripHost) emit(tripHost, _tj("позвал в поездку: {0}", name || _t("Участник")));
+              // The call itself: a mark the person sees in the Circle and on Today. A second tap the same day must not take it back.
+              if (!(mine[`u:${uid}`]?.e === '🕋' && mine[`u:${uid}`].day === today)) circle?.react(`u:${uid}`, '🕋', today);
+              // And a line in the circle's main chat: it brings a notification and an unread mark, even if another circle is open.
+              if (chatOn && tripHost) chat.send(_tj("🕋 Зовёт на умру «{0}»: {1}", t?.title ?? _t("Умра"), name || _t("Участник")), { um: tripHost, to: uid }, 'event');
             } }} />
       </div>
     );
@@ -203,7 +208,24 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const title = tab === 'now' && trip && myTrips.includes(tripHost!) ? trip.title : _t("Умра");
   const sub = onSite ? _t("Ляббайк, Аллахумма ляббайк") : from && left! > 0 ? _tj("Вылет через {0} {1} · {2}{3}", left, plural(left!, _t("день"), _t("дня"), _t("дней")), dLabel(from), to ? ` – ${dLabel(to)}` : '') : '';
 
-  const people = tripHost ? <People host={tripHost} api={api} names={circle?.names} nameOf={nameOf} onInvite={chatCode ? () => setInviting('sheet') : undefined} onOpen={() => go('group')} /> : null;
+  // Called or looking at someone else's trip and not answered yet: the answer comes first, where it can't be missed.
+  const myS = me && tripHost ? rsvp[me]?.[tripHost]?.s : undefined;
+  const call = circle ? umrahCall(rawApi, circle.reacts, today) : null;
+  const caller = call && call.h === tripHost ? call.c : tripHost;
+  const answer = (s: 'go' | 'maybe' | 'no') => { if (tripHost) api.respond(tripHost, { s, ready: prepPct(state) }); };
+  const ask = trip && tripHost && me && me !== tripHost && myS !== 'go' && myS !== 'no' ? (
+    <div className="um-ask">
+      <small>{caller && call?.h === tripHost ? _tj("{0} зовёт тебя на умру", nameOf(caller)) : _tj("{0} собирает умру", nameOf(tripHost))}</small>
+      <b>{trip.title}</b>
+      {trip.month && <span>{trip.month}{trip.city ? _t(" · из {0}", trip.city) : ''}</span>}
+      <div className="um-ask-b">
+        <button type="button" className="gold-btn" onClick={() => answer('go')}>{_t("Еду")}</button>
+        <button type="button" className="ghost-btn" aria-pressed={myS === 'maybe'} onClick={() => answer('maybe')}>{myS === 'maybe' ? _t("Думаю ✓") : _t("Думаю")}</button>
+        <button type="button" className="link-btn" onClick={() => answer('no')}>{_t("Не в этот раз")}</button>
+      </div>
+    </div>
+  ) : null;
+  const people = tripHost ? <>{ask}<People host={tripHost} api={api} names={circle?.names} nameOf={nameOf} onInvite={chatCode ? () => setInviting('sheet') : undefined} onOpen={() => go('group')} /></> : null;
 
   const ritesList = (
     <>

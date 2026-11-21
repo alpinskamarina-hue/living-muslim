@@ -24,6 +24,7 @@ import { effectiveTheme, themeMode, setCurrentTheme, sysPrefersDark } from './th
 import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
+import { umrahCall } from './components/UmrahBanner';
 import { UmrahMadeCard } from './components/UmrahMade';
 import { GiftNudge } from './components/GiftPass';
 import { prepPct } from './components/Umrah';
@@ -278,6 +279,11 @@ export function App() {
 
   // Support from the circle for me today: who made dua and who nudged me.
   const support: { text: string; onOpen: () => void; cls?: string }[] = [];
+  // Someone called me to their umrah trip and I have not answered: first, it is a real invitation.
+  const uCall = joined && circle.me ? umrahCall(umrah, circle.reacts, today) : null;
+  if (uCall && !uCall.answered) support.push({ cls: 'invite',
+    text: _t("🕋 {0} зовёт тебя на умру «{1}»", circle.names[uCall.c]?.name || umrah.names[uCall.c] || _t("Брат"), umrah.trips[uCall.h]?.title || _t("Умра")),
+    onOpen: () => { window.scrollTo(0, 0); try { sessionStorage.setItem('lm.umHost', uCall.h); } catch { /* */ } setPracticeStart((x) => ({ n: x.n + 1, mode: 'umrah' })); setTab('practice'); } });
   const nkTodo = nikahTodo(nk);
   if (nkTodo.wali.length) support.push({ cls: 'invite', text: _t("💍 {0} просит тебя быть вали в поиске пары", nkTodo.wali[0].name), onOpen: () => go({ profile: 'nikah' }) });
   if (nkTodo.props) support.push({ cls: 'invite', text: _t("💍 {0} для никаха", nkTodo.props === 1 ? _t("Новое предложение") : _t("{0} новых предложения", nkTodo.props)), onOpen: () => go({ profile: 'nikah' }) });

@@ -7,6 +7,7 @@ import { ProGate } from './Plan';
 import { limitOf } from '../plan';
 import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
 import { _t, _tj } from '../i18n';
+import { authMe, signInUrl } from '../auth';
 import { ShareRow } from './ShareRow';
 
 function InboxIfReady() {
@@ -32,6 +33,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const full = mineCodes.length >= limitOf('circles');
   const k = kindOf(kind)!;
   const invited = Boolean(code && code === inv);
+  const umrahCall = (() => { try { return Boolean(sessionStorage.getItem('lm.umrahGo')); } catch { return false; } })();
   const run = async (fn: () => Promise<boolean | string>) => {
     if (!ok) { setErr(_t("Напиши имя, хотя бы две буквы.")); return; }
     setBusy(true); setErr('');
@@ -49,9 +51,17 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   return (
     <div className="page">
       {onCancel && <button type="button" className="link-btn pro-back" onClick={onCancel}>{_t("← Мои круги")}</button>}
-      <h1 className="page-h">{invited ? _t("Приглашение") : onCancel ? _t("Новый круг") : _t("Круг")}</h1>
+      <h1 className="page-h">{invited ? (umrahCall ? _t("Тебя зовут на умру") : _t("Приглашение")) : onCancel ? _t("Новый круг") : _t("Круг")}</h1>
+      {invited && umrahCall && <p className="page-sub">{_tj("Поездка собирается в круге «{0}». Вступи в круг, и сразу откроется поездка: даты, задачи и общий чат.", meta.title || _t("Круг друзей"))}</p>}
+      {invited && !authMe() && (
+        <div className="cl-acc">
+          <b>{_t("Уже пользуешься Living Muslim?")}</b>
+          <p>{_t("Сначала войди по почте, тогда круг и поездка попадут в твой аккаунт и будут видны в приложении на телефоне. Иначе здесь появится второй, новый профиль.")}</p>
+          <a className="ghost-btn" href={signInUrl}>{_t("Войти по почте")}</a>
+        </div>
+      )}
       {!onCancel && !invited && <InboxIfReady />}
-      <p className="page-sub">{invited ? _t("Тебя позвали в круг. Друзья увидят только итог твоего дня: сколько намазов и привычек отмечено.") : _t("Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек и заметок.")}</p>
+      {!(invited && umrahCall) && <p className="page-sub">{invited ? _t("Тебя позвали в круг. Друзья увидят только итог твоего дня: сколько намазов и привычек отмечено.") : _t("Близкие люди, которые держат друг друга в постоянстве. Друзья видят только итог дня, без названий привычек и заметок.")}</p>}
       <div className="join cl-setup">
         <label className="cl-f">
           <span>{_t("Как тебя будут видеть в кругу")}</span>
