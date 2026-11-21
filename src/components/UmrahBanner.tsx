@@ -149,7 +149,7 @@ export function UmrahBanner({ api, names, reacts, today, family, myReady, unread
       <b>{family ? _t("Умра всей семьёй") : _t("Поехать на умру вместе с братьями")}</b>
       <p>{line}</p>
       <div className="ub-btns">
-        <button type="button" className="go" onClick={() => onOpen('trip')}>{_t("Собрать поездку")}</button>
+        <button type="button" className="go" onClick={() => onOpen('group')}>{_t("Собрать поездку")}</button>
         <button type="button" onClick={() => onOpen('now')}>{_t("Подробнее")}</button>
       </div>
     </div>

@@ -29,7 +29,7 @@ import { useUmrahAsks } from './umrahOpen';
 import { umrahCall } from './components/UmrahBanner';
 import { UmrahMadeCard } from './components/UmrahMade';
 import { GiftNudge } from './components/GiftPass';
-import { prepPct } from './components/Umrah';
+import { umrahReady } from './umrah/path';
 import { Goals } from './components/Goals';
 import { progress, snapshot } from './goals';
 import { useKhatm } from './khatm';
@@ -447,10 +447,10 @@ export function App() {
         )}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (
-          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
+          <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={umrahReady(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
         {tab === 'umrah' && <UmrahHub key={umStart} start={umFrom} state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} backLabel="Living Muslim" onExit={() => { setTab('today'); window.scrollTo(0, 0); }} />}
-        {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onHalal={() => setHalal('cam')} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
+        {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' ? (practiceStart.ref === 'group' ? 'group' : 'now') : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onHalal={() => setHalal('cam')} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
           <div className="page">
             {!goalOpen && !reviewOpen && <Hint id="goals" />}

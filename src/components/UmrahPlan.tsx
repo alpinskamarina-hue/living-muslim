@@ -8,7 +8,9 @@ import { _t, _tj, LOC } from '../i18n';
 // The trip page: nine steps from «who is going» to «how much we saved».
 // Everything lives in the existing circle documents: the host's trip doc and each person's rsvp doc.
 
-interface Props { host: string; trip: UTrip; api: UmrahApi; nameOf: (id: string) => string; going: string[]; onOpenGuide?: () => void }
+interface Props { host: string; trip: UTrip; api: UmrahApi; nameOf: (id: string) => string; going: string[]; onOpenGuide?: () => void;
+  /** «Моя умра» shows the parts inside its own path steps: 0 gather, 1 dates, 2 tickets, 3 stay, 5 cash, 6 road. The cost block goes with 2. */
+  show?: number[] }
 
 export const DOCS: { id: string; t: string; sub?: string }[] = [
   { id: 'passport', t: _t("Загранпаспорт"), sub: _t("действует ещё 6 месяцев после возвращения") },
@@ -63,7 +65,7 @@ export function settle(b: Record<string, number>) {
   return out;
 }
 
-export function UmrahPlan({ host, trip, api, nameOf, going, onOpenGuide }: Props) {
+export function UmrahPlan({ host, trip, api, nameOf, going, onOpenGuide, show }: Props) {
   const { me, rsvp } = api;
   const isHost = me === host;
   // The umrah dashboard opens a step directly (tickets, stay, documents…).
@@ -112,8 +114,7 @@ export function UmrahPlan({ host, trip, api, nameOf, going, onOpenGuide }: Props
   ];
   const nowStep = steps.findIndex((x) => !x.ok);
 
-  return (
-    <div className="up">
+  const cost = (
       <div className="up-save">
         <small>{known ? _t("Расчёт на человека по вашим ценам") : _t("Расчёт появится, когда будут цены билетов и жилья")}</small>
         {saving > 0 ? <b>{_tj("Экономия {0} · {1}%", fmt(saving, cur), Math.round((saving / trip.agency!) * 100))}</b> : <b>{known ? fmt(totalPP, cur) : '—'}</b>}
@@ -128,6 +129,17 @@ export function UmrahPlan({ host, trip, api, nameOf, going, onOpenGuide }: Props
           </div>
         )}
       </div>
+  );
+  if (show) return (
+    <div className="up up-only">
+      {show.includes(2) && cost}
+      {show.map((i) => <div key={i} className="up-part"><h3>{steps[i].t}</h3>{body(i)}</div>)}
+    </div>
+  );
+
+  return (
+    <div className="up">
+      {cost}
 
       <PassCard isHost={isHost} going={going.length} />
 
@@ -369,7 +381,7 @@ export function PassCard({ isHost, going }: { isHost: boolean; going: number }) 
     <div className={`up-pass${open ? ' open' : ''}`}>
       <button type="button" className="up-pass-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span>🎟️</span>
-        <span><b>{_t("Пропуск на умру · Umrah Pass")}</b><small>{solo ? _t("€10 на одного") : _t("{0} на группу из {1} · {2} с человека", eur(price), n, eur(price / n))}</small></span>
+        <span><b>{_t("Пропуск на умру · Umrah Pass")}</b><small>{solo ? _t("€10 на одного") : _t("{0} на группу из {1} · {2} с человека", eur(price), n, eur(price / n))}{_t(" · в Ultra уже включён")}</small></span>
         <i aria-hidden="true">{open ? '▴' : '▾'}</i>
       </button>
       {open && (

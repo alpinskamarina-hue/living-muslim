@@ -264,8 +264,6 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     feed.push({ e: '📖', t: _t("{0}: прочитано {1} из 30 джузов", k.title || _t("Хатм"), Math.min(30, done)) });
   }
   const jobsActive = Object.keys(khatm.list).length > 0 || Object.keys(iftar.events).length > 0;
-  const umraCount = Object.keys(umrah.trips).length;
-  const umraGoing = Boolean(me && Object.entries(umrah.rsvp[me] ?? {}).some(([h, r]) => r.s === 'go' && umrah.trips[h]));
 
   const umraName = (id: string) => names[id]?.name || umrah.names[id] || khatm.names[id] || _t("Участник");
   if (umra) return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={umraName} start={umra} circle={circle} joined={joined} backLabel={_t("Круг")} onExit={() => { setUmra(false); window.scrollTo(0, 0); }} />;
@@ -427,11 +425,6 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       {joined && (
         <>
           <h3 className="ch-h" id="cx-deeds">{_t("Общие дела")}</h3>
-          <button type="button" className="um-entry" onClick={() => { setUmra('trip'); window.scrollTo(0, 0); }}>
-            <span className="um-ic">🕋</span>
-            <span><b>{_t("Умра")}</b><small>{umraCount ? `${umraCount} ${plural(umraCount, _t("поездка"), _t("поездки"), _t("поездок"))} · ${umraGoing ? _t("ты едешь") : _t("открой, чтобы присоединиться")}` : _t("Собрать группу, сэкономить и поехать вместе")}</small></span>
-            <i aria-hidden="true">›</i>
-          </button>
           {(jobsActive || jobs) ? (
             <>
               <IftarSection api={iftar} today={today} nameOf={(id) => names[id]?.name || iftar.names[id] || _t("Участник")} />
@@ -477,7 +470,6 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     if (goal && goal.k !== 'none') chips.push({ k: 'g', t: `🎯 ${gt}/${goal.n}`, go: () => openPanel('cx-goal') });
     if (chN) chips.push({ k: 'c', t: _t("⚔️ Вызовов: {0}", chN), go: () => openPanel('cx-ch') });
     for (const k of khatms) chips.push({ k: `k${k.host}`, t: `📖 ${k.n}/30`, go: () => openPanel('cx-deeds') });
-    if (umraCount) chips.push({ k: 'u', t: _t("🕋 Умра"), go: () => { setUmra('trip'); window.scrollTo(0, 0); } });
     if (am) chips.push({ k: 'a', t: _t("👑 Амир: {0}", nm(am.id).split(' ')[0]), go: () => openPanel('cx-amir') });
     if (!chips.length) chips.push({ k: 'n', t: _t("＋ Начать общее дело"), go: () => openPanel('cx-goal') });
     const acts = [
