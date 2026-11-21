@@ -1,5 +1,5 @@
 import { QuitCheck, QuitScreen, type QuitView } from './components/Quit';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { WordCard, WordsLayer } from './components/Words';
 import { todayTrigger, useWordsWatch } from './wordsWatch';
 import { say } from './words';
@@ -442,6 +442,7 @@ export function App() {
             <small>{LABELS[t]}</small>
           </button>
         ))}
+        <span className="nav-ind" aria-hidden="true" style={{ '--i': Math.max(0, (Object.keys(LABELS) as Tab[]).indexOf(tab)) } as CSSProperties} />
       </nav>
 
       <WordsLayer state={state} today={today} />

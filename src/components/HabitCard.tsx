@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Habit, Mark } from '../types';
 import { sphereName } from '../types';
 import { plural } from '../dates';
@@ -22,6 +22,16 @@ interface Props {
 
 const OPEN = -168;
 
+// An eight-pointed star (two squares turned by 45°) that opens behind the tick when a habit is done.
+const Star = () => (
+  <span className="b3-star" aria-hidden="true">
+    <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+      <rect x="9" y="9" width="22" height="22" />
+      <rect x="9" y="9" width="22" height="22" transform="rotate(45 20 20)" />
+    </svg>
+  </span>
+);
+
 export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMin }: Props) {
   const [x, setX] = useState(0);
   const [drag, setDrag] = useState(false);
@@ -29,6 +39,18 @@ export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMi
   const state = mark ?? 'todo';
 
   const close = () => setX(0);
+
+  // Plays the tick-and-star only when the habit becomes done right now, not when the screen opens.
+  const was = useRef(state);
+  const [pop, setPop] = useState(false);
+  useEffect(() => {
+    const before = was.current;
+    was.current = state;
+    if (state !== 'done' || before === 'done') return;
+    setPop(true);
+    const t = setTimeout(() => setPop(false), 750);
+    return () => clearTimeout(t);
+  }, [state]);
 
   return (
     <div className="sw">
@@ -76,11 +98,12 @@ export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMi
       >
         <button
           type="button"
-          className="chk"
+          className={pop ? 'chk pop' : 'chk'}
           aria-label={state === 'done' ? _t("Снять отметку") : _t("Отметить выполненной")}
           onClick={() => onMark(state === 'done' ? null : 'done')}
         >
           <Ticks />
+          {pop && <Star />}
         </button>
         <div className="x">
           <div className="nm">{habit.action}</div>

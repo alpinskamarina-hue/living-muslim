@@ -4744,3 +4744,112 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .pall em { font-style: normal; color: var(--ink-2); font-size: 18px; margin-left: auto; }
 .pall-ic + em { margin-left: 0; }
 .pnow.slim small, .pnow.slim .pnow-toggle { color: var(--gold-light); }
+
+/* ── Buttons, variant В: soft 3D + live (21.11) ──
+   Solid buttons get a light top and a coloured edge underneath; quiet buttons and chips a thin edge;
+   everything springs back when pressed. «Reduce motion» turns the movement off (end of section). */
+:root { --b3-c: var(--green-2); --b3-hi: rgba(255, 255, 255, .2); --b3-ink: 0, 0%, 0%; --b3-q: rgba(255, 255, 255, .5); --b3-qedge: var(--line); --b3-shade: rgba(60, 40, 15, .28); --b3-spring: cubic-bezier(.34, 1.56, .64, 1); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --b3-hi: rgba(255, 255, 255, .14); --b3-q: rgba(255, 255, 255, .045); --b3-qedge: rgba(0, 0, 0, .45); --b3-shade: rgba(0, 0, 0, .5); } }
+:root[data-theme="dark"] { --b3-hi: rgba(255, 255, 255, .14); --b3-q: rgba(255, 255, 255, .045); --b3-qedge: rgba(0, 0, 0, .45); --b3-shade: rgba(0, 0, 0, .5); }
+
+/* which colour the edge is made from */
+:is(.gold-btn, .pnow-go, .g-go, .g-add button, .fd-btn, .fp-new, .adh-big, .az-big, .qt-sos, .udoc-h button, .um-other button) { --b3-c: var(--gold); }
+.nk-btn { --b3-c: var(--nk); }
+.kh-start { --b3-c: var(--green-2); }
+
+/* 1. solid buttons */
+:is(.pri-btn, .gold-btn, .fab, .done-btn, .actions .pri, .pnow-go, .g-do, .g-go, .g-add button, .dp-go, .nk-btn, .nk-search button, .fd-btn, .pn-btn, .onb-go, .fp-new, .fd-cam, .adh-play, .adh-big, .az-big, .sf-play, .qt-sos, .os-pray.go, .udoc-h button, .um-other button, .kh-start, .ch-inv) {
+  background-image: linear-gradient(180deg, var(--b3-hi), rgba(255, 255, 255, 0) 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 3px 0 color-mix(in srgb, var(--b3-c) 62%, #000), 0 8px 14px -8px var(--b3-shade);
+  transition: transform .38s var(--b3-spring), box-shadow .18s ease, background-color .2s, color .2s;
+}
+:is(.pri-btn, .gold-btn, .fab, .done-btn, .actions .pri, .pnow-go, .g-do, .g-go, .g-add button, .dp-go, .nk-btn, .nk-search button, .fd-btn, .pn-btn, .onb-go, .fp-new, .fd-cam, .adh-play, .adh-big, .az-big, .sf-play, .qt-sos, .os-pray.go, .udoc-h button, .um-other button, .kh-start, .ch-inv):active:not(:disabled) {
+  transform: translateY(2px) scale(.98);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 0 color-mix(in srgb, var(--b3-c) 62%, #000), 0 3px 6px -4px var(--b3-shade);
+  transition-duration: .08s;
+}
+:is(.pri-btn, .gold-btn, .done-btn, .actions .pri, .pnow-go, .g-do, .g-go, .dp-go, .fd-btn, .pn-btn, .onb-go):disabled { box-shadow: none; background-image: none; }
+.fab:active { transform: translateY(2px) scale(.97); }
+.fab svg { transition: transform .45s var(--b3-spring); }
+.fab:active svg { transform: rotate(90deg); }
+
+/* gold buttons: a soft light passes over them now and then */
+:is(.gold-btn, .pnow-go, .g-go) { position: relative; overflow: hidden; isolation: isolate; }
+:is(.gold-btn, .pnow-go, .g-go)::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .38) 50%, transparent 65%); transform: translateX(-120%); animation: b3-shine 5.5s ease-in-out 1.2s infinite; }
+@keyframes b3-shine { 0%, 72% { transform: translateX(-120%); } 92%, 100% { transform: translateX(120%); } }
+
+/* 2. quiet buttons, chips, segments */
+:is(.ghost-btn, .pmy-go, .dl-chip, .icon-btn, .hard, .ideas button, .link-chip, .ppills button, .ns-nav button,
+  :is(.langs, .choices, .seg, .h-q, .ch-tabs, .nk-pick, .g-seg, .g-circ-pick, .g-tabs, .um-lang, .rm-lang, .cg-kinds, .ac-cats, .np-who, .np-stages, .um-trips, .adh-seg, .hz-sets, .cs-weeks, .g-bookby, .fd-sex, .fd-slots, .fd-grams, .fd-pick, .bc-chips, .wk-chips, .sf-tabs, .sf-chips, .vtabs, .vchips, .vspeed, .kh-chips) > button) {
+  background-image: linear-gradient(180deg, var(--b3-q), rgba(255, 255, 255, 0) 80%);
+  box-shadow: 0 2px 0 var(--b3-qedge);
+  transition: transform .38s var(--b3-spring), box-shadow .15s ease, background-color .2s, color .2s, border-color .2s;
+}
+:is(.langs, .choices, .seg, .h-q, .ch-tabs, .nk-pick, .g-seg, .g-circ-pick, .g-tabs, .um-lang, .rm-lang, .cg-kinds, .ac-cats, .np-who, .np-stages, .um-trips, .adh-seg, .hz-sets, .cs-weeks, .g-bookby, .fd-sex, .fd-slots, .fd-grams, .fd-pick, .bc-chips, .wk-chips, .sf-tabs, .sf-chips, .vtabs, .vchips, .vspeed, .kh-chips) > button:is([aria-pressed="true"], [aria-selected="true"]) {
+  background-image: linear-gradient(180deg, var(--b3-hi), rgba(255, 255, 255, 0) 75%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 2px 0 rgba(30, 20, 8, .25);
+}
+:is(.ghost-btn, .pmy-go, .dl-chip, .icon-btn, .hard, .ideas button, .ppills button, .ns-nav button,
+  :is(.langs, .choices, .seg, .h-q, .ch-tabs, .nk-pick, .g-seg, .g-circ-pick, .g-tabs, .um-lang, .rm-lang, .cg-kinds, .ac-cats, .np-who, .np-stages, .um-trips, .adh-seg, .hz-sets, .cs-weeks, .g-bookby, .fd-sex, .fd-slots, .fd-grams, .fd-pick, .bc-chips, .wk-chips, .sf-tabs, .sf-chips, .vtabs, .vchips, .vspeed, .kh-chips) > button):active:not(:disabled) {
+  transform: translateY(1px) scale(.95); box-shadow: 0 1px 0 var(--b3-qedge); transition-duration: .08s;
+}
+/* on the dark green header and screens the quiet edge would look like a stain: keep them flat there */
+:is(.top, .sess, .miqat, .bc-hd, .ai-glow-night) :is(.ghost-btn, .icon-btn, .hard) { background-image: none; box-shadow: none; }
+.pmy-r:active .pmy-go { transform: scale(.94); }
+
+/* rows and tiles give way a little under the finger */
+:is(.pmy-r, .menu-row, .lw, .pall, .pmy-add, .type, .q) { transition: transform .38s var(--b3-spring), background-color .2s; }
+:is(.pmy-r, .menu-row, .lw, .pall, .pmy-add, .type, .q):active { transform: scale(.985); transition-duration: .08s; }
+.d3 { filter: drop-shadow(0 2px 0 color-mix(in srgb, var(--ink) 14%, transparent)); transition: transform .38s var(--b3-spring); }
+button:active > .d3, .d3:active { transform: translateY(1px) scale(.94); transition-duration: .08s; }
+
+/* 3. circles: habit check, prayer marks */
+.card .chk, .dl-dot, .pr .dot { transition: transform .38s var(--b3-spring), background-color .2s, box-shadow .2s; }
+.card .chk { background-image: radial-gradient(circle at 35% 28%, var(--b3-q), transparent 62%); box-shadow: 0 2px 0 color-mix(in srgb, var(--cc, var(--green-2)) 30%, transparent); }
+.card[data-s="done"] .chk { background-image: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .32), transparent 60%); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .14), 0 2px 0 color-mix(in srgb, var(--cc, var(--green-2)) 55%, #000); }
+.card .chk:active, .dl-dot:active:not(:disabled), .pr .dot:active { transform: scale(.9); transition-duration: .08s; }
+.dl-dot { background-image: radial-gradient(circle at 35% 28%, var(--b3-q), transparent 62%); }
+.dl-dot:is([data-m="ontime"], [data-m="late"]) { background-image: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .3), transparent 60%); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .14), 0 2px 0 color-mix(in srgb, var(--green-2) 55%, #000); }
+.dl-dot[data-m="late"] { box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .14), 0 2px 0 color-mix(in srgb, var(--gold) 55%, #000); }
+.dl-node.now .dl-dot:is([data-m="ontime"], [data-m="late"]) { box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .14), 0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent); }
+
+/* habit done: the tick draws itself and an eight-pointed star opens behind it */
+.card .chk { position: relative; }
+.card .chk.pop svg path { stroke-dasharray: 30; animation: b3-draw .42s ease-out both; }
+.card .chk.pop { animation: b3-bounce .5s var(--b3-spring); }
+.b3-star { position: absolute; inset: -14px; pointer-events: none; color: var(--gold); animation: b3-burst .7s ease-out forwards; }
+.b3-star svg { width: 100%; height: 100%; }
+@keyframes b3-draw { from { stroke-dashoffset: 30; } to { stroke-dashoffset: 0; } }
+@keyframes b3-bounce { 0% { transform: scale(.85); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes b3-burst { 0% { transform: scale(.4) rotate(0deg); opacity: .9; } 100% { transform: scale(1.35) rotate(22deg); opacity: 0; } }
+
+/* prayer marked: a gold ring draws around the circle */
+@property --b3-p { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+.dl-dot.ring::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
+  background: conic-gradient(var(--gold) var(--b3-p), transparent 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: b3-ring .9s ease-out forwards; }
+@keyframes b3-ring { 0% { --b3-p: 0%; opacity: 1; } 70% { --b3-p: 100%; opacity: 1; } 100% { --b3-p: 100%; opacity: 0; } }
+
+/* 4. ripple from the finger */
+.b3-rw { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 0; }
+.b3-rp { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; background: currentColor; opacity: .22; transform: scale(0); animation: b3-rp .55s ease-out forwards; }
+@keyframes b3-rp { to { transform: scale(var(--b3-r, 12)); opacity: 0; } }
+
+/* 5. bottom bar: the green pill slides to the new tab, the icon hops */
+.nav { --tabs: 5; }
+.nav > button { position: relative; z-index: 1; }
+.nav button.on .k { background: transparent; }
+.nav-ind { position: absolute; top: 12px; width: 58px; height: 32px; border-radius: 16px; background: var(--green-soft); box-shadow: inset 0 1px 0 var(--b3-q), 0 2px 0 color-mix(in srgb, var(--green-2) 22%, transparent);
+  left: calc(6px + ((100% - 28px) / var(--tabs) + 4px) * var(--i, 0) + (100% - 28px) / var(--tabs) / 2 - 29px); transition: left .42s var(--b3-spring); pointer-events: none; }
+.nav button.on .k svg { animation: b3-hop .45s var(--b3-spring); }
+.nav button:active .k svg { transform: scale(.88); }
+.nav .k svg { transition: transform .3s var(--b3-spring); }
+@keyframes b3-hop { 0% { transform: translateY(0); } 40% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
+
+/* «Reduce motion» in the phone settings: everything stays still */
+@media (prefers-reduced-motion: reduce) {
+  :is(.gold-btn, .pnow-go, .g-go)::after, .b3-rw, .b3-star, .dl-dot.ring::after { display: none; animation: none; }
+  .card .chk.pop, .card .chk.pop svg path, .nav button.on .k svg { animation: none; }
+  .nav-ind { transition: none; }
+  button, .d3, .card .chk, .dl-dot { transition-duration: 0s !important; }
+}
