@@ -15,6 +15,7 @@ import { ramadanMonth } from '../ramadan';
 import { catalog, lessons, emptyVideos } from '../videos';
 import { isCloud, myCircles, kindOf } from '../cloud';
 import { _t, _tj, LOC } from '../i18n';
+import { BecomeStrip } from './Become';
 import { Advice } from './Plan';
 import { SOFT } from '../plan';
 
@@ -90,6 +91,7 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
       </div>
       {seg === 'stats' ? stats : seg === 'plans' && plans ? plans : (
         <>
+          <BecomeStrip state={state} today={today} />
           {isReviewDay(state, today) && (
             <button type="button" className="g-review-cta" onClick={() => setReviewOpen(true)}>
               <b>{_t("Пятница: пересмотр недели")}</b><small>{_t("2 минуты после джума: что продвинулось")}</small>
