@@ -27,11 +27,15 @@ import { RollCall, DayPlan, activeRoll } from './UmrahDash';
 import { UmrahDocs } from './UmrahDocs';
 import { umrahCall } from './UmrahBanner';
 import { AsksToMe, OpenGroups, OpenSwitch, useOpenList } from './UmrahOpen';
+import { GuidesPane } from './UmrahGuides';
+import { useGuides } from '../guides';
 import { useUmrahAsks } from '../umrahOpen';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
 import { _t, _tj } from '../i18n';
+
+type PView = 'mine' | 'guides' | 'open';
 
 // One place for the whole umrah: what matters today, the heart, my duas, the rites and the trip.
 // Both Practice and the Circle open this screen.
@@ -63,7 +67,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const [qibla, setQibla] = useState(false);
   const [inviting, setInviting] = useState<'' | 'sheet' | 'nick'>('');
   const [stepI, setStepI] = useState(0);
-  const [peopleView, setPeopleView] = useState<'mine' | 'open'>(() => { try { const v = sessionStorage.getItem('lm.umOpen'); sessionStorage.removeItem('lm.umOpen'); return v ? 'open' : 'mine'; } catch { return 'mine'; } });
+  const [peopleView, setPeopleView] = useState<PView>(() => { try { const v = sessionStorage.getItem('lm.umOpen'); sessionStorage.removeItem('lm.umOpen'); return v === 'guides' ? 'guides' : v ? 'open' : 'mine'; } catch { return 'mine'; } });
   const u = umrahOf(state);
   const { me, trips, rsvp, duas } = rawApi;
 
@@ -77,6 +81,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   const onSite = phase === 'there';
 
   const [tab, setTab] = useState<UTab>(() => (start === 'group' ? 'people' : start === 'duas' ? 'duas' : start === 'heart' ? 'know' : start === 'rites' ? (onSite ? 'rite' : 'know') : onSite ? 'rite' : 'path'));
+  const gProbe = useGuides(isCloud && tab === 'step');
   const go = (t: UTab) => { setTab(t); window.scrollTo(0, 0); };
 
   // Light or dark like the whole app (auto follows the phone); the moon/sun switches it for the whole app.
@@ -312,6 +317,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   );
   const plan = (show: number[]) => groupHost && trips[groupHost] ? <UmrahPlan host={groupHost} trip={trips[groupHost]} api={api} nameOf={nameOf} going={goingIds} show={show} /> : null;
 
+  const guideCard = isCloud && gProbe.ok ? <button type="button" className="um-card" onClick={() => { setPeopleView('guides'); go('people'); }}><b>🧭 {_t("Найти гида")}</b><small>{_t("проверенные гиды в Мекке, Медине и готовые вылететь ›")}</small></button> : null;
+
   function stepBody(i: number) {
     switch (model.steps[i].id) {
       case 'gather': return (
@@ -321,6 +328,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
               {people}
               {chatCode && <button type="button" className="pri-btn" onClick={() => setInviting('sheet')}>{_t("+ Позвать в поездку")}</button>}
               {plan([0])}
+              {guideCard}
             </>
           ) : (
             <>
@@ -328,6 +336,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
               {modeChips}
               {mode === 'group' && <button type="button" className="um-card" onClick={() => go('people')}><b>👥 {_t("Собрать группу")}</b><small>{_t("в Круге: позови братьев или найди группу ›")}</small></button>}
               {mode === 'solo' && <button type="button" className="um-card" onClick={() => { setPeopleView('open'); go('people'); }}><b>👀 {_t("Найти попутчиков")}</b><small>{_t("группы, которые ищут людей ›")}</small></button>}
+              {(mode === 'solo' || mode === 'group') && guideCard}
               {mode === 'agency' && (
                 <label className="field"><span>{_t("Агентство")}</span><input defaultValue={u.agency ?? ''} placeholder={_t("Название агентства")} onBlur={(e) => update((s) => patch(s, { agency: e.target.value.trim() || undefined }))} /></label>
               )}
@@ -366,6 +375,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
         <>
           <button type="button" className="pri-btn" onClick={() => setMiqat(true)}>{_t("✈ Микат в самолёте: указать рейс")}</button>
           <OnSiteSetup state={state} update={update} />
+          {guideCard}
           {plan([6])}
           {deedList(5)}
           <WalkPlan state={state} update={update} today={today} left={left} />
@@ -677,21 +687,25 @@ function InviteSheet({ code, title, onNick, onClose }: { code: string; title: st
 
 /** «Люди»: my group (faces, roll call, chat) and the groups that look for people, behind one switch. */
 function PeopleTab({ code, onAccepted, view, setView, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onInvite }: {
-  code?: string; onAccepted: (uid: string, name: string) => void; view: 'mine' | 'open'; setView: (v: 'mine' | 'open') => void;
+  code?: string; onAccepted: (uid: string, name: string) => void; view: PView; setView: (v: PView) => void;
   api: UmrahApi; me: string | null; tripHost: string | null; hosts: string[]; onPick: (h: string) => void; people: React.ReactNode; myReady: number;
   nameOf: (id: string) => string; chat: React.ReactNode; noChat: string; radar: React.ReactNode; onInvite?: () => void;
 }) {
   const asks = useUmrahAsks(isCloud);
   const open = useOpenList(isCloud);
-  useEffect(() => { if (view === 'open') open.reload(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
-  const seg = isCloud && asks.ok !== false ? (
+  const guides = useGuides(isCloud);
+  useEffect(() => { if (view === 'open') open.reload(); if (view === 'guides') guides.reload(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
+  const gOn = guides.ok !== false, oOn = asks.ok !== false;
+  const seg = isCloud && (gOn || oOn) ? (
     <div className="seg uo-seg">
-      <button type="button" aria-pressed={view === 'mine'} onClick={() => setView('mine')}>{_t("Моя группа")}</button>
-      <button type="button" aria-pressed={view === 'open'} onClick={() => setView('open')}>{open.list?.length ? _tj("Ищут людей · {0}", open.list.length) : _t("Ищут людей")}</button>
+      <button type="button" aria-pressed={view === 'mine'} onClick={() => setView('mine')}>{_t("Группа")}</button>
+      {gOn && <button type="button" aria-pressed={view === 'guides'} onClick={() => setView('guides')}>{guides.list?.length ? _tj("Гиды · {0}", guides.list.length) : _t("Гиды")}</button>}
+      {oOn && <button type="button" aria-pressed={view === 'open'} onClick={() => setView('open')}>{open.list?.length ? _tj("Ищут людей · {0}", open.list.length) : _t("Ищут людей")}</button>}
     </div>
   ) : null;
   const head = <div className="um-title"><h1>{_t("Люди")}</h1></div>;
-  if (view === 'open' && seg) return <div className="um-sec um-group">{head}{seg}<OpenGroups list={open.list} reload={open.reload} /></div>;
+  if (view === 'open' && seg && oOn) return <div className="um-sec um-group">{head}{seg}<OpenGroups list={open.list} reload={open.reload} /></div>;
+  if (view === 'guides' && seg && gOn) return <div className="um-sec um-group">{head}{seg}<GuidesPane list={guides.list} reload={guides.reload} code={tripHost && code ? code : null} /></div>;
   if (!me) return <div className="um-sec">{head}{seg}<p className="tiny">{noChat}</p></div>;
   if (!tripHost) return <div className="um-sec">{head}{seg}<UmrahTrips api={api} myReady={myReady} nameOf={nameOf} embedded /></div>;
   const trip = api.trips[tripHost];

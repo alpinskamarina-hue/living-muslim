@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { halalDecide, halalQueue, type QueueItem } from '../halalCloud';
+import { guideDecide, guideQueue, type QueueGuide } from '../guides';
 import { accessToken, authMe } from '../auth';
 import { AdminCourses } from './AdminCourses';
 import { setOwner } from '../plan';
@@ -58,7 +59,7 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
@@ -66,8 +67,9 @@ export function AdminPage() {
         <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Курсы</button>
         <button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>🚩 Жалобы</button>
         <button type="button" aria-pressed={tab === 'halal'} onClick={() => setTab('halal')}>☪ Халяль</button>
+        <button type="button" aria-pressed={tab === 'guides'} onClick={() => setTab('guides')}>🧭 Гиды</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : <AdminReports />}
     </div>
   );
 }
@@ -243,6 +245,55 @@ function AdminHalal() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** «Гиды» for umrah: applications with the diploma and licence photos. The photos are deleted after the decision. */
+function AdminGuides() {
+  const [list, setList] = useState<QueueGuide[] | null>(null);
+  const [err, setErr] = useState('');
+  const [ticks, setTicks] = useState<Record<string, Record<string, boolean>>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const load = () => guideQueue().then((r) => setList(r ?? [])).catch((e) => setErr(/nosql/.test(String(e)) ? 'Сначала запусти supabase/guides.sql в Supabase → SQL Editor.' : 'Не получилось загрузить. Проверь интернет.'));
+  useEffect(() => { load(); }, []);
+  const tick = (uid: string, k: string) => setTicks((t) => ({ ...t, [uid]: { ...t[uid], [k]: !t[uid]?.[k] } }));
+  const decide = async (uid: string, ok: boolean) => {
+    await guideDecide(uid, ok, ticks[uid] ?? {}, notes[uid] ?? '').catch(() => null);
+    setList((l) => (l ?? []).filter((x) => x.uid !== uid));
+  };
+  if (err) return <p className="tiny">{err}</p>;
+  if (!list) return <p className="tiny">Загружаю…</p>;
+  if (!list.length) return <p className="tiny">Новых заявок гидов нет.</p>;
+  return (
+    <div className="adm-rep">
+      <p className="tiny">Поставь галочки только за то, что действительно проверил. После решения фото документов удаляются, остаются лишь галочки. Одобрить можно, только если стоит галочка «диплом».</p>
+      {list.map((g) => {
+        const t = ticks[g.uid] ?? {};
+        return (
+          <div key={g.uid} className="adm-card adm-halal">
+            <b>{g.name}</b>
+            <small>{g.email || 'без почты'} · {g.langs.join(', ')} · {new Date(g.updated).toLocaleDateString('ru-RU')}</small>
+            <small><b>Знание:</b> {g.school}{g.field ? `, ${g.field}` : ''}{g.grad ? `, ${g.grad}` : ''} · {g.years} лет · {g.groups} групп</small>
+            <small><b>Где:</b> {g.place === 'makkah' ? 'Мекка' : g.place === 'madinah' ? 'Медина' : `готов вылететь${g.city ? ` из ${g.city}` : ''}`}{g.until ? ` до ${g.until}` : ''}{g.sisters ? ' · для сестёр' : ''}</small>
+            {g.services.length > 0 && <small><b>Услуги:</b> {g.services.map((s) => `${s.t} €${s.price}${s.per ? `/${s.per}` : ''}`).join(' · ')}</small>}
+            {g.imam && <small><b>Рекомендует:</b> {g.imam}</small>}
+            {g.about && <small className="adm-ing">{g.about}</small>}
+            <div className="adm-ph">
+              {g.diploma_photo ? <img src={`data:image/jpeg;base64,${g.diploma_photo}`} alt="Диплом" /> : <small>Фото диплома нет (могло быть удалено после прошлой проверки)</small>}
+              {g.license_photo && <img src={`data:image/jpeg;base64,${g.license_photo}`} alt="Лицензия" />}
+            </div>
+            <label className="chk"><input type="checkbox" checked={Boolean(t.diploma)} onChange={() => tick(g.uid, 'diploma')} /> Диплом или иджаза проверены</label>
+            {g.license && <label className="chk"><input type="checkbox" checked={Boolean(t.license)} onChange={() => tick(g.uid, 'license')} /> Лицензия КСА проверена</label>}
+            {g.imam && <label className="chk"><input type="checkbox" checked={Boolean(t.imam)} onChange={() => tick(g.uid, 'imam')} /> Рекомендацию подтвердил</label>}
+            <input placeholder="Заметка для гида (если отклоняешь)" value={notes[g.uid] ?? ''} onChange={(e) => setNotes((n) => ({ ...n, [g.uid]: e.target.value }))} />
+            <div className="adm-act">
+              <button type="button" className="pri-btn" disabled={!t.diploma} onClick={() => decide(g.uid, true)}>Одобрить</button>
+              <button type="button" className="ghost-btn" onClick={() => decide(g.uid, false)}>Отклонить</button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
