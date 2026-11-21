@@ -6291,4 +6291,8 @@ export const EN: Record<string, string> = {
   "Поездка собирается в круге «{0}». Вступи в круг, и сразу откроется поездка: даты, задачи и общий чат.": "The trip is gathered in the circle «{0}». Join the circle and the trip opens right away: dates, tasks and the group chat.",
   "Уже пользуешься Living Muslim?": "Already using Living Muslim?",
   "Сначала войди по почте, тогда круг и поездка попадут в твой аккаунт и будут видны в приложении на телефоне. Иначе здесь появится второй, новый профиль.": "Sign in with your email first, so the circle and the trip go to your account and show in the app on your phone. Otherwise a second, new profile is made here.",
+  "Поехать на умру вместе: даты, билеты, жильё, общая касса и чат группы. Друзей позовёшь по ссылке или по нику": "Go on umrah together: dates, tickets, rooms, a shared purse and the group chat. Invite friends by link or by nick",
+  "Например: Умра с братьями": "For example: Umrah with the brothers",
+  "Когда примерно": "Roughly when",
+  "Например: март 2027": "For example: March 2027",
 };

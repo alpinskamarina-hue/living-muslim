@@ -132,6 +132,21 @@ async function callByNick(A, nick, who) {
     say('3) link without account:', dTxt.slice(0, 300).replace(/\n+/g, ' | '));
     check(/зовут на умру/.test(dTxt) && /Войти по почте/.test(dTxt), 'invite screen names the umrah and offers email sign-in');
     await shot(D, 'ui-7-link');
+    // 4. A new user makes an umrah circle: «Умра» is a circle kind, the trip is made and «Позвать» opens at once.
+    const E = await L.phone(br, 'E');
+    await signup(E, 'Рустам', 'rustam@test.dev');
+    await nav(E, 'Круг');
+    const kinds = await E.locator('.cl-kinds button').allInnerTexts();
+    check(/Умра/.test(kinds[0] || ''), `«Умра» is the first circle kind: ${kinds.map((x) => x.replace(/\n/g, ' ')).join(' · ')}`);
+    await E.locator('.cl-kinds button', { hasText: 'Умра' }).click(); await wait(300);
+    await shot(E, 'ui-8-kind');
+    await E.locator('input[placeholder^="Например: Умра"]').fill('Умра весной');
+    await E.locator('input[placeholder^="Например: март"]').fill('март 2027');
+    await E.locator('button', { hasText: 'Собрать поездку' }).click(); await wait(6000);
+    const tr = await L.q(`select d.data->>'title' t, d.data->>'month' m from docs d join users u on u.uid = d.key where d.coll = 'umrahTrip' and u.name = 'Рустам'`);
+    check(tr.length === 1 && tr[0].t === 'Умра весной' && tr[0].m === 'март 2027', `trip made: ${JSON.stringify(tr)}`);
+    check(await E.locator('.um-app').count() > 0 && await E.locator('.um-sheet').count() > 0, `umrah screen with «Позвать в поездку»: ${await txt(E, '.um-sheet')}`);
+    await shot(E, 'ui-9-new-umrah');
   } finally {
     say('errors:', L.errors.filter((e) => !/favicon/.test(e)).slice(0, 10));
     say(fails ? `FAILED: ${fails}` : 'ALL OK');

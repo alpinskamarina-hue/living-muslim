@@ -25,6 +25,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const [name, setN] = useState(me?.name || signupName());
   const [code, setCode] = useState(inv && !mineCodes.includes(inv) ? inv : '');
   const [title, setTitle] = useState('');
+  const [month, setMonth] = useState('');
   const [kind, setKind] = useState<CircleKind>('brothers');
   const [pick, setPick] = useState<number[]>(BIZ_DEFAULT);
   const [busy, setBusy] = useState(false);
@@ -92,10 +93,21 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
             <p className="tiny">{k.hint}</p>
             <label className="cl-f">
               <span>{_t("Название")}</span>
-              <input value={title} maxLength={40} placeholder={kind === 'family' ? _t("Например: Семья Насима") : kind === 'masjid' ? _t("Например: Халака по субботам") : kind === 'biz' ? _t("Например: Партнёры") : _t("Например: {0}", k.ru)} onChange={(e) => setTitle(e.target.value)} />
+              <input value={title} maxLength={40} placeholder={kind === 'umrah' ? _t("Например: Умра с братьями") : kind === 'family' ? _t("Например: Семья Насима") : kind === 'masjid' ? _t("Например: Халака по субботам") : kind === 'biz' ? _t("Например: Партнёры") : _t("Например: {0}", k.ru)} onChange={(e) => setTitle(e.target.value)} />
             </label>
             {kind === 'biz' && <BizPick pick={pick} setPick={setPick} />}
-            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(() => createCircle(name, title || k.ru, kind))}>{_t("Создать круг")}</button>
+            {kind === 'umrah' && (
+              <label className="cl-f">
+                <span>{_t("Когда примерно")}</span>
+                <input value={month} maxLength={40} placeholder={_t("Например: март 2027")} onChange={(e) => setMonth(e.target.value)} />
+              </label>
+            )}
+            <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(async () => {
+              const c = await createCircle(name, title || (kind === 'umrah' ? _t("Умра с братьями") : k.ru), kind);
+              // An umrah circle: after the reload the trip is made and the umrah screen opens on «Позвать».
+              if (c && kind === 'umrah') { try { sessionStorage.setItem('lm.umNew', JSON.stringify({ title: title.trim() || _t("Умра с братьями"), month: month.trim() })); sessionStorage.setItem('lm.umrahGo', '1'); } catch { /* */ } }
+              return c;
+            })}>{kind === 'umrah' ? _t("Собрать поездку") : _t("Создать круг")}</button>
             {kind === 'biz' && <p className="tiny bz-note">{_t("Суммы денег в круге не видны никогда.")}</p>}
             <p>{_t("Или вставь код приглашения от друга:")}</p>
             <div className="cl-row">

@@ -122,6 +122,18 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     },
   }), [rawApi, me, chatOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Just made an umrah circle: make its trip once the circle is connected, then offer «Позвать» right away.
+  useEffect(() => {
+    if (!rawApi.ready || !me) return;
+    let n: { title: string; month: string } | null = null;
+    try { n = JSON.parse(sessionStorage.getItem('lm.umNew') || 'null'); } catch { /* */ }
+    if (!n) return;
+    try { sessionStorage.removeItem('lm.umNew'); } catch { /* */ }
+    if (!rawApi.trips[me]) rawApi.saveTrip({ title: n.title || _t("Умра с братьями"), month: n.month, city: '', tasks: [], created: new Date().toISOString() });
+    rawApi.respond(me, { s: 'go', ready: prepPct(state) });
+    setPick(me); setTab('group'); setInviting('sheet');
+  }, [rawApi.ready, me]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const togglePrep = (id: string) => update((s) => patch(s, { prep: umrahOf(s).prep.includes(id) ? umrahOf(s).prep.filter((x) => x !== id) : [...umrahOf(s).prep, id] }));
   const heart = PREP.filter((p) => HEART.includes(p.id));
   const deeds = PREP.filter((p) => !HEART.includes(p.id));
