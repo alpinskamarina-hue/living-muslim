@@ -7,4 +7,6 @@ copyFileSync('landing/index.html', 'dist/index.html');
 copyFileSync('landing/privacy.html', 'dist/privacy.html');
 mkdirSync('dist/guide', { recursive: true });
 copyFileSync('landing/guide.html', 'dist/guide/index.html');
+mkdirSync('dist/investors', { recursive: true });
+copyFileSync('landing/investors.html', 'dist/investors/index.html');
 console.log('landing at /, app at /app/');

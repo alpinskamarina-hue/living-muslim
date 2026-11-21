@@ -6,6 +6,7 @@ import { shortOf } from './CircleChat';
 import { _t, LOC } from '../i18n';
 import { openPerson, usePersonReady, useAsks } from '../person';
 import { AsksBox, IntentsFeed } from './Person';
+import { InviteInbox } from './Nick';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 interface Row { last: Msg | null; who: Record<string, string> }
@@ -85,6 +86,7 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
     <div className="page wa-list">
       <div className="wa-lt"><h1>{_t("Круги")}</h1></div>
       <input className="wa-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("🔍 Поиск")} />
+      <InviteInbox />
       {personOn && <AsksBox list={asks.list} reload={asks.reload} />}
       {people.length > 1 && (
         <div className="wa-status" aria-label={_t("Как прошёл день в «{0}»", cur?.title || _t("Круг"))}>

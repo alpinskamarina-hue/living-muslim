@@ -75,6 +75,9 @@ const REACTIONS = [
   { e: '✨', label: _t("МашаАллах"), short: _t("МашаАллах") },
 ];
 
+/** An invite link (?c=) opens its circle once; later visits to the tab start on the list. */
+let cLinkUsed = false;
+
 export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah, chatUnread, onCC, onOpenCourse }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
@@ -109,9 +112,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const [listOn, setListOn] = useState(() => {
     if (!isCloud || !myCircles().length) return false;
     try { if (sessionStorage.getItem('lm.asksGo')) return true; } catch { /* */ }
-    try { if (sessionStorage.getItem('lm.chat') === chatCode || new URLSearchParams(location.search).get('c') || sessionStorage.getItem('lm.umrahGo') || sessionStorage.getItem('lm.autojoin')) return false; } catch { /* */ }
+    try { if (sessionStorage.getItem('lm.chat') === chatCode || (!cLinkUsed && new URLSearchParams(location.search).get('c')) || sessionStorage.getItem('lm.umrahGo') || sessionStorage.getItem('lm.autojoin')) return false; } catch { /* */ }
     return true;
   });
+  useEffect(() => () => { cLinkUsed = true; }, []);
   useEffect(() => {
     const f = () => { if (isCloud && myCircles().length) setListOn(true); };
     window.addEventListener('lm-open-asks', f);
@@ -125,7 +129,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     return 'circle';
   });
   const [cxOn, setCxOn] = useState(false);
-  const chat = useChat(joined ? chatCode : undefined, view === 'chat' || (cxOn && !panel));
+  // «open» marks messages as read, so it must stay off while the list of circles is on screen:
+  // otherwise the current circle's new messages were read silently and its number never showed.
+  const listShown = listOn && isCloud && myCircles().length > 0;
+  const chat = useChat(joined ? chatCode : undefined, !listShown && (view === 'chat' || (cxOn && !panel)));
   const [draft, setDraft] = useState<Draft | null>(null);
   const openChat = (d?: Draft) => { if (d) setDraft(d); setView('chat'); setPanel(false); window.scrollTo(0, 0); };
   useEffect(() => {

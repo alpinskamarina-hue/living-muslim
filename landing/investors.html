@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="ru" data-l="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Living Muslim · Для инвесторов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+:root {
+  --bg: #F6EFE3; --card: #FFFBF4; --sand: #E8DCC6; --ink: #2B2219; --ink-2: #7A6A55;
+  --emerald: #11553A; --emerald-2: #1d6b4b; --brass: #B5832A; --brass-2: #E0B45C; --terra: #B4583A; --tile: #2F7F7A;
+  --night: #0F1712; --night-2: #18221B; --warm: #F1E8D8;
+  --f-serif: 'Cormorant Garamond', Georgia, serif; --f-sans: Manrope, system-ui, -apple-system, sans-serif; --f-ar: Amiri, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0F1712; --card: #18221B; --sand: #2a3a2f; --ink: #F1E8D8; --ink-2: #b9ab94; --brass: #E0B45C; --emerald-2: #2b8a5f; }
+}
+* { box-sizing: border-box; }
+html[data-l="ru"] [lang="en"], html[data-l="en"] [lang="ru"] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--f-sans); }
+a { color: inherit; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+.eyebrow { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--brass); font-weight: 800; display: flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 10px; height: 10px; background: currentColor; transform: rotate(45deg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px currentColor; }
+h1, h2, h3.s { font-family: var(--f-serif); font-weight: 700; }
+h2 { font-size: clamp(32px, 4.6vw, 48px); line-height: 1.05; margin: 10px 0 14px; letter-spacing: -.2px; }
+.sub { color: var(--ink-2); max-width: 680px; margin: 0 0 32px; font-size: 17px; }
+section { padding: 84px 0; }
+.ph { background: #ffe9a8; color: #5a4300; border-radius: 6px; padding: 0 6px; font-weight: 700; }
+
+/* top bar */
+.top { position: absolute; inset: 0 0 auto; z-index: 3; }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; color: var(--warm); }
+.brand { display: flex; gap: 10px; align-items: center; font-weight: 800; letter-spacing: .3px; }
+.brand svg { width: 46px; height: 29px; }
+.lang button { background: none; border: 1px solid rgba(241,232,216,.3); color: var(--warm); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; margin-left: 6px; }
+.lang button.on { background: rgba(241,232,216,.15); }
+
+/* hero */
+.hero { position: relative; color: var(--warm); background: radial-gradient(120% 80% at 75% 0%, #1f5a40 0%, #0f3a28 45%, #0b2219 100%); padding: 130px 0 150px; overflow: hidden; }
+.hero .pat { position: absolute; inset: 0; opacity: .08; }
+.hero .arch { position: absolute; left: 0; right: 0; bottom: -1px; height: 70px; }
+.hero .grid { position: relative; display: grid; grid-template-columns: 1.25fr .75fr; gap: 40px; align-items: center; }
+.hero h1 { font-size: clamp(42px, 6.8vw, 76px); line-height: 1; margin: 18px 0 18px; }
+.hero h1 em { font-style: normal; color: var(--brass-2); }
+.hero .lead { font-size: 19px; color: #d9d2c2; max-width: 600px; margin: 0 0 30px; }
+.hero .eyebrow { color: var(--brass-2); }
+.hero .eyebrow::before { box-shadow: 0 0 0 3px #0f3a28, 0 0 0 4px currentColor; }
+.btn { display: inline-flex; align-items: center; gap: 8px; background: var(--brass-2); color: #22180a; font-weight: 800; text-decoration: none; padding: 15px 24px; border-radius: 999px; box-shadow: 0 10px 30px rgba(224,180,92,.25); }
+.btn.ghost { background: transparent; color: var(--warm); border: 1px solid rgba(241,232,216,.35); box-shadow: none; margin-left: 10px; }
+.ayah { text-align: center; }
+.ayah .ar { font-family: var(--f-ar); font-size: clamp(30px, 3.6vw, 42px); line-height: 1.6; color: var(--brass-2); direction: rtl; }
+.ayah p { margin: 8px 0 0; color: #d9d2c2; font-family: var(--f-serif); font-size: 21px; font-style: italic; }
+.ayah small { display: block; color: #a89f8c; margin-top: 6px; letter-spacing: 1px; }
+.lamps { display: flex; justify-content: center; margin: -40px 0 10px; }
+.lamps svg { width: 230px; height: 356px; overflow: visible; }
+.lm-halo { animation: lm-flicker 5.5s ease-in-out infinite; }
+.lm-bloom { opacity: .35; }
+.lm-hang { animation: lm-sway 7s ease-in-out infinite; }
+.lm-hang.lm-1 { animation-duration: 8.5s; animation-delay: -2s; }
+.lm-hang.lm-2 { animation-duration: 6.2s; animation-delay: -4s; }
+@keyframes lm-sway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+@keyframes lm-flicker { 0%, 100% { opacity: 1; } 30% { opacity: .82; } 55% { opacity: .95; } 70% { opacity: .78; } }
+@media (prefers-reduced-motion: reduce) { .lm-hang, .lm-halo { animation: none; } }
+@media (max-width: 900px) { .lamps { margin: -30px 0 0; } .lamps svg { width: 170px; height: 263px; } }
+.kpis { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 56px; background: rgba(241,232,216,.14); border-radius: 22px; overflow: hidden; }
+.kpi { background: rgba(11,34,25,.82); padding: 20px 22px; }
+.kpi b { display: block; font-family: var(--f-serif); font-size: 40px; line-height: 1; color: #fff; font-weight: 700; }
+.kpi b small { font-size: 20px; }
+.kpi span { font-size: 13px; color: #b8b09f; }
+
+/* good deed */
+.deed { padding-top: 40px; }
+.deed .intro { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; margin-bottom: 36px; }
+.hadith { position: relative; background: var(--card); border: 1px solid var(--sand); border-radius: 200px 200px 24px 24px; padding: 64px 34px 30px; text-align: center; }
+.hadith .ar { font-family: var(--f-ar); font-size: 26px; line-height: 1.7; color: var(--emerald-2); direction: rtl; }
+.hadith p { font-family: var(--f-serif); font-size: 22px; line-height: 1.35; margin: 12px 0 8px; }
+.hadith small { color: var(--ink-2); letter-spacing: 1px; text-transform: uppercase; font-size: 11px; font-weight: 700; }
+.hadith::before { content: ""; position: absolute; top: 22px; left: 50%; width: 16px; height: 16px; margin-left: -8px; background: var(--brass); transform: rotate(45deg); }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.reward { background: var(--card); border: 1px solid var(--sand); border-radius: 22px; padding: 24px; position: relative; overflow: hidden; }
+.reward .n { font-family: var(--f-serif); font-size: 46px; line-height: 1; color: var(--emerald-2); font-weight: 700; }
+.reward h3 { font-family: var(--f-serif); font-size: 24px; margin: 10px 0 6px; line-height: 1.1; }
+.reward p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.reward .star { position: absolute; right: -18px; top: -18px; width: 90px; opacity: .12; color: var(--brass); }
+.both { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; border-radius: 22px; overflow: hidden; border: 1px solid var(--sand); }
+.both div { padding: 22px 24px; background: var(--card); }
+.both div + div { background: var(--emerald); color: var(--warm); }
+.both b { font-family: var(--f-serif); font-size: 26px; display: block; }
+.both div + div span { color: #cfe0d3; }
+
+/* generic cards */
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--sand); border-radius: 22px; padding: 22px; }
+.card h3 { font-family: var(--f-serif); font-size: 23px; line-height: 1.1; margin: 12px 0 6px; }
+.card p { margin: 0; color: var(--ink-2); font-size: 15px; }
+.tileic { width: 46px; height: 46px; border-radius: 14px; background: #efe3cd; color: var(--brass); display: grid; place-items: center; }
+@media (prefers-color-scheme: dark) { .tileic { background: #2a2416; } }
+.tileic svg { width: 24px; height: 24px; }
+.problem { background: var(--card); border-top: 1px solid var(--sand); border-bottom: 1px solid var(--sand); }
+.problem .card { background: var(--bg); }
+.problem .q { font-family: var(--f-serif); font-size: 64px; line-height: .6; color: var(--terra); }
+
+/* market */
+.mkt { display: grid; grid-template-columns: .9fr 1.1fr; gap: 40px; align-items: center; }
+.bars { display: grid; gap: 18px; }
+.bar label { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 6px; }
+.bar label b { font-family: var(--f-serif); font-size: 26px; line-height: 1; }
+.bar i { display: block; height: 12px; border-radius: 6px; background: var(--sand); position: relative; overflow: hidden; }
+.bar i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--emerald-2); border-radius: 6px; }
+.bar i.mut::after { background: #c9b994; }
+.note { font-size: 13px; color: var(--ink-2); margin-top: 18px; }
+
+/* plans */
+.plans { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: stretch; }
+.plan { background: var(--card); border: 1px solid var(--sand); border-radius: 22px; padding: 20px 18px; display: flex; flex-direction: column; }
+.plan .tag { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--ink-2); }
+.plan .nm { font-family: var(--f-serif); font-size: 26px; font-weight: 700; margin-top: 4px; }
+.plan .p { font-family: var(--f-serif); font-size: 36px; font-weight: 700; margin: 10px 0 0; line-height: 1; }
+.plan small { color: var(--ink-2); font-size: 13px; }
+.plan ul { margin: 14px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--ink-2); }
+.plan li { padding: 4px 0 4px 18px; position: relative; }
+.plan li::before { content: ""; position: absolute; left: 2px; top: 11px; width: 6px; height: 6px; background: var(--brass); transform: rotate(45deg); }
+.plan.pro { border-color: var(--brass); box-shadow: inset 0 0 0 1px var(--brass); }
+.plan.ultra { background: linear-gradient(160deg, #13402d, #0b2219); color: var(--warm); border-color: #2c5a44; }
+.plan.ultra .tag { color: var(--brass-2); } .plan.ultra small, .plan.ultra ul { color: #c8c0ae; } .plan.ultra li::before { background: var(--brass-2); }
+.calc { margin-top: 18px; display: flex; gap: 22px; align-items: center; background: var(--card); border: 1px dashed var(--brass); border-radius: 22px; padding: 20px 24px; }
+.calc b { font-family: var(--f-serif); font-size: 32px; color: var(--emerald-2); white-space: nowrap; }
+.calc span { color: var(--ink-2); }
+
+/* roadmap */
+.road { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.road::before { content: ""; position: absolute; left: 22px; right: 22px; top: 22px; height: 2px; background: repeating-linear-gradient(90deg, var(--brass) 0 8px, transparent 8px 14px); }
+.step .dot { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--emerald); color: var(--brass-2); display: grid; place-items: center; font-weight: 800; font-size: 13px; border: 4px solid var(--bg); }
+.step h3 { font-family: var(--f-serif); font-size: 23px; margin: 14px 0 4px; }
+.step p { margin: 0; color: var(--ink-2); font-size: 15px; }
+
+/* round */
+.round { background: var(--night); color: var(--warm); position: relative; overflow: hidden; }
+.round .pat { position: absolute; inset: 0; opacity: .05; }
+.round .wrap { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.round .sub { color: #b8b09f; }
+.round .eyebrow { color: var(--brass-2); } .round .eyebrow::before { box-shadow: 0 0 0 3px var(--night), 0 0 0 4px currentColor; }
+.funds { background: var(--night-2); border: 1px solid #2c3a30; border-radius: 22px; padding: 24px; }
+.funds h3 { font-family: var(--f-serif); font-size: 24px; margin: 0 0 14px; }
+.stack { display: flex; height: 16px; border-radius: 8px; overflow: hidden; gap: 3px; }
+.legend { display: grid; gap: 10px; margin-top: 18px; font-size: 15px; }
+.legend div { display: grid; grid-template-columns: 14px 52px 1fr; gap: 10px; align-items: center; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; display: block; }
+.legend b { font-family: var(--f-serif); font-size: 22px; }
+.sharia { margin-top: 26px; display: grid; gap: 10px; }
+.sharia div { display: flex; gap: 12px; align-items: flex-start; color: #d9d2c2; }
+.sharia svg { flex: none; width: 22px; height: 22px; color: var(--brass-2); margin-top: 2px; }
+
+/* form */
+.contact .wrap { display: grid; grid-template-columns: .9fr 1.1fr; gap: 40px; }
+form { display: grid; gap: 14px; background: var(--card); border: 1px solid var(--sand); border-radius: 24px; padding: 26px; }
+label { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+input, select, textarea { width: 100%; font: inherit; font-size: 15px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--sand); background: var(--bg); color: var(--ink); margin-top: 6px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+button.send { background: var(--emerald); color: #fff; border: 0; border-radius: 999px; padding: 15px 22px; font: inherit; font-weight: 800; cursor: pointer; }
+.chk { display: flex; gap: 10px; font-weight: 500; }
+.chk input { width: auto; margin-top: 3px; }
+.msg { margin: 0; font-weight: 700; color: var(--emerald-2); }
+.msg.err { color: var(--terra); }
+.direct { display: grid; gap: 10px; margin: 0 0 8px; max-width: 360px; }
+.direct a { display: flex; gap: 12px; align-items: center; text-decoration: none; background: var(--card); border: 1px solid var(--sand); border-radius: 16px; padding: 12px 16px; }
+.direct svg { width: 26px; height: 26px; color: var(--emerald-2); flex: none; }
+.direct small { display: block; font-size: 12px; color: var(--ink-2); }
+.direct b { font-size: 17px; }
+.dua { font-family: var(--f-serif); font-size: 22px; font-style: italic; color: var(--ink-2); margin-top: 20px; }
+
+footer { padding: 10px 0 60px; font-size: 13px; color: var(--ink-2); }
+footer .disc { border-top: 1px solid var(--sand); padding-top: 22px; }
+
+@media (max-width: 900px) {
+  .hero { padding: 110px 0 120px; }
+  .hero .grid, .deed .intro, .mkt, .round .wrap, .contact .wrap, .both { grid-template-columns: 1fr; }
+  .hero .ayah { order: -1; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .three, .grid3 { grid-template-columns: 1fr; }
+  .plans { grid-template-columns: 1fr 1fr; }
+  .plans .plan.ultra { grid-column: span 2; }
+  .road { grid-template-columns: 1fr 1fr; row-gap: 28px; }
+  .road::before { display: none; }
+  .row2 { grid-template-columns: 1fr; }
+  .btn.ghost { margin: 12px 0 0; }
+  .calc { flex-direction: column; align-items: flex-start; gap: 6px; }
+  section { padding: 60px 0; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="khatam" viewBox="0 0 100 100"><g fill="none" stroke="currentColor" stroke-width="3"><rect x="22" y="22" width="56" height="56"/><rect x="22" y="22" width="56" height="56" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="12"/></g></symbol>
+    <pattern id="pat" width="80" height="80" patternUnits="userSpaceOnUse"><g fill="none" stroke="#F1E8D8" stroke-width="1.2"><rect x="20" y="20" width="40" height="40"/><rect x="20" y="20" width="40" height="40" transform="rotate(45 40 40)"/><path d="M0 40h12M68 40h12M40 0v12M40 68v12"/></g></pattern>
+  </defs>
+</svg>
+
+<div class="top"><div class="wrap">
+  <span class="brand"><svg viewBox="0 0 160 100"><path d="M6 72 H44 A18 18 0 0 1 80 72 H90 L97 16 L104 72 H120 L126 62 L132 72 H144" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="152" cy="72" r="7" fill="#E0B45C"/></svg>Living Muslim</span>
+  <span class="lang"><button data-set="ru" class="on">RU</button><button data-set="en">EN</button></span>
+</div></div>
+
+<header class="hero">
+  <svg class="pat" width="100%" height="100%"><rect width="100%" height="100%" fill="url(#pat)"/></svg>
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <div class="eyebrow"><span lang="ru">Для партнёров и инвесторов</span><span lang="en">For partners and investors</span></div>
+        <h1><span lang="ru">Вложитесь в <em>благое дело</em>, которое растёт</span><span lang="en">Invest in a <em>good deed</em> that grows</span></h1>
+        <p class="lead"><span lang="ru">Living Muslim помогает мусульманам каждый день молиться вовремя, читать Коран и держаться вместе с близкими. Мы ищем первых партнёров — тех, для кого награда у Аллаха важнее прибыли, но кто ценит и то, и другое.</span><span lang="en">Living Muslim helps Muslims pray on time, read the Quran and stay together with loved ones every day. We are looking for our first partners: people for whom the reward with Allah comes first, yet who value both.</span></p>
+        <a class="btn" href="#contact"><span lang="ru">Запросить презентацию</span><span lang="en">Request the deck</span> →</a><a class="btn ghost" href="/?home"><span lang="ru">Посмотреть приложение</span><span lang="en">See the app</span></a>
+      </div>
+      <div class="ayah">
+        <div class="lamps" aria-hidden="true"><svg id="lamps" viewBox="0 0 100 155"></svg></div>
+        <div class="ar">وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَىٰ</div>
+        <p lang="ru">«Помогайте друг другу в благочестии и богобоязненности»</p><p lang="en">“Help one another in righteousness and piety”</p>
+        <small lang="ru">Коран 5:2</small><small lang="en">Quran 5:2</small>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><b>~60 <small lang="ru">млн</small><small lang="en">M</small></b><span lang="ru">русско- и англоязычных мусульман — ядро аудитории</span><span lang="en">Russian- and English-speaking Muslims: the core audience</span></div>
+      <div class="kpi"><b>2</b><span lang="ru">языка с первого дня: русский и английский</span><span lang="en">languages from day one: Russian and English</span></div>
+      <div class="kpi"><b>2026</b><span lang="ru">запуск в ноябре, сейчас ранний доступ: самое выгодное время войти</span><span lang="en">launched in November, now in early access: the best time to join</span></div>
+      <div class="kpi"><b>0</b><span lang="ru">рекламы и проданных данных</span><span lang="en">ads and zero data sold</span></div>
+    </div>
+  </div>
+  <svg class="arch" viewBox="0 0 1440 70" preserveAspectRatio="none"><path d="M0 70 V40 H560 Q640 40 680 10 Q720 -12 760 10 Q800 40 880 40 H1440 V70 Z" fill="var(--bg)"/></svg>
+</header>
+
+<section class="deed"><div class="wrap">
+  <div class="intro">
+    <div>
+      <div class="eyebrow"><span lang="ru">Прежде всего — благое дело</span><span lang="en">A good deed first</span></div>
+      <h2><span lang="ru">Каждый намаз, совершённый с помощью приложения, — и ваша доля в награде, иншаАллах</span><span lang="en">Every prayer kept with the app is your share of the reward too, insha’Allah</span></h2>
+      <p class="sub" style="margin:0"><span lang="ru">Это не просто стартап. Вы поможете тысячам людей не бросить намаз, вернуться к Корану, собрать семью в Рамадан. Такое дело продолжает приносить пользу, даже когда вы о нём не думаете.</span><span lang="en">This is not just a startup. You will help thousands of people keep their prayer, return to the Quran, gather the family in Ramadan. Such a deed keeps bringing benefit even when you are not thinking about it.</span></p>
+    </div>
+    <div class="hadith">
+      <div class="ar">مَنْ دَلَّ عَلَى خَيْرٍ فَلَهُ مِثْلُ أَجْرِ فَاعِلِهِ</div>
+      <p lang="ru">«Тот, кто указал на благое, получит награду, подобную награде совершившего его»</p><p lang="en">“Whoever guides to good will have a reward like the one who does it”</p>
+      <small lang="ru">Сахих Муслим, 1893</small><small lang="en">Sahih Muslim, 1893</small>
+    </div>
+  </div>
+  <div class="three">
+    <div class="reward"><svg class="star"><use href="#khatam"/></svg><div class="n">5</div><h3 lang="ru">намазов в день, каждый вовремя</h3><h3 lang="en">prayers a day, each on time</h3><p lang="ru">Мягкое правило «не пропускать дважды» вместо чувства вины.</p><p lang="en">A gentle “never miss twice” rule instead of guilt.</p></div>
+    <div class="reward"><svg class="star"><use href="#khatam"/></svg><div class="n">604</div><h3 lang="ru">страницы Корана с переводом смыслов</h3><h3 lang="en">Quran pages with translation of meanings</h3><p lang="ru">Перевод смыслов, совместный хатм в кругу, план чтения.</p><p lang="en">Translation of meanings, group khatm, a reading plan.</p></div>
+    <div class="reward"><svg class="star"><use href="#khatam"/></svg><div class="n">1</div><h3 lang="ru">круг близких, который держит вместе</h3><h3 lang="en">circle of loved ones that keeps you together</h3><p lang="ru">Семьи и друзья поддерживают друг друга, просят дуа, вместе проходят Рамадан.</p><p lang="en">Families and friends support each other, ask for dua, go through Ramadan together.</p></div>
+  </div>
+  <div class="both">
+    <div><b lang="ru">Для ахирата</b><b lang="en">For the hereafter</b><span lang="ru">садака джария — польза, которая не прекращается, иншаАллах</span><span lang="en">sadaqah jariyah: benefit that keeps flowing, insha’Allah</span></div>
+    <div><b lang="ru">И для этого мира</b><b lang="en">And for this world</b><span lang="ru">честный бизнес с подписками, в котором вы совладелец</span><span lang="en">an honest subscription business in which you are a co-owner</span></div>
+  </div>
+</div></section>
+
+<section class="problem"><div class="wrap">
+  <div class="eyebrow"><span lang="ru">Проблема</span><span lang="en">The problem</span></div>
+  <h2><span lang="ru">Вера держится на постоянстве, а постоянству почти никто не помогает</span><span lang="en">Faith rests on consistency, and almost nothing helps with consistency</span></h2>
+  <div class="grid3" style="margin-top:28px">
+    <div class="card"><div class="q">“</div><h3 lang="ru">Намаз через вину</h3><h3 lang="en">Prayer through guilt</h3><p lang="ru">Пропустил, укорил себя, бросил. Нужна мягкая система, а не ещё один будильник.</p><p lang="en">Missed, blamed yourself, gave up. People need a gentle system, not another alarm.</p></div>
+    <div class="card"><div class="q">“</div><h3 lang="ru">Всё по отдельности</h3><h3 lang="en">Everything is scattered</h3><p lang="ru">Время намаза, Коран, трекер, чат с друзьями — разные приложения, часто с рекламой.</p><p lang="en">Prayer times, Quran, tracker, chats: separate apps, often full of ads.</p></div>
+    <div class="card"><div class="q">“</div><h3 lang="ru">Почти ничего на русском</h3><h3 lang="en">Almost nothing in Russian</h3><p lang="ru">~50 млн русскоязычных мусульман почти без современных продуктов на родном языке.</p><p lang="en">~50M Russian-speaking Muslims with almost no modern products in their language.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow"><span lang="ru">Продукт</span><span lang="en">The product</span></div>
+  <h2><span lang="ru">Уже работает, а не просто идея</span><span lang="en">Already live, not just an idea</span></h2>
+  <p class="sub"><span lang="ru">Приложение на living-muslim.vercel.app: вход по почте, облако, чаты, ИИ-помощник, русский и английский.</span><span lang="en">The app at living-muslim.vercel.app: email sign-in, cloud, chats, AI assistant, Russian and English.</span></p>
+  <div class="grid3">
+    <div class="card"><div class="tileic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></div><h3 lang="ru">День вокруг пяти намазов</h3><h3 lang="en">A day around five prayers</h3><p lang="ru">Привычки после каждого намаза, вечерняя мухасаба, правило «не пропускать дважды».</p><p lang="en">Habits after each prayer, evening muhasabah, a “never miss twice” rule.</p></div>
+    <div class="card"><div class="tileic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="9" r="3"/><circle cx="16" cy="9" r="3"/><path d="M3 19c1-3 3-4 5-4s4 1 5 4M11 19c1-3 3-4 5-4s4 1 5 4"/></svg></div><h3 lang="ru">Круги близких</h3><h3 lang="en">Circles</h3><p lang="ru">Чат с голосовыми, цель недели, вызовы, дуа друг за друга. Главный двигатель роста.</p><p lang="en">Chat with voice notes, weekly goal, challenges, dua for each other. The main growth engine.</p></div>
+    <div class="card"><div class="tileic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h7a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-7a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h7z"/></svg></div><h3 lang="ru">Практика</h3><h3 lang="en">Practice</h3><p lang="ru">Коран, азкары, тасбих, Рамадан, садака, закят, кибла, мечети рядом, питание.</p><p lang="en">Quran, adhkar, tasbih, Ramadan, sadaqah, zakat, qibla, nearby mosques, food.</p></div>
+    <div class="card"><div class="tileic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="6" width="12" height="14" rx="1"/><path d="M6 10h12M9 3h6"/></svg></div><h3 lang="ru">Умра</h3><h3 lang="en">Umrah</h3><p lang="ru">Подготовка, план поездки, гид на месте, групповой режим. Отдельный платный пропуск.</p><p lang="en">Preparation, trip plan, on-site guide, group mode. A separate paid pass.</p></div>
+    <div class="card"><div class="tileic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 6h14v9H9l-4 4z"/><path d="M9 10h6"/></svg></div><h3 lang="ru">ИИ-помощник</h3><h3 lang="en">AI assistant</h3><p lang="ru">Юсуф и Марьям помогают с привычками и планом. Честно говорят, что они не муфтий.</p><p lang="en">Yusuf and Maryam help with habits and plans. Honest that they are not a mufti.</p></div>
+    <div class="card"><div class="tileic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg></div><h3 lang="ru">Доверие</h3><h3 lang="en">Trust</h3><p lang="ru">Личные отметки хранятся на телефоне. Без рекламы и трекеров — решающее для мусульман.</p><p lang="en">Personal check-ins stay on the phone. No ads or trackers: decisive for Muslims.</p></div>
+  </div>
+</div></section>
+
+<section class="problem"><div class="wrap mkt">
+  <div>
+    <div class="eyebrow"><span lang="ru">Рынок</span><span lang="en">Market</span></div>
+    <h2><span lang="ru">Две языковые аудитории, около 180 млн человек</span><span lang="en">Two language audiences, about 180M people</span></h2>
+    <p class="sub" style="margin:0"><span lang="ru">Платящее ядро — англоязычные мусульмане Запада, русскоязычная диаспора в Европе и страны Залива.</span><span lang="en">The paying core: English-speaking Muslims in the West, the Russian-speaking diaspora in Europe and the Gulf.</span></p>
+  </div>
+  <div>
+    <div class="bars">
+      <div class="bar"><label><span lang="ru">Русскоязычные мусульмане</span><span lang="en">Russian-speaking Muslims</span><b>~50 M</b></label><i style="--w:42%"></i></div>
+      <div class="bar"><label><span lang="ru">Английский — родной</span><span lang="en">English, native</span><b>~12 M</b></label><i style="--w:10%"></i></div>
+      <div class="bar"><label><span lang="ru">Английский — второй язык</span><span lang="en">English, second language</span><b>~120 M</b></label><i class="mut" style="--w:100%"></i></div>
+    </div>
+    <p class="note"><span lang="ru">Приблизительные оценки по переписям и данным о владении языками.</span><span lang="en">Approximate estimates from censuses and language data.</span></p>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="eyebrow"><span lang="ru">Модель дохода</span><span lang="en">Business model</span></div>
+  <h2><span lang="ru">Поклонение бесплатно навсегда, рост — по подписке</span><span lang="en">Worship free forever, growth by subscription</span></h2>
+  <p class="sub"><span lang="ru">Намаз, Коран, Рамадан и садака никогда не будут платными. Платят за больше привычек, кругов и личного помощника.</span><span lang="en">Prayer, Quran, Ramadan and sadaqah will never be paid. People pay for more habits, circles and a personal assistant.</span></p>
+  <div class="plans">
+    <div class="plan"><span class="tag" lang="ru">Начало</span><span class="tag" lang="en">Start</span><span class="nm">Free</span><div class="p">€0</div><small lang="ru">навсегда</small><small lang="en">forever</small><ul lang="ru"><li>3 привычки, круга, цели</li><li>Всё поклонение</li></ul><ul lang="en"><li>3 habits, circles, goals</li><li>All worship tools</li></ul></div>
+    <div class="plan pro"><span class="tag" lang="ru">Основной</span><span class="tag" lang="en">Main</span><span class="nm">Pro</span><div class="p">€3.99</div><small lang="ru">в месяц · €29.99 в год</small><small lang="en">a month · €29.99 a year</small><ul lang="ru"><li>5 привычек, 20 кругов</li><li>Книги и курсы без лимита</li><li>3 совета помощника в день</li></ul><ul lang="en"><li>5 habits, 20 circles</li><li>Unlimited books and courses</li><li>3 assistant tips a day</li></ul></div>
+    <div class="plan ultra"><span class="tag" lang="ru">Личный помощник</span><span class="tag" lang="en">Personal assistant</span><span class="nm" lang="ru">Ультра</span><span class="nm" lang="en">Ultra</span><div class="p">€19.99</div><small lang="ru">в месяц · €149 в год</small><small lang="en">a month · €149 a year</small><ul lang="ru"><li>Помощник без ограничений</li><li>Помнит цели и историю</li><li>Наставник по учёбе и в круге</li><li>Свой характер помощника</li></ul><ul lang="en"><li>Unlimited assistant</li><li>Remembers goals and history</li><li>Tutor, also in circles</li><li>Its own character</li></ul></div>
+    <div class="plan"><span class="tag" lang="ru">Для дома</span><span class="tag" lang="en">For the home</span><span class="nm" lang="ru">Семья</span><span class="nm" lang="en">Family</span><div class="p">€44.99</div><small lang="ru">в год, на всю семью</small><small lang="en">a year, whole family</small><ul lang="ru"><li>Pro для всех</li><li>Детский Рамадан</li></ul><ul lang="en"><li>Pro for everyone</li><li>Kids’ Ramadan</li></ul></div>
+    <div class="plan"><span class="tag" lang="ru">Разово</span><span class="tag" lang="en">One-off</span><span class="nm" lang="ru">Умра</span><span class="nm" lang="en">Umrah</span><div class="p">€10</div><small lang="ru">с человека · группа от €30</small><small lang="en">per person · groups from €30</small><ul lang="ru"><li>Гид и план поездки</li><li>Групповой режим</li></ul><ul lang="en"><li>Guide and trip plan</li><li>Group mode</li></ul></div>
+  </div>
+  <div class="calc"><b>≈ €300 000</b><span><span lang="ru">Пример, не прогноз: 10 000 человек на годовом Pro — это всего 0,02% ядра аудитории. Каждый, кто перейдёт на Ультру, приносит как пять Pro.</span><span lang="en">An example, not a forecast: 10,000 people on yearly Pro is only 0.02% of the core audience. Each Ultra subscriber brings as much as five Pro.</span></span></div>
+</div></section>
+
+<section class="problem"><div class="wrap">
+  <div class="eyebrow"><span lang="ru">План на 12 месяцев</span><span lang="en">12-month plan</span></div>
+  <h2 style="margin-bottom:36px"><span lang="ru">От рабочего продукта к устойчивой выручке</span><span lang="en">From a working product to steady revenue</span></h2>
+  <div class="road">
+    <div class="step"><div class="dot">Q1</div><h3 lang="ru">Оплата и домен</h3><h3 lang="en">Payments and domain</h3><p lang="ru">Подписки, свой домен, юридические документы, первые платящие.</p><p lang="en">Subscriptions, own domain, legal documents, first paying users.</p></div>
+    <div class="step"><div class="dot">Q2</div><h3 lang="ru">Рамадан 2027</h3><h3 lang="en">Ramadan 2027</h3><p lang="ru">Главный сезон года: рамадан-режим, совместный хатм, ифтары.</p><p lang="en">The peak season: Ramadan mode, group khatm, iftars.</p></div>
+    <div class="step"><div class="dot">Q3</div><h3 lang="ru">Общины</h3><h3 lang="en">Communities</h3><p lang="ru">Мечети, имамы, студенческие и семейные группы в Европе.</p><p lang="en">Mosques, imams, student and family groups in Europe.</p></div>
+    <div class="step"><div class="dot">Q4</div><h3 lang="ru">App Store и Google Play</h3><h3 lang="en">App stores</h3><p lang="ru">iOS и Android, сезон умры, новые языки.</p><p lang="en">iOS and Android, Umrah season, new languages.</p></div>
+  </div>
+</div></section>
+
+<section class="round">
+  <svg class="pat" width="100%" height="100%"><rect width="100%" height="100%" fill="url(#pat)"/></svg>
+  <div class="wrap">
+    <div>
+      <div class="eyebrow"><span lang="ru">Первый раунд</span><span lang="en">First round</span></div>
+      <h2><span lang="ru">Партнёрство по шариату: вместе в прибыли и в риске</span><span lang="en">A Sharia partnership: together in profit and in risk</span></h2>
+      <p class="sub"><span lang="ru">Участие — от €5 000. Доля, оценка и оформление — в презентации, которую основатель пришлёт после короткого знакомства.</span><span lang="en">Participation from €5,000. Stake, valuation and paperwork are in the deck the founder sends after a short introduction.</span></p>
+      <div class="sharia">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg><span lang="ru">Мушарака — долевое участие, без процентов и гарантированной доходности</span><span lang="en">Musharakah: equity participation, no interest, no guaranteed return</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg><span lang="ru">Халяльный бизнес: без рекламы, азартных механик и продажи данных</span><span lang="en">A halal business: no ads, no gambling mechanics, no data sales</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l4 4 10-10"/></svg><span lang="ru">Отчёт партнёрам раз в квартал: пользователи, выручка, расходы</span><span lang="en">Quarterly report to partners: users, revenue, costs</span></div>
+      </div>
+    </div>
+    <div class="funds">
+      <h3 lang="ru">На что пойдут средства</h3><h3 lang="en">Use of funds</h3>
+      <div class="stack"><span style="flex:40;background:#2b8a5f"></span><span style="flex:25;background:#E0B45C"></span><span style="flex:20;background:#2F7F7A"></span><span style="flex:15;background:#B4583A"></span></div>
+      <div class="legend">
+        <div><i style="background:#2b8a5f"></i><b>40%</b><span lang="ru">маркетинг в общинах и соцсетях</span><span lang="en">community and social marketing</span></div>
+        <div><i style="background:#E0B45C"></i><b>25%</b><span lang="ru">серверы, ИИ, сервисы</span><span lang="en">servers, AI, services</span></div>
+        <div><i style="background:#2F7F7A"></i><b>20%</b><span lang="ru">юристы, бухгалтерия, товарный знак</span><span lang="en">legal, accounting, trademark</span></div>
+        <div><i style="background:#B4583A"></i><b>15%</b><span lang="ru">проверка контента учёными, переводы</span><span lang="en">scholar review, translations</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact"><div class="wrap">
+  <div>
+    <div class="eyebrow"><span lang="ru">Знакомство</span><span lang="en">Get in touch</span></div>
+    <h2><span lang="ru">Запросить презентацию</span><span lang="en">Request the deck</span></h2>
+    <p class="sub"><span lang="ru">Оставьте контакт — основатель свяжется с вами лично, расскажет о проекте и ответит на вопросы.</span><span lang="en">Leave your details and the founder will reach out personally, walk you through the project and answer questions.</span></p>
+    <div class="direct">
+      <a href="https://wa.me/359885282094" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.8 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.2.1-1.9-.1-2.9-1-4.8-3.9-5-4.1-.1-.2-1.2-1.6-1.2-3s.7-2.2 1-2.5c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.5z"/></svg><span><small lang="ru">WhatsApp</small><small lang="en">WhatsApp</small><b>+359 88 528 2094</b></span></a>
+      <a href="/app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1"/></svg><span><small lang="ru">Ник в приложении</small><small lang="en">Nick in the app</small><b>@ilgiz_yusupov</b></span></a>
+    </div>
+    <div class="dua"><span lang="ru">Пусть Аллах сделает это дело благословенным для каждого, кто в нём участвует.</span><span lang="en">May Allah make this work blessed for everyone who takes part in it.</span></div>
+  </div>
+  <form id="lead">
+    <div class="row2">
+      <label><span lang="ru">Имя</span><span lang="en">Name</span><input name="name" maxlength="60" required></label>
+      <label><span lang="ru">Почта или телефон</span><span lang="en">Email or phone</span><input name="contact" maxlength="120" required></label>
+    </div>
+    <div class="row2">
+      <label><span lang="ru">Страна</span><span lang="en">Country</span><input name="country" maxlength="60"></label>
+      <label><span lang="ru">Интересующая сумма</span><span lang="en">Amount of interest</span><select name="amount"><option>€5 000 – 10 000</option><option>€10 000 – 25 000</option><option>€25 000 – 50 000</option><option>€50 000+</option></select></label>
+    </div>
+    <label><span lang="ru">Пара слов о вас</span><span lang="en">A few words about you</span><textarea name="about" rows="3" maxlength="1000"></textarea></label>
+    <label class="chk"><input type="checkbox" required><span lang="ru">Согласен, чтобы со мной связались по поводу участия в проекте</span><span lang="en">I agree to be contacted about joining the project</span></label>
+    <button class="send"><span lang="ru">Отправить</span><span lang="en">Send</span></button>
+    <p class="msg" id="lead-msg" hidden></p>
+  </form>
+</div></section>
+
+<footer><div class="wrap"><div class="disc">
+  <p lang="ru"><b>Важно.</b> Эта страница не является публичной офертой, предложением ценных бумаг или инвестиционной рекомендацией. Условия участия обсуждаются индивидуально и оформляются по законодательству Республики Болгария. Инвестиции в ранний проект связаны с высоким риском, включая полную потерю вложений. Приведённые цифры — оценки и примеры, а не прогноз доходности. Награда за благое дело — у Аллаха, мы её не обещаем и не гарантируем.</p>
+  <p lang="en"><b>Important.</b> This page is not a public offer, an offer of securities or investment advice. Terms are discussed individually and documented under the laws of the Republic of Bulgaria. Early-stage investments carry high risk, including total loss. Figures shown are estimates and examples, not a forecast of returns. The reward for a good deed is with Allah; we neither promise nor guarantee it.</p>
+  <p>© 2026 Living Muslim · <a href="/privacy.html">Privacy</a> · <a href="/?home">living-muslim</a></p>
+</div></div></footer>
+
+<script>
+// Ottoman mosaic lamps, the same drawing as the app's evening header (src/components/Lamps.tsx), all lit.
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const COL = ['#C7283E', '#1FA3A0', '#F0A63A', '#2D56B8', '#2E9A5E', '#E86A2A', '#8E3FB0', '#F4D06A'];
+  const R = 30;
+  function mosaic(r, rings) {
+    const out = [], bands = rings * 2;
+    for (let b = 0; b < bands; b++) {
+      const la0 = -Math.PI / 2 + Math.PI * b / bands, la1 = -Math.PI / 2 + Math.PI * (b + 1) / bands;
+      const n = Math.max(4, Math.floor(10 * Math.cos((la0 + la1) / 2) + 4)), off = (b % 2) * 0.5;
+      for (let k = 0; k < n; k++) {
+        const lo0 = -Math.PI / 2 + Math.PI * (k + off) / n, lo1 = -Math.PI / 2 + Math.PI * (k + 1 + off) / n;
+        const pts = [[la0, lo0], [la0, lo1], [la1, lo1], [la1, lo0]].map(([la, l]) => { const lo = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, l)); return [r * Math.cos(la) * Math.sin(lo), r * Math.sin(la)]; });
+        const shade = Math.cos((lo0 + lo1) / 2) * Math.cos((la0 + la1) / 2);
+        const p = i => pts[i][0].toFixed(1) + ',' + pts[i][1].toFixed(1), odd = (b + k) % 2 === 1;
+        out.push({ a: odd ? `${p(0)} ${p(1)} ${p(2)}` : `${p(0)} ${p(1)} ${p(3)}`, b: odd ? `${p(0)} ${p(2)} ${p(3)}` : `${p(1)} ${p(2)} ${p(3)}`,
+          c1: COL[(b * 3 + k * 2) % COL.length], c2: COL[(b * 5 + k * 3 + 4) % COL.length], op: 0.5 + 0.4 * shade, bx: pts[0][0], by: pts[0][1], bo: 0.4 + 0.5 * shade });
+      }
+    }
+    return out;
+  }
+  const TILES = mosaic(R, 4), cw = R * 0.62, sw = Math.max(0.6, R / 42);
+  function globe(id) {
+    let t = '';
+    for (const x of TILES) t += `<polygon points="${x.a}" fill="${x.c1}" fill-opacity="${x.op}" stroke="#3A230E" stroke-width="${sw}" stroke-opacity=".7"/><polygon points="${x.b}" fill="${x.c2}" fill-opacity="${x.op}" stroke="#3A230E" stroke-width="${sw}" stroke-opacity=".7"/><circle cx="${x.bx}" cy="${x.by}" r="${Math.max(0.7, R / 30)}" fill="#F4D06A" opacity="${x.bo}"/>`;
+    return `<defs><radialGradient id="lg${id}" cx="45%" cy="42%" r="60%"><stop offset="0" stop-color="#FFF4C8"/><stop offset=".45" stop-color="#FFC765"/><stop offset="1" stop-color="#B85A16"/></radialGradient>
+      <radialGradient id="lh${id}" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFC765" stop-opacity=".55"/><stop offset=".55" stop-color="#E9963A" stop-opacity=".18"/><stop offset="1" stop-color="#E9963A" stop-opacity="0"/></radialGradient>
+      <clipPath id="lc${id}"><circle r="${R}"/></clipPath></defs>
+      <circle class="lm-halo" r="${R * 2.6}" fill="url(#lh${id})"/>
+      <circle r="${R}" fill="url(#lg${id})"/><g clip-path="url(#lc${id})">${t}</g>
+      <circle class="lm-bloom" cx="${-R * 0.15}" cy="${-R * 0.1}" r="${R * 0.55}" fill="#FFE9A8"/>
+      <ellipse cx="${-R * 0.38}" cy="${-R * 0.45}" rx="${R * 0.22}" ry="${R * 0.12}" fill="#fff" opacity=".4" transform="rotate(-30 ${-R * 0.38} ${-R * 0.45})"/>
+      <circle r="${R}" fill="none" stroke="#8A5A1C" stroke-width="${R / 18}"/>
+      <path d="M${-cw} ${-R * 0.86} Q0 ${-R * 1.32} ${cw} ${-R * 0.86} Z" fill="#C9963E" stroke="#7A4E14" stroke-width="1"/>
+      <rect x="${-R * 0.1}" y="${-R * 1.36}" width="${R * 0.2}" height="${R * 0.16}" rx="2" fill="#E0B45C"/>
+      <path d="M${-cw * 0.7} ${R * 0.9} Q0 ${R * 1.18} ${cw * 0.7} ${R * 0.9} L0 ${R * 1.55} Z" fill="#C9963E" stroke="#7A4E14" stroke-width="1"/>
+      <circle cy="${R * 1.6}" r="${R * 0.08}" fill="#E0B45C"/>`;
+  }
+  function chain(len) { let s = ''; for (let y = 0; y < len; y += 5.2) s += `<ellipse cx="0" cy="${y + 3}" rx="1.6" ry="3" fill="none" stroke="#C9963E" stroke-width="1"/>`; return `<g opacity=".9">${s}</g>`; }
+  const LAMPS = [[36, 58, 15], [74, 92, 21], [24, 118, 11]];
+  let html = '';
+  LAMPS.forEach(([x, y, r], i) => {
+    html += `<g class="lm-hang lm-${i}" style="transform-origin:${x}px 0px"><g transform="translate(${x} 0)">${chain(y - r * 1.36)}</g><g transform="translate(${x} ${y}) scale(${r / R})">${globe('n' + i)}</g></g>`;
+  });
+  document.getElementById('lamps').innerHTML = html;
+})();
+document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
+  document.documentElement.dataset.l = b.dataset.set; document.documentElement.lang = b.dataset.set;
+  document.querySelectorAll('[data-set]').forEach(x => x.classList.toggle('on', x === b));
+});
+
+// Deck requests go to Supabase (supabase/invest.sql); only the owner reads them.
+(function () {
+  var SB = 'https://pbpllsoiesquknuibyyj.supabase.co', KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
+  var f = document.getElementById('lead'), m = document.getElementById('lead-msg');
+  var T = {
+    ru: { ok: 'Спасибо! Основатель свяжется с вами в ближайшие дни, иншаАллах.', err: 'Не получилось отправить. Попробуйте ещё раз чуть позже.' },
+    en: { ok: 'Thank you! The founder will contact you within a few days, insha’Allah.', err: 'Could not send. Please try again a little later.' }
+  };
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var l = document.documentElement.dataset.l === 'en' ? 'en' : 'ru', d = new FormData(f), b = f.querySelector('button');
+    b.disabled = true;
+    fetch(SB + '/rest/v1/rpc/lm_invest_lead', { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_name: d.get('name'), p_contact: d.get('contact'), p_country: d.get('country'), p_amount: d.get('amount'), p_about: d.get('about'), p_lang: l }) })
+      .then(function (r) { return r.ok ? r.json() : false; })
+      .then(function (ok) {
+        m.hidden = false; m.className = ok ? 'msg' : 'msg err'; m.textContent = ok ? T[l].ok : T[l].err;
+        if (ok) { f.reset(); f.querySelectorAll('input,select,textarea').forEach(function (x) { x.disabled = true; }); } else b.disabled = false;
+      })
+      .catch(function () { m.hidden = false; m.className = 'msg err'; m.textContent = T[l].err; b.disabled = false; });
+  });
+  if (/^en/.test(navigator.language || '') && !/[?&]l=ru/.test(location.search)) document.querySelector('[data-set="en"]').click();
+})();
+</script>
+</body>
+</html>
