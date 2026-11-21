@@ -19,7 +19,7 @@ const PRO_LIST = [
   _t("Книги и видеокурсы без ограничений"),
   _t("Всё новое в Pro первым"),
 ];
-const NAME: Record<PlanId, string> = { year: _t("Год"), month: _t("Месяц"), family: _t("Семья") };
+const NAME: Record<PlanId, string> = { year: _t("Год"), month: _t("Месяц"), family: 'Family' };
 
 export function ProPlans({ onBack }: { onBack: () => void }) {
   const p = usePlan();
@@ -49,9 +49,9 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
       ) : p.early ? (
         <div className="pro-on">{_tj("✓ Ты в списке первых ({0}). Pro открыт, пока не подключим оплату", NAME[mine ?? 'year'])}</div>
       ) : p.trial ? (
-        <div className="pro-on">{_tj("Pro открыт ещё {0}  {1} · {2}", p.daysLeft, plural(p.daysLeft, _t("день"), _t("дня"), _t("дней")), leftLabel(p.msLeft))}<small>{_tj("Потом бесплатный тариф: по {0}", FREE.habits)}</small></div>
+        <div className="pro-on">{_tj("Pro открыт ещё {0}  {1} · {2}", p.daysLeft, plural(p.daysLeft, _t("день"), _t("дня"), _t("дней")), leftLabel(p.msLeft))}<small>{_tj("Потом тариф Free: по {0}", FREE.habits)}</small></div>
       ) : (
-        <div className="pro-on off">{_tj("Сейчас бесплатный тариф: по {0} привычки, круга, цели, книги и курса", FREE.habits)}</div>
+        <div className="pro-on off">{_tj("Сейчас тариф Free: по {0} привычки, круга, цели, книги и курса", FREE.habits)}</div>
       )}
 
       <div className="pro-seg" role="tablist">
@@ -74,13 +74,23 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
 
       <div className="pro-cols">
         <div className="pro-col">
-          <h3>{_t("Бесплатно")}</h3>
+          <h3>Free</h3>
           <ul>{FREE_LIST.map((x) => <li key={x}>{x}</li>)}</ul>
         </div>
         <div className="pro-col is-pro">
-          <h3>Pro <small>{_t("всё из бесплатного, плюс")}</small></h3>
+          <h3>Pro <small>{_t("всё из Free, плюс")}</small></h3>
           <ul>{PRO_LIST.map((x) => <li key={x}>{x}</li>)}</ul>
         </div>
+      </div>
+
+      <div className="pro-card pro-ultra">
+        <b>Ultra <small>{_t("€19.99 в месяц или €149 в год")}</small></b>
+        <ul>
+          <li><b>{_t("🕋 1 Умра в год включена: Umrah Pass на твою поездку")}</b></li>
+          <li>{_t("Помощник без ограничений, помнит тебя и твои цели")}</li>
+          <li>{_t("Наставник: Коран, арабский, английский")}</li>
+        </ul>
+        <small>{_t("Появится вместе с оплатой.")}</small>
       </div>
 
       <div className="pro-card">

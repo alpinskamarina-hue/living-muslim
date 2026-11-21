@@ -5133,3 +5133,11 @@ body.pp-on { overflow: hidden; }
 .pf-gift i { font-style: normal; font-size: 18px; opacity: .6; }
 .pf-search { width: 100%; box-sizing: border-box; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 10px 14px; font: inherit; font-size: 14.5px; margin: 2px 0 4px; }
 .pf-sub { margin: 22px 0 10px; font-family: var(--f-display); font-size: 22px; }
+
+/* Ultra card on the Pro screen (src/components/Pro.tsx) */
+.pro-ultra { background: linear-gradient(160deg, #13402d, #0b2219); color: #f1e8d8; border: 0; }
+.pro-ultra > b { display: flex; align-items: baseline; gap: 8px; font-size: 18px; }
+.pro-ultra > b small { font-size: 12.5px; font-weight: 600; color: #e0b45c; }
+.pro-ultra ul { margin: 8px 0 6px; padding-left: 18px; font-size: 13.5px; line-height: 1.45; color: #d9cfbc; }
+.pro-ultra ul b { color: #f3d58f; }
+.pro-ultra > small { font-size: 12px; color: #b9ac95; }

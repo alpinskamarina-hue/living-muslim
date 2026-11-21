@@ -39,7 +39,7 @@ export function TrialDial() {
   if (!p.trial) {
     return (
       <button type="button" className="pl-free" onClick={openPro}>
-        <span>{_tj("Бесплатный тариф: по {0} привычки, круга и цели", FREE.habits)}</span><b>Pro −37% ›</b>
+        <span>{_tj("Тариф Free: по {0} привычки, круга и цели", FREE.habits)}</span><b>Pro −37% ›</b>
       </button>
     );
   }
@@ -52,7 +52,7 @@ export function TrialDial() {
       <span className="pl-txt">
         <b>{last ? _t("Последний день Pro") : _t("Pro открыт полностью")}</b>
         <span className="pl-clock">{leftLabel(ms)}</span>
-        <small>{_tj("Потом бесплатный: по {0} привычки, круга, цели, книги и курса", FREE.habits)}</small>
+        <small>{_tj("Потом Free: по {0} привычки, круга, цели, книги и курса", FREE.habits)}</small>
       </span>
       <i aria-hidden="true">›</i>
     </button>
@@ -122,7 +122,7 @@ export function PlanSheet({ k, state, today, onClose }: { k: 5 | 7 | 8; state: A
         <div className={`pl-head${k === 8 ? ' free' : ''}`}>
           {k !== 8 ? <span className="pl-ring big"><Dial left={left} size={84} /><span><b>{left}</b><small>{plural(left, _t("день"), _t("дня"), _t("дней"))}</small></span></span> : <span className="pl-ring big free"><span><b>{FREE.habits}</b><small>{_t("по")}</small></span></span>}
           <div>
-            <h3>{k === 5 ? _t("Осталось {0} {1} Pro", left, plural(left, _t("день"), _t("дня"), _t("дней"))) : k === 7 ? _t("Последний день Pro") : _t("Теперь бесплатный тариф")}</h3>
+            <h3>{k === 5 ? _t("Осталось {0} {1} Pro", left, plural(left, _t("день"), _t("дня"), _t("дней"))) : k === 7 ? _t("Последний день Pro") : _t("Теперь тариф Free")}</h3>
             {k !== 8 ? <p className="pl-clock dark">{leftLabel(ms)}</p> : <p>{_t("Всё для поклонения остаётся с тобой навсегда.")}</p>}
           </div>
         </div>
@@ -146,7 +146,7 @@ export function PlanSheet({ k, state, today, onClose }: { k: 5 | 7 | 8; state: A
           </>
         ) : (
           <>
-            <p className="pl-lead">{k === 5 ? _t("Ещё {0} {1} всё открыто, потом бесплатный тариф. Чтобы ничего не останавливать из того, что уже начал, оставь Pro.", left, plural(left, _t("день"), _t("дня"), _t("дней"))) : _t("Завтра приложение перейдёт на бесплатный тариф. Ничего не удалится.")}</p>
+            <p className="pl-lead">{k === 5 ? _t("Ещё {0} {1} всё открыто, потом тариф Free. Чтобы ничего не останавливать из того, что уже начал, оставь Pro.", left, plural(left, _t("день"), _t("дня"), _t("дней"))) : _t("Завтра приложение перейдёт на бесплатный тариф. Ничего не удалится.")}</p>
             {changes.length > 0 && <ul className="pl-list">{changes.map((x) => <li key={x}>{x}</li>)}</ul>}
           </>
         )}
@@ -154,7 +154,7 @@ export function PlanSheet({ k, state, today, onClose }: { k: 5 | 7 | 8; state: A
         <Prices />
         <button type="button" className="pri-btn big-btn" onClick={go}>{k === 8 ? _t("Вернуть Pro со скидкой −37%") : _t("Оставить Pro")}</button>
         <Share />
-        <button type="button" className="link-btn pl-later" onClick={close}>{k === 8 ? _t("Хорошо, остаюсь на бесплатном") : _t("Напомнить позже")}</button>
+        <button type="button" className="link-btn pl-later" onClick={close}>{k === 8 ? _t("Хорошо, остаюсь на Free") : _t("Напомнить позже")}</button>
       </div>
     </>
   );
@@ -183,7 +183,7 @@ export function ProGate({ k, have }: { k: LimitKey; have?: number }) {
   const n = PRO[k] >= 100 ? _t("без ограничений") : _t("до {0}", PRO[k]);
   return (
     <div className="pl-gate">
-      <b>{_tj("🔒 На бесплатном тарифе {0}  {1}", FREE[k], LIMIT_RU[k][1])}</b>
+      <b>{_tj("🔒 На тарифе Free {0}  {1}", FREE[k], LIMIT_RU[k][1])}</b>
       <p>{_tj("{0}В Pro {1}  {2}. Первый год со скидкой −37%: {3} в месяц.", have != null ? _t("У тебя уже {0}. ", have) : '', LIMIT_RU[k][0], n, PRICES.year.month)}</p>
       <div className="da-row">
         <button type="button" className="pri-btn" onClick={openPro}>{_t("Открыть Pro")}</button>

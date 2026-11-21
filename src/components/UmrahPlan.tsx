@@ -369,7 +369,7 @@ export function PassCard({ isHost, going }: { isHost: boolean; going: number }) 
     <div className={`up-pass${open ? ' open' : ''}`}>
       <button type="button" className="up-pass-head" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span>🎟️</span>
-        <span><b>{_t("Пропуск на умру")}</b><small>{solo ? _t("€10 на одного") : _t("{0} на группу из {1} · {2} с человека", eur(price), n, eur(price / n))}</small></span>
+        <span><b>{_t("Пропуск на умру · Umrah Pass")}</b><small>{solo ? _t("€10 на одного") : _t("{0} на группу из {1} · {2} с человека", eur(price), n, eur(price / n))}</small></span>
         <i aria-hidden="true">{open ? '▴' : '▾'}</i>
       </button>
       {open && (
@@ -396,7 +396,7 @@ export function PassCard({ isHost, going }: { isHost: boolean; going: number }) 
           </div>
           {note && <p className="pro-note">{note}</p>}
           <GiftPassCard title={_t("Подари ещё один пропуск")} sub={_t("€10 тому, кто едет, но не может оплатить")} />
-          <p className="tiny">{_t("Пропуск отдельно от Pro. Умра-гид и дуа всегда бесплатны.")}</p>
+          <p className="tiny">{_t("Пропуск отдельно от Pro. В Ultra 1 Умра в год уже включена. Умра-гид и дуа всегда бесплатны.")}</p>
         </div>
       )}
     </div>
