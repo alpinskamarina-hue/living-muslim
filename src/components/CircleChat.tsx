@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Ic } from './LIcon';
-import { FILE_MAX, callsAi, type ChatApi, type Msg, type MsgRef } from '../chat';
+import { FILE_MAX, callsAi, type ChatApi, type Msg, type MsgRef, type ReadState } from '../chat';
 import { aiName } from '../assistant';
 import { placeOf } from '../plansCloud';
 import { setAskFor } from '../cweek';
@@ -594,7 +594,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                   : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
                   : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
                   : <span className="cc-t">{m.body}</span>}
-                <small className="cc-time">{m.failed ? _t("⚠ Не отправлено · нажми, чтобы повторить") : <>{hm(m.at)}{mine ? (m.pending ? ' ⏳' : ' ✓') : ''}</>}</small>
+                <small className="cc-time">{m.failed ? _t("⚠ Не отправлено · нажми, чтобы повторить") : <>{hm(m.at)}{mine ? (m.pending ? ' ⏳' : <> <Ticks s={chat.readOf(m)?.state ?? 'sent'} /></>) : ''}</>}</small>
               </div>
               {rs.length > 0 && (
                 <div className="cc-rs">
@@ -699,6 +699,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           <div className="dim" onClick={() => setMenu(null)} />
           <div className="cc-menu" role="dialog" aria-label={_t("Сообщение")}>
             {!menu.deleted && menu.kind !== 'event' && <div className="cc-emo">{EMOJI.map((e) => <button key={e} type="button" className={menu.reacts?.[me] === e ? 'on' : ''} onClick={() => { chat.react(menu.id, e); setMenu(null); }}>{e}</button>)}</div>}
+            {menu.uid === me && !menu.deleted && (() => { const r = chat.readOf(menu); if (!r || !r.tot) return null; return <p className="cc-read">{r.by.length ? <><Ticks s={r.state} /> {_t("Прочитали:")} {r.by.map(nm).join(', ')}</> : <><Ticks s="sent" /> {_t("Ещё никто не прочитал")}</>}{r.by.length && r.by.length < r.tot ? <small>{_tj("Ещё не прочитали: {0}", r.tot - r.by.length)}</small> : null}</p>; })()}
             {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}>{_t("↩️ Ответить")}</button>}
             {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}>{_t("📋 Скопировать")}</button>}
             {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? _t("Жалоба отправлена. Спасибо, разберёмся") : _t("Не получилось отправить жалобу")); }}>{_t("🚩 Пожаловаться")}</button>}
@@ -709,6 +710,17 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         </>
       )}
     </div>
+  );
+}
+
+/** WhatsApp-like ticks on my message: one = sent, nobody has read it yet; two grey = some have read it; two blue = everyone has. */
+export function Ticks({ s }: { s: ReadState }) {
+  const label = s === 'sent' ? _t("Отправлено, ещё не прочитано") : s === 'all' ? _t("Прочитали все") : _t("Прочитано");
+  return (
+    <svg className={`cc-tick t-${s}`} viewBox="0 0 18 11" width="18" height="11" role="img" aria-label={label}>
+      <title>{label}</title>
+      {s === 'sent' ? <path d="M3 5.6 6.2 8.8 13 2" /> : <><path d="M1 5.6 4.2 8.8 11 2" /><path d="M6.4 7.6 7.6 8.8 14.4 2" /></>}
+    </svg>
   );
 }
 
