@@ -25,6 +25,7 @@ import { Circle } from './components/Circle';
 import { useCircle } from './circle';
 import { useUmrahCircle } from './umrahCircle';
 import { umrahTabOn } from './umrahTab';
+import { useUmrahAsks } from './umrahOpen';
 import { umrahCall } from './components/UmrahBanner';
 import { UmrahMadeCard } from './components/UmrahMade';
 import { GiftNudge } from './components/GiftPass';
@@ -89,6 +90,7 @@ export function App() {
     return 'today';
   });
   const [umStart, setUmStart] = useState(0);
+  const [umFrom, setUmFrom] = useState<'group' | undefined>();
   const chatUnread = useChatUnread();
   const chatTotal = Object.values(chatUnread).reduce((a, n) => a + n, 0);
   // A chat notification was tapped: open that circle's chat (switching circle reloads the page).
@@ -177,7 +179,7 @@ export function App() {
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
   // ?umrah opens the umrah app right away (the phone shortcut and /umrah links).
   const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>(() => {
-    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) return { n: 0, mode: 'umrah', ref: q.get('umrah') || undefined }; if (q.get('course')) return { n: 0, mode: 'videos', ref: q.get('course') || undefined }; } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) { const r = q.get('umrah') || undefined; if (r === 'open') try { sessionStorage.setItem('lm.umOpen', '1'); } catch { /* */ } return { n: 0, mode: 'umrah', ref: r === 'open' ? 'group' : r }; } if (q.get('course')) return { n: 0, mode: 'videos', ref: q.get('course') || undefined }; } catch { /* */ }
     return { n: 0 };
   });
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -285,9 +287,14 @@ export function App() {
   const support: { text: string; onOpen: () => void; cls?: string }[] = [];
   // Someone called me to their umrah trip and I have not answered: first, it is a real invitation.
   const uCall = joined && circle.me ? umrahCall(umrah, circle.reacts, today) : null;
+  const umAsks = useUmrahAsks(isCloud);
   if (uCall && !uCall.answered) support.push({ cls: 'invite',
     text: _t("🕋 {0} зовёт тебя на умру «{1}»", circle.names[uCall.c]?.name || umrah.names[uCall.c] || _t("Брат"), umrah.trips[uCall.h]?.title || _t("Умра")),
-    onOpen: () => { window.scrollTo(0, 0); try { sessionStorage.setItem('lm.umHost', uCall.h); } catch { /* */ } setUmStart((n) => n + 1); setTab('umrah'); } });
+    onOpen: () => { window.scrollTo(0, 0); try { sessionStorage.setItem('lm.umHost', uCall.h); } catch { /* */ } setUmFrom(undefined); setUmStart((n) => n + 1); setTab('umrah'); } });
+  // Someone asks to join my open umrah group («Ищут людей»).
+  if (umAsks.to_me.length) support.push({ cls: 'invite',
+    text: umAsks.to_me.length === 1 ? _t("🕋 {0} просится в твою поездку на умру", umAsks.to_me[0].name || _t("Брат")) : _t("🕋 Просятся в твою поездку на умру: {0}", umAsks.to_me.length),
+    onOpen: () => { window.scrollTo(0, 0); setUmFrom('group'); setUmStart((n) => n + 1); setTab('umrah'); } });
   const nkTodo = nikahTodo(nk);
   if (nkTodo.wali.length) support.push({ cls: 'invite', text: _t("💍 {0} просит тебя быть вали в поиске пары", nkTodo.wali[0].name), onOpen: () => go({ profile: 'nikah' }) });
   if (nkTodo.props) support.push({ cls: 'invite', text: _t("💍 {0} для никаха", nkTodo.props === 1 ? _t("Новое предложение") : _t("{0} новых предложения", nkTodo.props)), onOpen: () => go({ profile: 'nikah' }) });
@@ -425,7 +432,7 @@ export function App() {
         {tab === 'circle' && (
           <Circle circle={circle} joined={joined} today={today} summary={summary} onCircleGoal={setMyGoal} myAsk={askLive(myAsk, today) ? myAsk : null} onAsk={setMyAsk} ch={myCh} amir={myAmir} onAmir={setMyAmir} shura={myShura} onShura={setMyShura} adv={myAdv} giveAdv={giveAdv} chatUnread={chatUnread} myCC={myCC} onCC={setMyCC} onOpenCourse={(id) => { window.scrollTo(0, 0); setPracticeStart((x) => ({ n: x.n + 1, mode: 'videos', ref: id })); setTab('practice'); }} onNikah={() => go({ profile: 'nikah' })} onJoin={() => circle.join(summary)} onLeave={() => circle.leave()} umrah={umrah} myReady={prepPct(state)} khatm={khatm} iftar={iftar} state={state} update={update} current={current} />
         )}
-        {tab === 'umrah' && <UmrahHub key={umStart} state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} backLabel="Living Muslim" onExit={() => { setTab('today'); window.scrollTo(0, 0); }} />}
+        {tab === 'umrah' && <UmrahHub key={umStart} start={umFrom} state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} backLabel="Living Muslim" onExit={() => { setTab('today'); window.scrollTo(0, 0); }} />}
         {tab === 'practice' && <Practice umrah={umrah} circle={circle} joined={joined} umrahStart={practiceStart.mode === 'umrah' && practiceStart.ref === 'group' ? 'group' : undefined} key={practiceStart.n} start={practiceStart.mode ? { mode: practiceStart.mode, ref: practiceStart.ref } : undefined} state={state} update={update} today={today} suggestedId={nextUp?.id} onSafar={() => setSafar(true)} onKhutba={() => setKhutba(true)} onHalal={() => setHalal('cam')} onRamadan={() => { say('ramadan_open'); setRamadan('auto'); }} onQuit={() => setQuitOpen({})} />}
         {tab === 'progress' && (
           <div className="page">
@@ -453,8 +460,8 @@ export function App() {
 
       <nav className={`nav${tabs.length > 5 ? ' six' : ''}`} aria-label={_t("Разделы")} style={{ '--tabs': tabs.length } as CSSProperties}>
         {tabs.map((t) => (
-          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? _t("{0}, приглашений: {1}", LABELS[t], invites.length) : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); if (t === 'umrah') { setUmStart((n) => n + 1); window.scrollTo(0, 0); } setTab(t); }}>
-            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'practice' && planN > 0 && <i className="nav-badge gold">{planN}</i>}{t === 'progress' && goalsN > 0 && <i className="nav-badge gold">{goalsN}</i>}{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
+          <button key={t} type="button" className={tab === t ? 'on' : ''} onPointerDown={() => { try { navigator.vibrate?.(8); } catch { /* */ } }} aria-current={tab === t ? 'page' : undefined} aria-label={t === 'circle' && invites.length ? _t("{0}, приглашений: {1}", LABELS[t], invites.length) : undefined} onClick={() => { if (t === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); if (t === 'practice') setPracticeStart((x) => ({ n: x.n + 1 })); if (t === 'umrah') { setUmFrom(umAsks.to_me.length ? 'group' : undefined); setUmStart((n) => n + 1); window.scrollTo(0, 0); } setTab(t); }}>
+            <span className="k" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{ICONS[t]}</svg>{t === 'practice' && planN > 0 && <i className="nav-badge gold">{planN}</i>}{t === 'progress' && goalsN > 0 && <i className="nav-badge gold">{goalsN}</i>}{t === 'umrah' && umAsks.to_me.length > 0 && <i className="nav-badge gold">{umAsks.to_me.length}</i>}{t === 'circle' && invites.length > 0 && <i className="nav-badge">{invites.length > 9 ? '9+' : invites.length}</i>}{t === 'circle' && !invites.length && chatTotal > 0 && <i className="nav-badge">{chatTotal > 9 ? '9+' : chatTotal}</i>}</span>
             <small>{LABELS[t]}</small>
           </button>
         ))}
