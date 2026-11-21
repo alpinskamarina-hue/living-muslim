@@ -4,6 +4,8 @@ import type { Member } from '../circle';
 import type { Msg } from '../chat';
 import { shortOf } from './CircleChat';
 import { _t, LOC } from '../i18n';
+import { openPerson, usePersonReady, useAsks } from '../person';
+import { AsksBox, IntentsFeed } from './Person';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 interface Row { last: Msg | null; who: Record<string, string> }
@@ -56,6 +58,10 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
   const circles = myCircles();
   const rows = useLastMessages(circles);
   const [q, setQ] = useState('');
+  const personOn = usePersonReady();
+  const asks = useAsks(personOn);
+  const [seekers, setSeekers] = useState(false);
+  useEffect(() => { if (!seekers) return; history.pushState({ lmSeek: 1 }, ''); const f = (e: Event) => { e.stopImmediatePropagation(); setSeekers(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [seekers]);
   const [f, setF] = useState<'all' | 'unread' | string>('all');
   const cur = currentCircle();
   const kinds = useMemo(() => [...new Set(circles.map((c) => c.kind).filter(Boolean))] as string[], [circles.map((c) => c.kind).join()]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -69,17 +75,19 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
   const ringOf = (m: Member) => (m.day !== today ? 0 : Math.min(1, (m.prayers / 5) * 0.6 + (m.total ? (m.done / m.total) * 0.4 : 0)));
   const people = [...members].sort((a, b) => (a.id === me ? -1 : b.id === me ? 1 : ringOf(b) - ringOf(a)));
 
+  if (seekers) return <IntentsFeed onBack={() => history.back()} />;
   return (
     <div className="page wa-list">
       <div className="wa-lt"><h1>{_t("Круги")}</h1></div>
       <input className="wa-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("🔍 Поиск")} />
+      {personOn && <AsksBox list={asks.list} reload={asks.reload} />}
       {people.length > 1 && (
         <div className="wa-status" aria-label={_t("Как прошёл день в «{0}»", cur?.title || _t("Круг"))}>
           {people.map((m) => {
             const fr = ringOf(m);
             const p = names[m.id];
             return (
-              <button key={m.id} type="button" onClick={() => cur && onOpen(cur)}>
+              <button key={m.id} type="button" onClick={() => (personOn ? openPerson(m.id) : cur && onOpen(cur))}>
                 <span className="wa-ring" style={{ background: `conic-gradient(var(--wa-acc) ${fr * 360}deg, var(--line) 0)` }}>
                   {p?.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <i style={{ background: p?.color || '#1f7a4d' }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</i>}
                 </span>
@@ -89,10 +97,11 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
           })}
         </div>
       )}
-      {circles.length > 1 && (
+      {(circles.length > 1 || personOn) && (
         <div className="wa-filt">
-          <button type="button" aria-pressed={f === 'all'} onClick={() => setF('all')}>{_t("Все")}</button>
-          <button type="button" aria-pressed={f === 'unread'} onClick={() => setF('unread')}>{_t("Непрочитанные")}{unreadN ? ` ${unreadN}` : ''}</button>
+          {personOn && <button type="button" className="wa-seek" onClick={() => setSeekers(true)}>{_t("🧭 Кто что ищет")}</button>}
+          {circles.length > 1 && <button type="button" aria-pressed={f === 'all'} onClick={() => setF('all')}>{_t("Все")}</button>}
+          {circles.length > 1 && <button type="button" aria-pressed={f === 'unread'} onClick={() => setF('unread')}>{_t("Непрочитанные")}{unreadN ? ` ${unreadN}` : ''}</button>}
           {kinds.length > 1 && kinds.map((k) => <button key={k} type="button" aria-pressed={f === k} onClick={() => setF(k)}>{kindOf(k as never)?.ru ?? k}</button>)}
         </div>
       )}

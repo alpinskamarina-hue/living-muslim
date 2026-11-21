@@ -13,6 +13,7 @@ import type { AppState } from '../types';
 import { plural } from '../dates';
 import { _t, _tj, LOC, isEn } from '../i18n';
 import { DAY_AYAHS } from '../ayahs';
+import { openPerson, personOk, INTENTS, type IntentKind } from '../person';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 export interface Draft { text: string; ref: MsgRef | null; label?: string }
@@ -125,7 +126,8 @@ function FileCard({ m, chat }: { m: Msg; chat: ChatApi }) {
 
 function Ava({ id, names }: { id: string; names: Names }) {
   const p = names[id];
-  return p?.avatarUrl ? <img className="cc-ava" src={p.avatarUrl} alt="" /> : <span className="cc-ava" style={{ background: p?.color || '#1f7a4d' }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>;
+  const open = personOk() ? () => openPerson(id) : undefined;
+  return p?.avatarUrl ? <img className="cc-ava" src={p.avatarUrl} alt="" onClick={open} /> : <span className="cc-ava" style={{ background: p?.color || '#1f7a4d' }} onClick={open}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>;
 }
 
 function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
@@ -253,12 +255,14 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other }: {
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
   /** A branch of the circle chat (an umrah trip): only its messages are shown and everything sent is tagged with it. */
   topic?: string; emptyNote?: string; placeholder?: string;
+  /** In a chat of two: the other person's name until their profile loads. */
+  other?: string;
   /** The circle's main screen: «＋» opens these actions, prayer quick buttons, ayah of the day. */
   actions?: ChatAction[];
   /** Opens the umrah trip someone was called to from the chat («Насим зовёт на умру»). */
@@ -275,7 +279,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   const [sending, setSending] = useState(false);
   const ta = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
-  const nm = (id: string) => (id === me ? _t("Ты") : names[id]?.name || _t("Участник"));
+  const nm = (id: string) => (id === me ? _t("Ты") : names[id]?.name || other || _t("Участник"));
   const byId = new Map(chat.msgs.map((m) => [m.id, m]));
   const quiet = prayerNow(state);
 
@@ -514,6 +518,22 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             );
             return out;
           }
+          if (m.kind === 'event' && m.ref?.t === 'in') {
+            const k = (m.ref.k || 'job') as IntentKind;
+            const im = INTENTS[k] ?? INTENTS.job;
+            out.push(
+              <div key={m.id} className={`cc-in-card i-${im.cls}`}>
+                <span>{im.ic} <b>{mine ? _t("Ты") : nm(m.uid)}</b> {m.body}</span>
+                {!mine && <small>{_t("Знаешь, кто может помочь? Подскажи или напиши.")}</small>}
+                <div className="cc-ev-row">
+                  {personOk() && <button type="button" onClick={() => openPerson(m.uid)}>{mine ? _t("Мой профиль") : _t("Открыть профиль")}</button>}
+                  {!mine && <button type="button" onClick={() => { setText(`${nm(m.uid).split(' ')[0]}, `); setRef({ r: m.id }); setTimeout(() => ta.current?.focus(), 50); }}>{_t("Подсказать")}</button>}
+                </div>
+                <small className="cc-time">{hm(m.at)}</small>
+              </div>,
+            );
+            return out;
+          }
           if (m.kind === 'event' && m.ref?.um) {
             // A call to an umrah trip: the person called gets a card with a button, the others a plain line.
             const forMe = m.ref.to === me;
@@ -567,7 +587,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             <div key={m.id} className={`cc-row${mine ? ' mine' : ''}`}>
               {!mine && <Ava id={m.uid} names={names} />}
               <div className={`cc-m${mine ? ' mine' : ''}${m.failed ? ' failed' : ''}`} {...holdProps(m)} onClick={m.failed ? () => chat.retry(m) : undefined}>
-                {!mine && <b className="cc-who">{nm(m.uid)}</b>}
+                {!mine && <b className="cc-who" onClick={personOk() ? (e) => { e.stopPropagation(); openPerson(m.uid); } : undefined}>{nm(m.uid)}</b>}
                 {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : shortOf(q)}</span>}
                 {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
                   : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>

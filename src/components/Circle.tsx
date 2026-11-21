@@ -16,7 +16,7 @@ import { CloudSetup, CloudInvite } from './CloudCircle';
 import { InviteByNick, InviteInbox } from './Nick';
 import { nicksReady, meRpc, serverHas, leaveCircle } from '../cloud';
 import { shareInvite } from './CloudCircle';
-import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite } from '../cloud';
+import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite, isDm } from '../cloud';
 import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
 import { FamilySection } from './Family';
@@ -29,6 +29,7 @@ import { ShuraCard, BizHabitsOffer, AdviceBox, bizLine } from './BizCircle';
 import { useChat, duaReplies, duaEventId } from '../chat';
 import { CircleChat, DuaReplies, type Draft } from './CircleChat';
 import { CircleList } from './CircleList';
+import { openPerson, personOk, usePersonReady, useAsks } from '../person';
 import { useRef } from 'react';
 import { CH_KINDS, CH_DAYS, goalFor, circleTotals, valOf, weekStart, amirOf } from '../cweek';
 import { addDays } from '../dates';
@@ -102,6 +103,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   useEffect(() => { nicksReady().then(setNicks); }, []);
   const chatCode = isCloud ? currentCircle()?.code : undefined;
   // WhatsApp-like: the Circles tab opens on the list of my circles; a circle opens as its chat.
+  const personOn = usePersonReady();
+  const asks = useAsks(personOn && isCloud);
   const [listOn, setListOn] = useState(() => {
     if (!isCloud || !myCircles().length) return false;
     try { if (sessionStorage.getItem('lm.chat') === chatCode || new URLSearchParams(location.search).get('c') || sessionStorage.getItem('lm.umrahGo') || sessionStorage.getItem('lm.autojoin')) return false; } catch { /* */ }
@@ -159,7 +162,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   useEffect(() => {
     // Just created or joined a circle on the standalone site: share today's total right away.
     if (status !== 'ready' || joined) return;
-    try { if (sessionStorage.getItem('lm.autojoin')) { sessionStorage.removeItem('lm.autojoin'); onJoin(); } } catch { /* */ }
+    try { if (sessionStorage.getItem('lm.autojoin') || isDm(currentCircle()?.code)) { sessionStorage.removeItem('lm.autojoin'); onJoin(); } } catch { /* */ }
   }, [status, joined]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === 'loading')
@@ -195,7 +198,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const familyKind = kind === 'family' || (!kind && members.some((m) => m.fam));
   const biz = kind === 'biz';
   const alone = members.filter((m) => m.id !== me).length === 0;
-  const chatOn = Boolean(chat.ready && joined && isCloud && !alone && me);
+  const chatOn = Boolean(chat.ready && joined && isCloud && (!alone || isDm(currentCircle()?.code)) && me);
   const cx = chatOn && !kicked;
   if (cx !== cxOn) setTimeout(() => setCxOn(cx), 0);
   const ask = (a: DuaAsk | null) => {
@@ -293,6 +296,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                       const on = mine?.e === r.e && mine.day === today;
                       return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
                     })}
+                    {personOk() && <button type="button" onClick={() => openPerson(m.id)}>{_t("👤 Профиль")}</button>}
                     {chatOn && <button type="button" aria-label={_t("Написать {0} в чате", p?.name || _t("участнику"))} onClick={() => openChat({ text: `${(p?.name || '').split(' ')[0]}, `, ref: null })}>💬</button>}
                     {kickOn && <button type="button" className="kick" onClick={() => kick(m.id, p?.name || _t("участника"))}>{_t("Убрать из круга")}</button>}
                     {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? _t("👋 Отправлено") : _t("👋 Подтолкнуть")}</button>}
@@ -530,6 +534,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <button type="button" className="wa-hbtn" aria-label={_t("Данные круга")} onClick={() => openPanel()}>⋮</button>
         </header>
         {isCloud && nicks && <InviteInbox />}
+        {asks.list.length > 0 && <button type="button" className="wa-asks" onClick={() => { setListOn(true); window.scrollTo(0, 0); }}>{_tj("📩 {0} хочет написать тебе ›", asks.list.length === 1 ? asks.list[0].from.name : _t("{0} человека", asks.list.length))}</button>}
         {uCall && (
           <button type="button" className="um-call" onClick={() => openTrip(uCall.h)}>
             <i aria-hidden="true">🕋</i>
@@ -538,7 +543,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           </button>
         )}
         <CircleChat chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
-          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} onUmrah={openTrip} />
+          draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} onUmrah={openTrip} />
 
         {sheet === 'dua' && (
           <>

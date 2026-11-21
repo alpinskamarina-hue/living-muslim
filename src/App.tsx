@@ -66,6 +66,8 @@ import { OnboardCard, useOnb } from './components/Onboard';
 import { npOf } from './newpath';
 import { lazyNamed } from './lazy';
 import type { OutGo } from './components/NewPathScreens';
+import { PersonHost } from './components/Person';
+import { usePersonReady } from './person';
 const PathScreen = lazyNamed(() => import('./components/NewPathScreens').then((m) => m.PathScreen));
 
 type Tab = 'today' | 'practice' | 'circle' | 'umrah' | 'progress' | 'profile';
@@ -343,6 +345,7 @@ export function App() {
   }
 
   // Guide buttons: open any part of the app.
+  const personOn = usePersonReady();
   const go = (t: GoTo) => {
     window.scrollTo(0, 0);
     if ('tab' in t) { if (t.tab === 'profile') setProfileStart((x) => ({ p: 'main', n: x.n + 1 })); setTab(t.tab); return; }
@@ -468,6 +471,7 @@ export function App() {
         <span className="nav-ind" aria-hidden="true" style={{ '--i': Math.max(0, tabs.indexOf(tab)) } as CSSProperties} />
       </nav>
 
+      {personOn && <PersonHost state={state} onSeek={() => go({ profile: 'seek' })} />}
       <WordsLayer state={state} today={today} />
       {quitOpen && <QuitScreen state={state} update={update} today={today} start={quitOpen} onClose={() => setQuitOpen(null)} />}
       {ramadan && <Ramadan state={state} update={update} today={today} start={ramadan === 'auto' ? undefined : (ramadan as 'day')} onClose={() => setRamadan(false)} />}

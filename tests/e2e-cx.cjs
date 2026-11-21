@@ -64,7 +64,7 @@ async function signup(pg, name, email) {
     await A.reload(); await wait(3500); await open(A, 'cx-0-list');
     await A.locator('.cc-plus').click(); await wait(400);
     await A.screenshot({ path: OUT + 'cx-2-plus.png' });
-    await A.locator('.cc-acts-g button', { hasText: '📊' }).click(); await wait(300);
+    await A.locator('.cc-acts-g').getByRole('button', { name: 'Опрос', exact: true }).click(); await wait(300);
     const ins = A.locator('.cx-sheet input');
     await ins.nth(0).fill('Где читаем Коран в субботу?'); await ins.nth(1).fill('У Rustam'); await ins.nth(2).fill('В мечети');
     await A.locator('.cx-sheet .pri-btn').click(); await wait(1200);
