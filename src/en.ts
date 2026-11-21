@@ -6274,4 +6274,11 @@ export const EN: Record<string, string> = {
   "планов": "plans",
   "День по намазам": "The day by prayers",
   "Кружок слева — намаз: касание — вовремя (две галочки), ещё касание — с опозданием (одна), ещё — снять.": "The circle on the left is the prayer: tap for on time (two ticks), again for late (one), again to clear.",
+  "Ещё на сегодня: {0} ˅": "More for today: {0} ˅",
+  "Отметь звёздочкой до {0} практик ниже. Они будут стоять здесь первыми.": "Star up to {0} practices below. They will stand here first.",
+  "＋ Добавить в мои": "＋ Add to mine",
+  "Все практики · {0}": "All practices · {0}",
+  "Счёт": "Count",
+  "Учить": "Learn",
+  "Пройти": "Take",
 };

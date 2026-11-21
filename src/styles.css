@@ -4716,3 +4716,31 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 .dl-hint { margin: -2px 16px 12px 68px; }
 .pn-move { display: block; margin-top: 6px; padding: 0; }
 .fd-guess { display: block; font-size: 13px; color: var(--green); font-weight: 600; }
+
+/* «Практика», вариант Б «Мои и все» (21.11): «Сейчас» in one line, my practices as rows with progress, the rest folded. */
+.pnow.slim { padding: 12px 14px; border-radius: 18px; }
+.pnow-line { display: flex; align-items: center; gap: 12px; }
+.pnow-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pnow.slim .pnow-tx b { font-family: inherit; font-size: 15.5px; font-weight: 800; margin: 2px 0 0; line-height: 1.25; }
+.pnow-tx > span { color: var(--on-dark-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pnow.slim .pnow-go { flex: none; padding: 10px 14px; }
+.pnow.slim .pnow-toggle { margin-top: 8px; }
+.pnow.slim .pnow-more { margin-top: 6px; }
+.pmy { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface); }
+.pmy-r { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); text-align: left; font: inherit; }
+.pmy-r:first-child { border-top: 0; }
+.pmy-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pmy-t b { font-size: 15px; }
+.pmy-t small { color: var(--ink-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pmy-bar { display: block; height: 5px; border-radius: 3px; background: var(--line); margin-top: 6px; overflow: hidden; }
+.pmy-bar > i { display: block; height: 100%; background: var(--gold); border-radius: 3px; }
+.pmy-go { flex: none; font-style: normal; font-size: 12.5px; font-weight: 800; color: var(--green-2); border: 1.3px solid color-mix(in srgb, var(--green-2) 40%, transparent); border-radius: 11px; padding: 6px 10px; }
+.pmy-add { display: block; width: 100%; margin-top: 10px; border: 1.5px dashed var(--line); border-radius: 14px; background: none; padding: 10px; color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 700; }
+.pall { width: 100%; display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); font: inherit; text-align: left; }
+.pall b { font-size: 15px; white-space: nowrap; }
+.pall-ic { display: flex; margin-left: auto; padding-left: 8px; }
+.pall-ic .d3 { width: 28px; height: 28px; border-radius: 50%; margin-left: -7px; box-shadow: 0 0 0 2px var(--surface); }
+.pall-ic .d3 svg { width: 55%; height: 55%; }
+.pall em { font-style: normal; color: var(--ink-2); font-size: 18px; margin-left: auto; }
+.pall-ic + em { margin-left: 0; }
+.pnow.slim small, .pnow.slim .pnow-toggle { color: var(--gold-light); }

@@ -4,8 +4,7 @@ import { history as halalHistory, mineHalal } from '../halal';
 import { say, type Trigger } from '../words';
 import { useEffect, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
-import { sphereName } from '../types';
-import { isCounted, setMark } from '../store';
+import { setMark } from '../store';
 import { Quran } from './Quran';
 import { prepPct } from './Umrah';
 import type { UmrahApi } from '../umrahCircle';
@@ -68,6 +67,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   const [editFav, setEditFav] = useState(false);
   const [testsOpen, setTestsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [allOpen, setAllOpen] = useState(() => { try { return localStorage.getItem('lm.pall') === '1'; } catch { return false; } });
   const [uStart, setUStart] = useState<HubTab | undefined>();
   const [vref, setVref] = useState<string | undefined>(start?.mode === 'videos' ? start.ref : undefined);
 
@@ -132,10 +132,10 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
     halal: { ic: 'scan', title: _t("Халяль-сканер"), sub: (() => { const h = halalHistory(); const m = h.filter((x) => x.v === 'green' && mineHalal(x.code)).length; return h.length ? (m ? _tj("Проверено {0} · {1} отмечено тобой", h.length, m) : _tj("Проверено товаров: {0}", h.length)) : _t("Штрихкод в магазине: есть ли запрещённое"); })(), open: () => onHalal?.() },
     safar: { ic: 'compass', title: _t("Сафар"), sub: state.trip ? _t("Поездка: {0}", state.trip.place) : _t("Поездка, кибла, дуа путника"), open: onSafar },
   };
-  const favIds = (state.practiceFav ?? ['quran', 'videos', 'tasbih', 'langs']).filter((id) => P[id]).slice(0, 4);
+  const favIds = (state.practiceFav ?? ['quran', 'videos', 'tasbih', 'langs']).filter((id) => P[id]).slice(0, FAV_MAX);
   const toggleFav = (id: string) => update((s) => {
     const cur = (s.practiceFav ?? favIds).filter((x) => P[x]);
-    return { ...s, practiceFav: cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= 4 ? cur : [...cur, id] };
+    return { ...s, practiceFav: cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= FAV_MAX ? cur : [...cur, id] };
   });
 
   // «Сейчас»: what fits this time of day.
@@ -154,7 +154,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   };
   const order = part === _t("утро") ? ['ramadan', 'azkar', 'quran', 'tasbih', 'langs'] : part === _t("день") ? ['ramadan', 'azkar', 'langs', 'course', 'courseAr', 'video', 'quran'] : part === _t("вечер") ? ['ramadan', 'azkar', 'video', 'quran', 'tasbih'] : ['ramadan', 'azkar', 'tasbih', 'quran'];
   const picks = order.map((k) => cand[k]).filter(Boolean) as Now[];
-  const now = picks[0], alt = picks[1];
+  const now = picks[0];
 
   // «На сегодня»: start opens the practice (and remembers it was started); «2 минуты» also ticks the habit's minimum.
   const plan = dayPlan(state, today);
@@ -178,79 +178,56 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   const all = dayPlan(state, today, true);
   const hero = plan[0];
   const rest = all.filter((x) => x.key !== hero?.key);
-  const doneN = all.filter((x) => x.done).length;
-  // Two open items at a time, so the card stays short; the rest (and what is already done) behind «Показать все».
   const restOpen = rest.filter((x) => !x.done);
-  const hidden = rest.length - Math.min(2, restOpen.length);
   const testsDone = [lastRun(state), lastRun(state, UMRAH_TEST), lastRun(state, SALAH_TEST)].filter(Boolean).length;
   const testDue = (() => { const r = lastRun(state); return r && repeatIn(r, today) <= 0; })();
+
+  // «Мои практики»: a row each, with where I stopped and one button to go on.
+  const myRow = (id: string) => { const it = P[id]; return it && (
+    <button key={id} type="button" className="pmy-r" onClick={it.open}>
+      <PIcon k={it.ic} badge={it.badge} />
+      <span className="pmy-t"><b>{it.title}</b><small>{it.sub}</small>{it.pct !== undefined && <i className="pmy-bar"><i style={{ width: `${Math.max(3, Math.min(100, Math.round(it.pct * 100)))}%` }} /></i>}</span>
+      <em className="pmy-go">{VERB[id]?.() ?? _t("Открыть")}</em>
+    </button>
+  ); };
+  const others = ALL_IDS.filter((id) => P[id] && (editFav || !favIds.includes(id)));
+  const shown = (ids: string[]) => ids.filter((id) => others.includes(id));
+  const listOpen = allOpen || editFav;
+  const flipAll = () => { const v = !allOpen; setAllOpen(v); try { localStorage.setItem('lm.pall', v ? '1' : ''); } catch { /* */ } };
+  const nowTitle = hero ? hero.title : now?.title;
+  const nowSub = hero ? hero.sub : now?.sub;
 
   return (
     <div className="page">
       <h1 className="page-h">{_t("Практика")}</h1>
-      <p className="page-sub">{_t("Сделай здесь, и привычка отметится сама.")}</p>
       <Hint id="practice" />
 
       {(hero || now) && (
-        <div className="pnow">
-          <small>{_tj("Сейчас · {0}", part)}</small>
-          {hero ? (
-            <>
-              <b>{hero.title}</b>
-              <p>{hero.sub}</p>
-              <div className="pnow-row">
-                <button type="button" className="pnow-go" onClick={() => go(hero)}>{_t("Начать")}</button>
-                {hero.habitId && <button type="button" className="pnow-min" onClick={() => go(hero, true)}>{_t("2 минуты")}</button>}
-              </div>
-            </>
-          ) : now && (
-            <>
-              <b>{now.title}</b>
-              <p>{now.sub}</p>
-              <div className="pnow-row">
-                <button type="button" className="pnow-go" onClick={now.go}>{now.btn}</button>
-                {alt && <button type="button" className="pnow-alt" onClick={alt.go}>{_tj("Или: {0}", alt.short)}</button>}
-              </div>
-              {active.length > 0 && (
-                <label className="pnow-hab">{_t("Отметит привычку: ")}
-                  <select value={habitId} onChange={(e) => setHabitId(e.target.value)}>
-                    <option value="">{_t("без привязки")}</option>
-                    {active.map((x) => <option key={x.id} value={x.id}>{isCounted(state.log[today]?.[x.id]) ? '✓ ' : ''}{x.action} · {sphereName(x.sphere)}</option>)}
-                  </select>
-                </label>
-              )}
-            </>
+        <div className="pnow slim">
+          <div className="pnow-line">
+            <span className="pnow-tx">
+              <small>{_tj("Сейчас · {0}", part)}</small>
+              <b>{nowTitle}</b>
+              {nowSub && <span>{nowSub}</span>}
+            </span>
+            <button type="button" className="pnow-go" onClick={() => (hero ? go(hero) : now!.go())}>{hero ? _t("Начать") : now!.btn}</button>
+          </div>
+          {restOpen.length > 0 && (
+            <button type="button" className="pnow-toggle" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>
+              {moreOpen ? _t("Свернуть ˄") : _tj("Ещё на сегодня: {0} ˅", restOpen.length)}
+            </button>
           )}
-          {rest.length > 0 && (
+          {moreOpen && restOpen.length > 0 && (
             <div className="pnow-more">
-              <div className="pnow-lbl">{_tj("Ещё на сегодня · {0} из {1}", doneN, all.length)}</div>
-              {(moreOpen ? [...restOpen, ...rest.filter((x) => x.done)] : restOpen.slice(0, 2)).map((it) => it.done ? (
-                <div key={it.key} className="pnow-it done"><PIcon k="check" /><span>{it.title}</span></div>
-              ) : (
+              {restOpen.map((it) => (
                 <button key={it.key} type="button" className="pnow-it" onClick={() => go(it)}>
                   <PIcon k={MODE_IC[it.mode] ?? 'book'} /><span>{it.title}{it.min ? <small>{_tj(" · минимум: {0}", it.min)}</small> : null}</span><em>›</em>
                 </button>
               ))}
-              {hidden > 0 && (
-                <button type="button" className="pnow-toggle" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>
-                  {moreOpen ? _t("Свернуть ˄") : _tj("Показать все · ещё {0} ˅", hidden)}
-                </button>
-              )}
             </div>
           )}
-          {!hero && !rest.length && doneN > 0 && <div className="pnow-lbl">{_t("✓ На сегодня всё начато. МашаАллах.")}</div>}
         </div>
       )}
-
-      <h3 className="ph">{_t("Мои практики ")}<button type="button" className="link-btn" onClick={() => setEditFav(!editFav)}>{editFav ? _t("Готово") : _t("Изменить")}</button></h3>
-      {editFav && <p className="tiny">{_t("Отметь звёздочкой до 4 практик ниже. Они будут стоять здесь первыми.")}</p>}
-      <div className="pfav">
-        {favIds.map((id) => { const it = P[id]; return (
-          <button key={id} type="button" className="pf" onClick={it.open}>
-            <PIcon k={it.ic} ball badge={it.badge} /><b>{it.title}</b>
-          </button>
-        ); })}
-      </div>
 
       {state.trip && (
         <button type="button" className="pseason" onClick={onSafar}>
@@ -266,22 +243,37 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
         </button>
       )}
 
-      <div className="pgl">{_t("Поклонение")}</div>
-      <div className="pgrp">{['quran', 'azkar', 'tasbih', 'sadaqa'].map(row)}</div>
-      <div className="pgl">{_t("Знания")}</div>
-      <div className="pgrp">{['videos', 'books', 'langs', 'khutba'].map(row)}</div>
-      <div className="pgl">{_t("Тело и время")}</div>
-      <div className="pgrp">{['body', 'halal', 'focus'].map(row)}</div>
-      <div className="pgl">{_t("Работа над собой")}</div>
-      <div className="pgrp">
-        <button type="button" className="prow" onClick={() => setTestsOpen(!testsOpen)} aria-expanded={testsOpen}>
-          <PIcon k="test" badge={testDue ? 1 : undefined} />
-          <span><b>{_t("Тесты")}</b><small>{testDue ? _t("Прошло 30 дней: пора пройти снова") : testsDone ? _tj("Пройдено {0} из 3 · что даётся труднее, умра, намаз", testsDone) : _t("3 коротких теста: что даётся труднее, умра, намаз")}</small></span>
-          <em className="pcnt">3</em><em>{testsOpen ? '▾' : '›'}</em>
-        </button>
-        {testsOpen && <div className="psub">{['tests', 'testUmrah', 'testSalah'].map(row)}</div>}
-        {row('quit')}
-      </div>
+      <h3 className="ph">{_t("Мои практики ")}<button type="button" className="link-btn" onClick={() => setEditFav(!editFav)}>{editFav ? _t("Готово") : _t("Изменить")}</button></h3>
+      {favIds.length > 0 && <div className="pmy">{favIds.map(myRow)}</div>}
+      {editFav
+        ? <p className="tiny">{_tj("Отметь звёздочкой до {0} практик ниже. Они будут стоять здесь первыми.", FAV_MAX)}</p>
+        : favIds.length < FAV_MAX && <button type="button" className="pmy-add" onClick={() => setEditFav(true)}>{_t("＋ Добавить в мои")}</button>}
+
+      <button type="button" className="pall" aria-expanded={listOpen} onClick={editFav ? () => setEditFav(false) : flipAll}>
+        <b>{_tj("Все практики · {0}", others.length + 1)}</b>
+        {!listOpen && <span className="pall-ic">{others.slice(0, 5).map((id) => <PIcon key={id} k={P[id].ic} />)}</span>}
+        <em>{listOpen ? '˄' : '›'}</em>
+      </button>
+      {listOpen && (
+        <>
+          {[[_t("Поклонение"), ['quran', 'azkar', 'tasbih', 'sadaqa']], [_t("Знания"), ['videos', 'books', 'langs', 'khutba']], [_t("Тело и время"), ['body', 'halal', 'focus']]].map(([name, ids]) => shown(ids as string[]).length > 0 && (
+            <div key={name as string}>
+              <div className="pgl">{name as string}</div>
+              <div className="pgrp">{shown(ids as string[]).map(row)}</div>
+            </div>
+          ))}
+          <div className="pgl">{_t("Работа над собой")}</div>
+          <div className="pgrp">
+            <button type="button" className="prow" onClick={() => setTestsOpen(!testsOpen)} aria-expanded={testsOpen}>
+              <PIcon k="test" badge={testDue ? 1 : undefined} />
+              <span><b>{_t("Тесты")}</b><small>{testDue ? _t("Прошло 30 дней: пора пройти снова") : testsDone ? _tj("Пройдено {0} из 3 · что даётся труднее, умра, намаз", testsDone) : _t("3 коротких теста: что даётся труднее, умра, намаз")}</small></span>
+              <em className="pcnt">3</em><em>{testsOpen ? '▾' : '›'}</em>
+            </button>
+            {testsOpen && <div className="psub">{['tests', 'testUmrah', 'testSalah'].map(row)}</div>}
+            {shown(['quit']).map(row)}
+          </div>
+        </>
+      )}
 
       <div className="pgl">{_t("Особые дни")}</div>
       <div className="ppills">
@@ -292,6 +284,16 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
     </div>
   );
 }
+
+/** Practices offered in «Все практики» (tests sit in their own row there; umrah and safar are «Особые дни»). */
+const ALL_IDS = ['quran', 'azkar', 'tasbih', 'sadaqa', 'videos', 'books', 'langs', 'khutba', 'body', 'halal', 'focus', 'quit'];
+const FAV_MAX = 6;
+/** The button on a «Мои практики» row. */
+const VERB: Record<string, () => string> = {
+  quran: () => _t("Читать"), azkar: () => _t("Читать"), tasbih: () => _t("Счёт"), sadaqa: () => _t("Открыть"), videos: () => _t("Дальше"), books: () => _t("Читать"),
+  langs: () => _t("Учить"), khutba: () => _t("Слушать"), body: () => _t("Открыть"), halal: () => _t("Сканировать"), focus: () => _t("Старт"), quit: () => _t("Открыть"),
+  tests: () => _t("Пройти"), testUmrah: () => _t("Пройти"), testSalah: () => _t("Пройти"), umrah: () => _t("Открыть"), safar: () => _t("Открыть"),
+};
 
 const MODE_IC: Record<string, string> = { tests: 'test', azkar: 'sun', quran: 'book', videos: 'play', course: 'lang', 'course-ar': 'lang', langs: 'lang', books: 'books', tasbih: 'beads', health: 'leaf', umrah: 'kaaba', focus: 'timer' };
 
