@@ -295,7 +295,9 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other, biz }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other, biz, notice }: {
+  /** A line on top of the composer (the newcomer rules of an open circle). */
+  notice?: import('react').ReactNode;
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
@@ -687,6 +689,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
       {(note || chat.error || recorder.msg) && <div className="cc-note" onClick={() => recorder.setMsg('')}>{note || recorder.msg || chat.error}</div>}
 
       <div className="cc-compose">
+        {notice}
         {reply && (
           <div className="cc-reply">
             <span><b>{_tj("Ответ {0}", reply.uid === me ? _t("себе") : nm(reply.uid))}</b>{shortOf(reply, 80)}</span>

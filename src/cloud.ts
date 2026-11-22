@@ -211,6 +211,18 @@ export async function joinCircle(name: string, code: string, title = '', kind?: 
 
 export async function setName(name: string) { await ensureId(name); }
 
+/** Makes sure I have an identity (open circles, the common circle). */
+export async function ensureMe(name: string): Promise<CloudId> { return ensureId(name || load()?.name || signupName() || _t("Участник")); }
+/** A circle the server already let me into (an open circle): add it, open its chat. The page reloads. */
+export function enterCircle(ref: CircleRef) {
+  const me = load();
+  if (!me) return;
+  save(addCircle(me, ref));
+  pushMeta(me, ref);
+  try { sessionStorage.setItem('lm.chat', ref.code); sessionStorage.setItem('lm.autojoin', '1'); sessionStorage.setItem('lm.tab', 'circle'); } catch { /* */ }
+  location.reload();
+}
+
 /** Leaves the circle on the server and forgets it here. */
 export async function leaveCircle() {
   const me = load();

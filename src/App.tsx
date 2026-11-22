@@ -5,6 +5,7 @@ import { todayTrigger, useWordsWatch } from './wordsWatch';
 import { say } from './words';
 import { isCloud, currentCircle, myCircles, switchCircle } from './cloud';
 import { useChatUnread } from './chat';
+import { markFajrOnce } from './openCircles';
 import type { Anchor, AppState, Habit } from './types';
 import { useAppState } from './store';
 import { dayKey, addDays, fromKey, plural } from './dates';
@@ -228,6 +229,9 @@ export function App() {
   const [onbFor, setOnbFor] = useState(() => onb !== 'done' && onb !== 'skip' && (onb !== '' || (active.length === 0 && !state.settings.path)));
   useEffect(() => { if (onb === 'again') setOnbFor(true); }, [onb]);
   const prayersToday = state.prayers?.[today] ?? {};
+  // the common circle counts everyone who marked Fajr today (supabase/open-circles.sql)
+  const fajrMarked = Boolean(prayersToday.fajr);
+  useEffect(() => { if (fajrMarked) markFajrOnce(today); }, [fajrMarked, today]);
   const [myGoals, setMyGoal] = useMyGoals();
   const [myAsk, setMyAsk] = useMyAsk();
   const myCh = useMyChallenges(today);

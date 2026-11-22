@@ -9,6 +9,9 @@ import { nicksReady, signupName, cloudMe, createCircle, rootOf, circleTitle, SUF
 import { _t, _tj } from '../i18n';
 import { authMe, signInUrl } from '../auth';
 import { ShareRow } from './ShareRow';
+import { useOpenReady } from '../openCircles';
+import { FindCircle, CommonCircle } from './OpenCircles';
+import { dayKey } from '../dates';
 
 function InboxIfReady() {
   const [ok, setOk] = useState(false);
@@ -55,9 +58,33 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
     setBusy(false);
   };
 
+  // A newcomer with no circle sees the common circle and open circles first (supabase/open-circles.sql).
+  const openOn = useOpenReady() && !onCancel && !invited;
+  const [mode, setMode] = useState<'find' | 'new'>('find');
+  const [common, setCommon] = useState(false);
+  const today = dayKey(new Date());
+  let sex: '' | 'm' | 'f' = '';
+  try { const st = JSON.parse(localStorage.getItem('qadam.v1') || 'null'); sex = st?.settings?.me === 'm' || st?.settings?.me === 'f' ? st.settings.me : ''; } catch { /* */ }
+  useEffect(() => { if (!common) return; history.pushState({ lmCommon: 1 }, ''); window.scrollTo(0, 0); const f = (e: Event) => { e.stopImmediatePropagation(); setCommon(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [common]);
+  if (openOn && common) return <CommonCircle today={today} onBack={() => history.back()} onFind={() => { history.back(); setMode('find'); }} />;
+  if (openOn && mode === 'find') {
+    return (
+      <div className="page wa-list oc-first">
+        <div className="wa-lt"><h1>{_t("Круги")}</h1></div>
+        <div className="oc-seg" role="tablist">
+          <button type="button" role="tab" aria-selected={false} onClick={() => setMode('new')}>{_t("Создать свой")}</button>
+          <button type="button" role="tab" aria-selected>{_t("Найти круг")}</button>
+        </div>
+        <InboxIfReady />
+        <FindCircle today={today} sex={sex} onCommon={() => setCommon(true)} />
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       {onCancel && <button type="button" className="link-btn pro-back" onClick={onCancel}>{_t("← Мои круги")}</button>}
+      {openOn && <button type="button" className="link-btn pro-back" onClick={() => setMode('find')}>{_t("← Найти готовый круг")}</button>}
       <h1 className="page-h">{invited ? (umrahCall ? _t("Тебя зовут на умру") : _t("Приглашение")) : onCancel ? _t("Новый круг") : _t("Круг")}</h1>
       {invited && umrahCall && <p className="page-sub">{_tj("Поездка собирается в круге «{0}». Вступи в круг, и сразу откроется поездка: даты, задачи и общий чат.", meta.title || _t("Круг друзей"))}</p>}
       {invited && !authMe() && (

@@ -59,7 +59,7 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
@@ -68,8 +68,9 @@ export function AdminPage() {
         <button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>🚩 Жалобы</button>
         <button type="button" aria-pressed={tab === 'halal'} onClick={() => setTab('halal')}>☪ Халяль</button>
         <button type="button" aria-pressed={tab === 'guides'} onClick={() => setTab('guides')}>🧭 Гиды</button>
+        <button type="button" aria-pressed={tab === 'open'} onClick={() => setTab('open')}>👥 Открытые круги</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : <AdminReports />}
     </div>
   );
 }
@@ -347,5 +348,54 @@ function GuideReportsBox() {
         </div>
       ))}
     </>
+  );
+}
+
+// Open circles (supabase/open-circles.sql): check circles «для всех» (known teacher or mosque), close a bad one,
+// and look at anonymous dua requests people complained about.
+interface AOpen { code: string; title: string; kind: string; about: string; who: string; wants_all: boolean; verified: boolean; join: string; city: string; lang: string; n: number; owner: string; nick: string | null; opened: string }
+interface ADua { id: number; body: string; reports: number; hidden: boolean; created: string }
+function AdminOpen() {
+  const [d, setD] = useState<{ circles: AOpen[]; dua: ADua[] } | null>(null);
+  const [err, setErr] = useState('');
+  const load = () => call<{ circles: AOpen[]; dua: ADua[] }>('lm_admin_open', {}).then((r) => setD(r ?? { circles: [], dua: [] })).catch((e) => setErr(/404|Could not find/.test(String(e)) ? 'Сначала запусти supabase/open-circles.sql в Supabase → SQL Editor.' : 'Не получилось загрузить. Проверь интернет.'));
+  useEffect(() => { load(); }, []);
+  if (err) return <p className="tiny">{err}</p>;
+  if (!d) return <p className="tiny">Загружаю…</p>;
+  const verify = async (c: AOpen, ok: boolean) => { await call('lm_admin_open_verify', { p_code: c.code, p_ok: ok }).catch(() => null); load(); };
+  const close = async (c: AOpen) => { if (!confirm(`Убрать «${c.title}» из «Найти круг»? Участники останутся.`)) return; await call('lm_admin_open_close', { p_code: c.code }).catch(() => null); load(); };
+  const dua = async (x: ADua, hide: boolean | null) => { await call('lm_admin_dua', { p_id: x.id, p_hide: hide }).catch(() => null); load(); };
+  const WHO: Record<string, string> = { brothers: 'только братья', sisters: 'только сёстры', all: 'для всех' };
+  return (
+    <div className="adm-rep">
+      <p className="tiny">«Для всех» (братья и сёстры вместе) включай только знакомым учителям и мечетям. После проверки круг виден всем и становится только текстовым.</p>
+      {!d.circles.length && <p className="tiny">Открытых кругов пока нет.</p>}
+      {d.circles.map((c) => (
+        <div key={c.code} className="adm-card adm-halal">
+          <b>{c.title}</b>
+          <small>{c.owner}{c.nick ? ` @${c.nick}` : ''} · {c.n} чел. · {c.city || 'онлайн'} · {c.lang} · {c.join === 'open' ? 'вход сразу' : 'по просьбе'}</small>
+          <small><b>Сейчас:</b> {WHO[c.who] ?? c.who}{c.verified ? ' · ✓ проверен' : ''}{c.wants_all && !c.verified ? ' · просит «для всех»' : ''}</small>
+          {c.about && <small className="adm-ing">{c.about}</small>}
+          <div className="adm-act">
+            {c.wants_all && !c.verified && <button type="button" className="pri-btn" onClick={() => verify(c, true)}>Проверен: для всех</button>}
+            {!c.wants_all && !c.verified && <button type="button" className="ghost-btn" onClick={() => verify(c, true)}>Отметить «проверено»</button>}
+            {c.verified && <button type="button" className="ghost-btn" onClick={() => verify(c, false)}>Снять проверку</button>}
+            <button type="button" className="ghost-btn" onClick={() => close(c)}>Убрать из каталога</button>
+          </div>
+        </div>
+      ))}
+      <h3>Жалобы на просьбы о дуа</h3>
+      {!d.dua.length && <p className="tiny">Жалоб нет.</p>}
+      {d.dua.map((x) => (
+        <div key={x.id} className="adm-card">
+          <small>«{x.body}»</small>
+          <small>{x.reports} жалоб · {x.hidden ? 'скрыта' : 'видна'} · {new Date(x.created).toLocaleString('ru-RU')}</small>
+          <div className="adm-act">
+            {x.hidden ? <button type="button" className="ghost-btn" onClick={() => dua(x, false)}>Вернуть</button> : <button type="button" className="ghost-btn" onClick={() => dua(x, true)}>Скрыть</button>}
+            <button type="button" className="ghost-btn" onClick={() => dua(x, null)}>Удалить</button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
