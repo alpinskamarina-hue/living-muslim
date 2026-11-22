@@ -5,7 +5,7 @@ import { BizPick } from './BizCircle';
 import { BIZ_DEFAULT, rememberBizPick } from '../biz';
 import { ProGate } from './Plan';
 import { limitOf } from '../plan';
-import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, KIND_INFO, type CircleKind } from '../cloud';
+import { nicksReady, signupName, cloudMe, createCircle, rootOf, circleTitle, SUFFIX_MAX, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, KIND_INFO, type CircleKind } from '../cloud';
 import { _t, _tj } from '../i18n';
 import { authMe, signInUrl } from '../auth';
 import { ShareRow } from './ShareRow';
@@ -17,6 +17,12 @@ function InboxIfReady() {
 }
 
 /** Create a circle (title + kind) or join one by invite. First visit, or «+ Новый круг». */
+/** What people usually add after the root, as a hint. */
+const OWN_HINT: Partial<Record<CircleKind, string>> = {
+  umrah: _t("с братьями"), family: _t("Каримовы"), brothers: _t("с работы"), sisters: _t("из мечети"), biz: _t("мойка, кафе, партнёры"),
+  friends: _t("со школы"), masjid: _t("по субботам"), study: _t("арабский A1"), work: _t("офис"), other: _t("Например: Бег по утрам"),
+};
+
 export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
   const me = cloudMe();
   const meta = pendingInviteMeta();
@@ -95,8 +101,11 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
               <ul>{KIND_INFO[kind].caps.map((c) => <li key={c}>{c}</li>)}</ul>
             </div>
             <label className="cl-f">
-              <span>{_t("Название")}</span>
-              <input value={title} maxLength={40} placeholder={kind === 'umrah' ? _t("Например: Умра с братьями") : kind === 'family' ? _t("Например: Семья Насима") : kind === 'masjid' ? _t("Например: Халака по субботам") : kind === 'biz' ? _t("Например: Партнёры") : _t("Например: {0}", k.ru)} onChange={(e) => setTitle(e.target.value)} />
+              <span>{rootOf(kind) ? _t("Название: «{0}» остаётся, допиши своё", rootOf(kind)) : _t("Название")}</span>
+              <span className={`cl-name${rootOf(kind) ? ' has-root' : ''}`}>
+                {rootOf(kind) && <em className="cl-root"><Ic e={k.ic} /> {rootOf(kind)} ·</em>}
+                <input value={title} maxLength={SUFFIX_MAX(kind)} placeholder={OWN_HINT[kind] ?? k.ru} onChange={(e) => setTitle(e.target.value)} />
+              </span>
             </label>
             {kind === 'biz' && <BizPick pick={pick} setPick={setPick} />}
             {kind === 'umrah' && (
@@ -106,9 +115,9 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
               </label>
             )}
             <button type="button" className="pri-btn big-btn" disabled={busy} onClick={() => run(async () => {
-              const c = await createCircle(name, title || (kind === 'umrah' ? _t("Умра с братьями") : k.ru), kind);
+              const c = await createCircle(name, circleTitle(kind, title), kind);
               // An umrah circle: after the reload the trip is made and the umrah screen opens on «Позвать».
-              if (c && kind === 'umrah') { try { sessionStorage.setItem('lm.umNew', JSON.stringify({ title: title.trim() || _t("Умра с братьями"), month: month.trim() })); sessionStorage.setItem('lm.umrahGo', '1'); } catch { /* */ } }
+              if (c && kind === 'umrah') { try { sessionStorage.setItem('lm.umNew', JSON.stringify({ title: circleTitle(kind, title), month: month.trim() })); sessionStorage.setItem('lm.umrahGo', '1'); } catch { /* */ } }
               return c;
             })}>{kind === 'umrah' ? _t("Собрать поездку") : _t("Создать круг")}</button>
             {kind === 'biz' && <p className="tiny bz-note">{_t("Суммы денег в круге не видны никогда.")}</p>}

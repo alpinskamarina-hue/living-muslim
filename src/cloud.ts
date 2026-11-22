@@ -42,13 +42,34 @@ export const KIND_INFO: Record<CircleKind, { sub: string; caps: string[] }> = {
   other: { sub: _t("своя цель"), caps: [_t("🎯 Итог дня, цель недели и вызовы"), _t("🤲 Дуа, чат и опросы")] },
 };
 
+/** Our kinds are the root of a circle's name: «Бизнес · Мойка». Only «Своё» is named freely. */
+const RU_ROOT: Partial<Record<CircleKind, string>> = { umrah: 'Умра', family: 'Семья', brothers: 'Братья', sisters: 'Сёстры', biz: 'Бизнес', friends: 'Друзья', masjid: 'Мечеть, халака', study: 'Учёба', work: 'Работа' };
+export function rootOf(kind?: CircleKind): string { return kind && kind !== 'other' ? kindOf(kind)?.ru ?? '' : ''; }
+/** The part people wrote themselves, without the root (Russian or the current language) in front. */
+export function suffixOf(title: string, kind?: CircleKind): string {
+  let t = (title || '').trim();
+  for (const r of [rootOf(kind), RU_ROOT[kind as CircleKind] ?? ''].filter(Boolean)) {
+    if (t.toLowerCase() === r.toLowerCase()) return '';
+    if (t.toLowerCase().startsWith(r.toLowerCase()) && /^[\s·:|—–-]/.test(t.slice(r.length))) { t = t.slice(r.length).replace(/^[\s·:|—–-]+/, ''); break; }
+  }
+  return t;
+}
+export const SUFFIX_MAX = (kind?: CircleKind) => Math.max(10, 40 - (rootOf(kind) ? rootOf(kind).length + 3 : 0));
+/** The full name of a circle: root · own part. */
+export function circleTitle(kind: CircleKind | undefined, own: string): string {
+  const root = rootOf(kind);
+  const o = own.trim();
+  return (root ? (o ? `${root} · ${o}` : root) : o || _t("Мой круг")).slice(0, 40);
+}
+const fixTitle = (c: CircleRef): CircleRef => (c.kind && c.kind !== 'other' && !isDm(c.code) ? { ...c, title: circleTitle(c.kind, suffixOf(c.title, c.kind)) } : c);
+
 function load(): CloudId | null {
   try {
     const x: CloudId | null = JSON.parse(localStorage.getItem(LS) || 'null');
     if (!x?.uid || !x?.token) return null;
     const list = (x.circles ?? []).filter((c) => c?.code);
     if (x.circle && !list.some((c) => c.code === x.circle)) list.unshift({ code: x.circle, title: _t("Мой круг") });
-    return { ...x, circles: list };
+    return { ...x, circles: list.map(fixTitle) };
   } catch { return null; }
 }
 function save(x: CloudId | null) {
