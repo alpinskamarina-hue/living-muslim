@@ -50,7 +50,7 @@ const hold = async (pg, loc) => { const b = await loc.boundingBox(); await pg.mo
     await signup(A, 'Насим', 'nasim@test.dev');
     await nav(A, 'Круг');
     await A.locator('button', { hasText: 'Бизнес' }).first().click();
-    const t = A.locator('input[placeholder^="Например"]'); if (await t.count()) await t.fill('Кофейня');
+    const t = A.locator('.cl-name input'); if (await t.count()) await t.fill('Кофейня');
     await A.locator('button', { hasText: 'Создать круг' }).click(); await wait(2500);
     const code = JSON.parse(await ls(A, 'lm.cloud')).circle;
     const uidA = JSON.parse(await ls(A, 'lm.cloud')).uid;
