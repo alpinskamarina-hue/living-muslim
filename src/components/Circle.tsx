@@ -1,3 +1,4 @@
+import { TrSettings } from './TrText';
 import { inRamadan } from '../rplan';
 import { THANKS, g, say, type Sex, type To } from '../words';
 import { sexOf } from './Words';
@@ -577,6 +578,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             </div>
           </div>
           {openOn && cur && !isDm(cur.code) && <OpenOwnerBox code={cur.code} kind={kind} />}
+          {cur && <TrSettings code={cur.code} />}
           {chips.length > 0 && chips[0].k !== 'n' && (
             <div className="wa-isec">
               <h4>{_t("Общие дела")}</h4>

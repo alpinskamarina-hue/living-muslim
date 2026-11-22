@@ -5952,3 +5952,35 @@ p.ug-terms { padding-left: 0; }
 .ch-empty .ps-solo b { font-family: inherit; font-size: inherit; margin: 0; display: inline; }
 .ch-empty .ps-solo .ps-by b, .ch-empty .ps-solo .ps-pinbar b { display: block; font-size: 13.5px; }
 .ch-empty .ps-solo p { text-align: left; }
+
+/* Translation in chats («Перевести», src/components/TrText.tsx) */
+.tr-globe { flex: none; vertical-align: -2px; }
+.tr-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--green-2); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.tr-btn.wait { color: var(--ink-2); cursor: default; }
+.cc-m .tr-btn { display: flex; width: fit-content; max-width: 100%; }
+.cc-m .tr-note, .cc-m .tr-ayah { display: block; }
+.tr-note { display: block; margin-top: 4px; font-size: 11.5px; line-height: 1.4; color: var(--ink-2); }
+.tr-note .tr-globe { margin-right: 4px; }
+.tr-link { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--green-2); text-decoration: underline; cursor: pointer; }
+.tr-ar { display: block; font-family: Amiri, var(--f-display), serif; font-size: 19px; line-height: 1.7; color: var(--green-2); }
+.tr-ayah { display: block; margin-top: 6px; padding: 7px 10px; border-radius: 10px; background: var(--gold-soft); font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; }
+.cc-tr .tr-note { display: block; }
+.cc-tr .tr-btn { display: flex; width: fit-content; }
+.tr-set h4 { display: flex; align-items: center; gap: 6px; }
+.tr-set .tr-globe { width: 16px; height: 16px; color: var(--green-2); }
+.tr-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.tr-row > span { flex: 1; display: grid; gap: 1px; }
+.tr-row b, .tr-know > b { font-size: 15px; }
+.tr-row small, .tr-know > small { font-size: 12.5px; color: var(--ink-2); }
+.tr-row em { font-style: normal; color: var(--ink-2); font-size: 14px; }
+.tr-sw { appearance: none; -webkit-appearance: none; flex: none; width: 48px; height: 28px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+.tr-sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+.tr-sw:checked { background: var(--green-2); }
+.tr-sw:checked::after { transform: translateX(20px); }
+.tr-sw:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tr-know { display: grid; gap: 2px; padding: 12px 0 4px; }
+.tr-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.tr-chips button { min-height: 34px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.tr-chips button.on { background: var(--gold-soft); border-color: var(--gold); color: var(--ink); }
+.tr-chips button.on::before { content: "✓ "; color: var(--gold); }
+.tr-foot { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-2); }

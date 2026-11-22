@@ -13,6 +13,7 @@ import type { AppState } from '../types';
 import { plural } from '../dates';
 import { _t, _tj, LOC, isEn } from '../i18n';
 import { DAY_AYAHS } from '../ayahs';
+import { TrText } from './TrText';
 import { openPerson, personOk, INTENTS, type IntentKind } from '../person';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
@@ -182,7 +183,7 @@ function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
       ) : <span className="cc-gone">{_t("🎙 Голосовое удалено через 30 дней, текст остался")}</span>}
       {text ? (
         text === '…' ? <span className="cc-tr none">{_t("Слов не разобрать")}</span>
-          : <><span className={`cc-tr${long && !open ? ' cut' : ''}`} onClick={long ? () => setOpen((o) => !o) : undefined}>{text}</span>{long && <button type="button" className="cc-tr-more" onClick={() => setOpen((o) => !o)}>{open ? _t("свернуть") : _t("читать дальше")}</button>}</>
+          : <><span className={`cc-tr${long && !open ? ' cut' : ''}`} onClick={long ? () => setOpen((o) => !o) : undefined}><TrText id={m.id} text={text} code={chat.code} mine={mine} cls="cc-tr-in" /></span>{long && <button type="button" className="cc-tr-more" onClick={() => setOpen((o) => !o)}>{open ? _t("свернуть") : _t("читать дальше")}</button>}</>
       ) : trOn && m.voice && (
         tr === 'load' ? <span className="cc-tr-btn wait">{_t("Расшифровываю…")}</span>
           : <button type="button" className="cc-tr-btn" onClick={doTr}><span aria-hidden="true">Аа</span> {tr || _t("Расшифровать")}</button>
@@ -680,9 +681,9 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                 {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : shortOf(q)}</span>}
                 {!q && m.ref?.t === 'st' && m.ref.to && <span className="cc-q cc-st"><b>{m.ref.to === me ? _t("Ответ на твою сторис") : _t("Ответ на сторис: {0}", nm(m.ref.to))}</b>{[m.ref.n, m.ref.k].filter(Boolean).join(' ')}</span>}
                 {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
-                  : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
-                  : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
-                  : <span className="cc-t">{m.body}</span>}
+                  : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <TrText id={m.id} text={m.body} code={chat.code} mine={mine} cls="cc-t cc-cap" />}</>
+                  : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <TrText id={m.id} text={m.body} code={chat.code} mine={mine} cls="cc-t cc-cap" />}</>
+                  : <TrText id={m.id} text={m.body} code={chat.code} mine={mine} />}
                 <small className="cc-time">{m.failed ? <IcT t={_t("⚠ Не отправлено · нажми, чтобы повторить")} /> : <>{hm(m.at)}{mine ? (m.pending ? <> <Ic e="clock" cls="rx" /></> : <> <Ticks s={chat.readOf(m)?.state ?? 'sent'} /></>) : ''}</>}</small>
               </div>
               {rs.length > 0 && (
