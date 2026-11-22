@@ -10,6 +10,20 @@ const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
 const LANGS = { ru: 'Russian', en: 'English' };
+// «Ответ на их языке»: the languages my own message may go out in.
+const OUT = { ru: 'Russian', en: 'English', tr: 'Turkish', ar: 'Arabic', de: 'German', fr: 'French', bs: 'Bosnian', uz: 'Uzbek', kk: 'Kazakh', ur: 'Urdu', id: 'Indonesian', nl: 'Dutch' };
+const OUT_SCHEMA = {
+  type: 'object',
+  properties: { text: { type: 'string', description: 'the message translated, ready to send' } },
+  required: ['text'],
+  additionalProperties: false,
+};
+const outSystem = (from, to) => `You translate a short chat message that a Muslim wrote in ${OUT[from] || 'their language'} into ${OUT[to]}, so that a friend from another country can read it in a habits app. The text is sent in the writer's name, so:
+- Write it the way a native speaker would write in a friendly chat: natural, short, the same tone, the same emoji, the same names of people and places. Do not add, explain, greet or soften anything.
+- Keep common Islamic phrases the way Muslims who speak ${OUT[to]} write them (InshaAllah, MashaAllah, Alhamdulillah, SubhanAllah, BarakAllahu feek, JazakAllahu khayran, Amin, Assalamu alaikum, Allahu Akbar, in that language's usual spelling).
+- If the message contains a verse of the Quran, a hadith or a du'a in Arabic, keep that Arabic exactly as written.
+- If it is already in ${OUT[to]}, return it unchanged.
+- Return only the translation in "text".`;
 
 async function rpc(fn, args) {
   const r = await fetch(`${SB}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
@@ -56,6 +70,45 @@ Rules:
 - If a message is already in ${LANGS[to]}, kind "same".
 - Return one item per message, with the same id.`;
 
+async function member(uid, token, code, secret) {
+  try {
+    const ctx = await rpc('lm_chat_ai_ctx', { p_secret: secret, p_uid: uid, p_token: token, p_code: code });
+    return ctx?.ok ? '' : 'auth';
+  } catch { return 'nosql'; }
+}
+
+/** { mode: 'out', uid, token, code, from, to, text } → { text }: my message in their language before it is sent. */
+async function out(b, res, secret) {
+  const uid = str(b.uid, 40), token = str(b.token, 200), code = str(b.code, 40);
+  const text = str(b.text, 2000).trim();
+  const to = OUT[b.to] ? b.to : '';
+  const from = OUT[b.from] ? b.from : 'ru';
+  if (!uid || !token || !code || !text || !to) return res.status(400).json({ error: 'empty' });
+  const bad = await member(uid, token, code, secret);
+  if (bad) return res.status(bad === 'auth' ? 403 : 503).json({ error: bad });
+  try {
+    const client = new Anthropic();
+    const r = await client.messages.create({
+      model: HAIKU,
+      max_tokens: 3000,
+      output_config: { effort: 'low', format: { type: 'json_schema', schema: OUT_SCHEMA } },
+      system: outSystem(from, to),
+      messages: [{ role: 'user', content: `<msg>\n${text}\n</msg>` }],
+    });
+    logUsage('translate-out', HAIKU, r.usage);
+    if (r.stop_reason === 'refusal') return res.status(502).json({ error: 'busy' });
+    let o;
+    try { o = JSON.parse(r.content.filter((c) => c.type === 'text').map((c) => c.text).join('')); } catch { o = null; }
+    const t = str(o?.text, 4000).trim();
+    if (!t) return res.status(502).json({ error: 'busy' });
+    return res.status(200).json({ text: t });
+  } catch (e) {
+    const status = e?.status || 500;
+    console.error('translate out failed', status, e?.message);
+    return res.status(status === 429 || status === 529 ? 503 : 502).json({ error: 'busy' });
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
@@ -64,16 +117,15 @@ export default async function handler(req, res) {
   let b = req.body;
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   b = b || {};
+  if (b.mode === 'out') return out(b, res, secret);
   const uid = str(b.uid, 40), token = str(b.token, 200), code = str(b.code, 40);
   const to = b.to === 'en' ? 'en' : 'ru';
   const items = (Array.isArray(b.items) ? b.items : []).slice(0, 12)
     .map((x) => ({ id: Number(x?.id), text: str(x?.text, 2000).trim() }))
     .filter((x) => Number.isFinite(x.id) && x.id > 0 && x.text);
   if (!uid || !token || !code || !items.length) return res.status(400).json({ error: 'empty' });
-  try {
-    const ctx = await rpc('lm_chat_ai_ctx', { p_secret: secret, p_uid: uid, p_token: token, p_code: code });
-    if (!ctx?.ok) return res.status(403).json({ error: 'auth' });
-  } catch { return res.status(503).json({ error: 'nosql' }); }
+  const bad = await member(uid, token, code, secret);
+  if (bad) return res.status(bad === 'auth' ? 403 : 503).json({ error: bad });
 
   try {
     const client = new Anthropic();

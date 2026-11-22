@@ -76,7 +76,7 @@ const TR = {
     const set = A.locator('.tr-set');
     ok(await set.count() === 1, '«Перевод» section on the circle page');
     await set.scrollIntoViewIfNeeded();
-    await set.locator('.tr-sw').check(); await wait(200);
+    await set.locator('.tr-sw-auto').check(); await wait(200);
     ok(JSON.parse(await ls(A, 'lm.tr.auto'))[code] === true, 'auto-translation saved for this circle');
     await set.locator('.tr-chips button', { hasText: 'Türkçe' }).click(); await wait(200);
     ok(JSON.parse(await ls(A, 'lm.tr.know')).includes('tr'), '«Я понимаю ещё» saved');

@@ -11,9 +11,10 @@ import { prayerTimes } from '../prayer';
 import { enablePush, currentSubscription, DEFAULT_PREFS } from '../push';
 import type { AppState } from '../types';
 import { plural } from '../dates';
-import { _t, _tj, LOC, isEn } from '../i18n';
+import { _t, _tj, LANG, LOC, isEn } from '../i18n';
 import { DAY_AYAHS } from '../ayahs';
-import { TrText } from './TrText';
+import { Globe, TrText } from './TrText';
+import { chatLangs, fromLabel, inLabel, langName, offerOn, outLang, rememberSent, setOutLang, translateOut, useTrSettings, voiceAuto } from '../translate';
 import { openPerson, personOk, INTENTS, type IntentKind } from '../person';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
@@ -160,15 +161,24 @@ function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
     return () => window.removeEventListener('lm-voice', stop);
   }, [m.id]);
   const trOn = useTrReady();
+  useTrSettings();
   const [tr, setTr] = useState<'' | 'load' | string>('');
   const [open, setOpen] = useState(false);
+  // one tap «Расшифровать» also translates the text when it is in another language
+  const [tapped, setTapped] = useState(false);
   const text = m.body;
-  const doTr = async () => {
+  const vAuto = !mine && voiceAuto(chat.code);
+  const doTr = async (auto = false) => {
     setTr('load');
-    const r = await chat.transcribe(m.id);
+    if (!auto) setTapped(true);
+    const r = await (auto ? autoTranscribe(chat, m.id) : chat.transcribe(m.id));
     setTr(r.err ? (TR_ERR[r.err] ?? TR_ERR.busy)() : '');
-    if (!r.err) setOpen(true);
+    if (!r.err && !auto) setOpen(true);
   };
+  // «Голосовые в текст»: voice messages of others from the last week are transcribed by themselves, one after another
+  useEffect(() => {
+    if (vAuto && trOn && m.voice && !text && tr === '' && Date.now() - Date.parse(m.at) < 7 * 864e5) void doTr(true);
+  }, [vAuto, trOn, m.id]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!m.voice && !text) return <span className="cc-gone">{_t("🎙 Голосовое больше не доступно")}</span>;
   const bars = m.bars?.length ? m.bars : Array.from({ length: 24 }, (_, i) => 3 + ((m.id * 7 + i * 13) % 6));
   const long = text.length > 140;
@@ -183,13 +193,21 @@ function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
       ) : <span className="cc-gone">{_t("🎙 Голосовое удалено через 30 дней, текст остался")}</span>}
       {text ? (
         text === '…' ? <span className="cc-tr none">{_t("Слов не разобрать")}</span>
-          : <><span className={`cc-tr${long && !open ? ' cut' : ''}`} onClick={long ? () => setOpen((o) => !o) : undefined}><TrText id={m.id} text={text} code={chat.code} mine={mine} cls="cc-tr-in" /></span>{long && <button type="button" className="cc-tr-more" onClick={() => setOpen((o) => !o)}>{open ? _t("свернуть") : _t("читать дальше")}</button>}</>
+          : <><span className={`cc-tr${long && !open ? ' cut' : ''}`} onClick={long ? () => setOpen((o) => !o) : undefined}><TrText id={m.id} text={text} code={chat.code} mine={mine} cls="cc-tr-in" go={tapped || vAuto} /></span>{long && <button type="button" className="cc-tr-more" onClick={() => setOpen((o) => !o)}>{open ? _t("свернуть") : _t("читать дальше")}</button>}</>
       ) : trOn && m.voice && (
-        tr === 'load' ? <span className="cc-tr-btn wait">{_t("Расшифровываю…")}</span>
-          : <button type="button" className="cc-tr-btn" onClick={doTr}><span aria-hidden="true">Аа</span> {tr || _t("Расшифровать")}</button>
+        tr === 'load' ? <span className="cc-tr-btn wait">{vAuto ? _t("Расшифровываю и перевожу…") : _t("Расшифровываю…")}</span>
+          : <button type="button" className="cc-tr-btn" onClick={() => void doTr()}><span aria-hidden="true">Аа</span> {tr || _t("Расшифровать")}</button>
       )}
     </span>
   );
+}
+
+/** Automatic transcriptions go one at a time, so a chat full of voice messages does not send them all at once. */
+let trChain: Promise<unknown> = Promise.resolve();
+function autoTranscribe(chat: ChatApi, id: number) {
+  const p = trChain.then(() => chat.transcribe(id));
+  trChain = p.catch(() => null);
+  return p;
 }
 
 const TR_ERR: Record<string, () => string> = {
@@ -382,12 +400,49 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   const myAi = aiName(state.settings);
   const [thinking, setThinking] = useState(false);
   const circleNow = () => members.map((m) => `${m.id === me ? 'the asker' : names[m.id]?.name || 'member'}: ${m.day === today ? `${m.prayers}/5 prayers, ${m.done}/${m.total} habits` : 'not marked today'}`).join('; ');
+  // «Ответ на их языке»: my text goes out in the language the others write in, with a mark for them
+  useTrSettings();
+  const offer = offerOn(chat.code) && !topic;
+  const langs = offer ? chatLangs(chat.msgs, me) : [];
+  const saved = offer ? outLang(chat.code) : '';
+  const outLangs = saved && !langs.includes(saved) ? [...langs, saved] : langs;
+  const outTo = saved;
+  const [outOpen, setOutOpen] = useState(false);
+  const [prev, setPrev] = useState<{ src: string; to: string; text: string; err?: string } | null>(null);
+  const outSrc = text.trim();
+  const outNow = Boolean(outTo && outSrc && !file && !callsAi(outSrc, myAi));
+  useEffect(() => {
+    if (!outNow || !chat.code || (prev && prev.src === outSrc && prev.to === outTo)) return;
+    const h = setTimeout(async () => {
+      const r = await translateOut(outSrc, outTo, chat.code as string);
+      setPrev({ src: outSrc, to: outTo, text: r.text || '', err: r.err });
+    }, 700);
+    return () => clearTimeout(h);
+  }, [outSrc, outTo, outNow]); // eslint-disable-line react-hooks/exhaustive-deps
+  const prevNow = prev && prev.src === outSrc && prev.to === outTo ? prev : null;
+
   const send = async (body = text, kind: 'text' | 'event' = 'text') => {
     if (!body.trim()) return;
-    const r = ref;
+    let r = ref;
+    let out = body;
+    if (kind === 'text' && body === text && outNow && chat.code) {
+      const src = body.trim();
+      let tx = prevNow?.text || '';
+      if (!tx) {
+        setSending(true);
+        const res = await translateOut(src, outTo, chat.code);
+        setSending(false);
+        tx = res.text || '';
+        if (!tx) { flash(_t("Перевод не получился. Нажми ещё раз или выбери «Как есть»")); return; }
+      }
+      out = tx;
+      r = { ...(r ?? {}), tl: LANG, tt: outTo };
+      rememberSent(tx, src);
+      setOutOpen(false);
+    }
     if (body === text) setText('');
     setRef(null);
-    const ok = await chat.send(body, r, kind);
+    const ok = await chat.send(out, r, kind);
     if (!ok || kind !== 'text' || topic || !chat.ai.ready || !callsAi(body, myAi)) return;
     if (!chat.ai.on) { flash(_t("Владелец круга выключил помощника в этом круге")); return; }
     setThinking(true);
@@ -683,7 +738,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                 {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
                   : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <TrText id={m.id} text={m.body} code={chat.code} mine={mine} cls="cc-t cc-cap" />}</>
                   : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <TrText id={m.id} text={m.body} code={chat.code} mine={mine} cls="cc-t cc-cap" />}</>
-                  : <TrText id={m.id} text={m.body} code={chat.code} mine={mine} />}
+                  : <TrText id={m.id} text={m.body} code={chat.code} mine={mine} tl={m.ref?.tl} tt={m.ref?.tt} />}
                 <small className="cc-time">{m.failed ? <IcT t={_t("⚠ Не отправлено · нажми, чтобы повторить")} /> : <>{hm(m.at)}{mine ? (m.pending ? <> <Ic e="clock" cls="rx" /></> : <> <Ticks s={chat.readOf(m)?.state ?? 'sent'} /></>) : ''}</>}</small>
               </div>
               {rs.length > 0 && (
@@ -743,6 +798,25 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             {chat.ai.ready && chat.ai.on && !topic && /(^|\s)@[^\s@]{0,12}$/.test(text) && (
               <button type="button" className="cc-ai-sug" onClick={() => { setText(text.replace(/@[^\s@]{0,12}$/, `@${myAi} `)); ta.current?.focus(); }}><i aria-hidden="true" /><b>{myAi}</b> · {_t("помощник")}</button>
             )}
+            {offer && outLangs.length > 0 && !file && (outOpen || outNow) && (
+              <div className="tr-out">
+                <div className="tr-out-h">
+                  <b><Globe />{_t("Уйдёт так")}</b>
+                  <span className="tr-chips">
+                    {outLangs.map((k) => <button key={k} type="button" className={outTo === k ? 'on' : ''} aria-pressed={outTo === k} onClick={() => { setOutLang(chat.code as string, k); setOutOpen(true); }}>{langName(k)}</button>)}
+                    <button type="button" className={!outTo ? 'on' : ''} aria-pressed={!outTo} onClick={() => { setOutLang(chat.code as string, ''); setOutOpen(false); }}>{_t("Как есть")}</button>
+                  </span>
+                </div>
+                {outNow && (
+                  <p className={`tr-out-t${prevNow?.text ? '' : ' wait'}`} dir="auto">
+                    {prevNow?.text || (prevNow?.err ? _t("Перевод не получился, нажми «Отправить» ещё раз") : _t("Перевожу…"))}
+                  </p>
+                )}
+                {outTo
+                  ? <small>{members.length === 2 ? _tj("{0} увидит пометку «переведено {1}»", nm(members.find((x) => x.id !== me)?.id || ''), fromLabel(LANG)) : _tj("Все увидят пометку «переведено {0}»", fromLabel(LANG))}</small>
+                  : <small>{_t("Выбери язык, и сообщение уйдёт переведённым. Пишешь как обычно")}</small>}
+              </div>
+            )}
             <div className="cc-in">
               <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
               {!main && chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : <Ic e="clip" />}</button>}
@@ -753,6 +827,11 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
               {main && <button type="button" className="cc-plus" disabled={sending} aria-label={_t("Прикрепить и действия круга")} onClick={() => setPlus(true)}>{sending ? '…' : <ClipIcon />}</button>}
               {main && chat.filesOn && !text.trim() && !file && <button type="button" className="cc-cam" disabled={sending} aria-label={_t("Камера")} onClick={() => pickKind(true, true)}><CamIcon /></button>}
               </div>
+              {offer && outLangs.length > 0 && !file && (
+                <button type="button" className={`tr-out-btn${outTo ? ' on' : ''}`} aria-expanded={outOpen || outNow} aria-label={outTo ? _tj("Уйдёт {0}. Сменить язык", inLabel(outTo)) : _t("Ответить на их языке")} onClick={() => setOutOpen((o) => !o)}>
+                  <Globe />{outTo && <b>{outTo.toUpperCase()}</b>}
+                </button>
+              )}
               {file || text.trim() || !recorder.supported || !chat.voiceOn ? (
                 <button type="button" className="cc-send" disabled={(!text.trim() && !file) || sending} aria-label={_t("Отправить")} onClick={() => { if (file) sendFile(); else send(); if (ta.current) ta.current.style.height = 'auto'; }}><Ic e="send" /></button>
               ) : (

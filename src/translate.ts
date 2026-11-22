@@ -153,3 +153,83 @@ export function translate(id: number, text: string, code: string): Promise<TrRes
   p.then((r) => { inflight.delete(id); if (r.err) return; });
   return p;
 }
+
+// --- voice messages and replies in their language (steps 3 and 4) ---
+
+const K_VOICE = 'lm.tr.voice', K_OFFER = 'lm.tr.offer', K_OUT = 'lm.tr.out', K_SENT = 'lm.tr.sent';
+/** «Голосовые в текст»: voice messages of others are transcribed and translated by themselves in this chat. */
+export const voiceAuto = (code: string | undefined) => Boolean(code && read<Record<string, boolean>>(K_VOICE, {})[code]);
+export function setVoiceAuto(code: string, on: boolean) {
+  const m = read<Record<string, boolean>>(K_VOICE, {});
+  if (on) m[code] = true; else delete m[code];
+  write(K_VOICE, m); ping();
+}
+/** «Предлагать ответ на их языке»: on unless switched off for this chat. */
+export const offerOn = (code: string | undefined) => Boolean(code) && read<Record<string, boolean>>(K_OFFER, {})[code as string] !== false;
+export function setOffer(code: string, on: boolean) {
+  const m = read<Record<string, boolean>>(K_OFFER, {});
+  if (on) delete m[code]; else m[code] = false;
+  write(K_OFFER, m); ping();
+}
+/** The language my messages in this chat go out in ('' = as I write them). */
+export const outLang = (code: string | undefined): string => (code ? read<Record<string, string>>(K_OUT, {})[code] || '' : '');
+export function setOutLang(code: string, l: string) {
+  const m = read<Record<string, string>>(K_OUT, {});
+  if (l) m[code] = l; else delete m[code];
+  write(K_OUT, m); ping();
+}
+
+/** Short names for the language chips: «Türkçe», «العربية»; a code we have no name for is shown as is. */
+export const langName = (k: string) => KNOWN_LANGS.find((x) => x.k === k)?.n || k.toUpperCase();
+const IN_RU: Record<string, string> = { ru: 'на русском', en: 'на английском', tr: 'на турецком', ar: 'на арабском', de: 'на немецком', fr: 'на французском', bs: 'на боснийском', uz: 'на узбекском', kk: 'на казахском', ur: 'на урду', id: 'на индонезийском', nl: 'на нидерландском' };
+const IN_EN: Record<string, string> = { ru: 'in Russian', en: 'in English', tr: 'in Turkish', ar: 'in Arabic', de: 'in German', fr: 'in French', bs: 'in Bosnian', uz: 'in Uzbek', kk: 'in Kazakh', ur: 'in Urdu', id: 'in Indonesian', nl: 'in Dutch' };
+/** «на турецком» / «in Turkish». */
+export const inLabel = (k: string) => (LANG === 'en' ? IN_EN : IN_RU)[k] || langName(k);
+
+interface ChatMsgLike { id: number; uid: string; kind: string; body: string; deleted?: boolean; ref?: { tl?: string; tt?: string } | null }
+/** The languages the others write in, most used first: what to offer for «ответ на их языке». */
+export function chatLangs(msgs: ChatMsgLike[], me: string): string[] {
+  const n = new Map<string, number>();
+  const add = (l: string | undefined, w = 1) => { if (l && l !== 'latin' && l !== LANG && KNOWN_LANGS.some((x) => x.k === l)) n.set(l, (n.get(l) ?? 0) + w); };
+  let seen = 0;
+  for (let i = msgs.length - 1; i >= 0 && seen < 40; i--) {
+    const m = msgs[i];
+    if (m.uid === me || m.deleted || !m.body || (m.kind !== 'text' && m.kind !== 'voice')) continue;
+    seen++;
+    // a message they sent through «ответ на их языке» says which language they think in
+    if (m.ref?.tl) { add(m.ref.tl, 3); continue; }
+    add(cached(m.id)?.lang || guessLang(m.body));
+  }
+  return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k).slice(0, 3);
+}
+
+/** My text translated into their language before it is sent. */
+const outMem = new Map<string, string>();
+export async function translateOut(text: string, to: string, code: string): Promise<{ text?: string; err?: string }> {
+  const t = text.trim().slice(0, 2000);
+  const key = `${to}|${t}`;
+  const c = outMem.get(key);
+  if (c) return { text: c };
+  const me = cloudMe();
+  if (!me) return { err: 'auth' };
+  try {
+    const r = await fetch('/api/translate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'out', uid: me.uid, token: me.token, code, from: LANG, to, text: t }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.text) return { err: j.error || (r.ok ? 'busy' : 'net') };
+    outMem.set(key, j.text);
+    return { text: j.text };
+  } catch { return { err: 'net' }; }
+}
+
+/** What I wrote before it went out translated, kept only on my phone. */
+export const sentOriginal = (body: string): string => read<Record<string, string>>(K_SENT, {})[body.trim()] || '';
+export function rememberSent(body: string, orig: string) {
+  const m = read<Record<string, string>>(K_SENT, {});
+  m[body.trim()] = orig;
+  const keys = Object.keys(m);
+  if (keys.length > 200) for (const k of keys.slice(0, keys.length - 150)) delete m[k];
+  write(K_SENT, m);
+}
