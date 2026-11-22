@@ -5289,3 +5289,6 @@ p.ug-terms { padding-left: 0; }
 .cc-read small { flex-basis: 100%; font-size: 12px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cc-tick.t-all { color: #53bdeb; } }
 :root[data-theme="dark"] .cc-tick.t-all { color: #53bdeb; }
+
+/* Assistant: reminders that came due while the chat was closed */
+.ai-fab .ai-unread { position: absolute; right: -3px; top: -3px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #c0392b; color: #fff; font: 700 11px/20px Manrope, system-ui, sans-serif; text-align: center; font-style: normal; box-shadow: 0 0 0 2px #fff; }

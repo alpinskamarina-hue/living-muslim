@@ -6,7 +6,7 @@ import { isBookFile, readBook } from '../bookFile';
 import { limitOf } from '../plan';
 import type { GoTo } from '../guide';
 import { dayKey } from '../dates';
-import { type AiConfig, type AiMsg, aiName, ask, fold, getAiConfig, getMemory, loadChat, onMemory, saveChat, setAiConfig, setMemory } from '../assistant';
+import { type AiConfig, type AiMsg, addDuePings, aiName, ask, fold, getAiConfig, getMemory, getUnread, loadChat, onMemory, onUnread, saveChat, setAiConfig, setMemory, setUnread } from '../assistant';
 import { authMe } from '../auth';
 import { _t, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
@@ -56,6 +56,14 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
 
   useEffect(() => { saveChat(msgs); end.current?.scrollIntoView({ block: 'end' }); }, [msgs, busy]);
   useEffect(() => () => { mic.current?.abort(); hush(); }, []);
+  // Reminders she set: while the chat is open, a due one appears here as her message (closed: App puts it in and counts it unread).
+  useEffect(() => {
+    setUnread(0);
+    const tick = () => setMsgs((m) => addDuePings(m, live.current.pings) ?? m);
+    tick();
+    const t = setInterval(tick, 20000);
+    return () => clearInterval(t);
+  }, []);
 
   const say = (i: number, t: string) => {
     if (saying === i) { hush(); setSaying(null); return; }
@@ -212,6 +220,12 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
           : (!m.content && !m.acts?.length && !m.drafts?.length) ? null
           : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className={`ai-msg it${m.content ? '' : ' ai-bare'}`}>
               {rich(m.content)}
+              {m.ping && i === msgs.length - 1 && signed && !busy && (
+                <div className="ai-book-acts">
+                  <button type="button" onClick={() => send(_t("Сделано ✓"))}>{_t("Сделано ✓")}</button>
+                  <button type="button" onClick={() => send(_t("Напомни ещё раз через час"))}>{_t("⏰ Через час")}</button>
+                </div>
+              )}
               {m.book && (live.current.books ?? []).some((b) => b.id === m.book) && (
                 <div className="ai-book-acts">
                   <button type="button" onClick={() => onGo?.({ practice: 'books' })}>{_t("📖 Открыть в Книгах")}</button>
@@ -411,6 +425,8 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
     window.addEventListener('scroll', on, { passive: true });
     return () => window.removeEventListener('scroll', on);
   }, []);
+  const [unread, setUn] = useState(getUnread);
+  useEffect(() => onUnread(() => setUn(getUnread())), []);
   if (s.aiFab === false) return null;
   const name = aiName(s);
   return (
@@ -420,9 +436,9 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
           <b>{name}</b>{_t("Ас-саляму алейкум! Спроси меня о чём угодно.")}
         </button>
       )}
-      <button type="button" className={`ai-fab${away && !hint ? ' away' : ''}`} onClick={() => { seen(); onOpen(); }} aria-label={_t("Открыть помощника: {0}", name)}>
+      <button type="button" className={`ai-fab${away && !hint && !unread ? ' away' : ''}`} onClick={() => { seen(); onOpen(); }} aria-label={_t("Открыть помощника: {0}", name)}>
         <AiFace s={s} size={50} live />
-        {hint && <i className="ai-dot" />}
+        {unread > 0 ? <i className="ai-unread">{unread > 9 ? '9+' : unread}</i> : hint && <i className="ai-dot" />}
       </button>
     </>
   );

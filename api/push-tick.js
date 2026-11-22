@@ -208,7 +208,9 @@ export function events(prefs, now, courses = []) {
       out.push({ key: `${day.key}:w-${String(r.k).slice(0, 24)}`, at: r.at, title: en ? '💪 Workout' : '💪 Тренировка', body: r.t.slice(0, 160), tag: 'workout', url: '/app/?go=workouts' });
       continue;
     }
-    out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: prefs.lang === 'en' ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=pings' });
+    // Set by the assistant: the notification comes from her by name and opens her chat, where the reminder waits as her message.
+    const who = typeof prefs.ainame === 'string' && prefs.ainame.trim() ? prefs.ainame.trim().slice(0, 30) : '';
+    out.push({ key: `${day.key}:p-${String(r.k).slice(0, 24)}`, at: r.at, title: who ? `⏰ ${who}` : en ? '⏰ Reminder' : '⏰ Напоминание', body: r.t.slice(0, 160), tag: `ping-${String(r.k).slice(0, 24)}`, url: '/app/?go=ai' });
   }
   return { day: day.key, list: out };
 }

@@ -17,6 +17,8 @@ export interface AiMsg {
   drafts?: { to: string; text: string }[];
   /** The answer touched «Планы»: show «Открыть Планы». */
   plans?: boolean;
+  /** A reminder the assistant set came due: its ping id (shown as the assistant's message, sent to the model as a note). */
+  ping?: string;
 }
 
 const LS = 'lm.ai.chat';
@@ -27,6 +29,35 @@ export function loadChat(): AiMsg[] {
 }
 export function saveChat(m: AiMsg[]) {
   try { if (m.length) localStorage.setItem(LS, JSON.stringify(m.slice(-KEEP))); else localStorage.removeItem(LS); } catch { /* private mode */ }
+}
+
+// ───── Reminders in the chat: when a reminder the assistant set comes due, it appears as her message ─────
+const UNREAD = 'lm.ai.unread';
+const unreadSubs = new Set<() => void>();
+export function getUnread(): number { try { return Number(localStorage.getItem(UNREAD)) || 0; } catch { return 0; } }
+export function setUnread(n: number) {
+  try { if (n > 0) localStorage.setItem(UNREAD, String(n)); else localStorage.removeItem(UNREAD); } catch { /* */ }
+  unreadSubs.forEach((f) => f());
+}
+export function onUnread(f: () => void) { unreadSubs.add(f); return () => { unreadSubs.delete(f); }; }
+const SEEN = 'lm.ai.pinged';
+/** Reminders that came due (in the last 2 days) and are not in the chat yet, added in time order; null when none. */
+export function addDuePings(msgs: AiMsg[], pings: { id: string; at: number; text: string }[] | undefined, now = Date.now()): AiMsg[] | null {
+  let seen: string[] = [];
+  try { seen = JSON.parse(localStorage.getItem(SEEN) || '[]'); if (!Array.isArray(seen)) seen = []; } catch { /* */ }
+  const due = (pings ?? []).filter((p) => p.at <= now && p.at > now - 864e5 && !seen.includes(p.id) && !msgs.some((m) => m.ping === p.id)).sort((a, b) => a.at - b.at);
+  if (!due.length) return null;
+  try { localStorage.setItem(SEEN, JSON.stringify([...seen, ...due.map((p) => p.id)].slice(-80))); } catch { /* */ }
+  return [...msgs, ...due.map((p): AiMsg => ({ role: 'assistant', content: `⏰ ${_t("Напоминаю")}: ${p.text}`, at: p.at, ping: p.id }))];
+}
+/** Phone side, while the chat is closed: put due reminders into the saved chat and count them as unread. */
+export function deliverPings(pings: { id: string; at: number; text: string }[] | undefined): number {
+  const m = addDuePings(loadChat(), pings);
+  if (!m) return 0;
+  const n = m.filter((x) => x.ping).length - loadChat().filter((x) => x.ping).length;
+  saveChat(m);
+  setUnread(getUnread() + n);
+  return n;
 }
 
 // ───── «Память помощника»: a short note about the person, kept on this phone ─────
@@ -78,6 +109,18 @@ export const aiName = (s: Settings) => s.aiName?.trim() || aiDefaultName(s) || _
 
 export type AskResult = { text: string; left?: number | null; calls?: { id: string; name: string; input: Record<string, unknown> }[]; content?: unknown[] } | { error: 'signin' | 'limit' | 'nokey' | 'refused' | 'net' | 'busy' };
 
+/** History for the model: a reminder message becomes a note in front of the person's next message (no two assistant turns in a row). */
+function forModel(history: AiMsg[]) {
+  const out: { role: string; content: unknown }[] = [];
+  let note = '';
+  for (const m of history) {
+    if (m.ping) { note += `[${new Date(m.at).toString().slice(16, 21)} reminder you set came due and was shown in this chat: ${m.content.replace(/^⏰\s*/, '')}] `; continue; }
+    if (note && m.role === 'user' && typeof m.content === 'string' && !m.raw) { out.push({ role: 'user', content: `${note}\n${m.content}` }); note = ''; continue; }
+    out.push({ role: m.role, content: m.raw ?? m.content });
+  }
+  return out;
+}
+
 export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskResult> {
   const memory = s.aiMemory === false ? '' : getMemory().text;
   const t = await accessToken();
@@ -87,7 +130,7 @@ export async function ask(history: AiMsg[], s: Settings, ctx = ''): Promise<AskR
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       body: JSON.stringify({
-        messages: history.map(({ role, content, raw }) => ({ role, content: raw ?? content })),
+        messages: forModel(history),
         lang: LANG, name: s.aiName?.trim() || aiDefaultName(s), me: s.me || '', madhab: s.madhab, you: s.aiYou || '', len: s.aiLen || '', tone: s.aiTone || '', ctx, memory,
       }),
     });
