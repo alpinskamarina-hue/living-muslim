@@ -6845,4 +6845,8 @@ export const EN: Record<string, string> = {
   "свободные даты и уроки": "free dates and lessons",
   "О цене и условиях договоритесь в чате до начала, лучше письменно.": "Agree on the price and terms in the chat before you start, preferably in writing.",
   "Цены в приложении не публикуются. Цену и условия называйте паломнику заранее, до начала услуг, и не меняйте их в поездке.": "Prices are not published in the app. Tell the pilgrim the price and terms in advance, before the services start, and do not change them during the trip.",
+  "Напоминаю": "Reminder",
+  "Сделано ✓": "Done ✓",
+  "Напомни ещё раз через час": "Remind me again in an hour",
+  "⏰ Через час": "⏰ In an hour",
 };

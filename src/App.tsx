@@ -1,5 +1,5 @@
 import { QuitCheck, QuitScreen, type QuitView } from './components/Quit';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { WordCard, WordsLayer } from './components/Words';
 import { todayTrigger, useWordsWatch } from './wordsWatch';
 import { say } from './words';
@@ -41,6 +41,7 @@ import { Safar } from './components/Safar';
 import { Khutba } from './components/Khutba';
 import { HalalScan } from './components/HalalScan';
 import { Assistant, AssistantFab } from './components/Assistant';
+import { deliverPings } from './assistant';
 import { buildContext } from './aiContext';
 import { QiblaScreen, type QiblaTab } from './components/Mosques';
 import { Ramadan } from './components/Ramadan';
@@ -170,6 +171,17 @@ export function App() {
   const [khutba, setKhutba] = useState(() => { try { return new URLSearchParams(location.search).has('khutba'); } catch { return false; } });
   const [halal, setHalal] = useState<'' | 'cam' | 'hist'>('');
   const [aiOpen, setAiOpen] = useState(false);
+  // Reminders the assistant set: when one comes due, it goes into her chat as a message (the FAB shows how many are new).
+  const pingsNow = useRef(state.pings);
+  pingsNow.current = state.pings;
+  useEffect(() => {
+    if (aiOpen) return;
+    const tick = () => { if (document.visibilityState === 'visible') deliverPings(pingsNow.current); };
+    tick();
+    const t = setInterval(tick, 20000);
+    document.addEventListener('visibilitychange', tick);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', tick); };
+  }, [aiOpen]);
   const [qiblaOpen, setQiblaOpen] = useState<QiblaTab | null>(null);
   const [pathOpen, setPathOpen] = useState<PathView | null>(null);
   useEffect(() => {
@@ -378,6 +390,7 @@ export function App() {
       const u = new URL(href, location.origin);
       const g = u.searchParams.get('go');
       if (g === 'workouts') { try { sessionStorage.setItem('lm.hview', 'workouts'); } catch { /* */ } go({ practice: 'health' }); return true; }
+      if (g === 'ai') { setAiOpen(true); return true; }
       if (g !== 'pings' && g !== 'ideas' && g !== 'plans') return false;
       if (g === 'plans') setPlanStart({ plan: u.searchParams.get('pl') || undefined, act: u.searchParams.get('do') || undefined, day: u.searchParams.get('d') || undefined });
       go({ profile: g });
