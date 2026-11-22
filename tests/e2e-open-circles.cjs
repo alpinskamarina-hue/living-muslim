@@ -54,6 +54,7 @@ async function signup(pg, name, email) {
     await A.locator('#oc-own button', { hasText: 'Открыть круг' }).click(); await wait(1500);
     const st = await A.locator('#oc-own .uo-msg').innerText().catch(() => '');
     check(/Круг открыт/.test(st), 'circle opened: ' + st);
+    check(await A.locator('.ps-solo, .ps-ctabs').count() === 0, 'no posts in a «Братья» circle');
 
     // 2. Newcomer brother B finds it
     const B = await L.phone(br, 'B');
