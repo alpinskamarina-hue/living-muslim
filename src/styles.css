@@ -5313,3 +5313,22 @@ p.ug-terms { padding-left: 0; }
 .kn-bar em { display: block; height: 100%; background: var(--gold, #b88a2c); border-radius: 4px; }
 .kn-sub { color: var(--ink-2); font-size: 12px; }
 .kn .um-card { margin-bottom: 8px; }
+
+/* «Ищем людей»: draft · unsaved · saved */
+.uo-pill { align-self: flex-start; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 5px 10px; background: rgba(140, 120, 80, .14); color: var(--ink-2); }
+.uo-pill.dirty { background: #f6e3b8; color: #6b4a0c; }
+.uo-pill.saved { background: #dcefe3; color: #0f5132; }
+.uo-open .uo-open-h { flex-direction: column; align-items: flex-start; gap: 6px; }
+.uo-count { align-self: flex-end; color: var(--ink-2); font-size: 12px; margin-top: -4px; }
+.uo-go { width: 100%; min-height: 48px; font-size: 15px; }
+.uo-row { display: flex; gap: 8px; }
+.uo-row .uo-go { flex: 1; width: auto; }
+.uo-row .ghost-btn { min-height: 48px; padding: 0 16px; }
+.uo-hint { text-align: center; color: var(--ink-2); font-size: 12px; }
+.uo-preview { border: 1px dashed var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 3px; background: var(--surface-2); }
+.uo-preview em { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--um-gold-ink, #8a6418); }
+.uo-preview small { color: var(--ink-2); font-size: 13px; }
+.uo-preview span { font-size: 14px; }
+.uo-hide { color: #a23a26; min-height: 44px; }
+.uo-row .ghost-btn { width: auto; margin: 0; }
+.uo-open .uo-hide { margin-top: 0; border-color: var(--line); }

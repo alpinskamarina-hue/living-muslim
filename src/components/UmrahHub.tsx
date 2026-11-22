@@ -803,7 +803,7 @@ function PeopleTab({ away, becomeFirst, code, onAccepted, view, setView, api, me
       {people}
       {radar}
       {onInvite && <button type="button" className="ghost-btn mp-invite" onClick={onInvite}>{_t("+ Позвать в поездку")}</button>}
-      {tripHost === me && code && asks.ok !== false && <OpenSwitch code={code} going={going} />}
+      {tripHost === me && code && asks.ok !== false && <OpenSwitch code={code} going={going} title={trip.title} month={trip.month} amir={nameOf(me)} />}
       {!chat && noChat && <p className="tiny">{noChat}</p>}
       {chat && <h3>{_t("Чат поездки")}</h3>}
       {chat}

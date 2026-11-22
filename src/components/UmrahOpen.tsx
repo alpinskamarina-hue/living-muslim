@@ -93,34 +93,91 @@ export function OpenGroups({ list, reload }: { list: OpenGroup[] | null; reload:
   );
 }
 
-/** The amir opens his trip in «Ищут людей»: how many places, who is welcome, a few words. */
-export function OpenSwitch({ code, going }: { code: string; going: number }) {
-  const [cur, setCur] = useState<{ places: number; who: Who; note: string } | null | undefined>(undefined);
-  const [draft, setDraft] = useState<{ places: number; who: Who; note: string }>({ places: 2, who: 'brothers', note: '' });
+/** The amir opens his trip in «Ищут людей»: how many places, who is welcome, a few words.
+ *  Three clear states: a draft (one button shows it), unsaved changes (save or undo), saved (with the time and how others see it). */
+type Listing = { places: number; who: Who; note: string };
+export function OpenSwitch({ code, going, title, month, amir }: { code: string; going: number; title: string; month?: string; amir: string }) {
+  const KEY = `lm.uoDraft.${code}`, TKEY = `lm.uoSaved.${code}`;
+  const [cur, setCur] = useState<Listing | null | undefined>(undefined);
+  const [draft, setDraftS] = useState<Listing>({ places: 2, who: 'brothers', note: '' });
+  const [at, setAt] = useState<string>(() => { try { return localStorage.getItem(TKEY) ?? ''; } catch { return ''; } });
   const [st, setSt] = useState('');
-  useEffect(() => { openMine().then((m) => { setCur(m ?? null); if (m) setDraft({ places: m.places, who: m.who, note: m.note }); }); }, []);
-  if (cur === undefined) return null;
+  const [busy, setBusy] = useState(false);
+  const setDraft = (d: Listing) => { setDraftS(d); setSt(''); try { localStorage.setItem(KEY, JSON.stringify(d)); } catch { /* */ } };
+  useEffect(() => {
+    openMine().then((m) => {
+      setCur(m ?? null);
+      let kept: Listing | null = null;
+      try { kept = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { /* */ }
+      if (kept) setDraftS(kept); else if (m) setDraftS({ places: m.places, who: m.who, note: m.note });
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const on = Boolean(cur);
-  const save = async (p: typeof draft | null) => {
-    setSt(_t("Сохраняю…"));
-    const r = await openSet(code, p);
-    if (r === 'ok') { setCur(p); setSt(p ? _t("✓ Группа видна в «Ищут людей»") : _t("Группа скрыта из списка")); }
-    else setSt(r === 'no_trip' ? _t("Сначала сохрани поездку.") : _t("Не получилось. Проверь интернет и попробуй ещё раз."));
+  const dirty = on && (cur!.places !== draft.places || cur!.who !== draft.who || cur!.note.trim() !== draft.note.trim());
+  // Leaving the page with unsaved changes: the browser asks.
+  useEffect(() => {
+    if (!dirty) return;
+    const f = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', f);
+    return () => window.removeEventListener('beforeunload', f);
+  }, [dirty]);
+  if (cur === undefined) return null;
+  const save = async (p: Listing | null) => {
+    if (busy) return;
+    setBusy(true); setSt(_t("Сохраняю…"));
+    const q = p ? { ...p, note: p.note.trim() } : null;
+    const r = await openSet(code, q);
+    setBusy(false);
+    if (r === 'ok') {
+      setCur(q);
+      const t = new Date().toTimeString().slice(0, 5);
+      setAt(t); try { localStorage.setItem(TKEY, t); localStorage.removeItem(KEY); } catch { /* */ }
+      if (q) setDraftS(q);
+      setSt(q ? '' : _t("Группа скрыта из списка. Текст остался, можно показать снова."));
+    } else setSt(r === 'no_trip' ? _t("Сначала сохрани поездку.") : _t("Не получилось. Проверь интернет и попробуй ещё раз."));
   };
-  const dirty = on && (cur!.places !== draft.places || cur!.who !== draft.who || cur!.note !== draft.note);
+  const undo = () => { if (cur) { setDraftS(cur); setSt(''); try { localStorage.removeItem(KEY); } catch { /* */ } } };
+  const state = !on ? 'draft' : dirty ? 'dirty' : 'saved';
+  const pill = state === 'draft' ? _t("Черновик · никто не видит") : state === 'dirty' ? _t("● Есть несохранённые изменения") : at ? _tj("✓ Видна в «Ищут людей» · сохранено {0}", at) : _t("✓ Видна в «Ищут людей»");
   return (
     <div className="uo-open">
       <div className="uo-open-h">
-        <span><b>{_t("Ищем людей")}</b><small>{on ? _t("группа видна в «Ищут людей»") : _t("группа появится в «Ищут людей»")}</small></span>
-        <button type="button" role="switch" aria-checked={on} className={`uo-sw${on ? ' on' : ''}`} aria-label={_t("Ищем людей")} onClick={() => save(on ? null : draft)}><i /></button>
+        <b>{_t("Ищем людей")}</b>
+        <span className={`uo-pill ${state}`} role="status">{pill}</span>
       </div>
       <label className="uo-l">{_t("Сколько ещё мест")}</label>
       <div className="uo-places">{[1, 2, 3, 4, 5, 6].map((n) => <button key={n} type="button" aria-pressed={draft.places === n} onClick={() => setDraft({ ...draft, places: n })}>{n}</button>)}</div>
       <label className="uo-l">{_t("Кого ждём")}</label>
       <div className="uo-who">{(['brothers', 'families', 'sisters', 'all'] as const).map((k) => <button key={k} type="button" aria-pressed={draft.who === k} onClick={() => setDraft({ ...draft, who: k })}>{WHO[k]}</button>)}</div>
-      <label className="uo-l">{_t("Пару слов о группе")}</label>
-      <textarea rows={2} maxLength={200} value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={_t("Например: билеты берём вместе в начале месяца, отель рядом с Харамом")} />
-      {dirty && <button type="button" className="pri-btn" onClick={() => save(draft)}>{_t("Сохранить")}</button>}
+      <label className="uo-l" htmlFor="uo-note">{_t("Пару слов о группе")}</label>
+      <textarea id="uo-note" rows={2} maxLength={200} value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder={_t("Например: билеты берём вместе в начале месяца, отель рядом с Харамом")} />
+      <small className="uo-count">{draft.note.length} / 200</small>
+      {state === 'draft' && (
+        <>
+          <button type="button" className="gold-btn uo-go" disabled={busy} onClick={() => save(draft)}>{busy ? _t("Сохраняю…") : _t("Показать группу в «Ищут людей»")}</button>
+          <small className="uo-hint">{_t("Черновик хранится на телефоне, пока ты не нажмёшь")}</small>
+        </>
+      )}
+      {state === 'dirty' && (
+        <>
+          <div className="uo-row">
+            <button type="button" className="pri-btn uo-go" disabled={busy} onClick={() => save(draft)}>{busy ? _t("Сохраняю…") : _t("Сохранить изменения")}</button>
+            <button type="button" className="ghost-btn" disabled={busy} onClick={undo}>{_t("Отменить")}</button>
+          </div>
+          <small className="uo-hint">{_t("Пока не сохранишь, другие видят старый текст")}</small>
+        </>
+      )}
+      {state === 'saved' && cur && (
+        <>
+          <div className="uo-preview">
+            <em>{_t("Так группу видят другие")}</em>
+            <b>{title}{month ? ` · ${month}` : ''}</b>
+            <small>{_tj("Амир {0} · едут {1} · нужно мест: {2} · {3}", amir, going, cur.places, WHO[cur.who].toLowerCase())}</small>
+            {cur.note && <span>«{cur.note}»</span>}
+          </div>
+          <button type="button" className="ghost-btn uo-hide" disabled={busy} onClick={() => save(null)}>{_t("Скрыть группу из списка")}</button>
+        </>
+      )}
       {st && <small className="uo-st" role="status">{st}</small>}
       <p className="uo-lock">{_tj("🔒 Чужим видно только: название, месяц, город, твоё имя, сколько едут ({0}) и сколько мест. Остальные имена, чат, документы и касса видны только тем, кого ты примешь.", going)}</p>
     </div>

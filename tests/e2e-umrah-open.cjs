@@ -60,8 +60,24 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     check(await A.locator('.uo-open').count() > 0, `amir sees «Ищем людей»: ${await txt(A, '.uo-open-h')}`);
     await A.locator('.uo-places button', { hasText: '2' }).click();
     await A.locator('.uo-who button', { hasText: 'Братья' }).click();
+    check(/Черновик/.test(await txt(A, '.uo-pill')), 'draft pill before showing');
     await A.locator('.uo-open textarea').fill('Билеты берём вместе в начале месяца, отель рядом с Харамом');
-    await A.locator('.uo-sw').click(); await wait(1500);
+    // the draft survives leaving the screen
+    await A.reload(); await wait(2500); await group(A); if (await tripSeg.count()) { await tripSeg.first().click(); await wait(800); }
+    check((await A.locator('.uo-open textarea').inputValue()).startsWith('Билеты'), 'draft kept on the phone');
+    await A.locator('.uo-go', { hasText: 'Показать группу' }).click(); await wait(1500);
+    check(/Видна в «Ищут людей» · сохранено \d\d:\d\d/.test(await txt(A, '.uo-pill')), `saved pill: ${await txt(A, '.uo-pill')}`);
+    check(/Так группу видят другие/i.test(await txt(A, '.uo-preview')) && /отель рядом/.test(await txt(A, '.uo-preview')), 'preview of the public card');
+    // change → unsaved → undo, then change → save
+    await A.locator('.uo-open textarea').fill('Новый текст');
+    check(/несохранённые/.test(await txt(A, '.uo-pill')), 'unsaved pill after a change');
+    await A.locator('.uo-row .ghost-btn', { hasText: 'Отменить' }).click(); await wait(300);
+    check((await A.locator('.uo-open textarea').inputValue()).startsWith('Билеты'), 'Отменить brings back the saved text');
+    await A.locator('.uo-places button', { hasText: '3' }).click();
+    await A.locator('.uo-go', { hasText: 'Сохранить изменения' }).click(); await wait(1500);
+    check((await L.q(`select places from umrah_open`))[0]?.places === 3, 'changes saved to the server');
+    await A.locator('.uo-places button', { hasText: '2' }).click();
+    await A.locator('.uo-go', { hasText: 'Сохранить изменения' }).click(); await wait(1500);
     await shot(A, 'uo-1-amir-open');
     const op = await L.q(`select places, who, note from umrah_open`);
     check(op.length === 1 && op[0].places === 2 && op[0].who === 'brothers', `listing stored: ${JSON.stringify(op)}`);
@@ -149,7 +165,8 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     await group(A);
     const tripSegA = A.locator('.um-gseg button', { hasText: /Поездка/ });
     if (await tripSegA.count()) { await tripSegA.first().click(); await wait(800); }
-    await A.locator('.uo-sw').click(); await wait(1500);
+    await A.locator('.uo-hide').click(); await wait(1500);
+    check(/Черновик/.test(await txt(A, '.uo-pill')), 'hidden → back to draft');
     check((await L.q(`select count(*)::int n from umrah_open`))[0].n === 0, 'the amir closed the group');
   } finally {
     say('errors:', L.errors.filter((e) => !/favicon/.test(e)).slice(0, 10));
