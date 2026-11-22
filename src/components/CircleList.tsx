@@ -4,6 +4,7 @@ import type { Member } from '../circle';
 import { readsReady, readStateOf, type Msg } from '../chat';
 import { Ticks, shortOf } from './CircleChat';
 import { _t, LOC } from '../i18n';
+import { Ic, IcT } from './LIcon';
 import { openPerson, usePersonReady, useAsks } from '../person';
 import { AsksBox, IntentsFeed } from './Person';
 import { InviteInbox } from './Nick';
@@ -122,7 +123,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
       )}
       {(circles.length > 1 || personOn) && (
         <div className="wa-filt">
-          {personOn && <button type="button" className="wa-seek" onClick={() => setSeekers(true)}>{_t("🧭 Кто что ищет")}</button>}
+          {personOn && <button type="button" className="wa-seek" onClick={() => setSeekers(true)}><IcT t={_t("🧭 Кто что ищет")} /></button>}
           {circles.length > 1 && <button type="button" aria-pressed={f === 'all'} onClick={() => setF('all')}>{_t("Все")}</button>}
           {circles.length > 1 && <button type="button" aria-pressed={f === 'unread'} onClick={() => setF('unread')}>{_t("Непрочитанные")}{unreadN ? ` ${unreadN}` : ''}</button>}
           {kinds.length > 1 && kinds.map((k) => <button key={k} type="button" aria-pressed={f === k} onClick={() => setF(k)}>{kindOf(k as never)?.ru ?? k}</button>)}
@@ -137,7 +138,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
           const text = !m ? _t("Сообщений пока нет") : `${m.ref?.t === 'dua' ? '🤲 ' : ''}${who ? `${who}: ` : ''}${shortOf(m, 60)}`;
           return (
             <button key={c.code} type="button" className="wa-row" onClick={() => onOpen(c)}>
-              <span className="wa-av" style={{ background: KIND_BG[c.kind ?? 'other'] ?? '#eef0f3' }}>{kindOf(c.kind)?.ic ?? '👥'}</span>
+              <span className="wa-av" style={{ background: KIND_BG[c.kind ?? 'other'] ?? '#eef0f3' }}><Ic e={kindOf(c.kind)?.ic ?? '👥'} /></span>
               <span className="wa-rt">
                 <span className="wa-l1"><b>{c.title}</b>{m && <time className={n ? 'new' : ''}>{timeOf(m.at)}</time>}</span>
                 <span className="wa-l2"><span>{m?.uid === me && m.kind !== 'event' ? <><Ticks s={r.rd ? readStateOf(r.rd[0], r.rd[1]) : 'sent'} /> </> : ''}{text}</span>{n > 0 && <em>{n > 99 ? '99+' : n}</em>}</span>

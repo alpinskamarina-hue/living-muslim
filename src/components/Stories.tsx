@@ -9,6 +9,7 @@ import {
   type Story, type StoryBg, type StoryCard, type StoryGroup, type StoriesApi, type StoryKind, type Viewer,
 } from '../stories';
 import { _t } from '../i18n';
+import { Ic } from './LIcon';
 import { plural } from '../dates';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string; gender?: string } | undefined>;
@@ -97,7 +98,7 @@ export function StoryFace({ s, photo }: { s: Pick<Story, 'kind' | 'body' | 'card
       <i className="st-arch" aria-hidden="true" />
       <div className="st-in">
         {s.kind === 'text' ? <p className="st-text">{s.body}</p> : <>
-          {c.ic && <span className="st-ic">{c.ic}</span>}
+          {c.ic && <span className="st-ic"><Ic e={c.ic} /></span>}
           {c.ar && <p className="st-ar" dir="rtl" lang="ar">{c.ar}</p>}
           {c.t && <h3>{c.t}</h3>}
           {c.s && <span className="st-tag">{c.s}</span>}
@@ -195,7 +196,7 @@ export function StoryViewer({ groups, start, api, me, onClose, onCreate }: {
       {note && <div className="st-note">{note}</div>}
       {mine ? (
         <div className="st-foot">
-          <button type="button" className="st-views" onClick={() => setSheet(true)}>👁 {_t('Посмотрели: {0}', cur.views ?? 0)}</button>
+          <button type="button" className="st-views" onClick={() => setSheet(true)}><Ic e="views" cls="lead" />{_t('Посмотрели: {0}', cur.views ?? 0)}</button>
           <button type="button" className="st-views" onClick={onCreate}>＋ {_t('Ещё сторис')}</button>
         </div>
       ) : (
@@ -205,7 +206,7 @@ export function StoryViewer({ groups, start, api, me, onClose, onCreate }: {
           </div>
           <form className="st-rep" onSubmit={(e) => { e.preventDefault(); const t = text.trim(); if (!t) return; setText(''); say(t); }}>
             <input value={text} onChange={(e) => setText(e.target.value)} placeholder={_t('Ответить в чат круга…')} maxLength={500} />
-            <button type="submit" aria-label={_t('Отправить')} disabled={!text.trim()}>➤</button>
+            <button type="submit" aria-label={_t('Отправить')} disabled={!text.trim()}><Ic e="send" /></button>
           </form>
         </>
       )}
@@ -223,10 +224,10 @@ function StoryMenu({ s, mine, api, onClose, onGone }: { s: Story; mine: boolean;
       <div className="st-sheet" onClick={(e) => e.stopPropagation()}>
         <i className="st-grab" />
         {done ? <p className="st-done">{done}</p> : mine ? (
-          <button type="button" onClick={async () => { if (!confirm(_t('Удалить сторис?'))) return; await api.remove(s.id); onGone(); }}>🗑 {_t('Удалить')}</button>
+          <button type="button" onClick={async () => { if (!confirm(_t('Удалить сторис?'))) return; await api.remove(s.id); onGone(); }}><Ic e="trash" cls="lead" />{_t('Удалить')}</button>
         ) : (
           <>
-            <button type="button" onClick={async () => { const ok = await api.report(s.id, _t('неуместно')); setDone(ok ? _t('Спасибо. Жалоба ушла владельцу приложения.') : _t('Не получилось. Попробуй ещё раз.')); }}>🚩 {_t('Пожаловаться')}</button>
+            <button type="button" onClick={async () => { const ok = await api.report(s.id, _t('неуместно')); setDone(ok ? _t('Спасибо. Жалоба ушла владельцу приложения.') : _t('Не получилось. Попробуй ещё раз.')); }}><Ic e="flag" cls="lead" />{_t('Пожаловаться')}</button>
             <button type="button" onClick={async () => { if (!confirm(_t('Убрать эту сторис из кругов, где ты владелец?'))) return; if (await api.remove(s.id)) onGone(); else setDone(_t('Убрать чужую сторис может только владелец круга.')); }}>🗑 {_t('Убрать из моего круга')}</button>
           </>
         )}
@@ -254,8 +255,8 @@ function ViewersSheet({ s, api, onClose, onGone }: { s: Story; api: StoriesApi; 
       <div className="st-sheet tall" onClick={(e) => e.stopPropagation()}>
         <i className="st-grab" />
         <div className="st-tabs">
-          <button type="button" aria-pressed={tab === 'all'} onClick={() => setTab('all')}>👁 {_t('Посмотрели {0}', list?.length ?? '…')}</button>
-          <button type="button" aria-pressed={tab === 'ans'} onClick={() => setTab('ans')}>💬 {_t('Ответы {0}', ans.length)}</button>
+          <button type="button" aria-pressed={tab === 'all'} onClick={() => setTab('all')}><Ic e="views" cls="lead" />{_t('Посмотрели {0}', list?.length ?? '…')}</button>
+          <button type="button" aria-pressed={tab === 'ans'} onClick={() => setTab('ans')}><Ic e="chat" cls="lead" />{_t('Ответы {0}', ans.length)}</button>
         </div>
         <div className="st-vlist">
           {list === null ? <p className="tiny">{_t('Загружаю…')}</p> : !shown.length ? <p className="tiny">{tab === 'all' ? _t('Пока никто не смотрел') : _t('Пока без ответов')}</p>
@@ -269,9 +270,9 @@ function ViewersSheet({ s, api, onClose, onGone }: { s: Story; api: StoriesApi; 
         </div>
         {note && <p className="st-done">{note}</p>}
         <div className="st-acts">
-          <button type="button" onClick={async () => { if (!confirm(_t('Удалить сторис?'))) return; await api.remove(s.id); onGone(); }}><b>🗑</b>{_t('Удалить')}</button>
+          <button type="button" onClick={async () => { if (!confirm(_t('Удалить сторис?'))) return; await api.remove(s.id); onGone(); }}><b><Ic e="trash" /></b>{_t('Удалить')}</button>
           <button type="button" onClick={toChat}><b>↗</b>{_t('В чат круга')}</button>
-          <button type="button" onClick={onClose}><b>✕</b>{_t('Закрыть')}</button>
+          <button type="button" onClick={onClose}><b><Ic e="close" /></b>{_t('Закрыть')}</button>
         </div>
       </div>
     </div>
@@ -320,10 +321,10 @@ export function StoryCreate({ state, today, api, me, names, onClose }: {
     setErr(r === 'day' ? _t('Не больше 10 сторис за сутки.') : r === 'big' ? _t('Фото слишком большое.') : _t('Не получилось. Проверь интернет и попробуй ещё раз.'));
   };
   const TYPES: { k: StoryKind; ic: string; t: string; s: string }[] = [
-    { k: 'ach', ic: '🏆', t: _t('Достижение'), s: _t('серия, цель, намазы') },
-    { k: 'photo', ic: '📷', t: _t('Фото'), s: _t('мечеть, ифтар, дорога') },
-    { k: 'text', ic: '✍️', t: _t('Текст на узоре'), s: _t('мысль, напоминание') },
-    { k: 'ayah', ic: '📖', t: _t('Аят'), s: _t('с переводом') },
+    { k: 'ach', ic: 'achieve', t: _t('Достижение'), s: _t('серия, цель, намазы') },
+    { k: 'photo', ic: 'camera', t: _t('Фото'), s: _t('мечеть, ифтар, дорога') },
+    { k: 'text', ic: 'pattern-text', t: _t('Текст на узоре'), s: _t('мысль, напоминание') },
+    { k: 'ayah', ic: 'khatm', t: _t('Аят'), s: _t('с переводом') },
   ];
   return (
     <div className="st-new" role="dialog" aria-label={_t('Новая сторис')}>
@@ -332,7 +333,7 @@ export function StoryCreate({ state, today, api, me, names, onClose }: {
         <div className="st-types">
           {TYPES.map((x) => (
             <button key={x.k} type="button" aria-pressed={kind === x.k} onClick={() => { setKind(x.k); if (x.k === 'photo' && !ph) fileRef.current?.click(); }}>
-              <span>{x.ic}</span><b>{x.t}</b><small>{x.s}</small>
+              <span><Ic e={x.ic} /></span><b>{x.t}</b><small>{x.s}</small>
             </button>
           ))}
         </div>
@@ -344,12 +345,12 @@ export function StoryCreate({ state, today, api, me, names, onClose }: {
 
         <p className="st-lbl">{_t('Что получится')}</p>
         <div className="st-prev">
-          {kind === 'photo' && !ph ? <button type="button" className="st-pick" onClick={() => fileRef.current?.click()}>📷 {_t('Выбрать фото')}</button>
+          {kind === 'photo' && !ph ? <button type="button" className="st-pick" onClick={() => fileRef.current?.click()}><Ic e="camera" cls="lead" />{_t('Выбрать фото')}</button>
             : kind === 'ach' && !achs.length ? <p className="st-empty">{_t('Пока нечем поделиться. Отметь намазы или шаг цели, и здесь появятся готовые карточки.')}</p>
             : <StoryFace s={{ kind, body, card, thumb: null }} photo={ph?.url} />}
         </div>
         {kind === 'ach' && achs.length > 1 && (
-          <div className="st-chips">{achs.map((a, i) => <button key={i} type="button" aria-pressed={ai === i} onClick={() => setAi(i)}>{a.ic} {a.t}</button>)}</div>
+          <div className="st-chips">{achs.map((a, i) => <button key={i} type="button" aria-pressed={ai === i} onClick={() => setAi(i)}><Ic e={a.ic} cls="lead" />{a.t}</button>)}</div>
         )}
         {kind === 'ayah' && <button type="button" className="link-btn" onClick={() => setAy(ay + 1)}>↻ {_t('Другой аят')}</button>}
         {kind === 'photo' && ph && <button type="button" className="link-btn" onClick={() => fileRef.current?.click()}>↻ {_t('Другое фото')}</button>}
@@ -395,7 +396,7 @@ export function StoryNudge({ state, today, api, me, onCreate }: { state: AppStat
   const hide = (all: boolean) => { try { localStorage.setItem(all ? 'lm.stNudge.off' : key, '1'); } catch { /* */ } setHidden(true); };
   return (
     <div className="st-nudge">
-      <button type="button" className="st-nudge-go" onClick={onCreate}><span>{a.ic}</span><span><b>{a.t}</b><small>{_t('Поделиться с кругом?')}</small></span></button>
+      <button type="button" className="st-nudge-go" onClick={onCreate}><span><Ic e={a.ic} /></span><span><b>{a.t}</b><small>{_t('Поделиться с кругом?')}</small></span></button>
       <button type="button" className="st-nudge-x" aria-label={_t('Не сейчас')} onClick={() => hide(false)}>✕</button>
       <button type="button" className="link-btn st-nudge-off" onClick={() => hide(true)}>{_t('Не предлагать')}</button>
     </div>

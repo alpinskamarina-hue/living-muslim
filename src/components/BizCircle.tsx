@@ -7,6 +7,7 @@ import { ANCHOR_LABEL, type AppState } from '../types';
 import { activeLimit, slotsUsed } from '../store';
 import { BIZ_HABITS, BIZ_DEFAULT, addBizHabits, adviceFor, shuraTotals, type Advice, type Shura } from '../biz';
 import { _t, _tj } from '../i18n';
+import { Ic, IcT } from './LIcon';
 import { Advice as AdviceNote } from './Plan';
 
 const AFTER: Record<string, string> = { fajr: _t("После Фаджра"), dhuhr: _t("После Зухра"), asr: _t("После Асра"), maghrib: _t("После Магриба"), isha: _t("После Иши") };
@@ -69,16 +70,16 @@ export function AdviceBox({ members, me, to, k, w, nameOf, mine, give }: {
           </div>
         </div>
       ) : (
-        <button type="button" className="bz-chip" onClick={() => setOpen(true)}>💬 {my ? _t("Изменить совет") : _t("Дать совет")}</button>
+        <button type="button" className="bz-chip" onClick={() => setOpen(true)}><Ic e="chat" cls="lead" />{my ? _t("Изменить совет") : _t("Дать совет")}</button>
       ))}
     </div>
   );
 }
 
 const LINES: { k: 'ok' | 'stuck' | 'ask'; ic: string; label: string; ph: string }[] = [
-  { k: 'ok', ic: '✅', label: _t("Что получилось"), ph: _t("Например: запустил новую страницу заказов") },
-  { k: 'stuck', ic: '🧱', label: _t("Где застрял"), ph: _t("Например: не успеваю отвечать клиентам") },
-  { k: 'ask', ic: '🙏', label: _t("В чём нужен совет"), ph: _t("Например: брать помощника или автоматизировать?") },
+  { k: 'ok', ic: 'task', label: _t("Что получилось"), ph: _t("Например: запустил новую страницу заказов") },
+  { k: 'stuck', ic: 'warn', label: _t("Где застрял"), ph: _t("Например: не успеваю отвечать клиентам") },
+  { k: 'ask', ic: 'dua', label: _t("В чём нужен совет"), ph: _t("Например: брать помощника или автоматизировать?") },
 ];
 
 /** «Шура недели»: on Thursday each one writes three lines; the brothers answer with advice, dua or МашаАллах. */
@@ -96,14 +97,14 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
   const tot = shuraTotals(members, reacts, w);
   const save = () => { onShura({ w, ok: d.ok.trim(), stuck: d.stuck.trim(), ask: d.ask.trim(), at: new Date().toISOString() }); setEdit(false); };
 
-  const lines = (s: Shura) => LINES.filter((l) => s[l.k]).map((l) => <p key={l.k} className="bz-l"><i>{l.ic}</i><span>{s[l.k]}</span></p>);
+  const lines = (s: Shura) => LINES.filter((l) => s[l.k]).map((l) => <p key={l.k} className="bz-l"><i><Ic e={l.ic} /></i><span>{s[l.k]}</span></p>);
   const myReact = (to: string) => { const r = reacts[me]?.[`s:${to}`]; return r && r.day >= w ? r.e : ''; };
   const gotOf = (to: string) => Object.entries(reacts).filter(([f, map]) => f !== to && (map?.[`s:${to}`]?.day ?? '') >= w);
 
   return (
     <div className="bz-shura">
       <div className="bz-sh-h">
-        <b>{_t("🧭 Шура недели")}</b>
+        <b><IcT t={_t("🧭 Шура недели")} /></b>
         <small>{rangeLabel(w)} · {thu ? _t("сегодня четверг, время шуры") : dow < 5 ? _t("в четверг, через {0} {1}", 5 - dow, plural(5 - dow, _t("день"), _t("дня"), _t("дней"))) : _t("итог после Джумы")}</small>
       </div>
       <p className="bz-q">{_t("«И советуйся с ними о делах» (Коран, 3:159). Три строки, без цифр и сумм.")}</p>
@@ -111,7 +112,7 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
       {edit ? (
         <div className="bz-mine">
           {LINES.map((l) => (
-            <label key={l.k} className="bz-f"><span>{l.ic} {l.label}</span>
+            <label key={l.k} className="bz-f"><span><Ic e={l.ic} cls="lead" />{l.label}</span>
               <input value={d[l.k]} maxLength={120} placeholder={l.ph} onChange={(e) => setD({ ...d, [l.k]: e.target.value })} />
             </label>
           ))}
@@ -133,7 +134,7 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
         </div>
       ) : (
         <button type="button" className={`da-ask bz-write${thu ? ' now' : ''}`} onClick={() => setEdit(true)}>
-          {_t("✍️ Написать свои три строки")}
+          <IcT t={_t("✍️ Написать свои три строки")} />
           <small>{_t("Что получилось, где застрял, в чём нужен совет")}</small>
         </button>
       )}
@@ -146,8 +147,8 @@ export function ShuraCard({ members, reacts, me, today, nameOf, shura, onShura, 
             {lines(m.shura!)}
             <AdviceBox members={members} me={me} to={m.id} k="s" w={w} nameOf={nameOf} mine={adv} give={give} />
             <div className="bz-acts">
-              <button type="button" aria-pressed={r === '🤲'} onClick={() => react(`s:${m.id}`, '🤲')}>{_tj("🤲 Дуа{0}", r === '🤲' ? ' ✓' : '')}</button>
-              <button type="button" aria-pressed={r === '✨'} onClick={() => react(`s:${m.id}`, '✨')}>{_tj("✨ МашаАллах{0}", r === '✨' ? ' ✓' : '')}</button>
+              <button type="button" aria-pressed={r === '🤲'} onClick={() => react(`s:${m.id}`, '🤲')}><IcT t={_tj("🤲 Дуа{0}", r === '🤲' ? ' ✓' : '')} /></button>
+              <button type="button" aria-pressed={r === '✨'} onClick={() => react(`s:${m.id}`, '✨')}><IcT rx t={_tj("✨ МашаАллах{0}", r === '✨' ? ' ✓' : '')} /></button>
             </div>
           </div>
         );
