@@ -24,6 +24,8 @@ import { isCloud, nicksReady, forgetIdentity, signupName, cloudMe } from '../clo
 import { MyProfile, Ava, cachedProfile, refreshProfile } from './Nick';
 import { NikahPage } from './Nikah';
 import { SeekPage, IntentsFeed } from './Person';
+import { DmSettingsPage } from './Dm';
+import { useDmReady } from '../dm';
 import { usePersonReady, openPerson, myIntents, INTENTS, modeOf, type Intent } from '../person';
 import { usePathReady, buildPath } from '../path';
 import { AssistantSettings, IdeasPage, PingsPage } from './Assistant';
@@ -58,6 +60,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const nikahOn = useNikahReady();
   const pathOn = usePathReady();
   const personOn = usePersonReady();
+  const dmOn = useDmReady();
   const nk = useNikahMe(nikahOn);
   const nkTodo = nikahTodo(nk);
   const admin = useIsAdmin();
@@ -94,6 +97,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'data') return <Sub title={_t("Данные")} onBack={back} label={bl}><DataSettings state={state} replace={replace} /></Sub>;
   if (page === 'seek') return <Sub title={_t("Что я сейчас ищу")} onBack={back} label={bl}><SeekPage state={state} onNikah={() => go('nikah')} /></Sub>;
   if (page === 'seekers') return <IntentsFeed onBack={back} />;
+  if (page === 'dm') return <Sub title={_t("Личные сообщения")} onBack={back} label={bl}><DmSettingsPage /></Sub>;
   if (page === 'nikah') return <Sub title={_t("Никах")} onBack={back} label={bl}><NikahPage /></Sub>;
   if (page === 'admin') return <Sub title={_t("Для владельца")} onBack={back} label={bl}><AdminPage /></Sub>;
   if (page === 'guide') return <Sub title={_t("Как пользоваться")} onBack={back} label={bl}><GuidePage go={(t) => onGo?.(t)} /></Sub>;
@@ -167,7 +171,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
     { icon: '🌱', title: _t("Привычки"), sub: _t("активных: {0}", used), go: () => go('habits') },
     { icon: '🌳', title: _t("Мой сад"), sub: _tj("{0} {1}", gd.leaves, plural(gd.leaves, _t("лист"), _t("листа"), _t("листьев"))), go: () => go('garden') },
   ];
-  const people = isCloud && (nikahOn || personOn);
+  const people = isCloud && (nikahOn || personOn || dmOn);
 
   return (
     <div className="page">
@@ -233,6 +237,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
           <div className="pf-h">{_t("Люди")}</div>
           <div className="menu">
             {nikahOn && <Row icon="💍" title={_t("Никах")} n={nkTodo.props + nkTodo.wali.length} sub={nkTodo.props || nkTodo.wali.length ? _t("Новое: {0}", [nkTodo.props && `${nkTodo.props} ${plural(nkTodo.props, _t("предложение"), _t("предложения"), _t("предложений"))}`, nkTodo.wali.length && _t("просьба быть вали")].filter(Boolean).join(', ')) : nk?.mine ? _t("Моя анкета, предложения, шаги") : _t("Ищу пару через свои круги, с вали")} onClick={() => go('nikah')} />}
+            {dmOn && <Row icon="💬" title={_t("Личные сообщения")} sub={_t("Кто может мне писать, заблокированные")} onClick={() => go('dm')} />}
             {personOn && <Row icon="🧭" title={_t("Кто что ищет")} sub={_t("Чем можно помочь людям из твоих кругов")} onClick={() => go('seekers')} />}
           </div>
         </>
@@ -247,7 +252,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'settings' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

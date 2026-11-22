@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { meRpc, myCircles, currentCircle, kindOf, type CircleRef } from '../cloud';
+import { meRpc, myCircles, currentCircle, kindOf, isDm, type CircleRef } from '../cloud';
 import type { Member } from '../circle';
 import { readsReady, readStateOf, type Msg } from '../chat';
 import { Ticks, shortOf } from './CircleChat';
@@ -14,6 +14,8 @@ import { useStories, type StoryGroup } from '../stories';
 import { StoryStrip, StoryViewer, StoryCreate, StoryNudge } from './Stories';
 import { useOpenReady, openPending } from '../openCircles';
 import { FindCircle, CommonCircle } from './OpenCircles';
+import { useDmReady, useDms } from '../dm';
+import { DmTab } from './Dm';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 interface Row { last: Msg | null; who: Record<string, string>; rd: [number, number] | null }
@@ -64,15 +66,22 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
   state: AppState; me: string | null; unread: Record<string, number>; members: Member[]; names: Names; today: string;
   onOpen: (c: CircleRef) => void; onNew: () => void;
 }) {
-  const circles = myCircles();
-  const rows = useLastMessages(circles);
+  const all = myCircles();
+  const rows = useLastMessages(all);
+  // «Личные»: chats of two have their own tab (supabase/dm.sql)
+  const dmOn = useDmReady();
+  const dms = useDms(dmOn);
+  const dmSet = new Set([...dms.list.map((d) => d.code), ...all.filter((c) => isDm(c.code)).map((c) => c.code)]);
+  const circles = dmOn ? all.filter((c) => !dmSet.has(c.code)) : all;
+  const dmOnRef = dmOn;
+  const dmUnread = dmOn ? [...dmSet].filter((c) => (unread[c] ?? 0) > 0).length : 0;
   const [q, setQ] = useState('');
   const personOn = usePersonReady();
   const asks = useAsks(personOn);
   useEffect(() => {
     if (!asks.list.length) return;
     let go = false; try { go = !!sessionStorage.getItem('lm.asksGo'); sessionStorage.removeItem('lm.asksGo'); } catch { /* */ }
-    if (go) setTimeout(() => document.getElementById('lm-asks')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150);
+    if (go) { if (dmOnRef) setTab('dm'); setTimeout(() => document.getElementById('lm-asks')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150); }
   }, [asks.list.length]);
   const [seekers, setSeekers] = useState(false);
   const stories = useStories();
@@ -94,7 +103,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
 
   // open circles: «Мои · Найти круг» and the common circle (supabase/open-circles.sql)
   const openOn = useOpenReady();
-  const [tab, setTab] = useState<'mine' | 'find'>(() => { try { return sessionStorage.getItem('lm.findTab') === 'find' ? 'find' : 'mine'; } catch { return 'mine'; } });
+  const [tab, setTab] = useState<'mine' | 'dm' | 'find'>(() => { try { const t = sessionStorage.getItem('lm.findTab'); return t === 'find' || t === 'dm' ? t : 'mine'; } catch { return 'mine'; } });
   useEffect(() => { try { sessionStorage.setItem('lm.findTab', tab); } catch { /* */ } }, [tab]);
   const [common, setCommon] = useState(() => { try { const g = sessionStorage.getItem('lm.commonGo'); sessionStorage.removeItem('lm.commonGo'); return Boolean(g); } catch { return false; } });
   useEffect(() => { if (!common) return; history.pushState({ lmCommon: 1 }, ''); window.scrollTo(0, 0); const f = (e: Event) => { e.stopImmediatePropagation(); setCommon(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [common]);
@@ -107,13 +116,15 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
   return (
     <div className="page wa-list">
       <div className="wa-lt"><h1>{_t("Круги")}</h1></div>
-      {openOn && (
+      {(openOn || dmOn) && (
         <div className="oc-seg" role="tablist">
           <button type="button" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>{_t("Мои")}</button>
-          <button type="button" role="tab" aria-selected={tab === 'find'} onClick={() => setTab('find')}>{_t("Найти круг")}</button>
+          {dmOn && <button type="button" role="tab" aria-selected={tab === 'dm'} onClick={() => setTab('dm')}>{_t("Личные")}{dmUnread + asks.list.length > 0 && <em className="dm-segn">{dmUnread + asks.list.length}</em>}</button>}
+          {openOn && <button type="button" role="tab" aria-selected={tab === 'find'} onClick={() => setTab('find')}>{_t("Найти круг")}</button>}
         </div>
       )}
-      {openOn && tab === 'find' ? <FindCircle today={today} sex={sex} onCommon={() => setCommon(true)} /> : <>
+      {dmOn && tab === 'dm' ? <DmTab list={dms.list} rows={rows} unread={unread} me={me} circles={all} onOpen={onOpen} asks={personOn ? <AsksBox list={asks.list} reload={asks.reload} /> : null} />
+        : openOn && tab === 'find' ? <FindCircle today={today} sex={sex} onCommon={() => setCommon(true)} /> : <>
       {pend.filter((p) => circles.some((c) => c.code === p.code)).map((p) => (
         <button key={p.code} type="button" className="wa-asks oc-pend" onClick={() => { try { sessionStorage.setItem('lm.ocOwn', p.code); } catch { /* */ } onOpen(circles.find((c) => c.code === p.code)!); }}>
           {_tj("📩 {0} {1} в «{2}» ›", p.n, plural(p.n, _t("просится"), _t("просятся"), _t("просятся")), p.title)}
@@ -121,7 +132,8 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
       ))}
       <input className="wa-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("🔍 Поиск")} />
       <InviteInbox />
-      {personOn && <AsksBox list={asks.list} reload={asks.reload} />}
+      {personOn && !dmOn && <AsksBox list={asks.list} reload={asks.reload} />}
+      {dmOn && asks.list.length > 0 && <button type="button" className="wa-asks" onClick={() => setTab('dm')}>{_tj("📩 {0} просят написать тебе ›", asks.list.length)}</button>}
       {stories.ready && (
         <>
           <StoryStrip api={stories} me={me} members={members} names={names} today={today}
@@ -184,7 +196,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
         {!list.length && <p className="wa-none">{_t("Ничего не найдено")}</p>}
       </div>
       </>}
-      <button type="button" className="wa-fab" aria-label={_t("Новый круг")} onClick={onNew}>＋</button>
+      {tab !== 'dm' && <button type="button" className="wa-fab" aria-label={_t("Новый круг")} onClick={onNew}>＋</button>}
     </div>
   );
 }
