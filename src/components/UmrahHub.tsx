@@ -16,7 +16,7 @@ import { QiblaScreen } from './Mosques';
 import { MiqatView } from './Miqat';
 import { UmrahSavings } from './UmrahSavings';
 import { UmrahLive } from './UmrahLive';
-import { TalbiyaLearn, WalkPlan } from './UmrahPrep';
+import { TalbiyaLearn, TALBIYA_LINES, WalkPlan } from './UmrahPrep';
 import { LeaveForPrayer, LostCard, OnSiteSetup } from './UmrahOnSite';
 import { Diary, FortyDays, StoryButton, YearAgo } from './UmrahAfter';
 import { Badal, MadinahGuide, WhenToGo } from './UmrahExtra';
@@ -83,7 +83,10 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
 
   const [tab, setTab] = useState<UTab>(() => (start === 'group' ? 'people' : start === 'duas' ? 'duas' : start === 'heart' ? 'know' : start === 'rites' ? (onSite ? 'rite' : 'know') : onSite ? 'rite' : 'path'));
   const gProbe = useGuides(isCloud && tab === 'step');
-  const go = (t: UTab) => { setTab(t); window.scrollTo(0, 0); };
+  const go = (t: UTab) => { setTab(t); setKn(null); window.scrollTo(0, 0); };
+  // «Знания»: one screen of tiles; a tile opens its own page.
+  const [kn, setKn] = useState<KnPage | null>(() => (start === 'heart' ? 'heart' : start === 'rites' && !onSite ? 'rites' : null));
+  const openKn = (k: KnPage) => { setKn(k); window.scrollTo(0, 0); };
 
   // Light or dark like the whole app (auto follows the phone); the moon/sun switches it for the whole app.
   const dark = currentTheme() === 'dark';
@@ -236,6 +239,29 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     : stepNext ? { k: _tj("Следующий шаг · {0}", stepNext.t), t: stepNext.next, go: () => (model.now === 0 && mode === 'group' && chatCode ? setInviting('sheet') : openStep(model.now)) }
     : null;
 
+  // «Знания» tiles and the one «Продолжить» card.
+  const vCourse = UMRAH_VIDEOS.find((x) => x.lang === (u.vlang ?? 'ru')) ?? UMRAH_VIDEOS[0];
+  const vSeen = vCourse.lessons.filter((l) => (u.watched ?? []).includes(l.id)).length;
+  const vMin = Math.round(vCourse.lessons.reduce((a, l) => a + l.s, 0) / 60);
+  const tKnown = (u.talbiyaKnown ?? []).length, tAll = TALBIYA_LINES.length;
+  const heartN = PREP.filter((p) => HEART.includes(p.id) && u.prep.includes(p.id)).length;
+  const asksDone = asks.filter((a) => u.asked?.includes(a.key)).length;
+  const pc = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+  const knTiles: { k: KnPage | 'duas'; t: string; s: string; n: string; p: number }[] = [
+    { k: 'video', t: _t("Видеоурок"), s: _tj("{0} уроков · {1} мин", vCourse.lessons.length, vMin), n: `${vSeen}/${vCourse.lessons.length}`, p: pc(vSeen, vCourse.lessons.length) },
+    { k: 'rites', t: _t("Обряды по шагам"), s: _tj("Микат и {0} шагов", STEPS.length), n: String(STEPS.length), p: u.prep.includes('learn') ? 100 : 0 },
+    { k: 'talbiya', t: _t("Тальбия"), s: _tj("Наизусть, {0} строки", tAll), n: `${tKnown}/${tAll}`, p: pc(tKnown, tAll) },
+    { k: 'heart', t: _t("Сердце"), s: _t("Намерение, покаяние, долги"), n: `${heartN}/${HEART.length}`, p: pc(heartN, HEART.length) },
+    { k: 'duas', t: _t("Дуа"), s: asks.length ? _tj("Мои {0} · просят {1}", u.duas.length, asks.length) : _t("Мои и просьбы Круга"), n: asks.length ? `${asksDone}/${asks.length}` : String(u.duas.length), p: pc(asksDone, asks.length) },
+    { k: 'madinah', t: _t("Медина"), s: _t("Места и умра за другого"), n: '', p: 0 },
+  ];
+  const vNext = vCourse.lessons.findIndex((l) => !(u.watched ?? []).includes(l.id));
+  const knNext: { k: KnPage; t: string; s: string } | null =
+    vNext >= 0 ? { k: 'video', t: _tj("Урок {0}: {1}", vNext + 1, vCourse.lessons[vNext].t), s: _tj("Видеоурок · {0} · {1} из {2}", mins(vCourse.lessons[vNext].s), vSeen, vCourse.lessons.length) }
+    : heartDue ? { k: 'heart', t: heartDue.text, s: _tj("Сердце · {0} из {1}", heartN, HEART.length) }
+    : tKnown < tAll ? { k: 'talbiya', t: _t("Выучить тальбию наизусть"), s: _tj("Тальбия · {0} из {1} строк", tKnown, tAll) }
+    : { k: 'rites', t: _t("Повторить обряды по шагам"), s: _t("Всё остальное пройдено, машаАллах") };
+
   const NAV: { k: UTab | 'lost' | 'qibla'; l: string }[] = onSite
     ? [{ k: 'rite', l: _t("Обряд") }, { k: 'people', l: _t("Люди") }, { k: 'lost', l: 'SOS' }, { k: 'know', l: _t("Знания") }, { k: 'qibla', l: _t("Кибла") }]
     : [{ k: 'path', l: _t("Путь") }, { k: 'people', l: _t("Люди") }, { k: 'docs', l: _t("Документы") }, { k: 'know', l: _t("Знания") }];
@@ -280,7 +306,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
     );
   };
 
-  const ritesList = (
+  const ritesSteps = (
     <>
       <button type="button" className="q-row" onClick={() => setMiqat(true)}>
         <span className="q-n">✈</span>
@@ -292,12 +318,19 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
           <span className="q-t"><b>{s.title}</b><small>{s.short}{s.counter ? ` · ${u[s.counter]}/7` : ''}</small></span>
         </button>
       ))}
+    </>
+  );
+  const rulesList = <ul className="rules">{IHRAM_RULES.map((r) => <li key={r}>{r}</li>)}</ul>;
+  const madhab = <p className="tiny">{_t("Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.")}</p>;
+  const ritesList = (
+    <>
+      {ritesSteps}
       <Badal />
       <h3>{_t("Медина")}</h3>
       <MadinahGuide />
       <h3>{_t("Запреты в ихраме")}</h3>
-      <ul className="rules">{IHRAM_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
-      <p className="tiny">{_t("Гид описывает умру по сунне в общих чертах. Детали различаются по мазхабам: уточняй у своего имама или руководителя группы.")}</p>
+      {rulesList}
+      {madhab}
     </>
   );
 
@@ -412,8 +445,8 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
   return (
     <div className={`um-app${dark ? ' um-dk' : ''}${tab === 'people' && chatOn && peopleView === 'mine' ? ' um-chat' : ''}`}>
       <div className="um-top">
-        <button type="button" className="um-out" onClick={tab === 'step' ? () => go('path') : tab === 'duas' ? () => go('know') : onExit}>
-          ← {tab === 'step' ? _t("Путь") : tab === 'duas' ? _t("Знания") : backLabel === _t("Круг") ? _t("Круг") : 'Living Muslim'}
+        <button type="button" className="um-out" onClick={tab === 'step' ? () => go('path') : tab === 'duas' || (tab === 'know' && kn) ? () => go('know') : onExit}>
+          ← {tab === 'step' ? _t("Путь") : tab === 'duas' || (tab === 'know' && kn) ? _t("Знания") : backLabel === _t("Круг") ? _t("Круг") : 'Living Muslim'}
         </button>
         <span className="um-top-r">
           <button type="button" className="um-theme" onClick={flipTheme} aria-label={dark ? _t("Светлая тема") : _t("Тёмная тема")}>{dark ? '☀' : '🌙'}</button>
@@ -523,21 +556,45 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
         </div>
       )}
 
-      {tab === 'know' && (
+      {tab === 'know' && !kn && (
+        <div className="um-sec kn">
+          <div className="um-title"><h1>{_t("Знания")}</h1><small>{_t("Работает без интернета")}</small></div>
+          {knNext && (
+            <button type="button" className="kn-go" onClick={() => openKn(knNext.k)}>
+              <span className="kn-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" /></svg></span>
+              <span><em>{_t("Продолжить")}</em><b>{knNext.t}</b><small>{knNext.s}</small></span>
+            </button>
+          )}
+          <div className="kn-grid">
+            {knTiles.map((t) => (
+              <button key={t.k} type="button" className="kn-tile" onClick={() => (t.k === 'duas' ? go('duas') : openKn(t.k))}>
+                <span className="kn-top"><span className="kn-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{KN_ICONS[t.k]}</svg></span><small>{t.n}</small></span>
+                <b>{t.t}</b><small>{t.s}</small>
+                <i className="kn-bar"><em style={{ width: `${t.p}%` }} /></i>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="um-card" onClick={() => openKn('rules')}><span><b>{_t("Запреты в ихраме")}</b><br /><small className="kn-sub">{_tj("{0} правил, коротко", IHRAM_RULES.length)}</small></span><small>›</small></button>
+          {madhab}
+        </div>
+      )}
+
+      {tab === 'know' && kn && (
         <div className="um-sec">
-          <div className="um-title"><h1>{_t("Знания")}</h1><small>{_t("Знание и сердце. Работает без интернета")}</small></div>
-          <UmrahVideos u={u} update={update} />
-          <h3>{_t("Сердце")} <small>{model.heart}%</small></h3>
-          {PREP.filter((p) => HEART.includes(p.id)).map((p) => (
-            <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>{_tj("за {0} до поездки", p.when)}</small></span></label>
-          ))}
-          <TalbiyaLearn state={state} update={update} />
-          <button type="button" className="um-card um-duas" onClick={() => go('duas')}>
-            <b>🤲 {_t("Дуа")}</b>
-            <small>{_tj("мои: {0}{1} ›", u.duas.length, asks.length ? _t(" · просят из Круга: {0}", asks.length) : '')}</small>
-          </button>
-          <h3>{_t("Обряды по шагам")}</h3>
-          {ritesList}
+          {kn === 'video' && <><div className="um-title"><h1>{_t("Видеоурок")}</h1></div><UmrahVideos u={u} update={update} /></>}
+          {kn === 'rites' && <><div className="um-title"><h1>{_t("Обряды по шагам")}</h1></div>{ritesSteps}{madhab}</>}
+          {kn === 'talbiya' && <><div className="um-title"><h1>{_t("Тальбия")}</h1></div><TalbiyaLearn state={state} update={update} /></>}
+          {kn === 'heart' && (
+            <>
+              <div className="um-title"><h1>{_t("Сердце")}</h1><small>{_tj("Подготовка души к поездке · {0}%", model.heart)}</small></div>
+              {PREP.filter((p) => HEART.includes(p.id)).map((p) => (
+                <label key={p.id} className="chk"><input type="checkbox" checked={u.prep.includes(p.id)} onChange={() => togglePrep(p.id)} /><span><b>{p.text}</b><small>{_tj("за {0} до поездки", p.when)}</small></span></label>
+              ))}
+              <p className="tiny">{_t("Отмеченное здесь считается и в «Пути».")}</p>
+            </>
+          )}
+          {kn === 'madinah' && <><div className="um-title"><h1>{_t("Медина")}</h1></div><MadinahGuide /><h3>{_t("Умра за другого")}</h3><Badal /></>}
+          {kn === 'rules' && <><div className="um-title"><h1>{_t("Запреты в ихраме")}</h1></div>{rulesList}{madhab}</>}
         </div>
       )}
 
@@ -612,6 +669,18 @@ const UM_ICONS: Record<string, React.ReactNode> = {
 };
 
 type UTab = 'path' | 'step' | 'people' | 'docs' | 'know' | 'duas' | 'rite';
+type KnPage = 'video' | 'rites' | 'talbiya' | 'heart' | 'madinah' | 'rules';
+
+/** Line icons for the «Знания» tiles. */
+const KN_ICONS: Record<KnPage | 'duas', React.ReactNode> = {
+  video: <><rect x="3" y="5" width="18" height="14" rx="3" /><path d="M10 9l5 3-5 3z" /></>,
+  rites: <><path d="M4 8l8-4 8 4v10l-8 3-8-3z" /><path d="M4 8l8 3 8-3M12 11v10" /></>,
+  talbiya: <><path d="M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3z" /><path d="M5 11a7 7 0 0014 0M12 18v3" /></>,
+  heart: <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" />,
+  duas: <><path d="M8 21v-6l-3-4 1-6 2 5" /><path d="M16 21v-6l3-4-1-6-2 5" /></>,
+  madinah: <><path d="M3 21h18M5 21V11l7-5 7 5v10" /><path d="M10 21v-5h4v5" /></>,
+  rules: <path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />,
+};
 
 /** The tawaf or sa'i ring: 7 arcs, the done ones gold. */
 function Ring({ n }: { n: number }) {

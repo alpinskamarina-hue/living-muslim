@@ -71,9 +71,24 @@ async function signup(pg, name, email) {
     check((await S.locator('.mp-tl button.ok').count()) >= 2, 'gather and dates are ticked');
     // heart in Знания raises the one number, and Goals shows the same number
     await unav(S, 'Знания');
+    check(await S.locator('.kn-tile').count() === 6, 'Знания: 6 tiles');
+    const knH = await S.evaluate(() => document.documentElement.scrollHeight / innerHeight);
+    say('know height in screens', knH.toFixed(2)); check(knH < 1.5, 'Знания fits about one screen');
+    await shot(S, 'mp-4-know-tiles', true);
+    check(/Урок 1/.test(await S.locator('.kn-go').innerText()), 'Продолжить → lesson 1');
+    await S.locator('.kn-go').click(); await wait(500);
+    check(await S.locator('.um-vid').count() === 1, 'Продолжить opens the video page');
+    await S.locator('.um-out').click(); await wait(400);
+    check(await S.locator('.kn-tile').count() === 6, '← Знания goes back to the tiles');
+    await S.locator('.kn-tile', { hasText: 'Сердце' }).click(); await wait(400);
     await S.locator('label.chk').first().click(); await wait(300);
     await S.locator('label.chk').nth(1).click(); await wait(300);
     await shot(S, 'mp-4-know');
+    await S.locator('.um-out').click(); await wait(400);
+    check(/2\/7/.test(await S.locator('.kn-tile', { hasText: 'Сердце' }).innerText()), 'Сердце tile shows 2/7');
+    for (const t of ['Обряды по шагам', 'Тальбия', 'Медина']) { await S.locator('.kn-tile', { hasText: t }).click(); await wait(300); check((await S.locator('.um-title h1').first().innerText()).includes(t), `tile ${t} opens`); await S.locator('.um-out').click(); await wait(300); }
+    await S.locator('.um-card', { hasText: 'Запреты в ихраме' }).click(); await wait(300);
+    check(await S.locator('ul.rules li').count() >= 6, 'Запреты page'); await S.locator('.um-out').click(); await wait(300);
     await unav(S, 'Путь');
     const ring = (await S.locator('.mp-ring').innerText()).trim();
     const stored = await S.evaluate(() => JSON.parse(localStorage.getItem('qadam.v1') || '{}').umrah?.ready);

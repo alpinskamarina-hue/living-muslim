@@ -36,7 +36,7 @@ export function WalkPlan({ state, update, today, left, compact }: Props) {
 }
 
 // The talbiya split into its four phrases, learned one by one with a self-check.
-const LINES = (() => {
+export const TALBIYA_LINES = (() => {
   const d = STEPS.find((s) => s.id === 'talbiya')?.dua?.[0];
   if (!d) return [];
   const ar = d.ar.split('، ');
@@ -52,9 +52,9 @@ export function TalbiyaLearn({ state, update }: Omit<Props, 'today' | 'left'>) {
   const toggle = (i: number) => update((s) => { const k = umrahOf(s).talbiyaKnown ?? []; return patch(s, { talbiyaKnown: k.includes(i) ? k.filter((x) => x !== i) : [...k, i] }); });
   return (
     <div className="pp-card">
-      <div className="pp-top"><b>{_t("Тальбия наизусть")}</b><small>{_tj("{0} из {1} строк", known.length, LINES.length)}</small></div>
-      <div className="pp-dots">{LINES.map((_, i) => <i key={i} data-on={known.includes(i)} />)}</div>
-      {LINES.map((l, i) => {
+      <div className="pp-top"><b>{_t("Тальбия наизусть")}</b><small>{_tj("{0} из {1} строк", known.length, TALBIYA_LINES.length)}</small></div>
+      <div className="pp-dots">{TALBIYA_LINES.map((_, i) => <i key={i} data-on={known.includes(i)} />)}</div>
+      {TALBIYA_LINES.map((l, i) => {
         const hide = test && !shown.includes(i);
         return (
           <div key={i} className={`pp-line${known.includes(i) ? ' known' : ''}`}>
