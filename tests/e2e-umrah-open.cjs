@@ -59,6 +59,12 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     const tripSeg = A.locator('.um-gseg button', { hasText: /Поездка/ });
     if (await tripSeg.count()) { await tripSeg.first().click(); await wait(800); }
     check(await A.locator('.pg-strip').count() === 1, 'Люди: one strip on top');
+    if (await A.locator('.um-app .cc-compose').count()) {
+      await wait(700);
+      const fab = await A.locator('.ai-fab').boundingBox(); const cc = await A.locator('.um-app .cc-compose').boundingBox();
+      check(!!fab && !!cc && fab.y + fab.height <= cc.y + 1 && fab.x + fab.width > cc.x + cc.width - 80, `assistant in Люди chat sits above the message box on the right: ${JSON.stringify({ fab, cc })}`);
+      await shot(A, 'pg-ai-fab');
+    }
     check(await A.locator('.um-sec.um-group > .uo-open').count() === 0, 'no big «Ищем людей» card on the screen');
     await A.locator('.pg-ppl').click(); await wait(500);
     check(await A.locator('.pg-sheet .pg-row').count() >= 1, `group sheet lists people: ${await txt(A, '.pg-sheet')}`);
