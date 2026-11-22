@@ -270,7 +270,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   if (adding) return <CloudSetup onCancel={() => setAdding(false)} />;
   if (inviting && cur) return <InviteByNick code={cur.code} onBack={() => { setInviting(false); window.scrollTo(0, 0); }} />;
   if (listOn && isCloud && myCircles().length && !kicked)
-    return <CircleList me={me} unread={chatUnread ?? {}} members={members} names={names} today={today} onNew={() => setAdding(true)}
+    return <CircleList state={state} me={me} unread={chatUnread ?? {}} members={members} names={names} today={today} onNew={() => setAdding(true)}
       onOpen={(c) => {
         if (c.code === cur?.code) { setListOn(false); pushNav(); window.scrollTo(0, document.documentElement.scrollHeight); return; }
         try { sessionStorage.setItem('lm.chat', c.code); } catch { /* */ }

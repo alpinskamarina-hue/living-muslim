@@ -7,6 +7,9 @@ import { _t, LOC } from '../i18n';
 import { openPerson, usePersonReady, useAsks } from '../person';
 import { AsksBox, IntentsFeed } from './Person';
 import { InviteInbox } from './Nick';
+import type { AppState } from '../types';
+import { useStories, type StoryGroup } from '../stories';
+import { StoryStrip, StoryViewer, StoryCreate, StoryNudge } from './Stories';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 interface Row { last: Msg | null; who: Record<string, string>; rd: [number, number] | null }
@@ -53,8 +56,8 @@ function useLastMessages(circles: CircleRef[]) {
   return rows;
 }
 
-export function CircleList({ me, unread, members, names, today, onOpen, onNew }: {
-  me: string | null; unread: Record<string, number>; members: Member[]; names: Names; today: string;
+export function CircleList({ state, me, unread, members, names, today, onOpen, onNew }: {
+  state: AppState; me: string | null; unread: Record<string, number>; members: Member[]; names: Names; today: string;
   onOpen: (c: CircleRef) => void; onNew: () => void;
 }) {
   const circles = myCircles();
@@ -68,6 +71,9 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
     if (go) setTimeout(() => document.getElementById('lm-asks')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150);
   }, [asks.list.length]);
   const [seekers, setSeekers] = useState(false);
+  const stories = useStories();
+  const [watch, setWatch] = useState<{ groups: StoryGroup[]; i: number } | null>(null);
+  const [making, setMaking] = useState(false);
   useEffect(() => { if (!seekers) return; history.pushState({ lmSeek: 1 }, ''); const f = (e: Event) => { e.stopImmediatePropagation(); setSeekers(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [seekers]);
   const [f, setF] = useState<'all' | 'unread' | string>('all');
   const cur = currentCircle();
@@ -89,7 +95,16 @@ export function CircleList({ me, unread, members, names, today, onOpen, onNew }:
       <input className="wa-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("🔍 Поиск")} />
       <InviteInbox />
       {personOn && <AsksBox list={asks.list} reload={asks.reload} />}
-      {people.length > 1 && (
+      {stories.ready && (
+        <>
+          <StoryStrip api={stories} me={me} members={members} names={names} today={today}
+            onPerson={(id) => (personOn ? openPerson(id) : cur && onOpen(cur))} onCreate={() => setMaking(true)} onView={(groups, i) => setWatch({ groups, i })} />
+          <StoryNudge state={state} today={today} api={stories} me={me} onCreate={() => setMaking(true)} />
+        </>
+      )}
+      {watch && <StoryViewer groups={watch.groups} start={watch.i} api={stories} me={me} onClose={() => setWatch(null)} onCreate={() => { history.back(); setTimeout(() => setMaking(true), 50); }} />}
+      {making && <StoryCreate state={state} today={today} api={stories} me={me} names={names} onClose={() => setMaking(false)} />}
+      {!stories.ready && people.length > 1 && (
         <div className="wa-status" aria-label={_t("Как прошёл день в «{0}»", cur?.title || _t("Круг"))}>
           {people.map((m) => {
             const fr = ringOf(m);
