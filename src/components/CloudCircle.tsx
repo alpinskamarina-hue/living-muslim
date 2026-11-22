@@ -77,7 +77,7 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
         {invited ? (
           <>
             <div className="cl-inv">
-              <i>{kindOf(meta.kind)?.ic ?? '👥'}</i>
+              <i><Ic e={kindOf(meta.kind)?.ic ?? '👥'} /></i>
               <span><b>{meta.title || _t("Круг друзей")}</b><small>{_tj("{0} · код {1}", kindOf(meta.kind)?.ru ?? _t("Круг"), code)}</small></span>
             </div>
             {full ? <ProGate k="circles" have={mineCodes.length} /> : <>

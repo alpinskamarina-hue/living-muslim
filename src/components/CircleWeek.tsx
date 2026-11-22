@@ -1,5 +1,5 @@
 import { shareCard } from '../share';
-import { Ic } from './LIcon';
+import { Ic, IcT } from './LIcon';
 import { useState, type ReactNode } from 'react';
 import type { Member, Reacts } from '../circle';
 import { plural } from '../dates';
@@ -47,7 +47,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
     if (!edit) {
       return (
         <button type="button" className="cg-empty" onClick={() => { setK(first); setN(suggest(first)); setEdit(true); }}>
-          <span aria-hidden="true">🎯</span>
+          <span aria-hidden="true"><Ic e="goal" /></span>
           <span><b>{_t("Поставьте цель круга на неделю")}</b><small>{_tj("Например, {0}  {1} на всех{2}. Общая шкала, без рейтинга.", suggest(first), unit(first, suggest(first)), biz ? _t(", а намазы вовремя считаются рядом") : '')}</small></span>
           <i aria-hidden="true">›</i>
         </button>
@@ -55,7 +55,7 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
     }
     return (
       <div className="cg-card cg-edit">
-        <b className="cg-h">{_t("🎯 Цель круга до пятницы")}</b>
+        <b className="cg-h"><IcT t={_t("🎯 Цель круга до пятницы")} /></b>
         <div className="cg-kinds">
           {kinds.map((x) => (
             <button key={x} type="button" aria-pressed={k === x} onClick={() => { setK(x); setN(suggest(x)); }}>{GOAL_KINDS[x].ic} {GOAL_KINDS[x].label}</button>
@@ -162,15 +162,15 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
         <div><b>{t.f}</b><small>{_t("Фаджр вовремя")}</small></div>
         <div><b>{t.h}</b><small>{_t("привычек")}</small></div>
       </div>
-      {goal && <p className="ws-line">🎯 {gv >= goal.n ? <>{_tj("Цель «{0}  {1}» ", goal.n, unit(goal.k as GoalKind, goal.n))}<b>{_t("выполнена")}</b>{_t(", машаАллах")}</> : <>{_tj("Цель: {0} из {1}  {2}", gv, goal.n, unit(goal.k as GoalKind, goal.n))}</>}</p>}
-      {biz && (t.b ?? 0) > 0 && <p className="ws-line">{_t("💼 Деловых отметок у намазов: ")}<b>{t.b}</b></p>}
+      {goal && <p className="ws-line"><Ic e="goal" cls="lead" />{gv >= goal.n ? <>{_tj("Цель «{0}  {1}» ", goal.n, unit(goal.k as GoalKind, goal.n))}<b>{_t("выполнена")}</b>{_t(", машаАллах")}</> : <>{_tj("Цель: {0} из {1}  {2}", gv, goal.n, unit(goal.k as GoalKind, goal.n))}</>}</p>}
+      {biz && (t.b ?? 0) > 0 && <p className="ws-line"><IcT t={_t("💼 Деловых отметок у намазов: ")} /><b>{t.b}</b></p>}
       {shLine && <p className="ws-line">{shLine}</p>}
       {crLine && <p className="ws-line">{crLine}</p>}
-      {sup.length > 0 && <p className="ws-line">{_t("🤲 Больше всех поддерживали: ")}<b>{sup.map((x) => nameOf(x.id)).join(', ')}</b></p>}
+      {sup.length > 0 && <p className="ws-line"><IcT t={_t("🤲 Больше всех поддерживали: ")} /><b>{sup.map((x) => nameOf(x.id)).join(', ')}</b></p>}
       <p className="ws-line ws-soft">{_tj("В деле было {0} из {1}. Общий итог, без рейтинга по поклонению.", t.people, members.length)}</p>
       <div className="ws-btns">
         <button type="button" className="pri-btn ws-share" onClick={share}>{sent ? _t("✓ Отправлено") : _t("Отправить итог текстом")}</button>
-        <button type="button" className="ws-pic" onClick={sharePic}>{pic || _t("🖼 Картинкой")}</button>
+        <button type="button" className="ws-pic" onClick={sharePic}>{pic || <IcT t={_t("🖼 Картинкой")} />}</button>
       </div>
     </div>
   );
@@ -197,10 +197,10 @@ export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, reac
         const n = askAnswers(reacts, m.id, a).length;
         return (
           <div key={m.id} className="da-card">
-            <p>🤲 <b>{nameOf(m.id)}</b>{_tj(" просит дуа{0}{1}", biz ? _t(" за дело") : '', a.d === today ? '' : ` · ${daysBetween(a.d, today) === 1 ? _t("вчера") : _t("2 дня назад")}`)}</p>
+            <p><Ic e="dua" cls="lead" /><b>{nameOf(m.id)}</b>{_tj(" просит дуа{0}{1}", biz ? _t(" за дело") : '', a.d === today ? '' : ` · ${daysBetween(a.d, today) === 1 ? _t("вчера") : _t("2 дня назад")}`)}</p>
             <q>{a.t}</q>
             <div className="da-row">
-              <button type="button" className={done ? 'on' : ''} onClick={() => react(`a:${m.id}`)}>{done ? _t("✓ Ты сделал дуа") : _t("🤲 Сделал дуа")}</button>
+              <button type="button" className={done ? 'on' : ''} onClick={() => react(`a:${m.id}`)}>{done ? _t("✓ Ты сделал дуа") : <IcT t={_t("🤲 Сделал дуа")} />}</button>
               {n > 0 && <small>{n} {plural(n, _t("человек уже сделал"), _t("человека уже сделали"), _t("человек уже сделали"))}</small>}
             </div>
             {extra?.(m.id, a)}
@@ -213,7 +213,7 @@ export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, reac
           <p>{_t("Твоя просьба о дуа ")}<small>{_tj("видна кругу {0}", [_t("до конца дня"), _t("до завтра"), _t("до послезавтра")][Math.min(2, daysBetween(today, addDays(myAsk.d, ASK_DAYS - 1)))])}</small></p>
           <q>{myAsk.t}</q>
           {extra?.(me, myAsk)}
-          <p className="da-got">{got.length ? <>{_t("🤲 Дуа за тебя: ")}<b>{got.map(nameOf).join(', ')}</b>{_t(". Аамин.")}</> : _t("Пока никто не ответил. Круг увидит просьбу на «Сегодня».")}</p>
+          <p className="da-got">{got.length ? <><IcT t={_t("🤲 Дуа за тебя: ")} /><b>{got.map(nameOf).join(', ')}</b>{_t(". Аамин.")}</> : _t("Пока никто не ответил. Круг увидит просьбу на «Сегодня».")}</p>
           <button type="button" className="link-btn" onClick={() => onAsk(null)}>{_t("Снять просьбу")}</button>
         </div>
       ) : open ? (
@@ -227,7 +227,7 @@ export function DuaAsks({ members, reacts, me, today, nameOf, myAsk, onAsk, reac
           </div>
         </div>
       ) : (
-        <button type="button" className="da-ask" onClick={() => setOpen(true)}>{biz ? _t("🤲 Попросить дуа за сделку или дело") : _t("🤲 Попросить круг о дуа")}</button>
+        <button type="button" className="da-ask" onClick={() => setOpen(true)}><IcT t={biz ? _t("🤲 Попросить дуа за сделку или дело") : _t("🤲 Попросить круг о дуа")} /></button>
       )}
     </div>
   );
@@ -240,7 +240,7 @@ export function StreakLine({ members, today }: { members: Member[]; today: strin
   if (s.n < 1 && s.got === 0) return null;
   return (
     <p className="cs-line">
-      <span aria-hidden="true">🔥</span>
+      <span aria-hidden="true"><Ic e="streak" /></span>
       {s.n >= 1 ? <><b>{_tj("Серия круга: {0}  {1}", s.n, plural(s.n, _t("день"), _t("дня"), _t("дней")))}</b>{_t(" подряд")}</> : <b>{_t("Начните серию круга сегодня")}</b>}
       <small>{s.todayOk ? _t(" · сегодня засчитано") : _t(" · сегодня {0} из {1} нужных, чтобы день засчитался", s.got, s.need)}</small>
     </p>
@@ -281,7 +281,7 @@ export function Challenges({ members, me, today, nameOf, ch }: {
         if (!c.ok) {
           return c.to === me ? (
             <div key={c.id} className="chl-card inv">
-              <p>⚔️ <b>{nameOf(c.from)}</b>{_t(" бросает тебе вызов")}</p>
+              <p><Ic e="challenge" cls="lead" /><b>{nameOf(c.from)}</b>{_t(" бросает тебе вызов")}</p>
               <b className="chl-t">{K.ic} {K.label}</b>
               <small>{_tj("«Соревнуйтесь в благих делах» (Коран, 2:148). Считается с {0} по {1}.", dShort(c.start), dShort(addDays(c.start, CH_DAYS - 1)))}</small>
               <div className="da-row">
@@ -291,7 +291,7 @@ export function Challenges({ members, me, today, nameOf, ch }: {
             </div>
           ) : (
             <div key={c.id} className="chl-card">
-              <p>{_t("⚔️ Ты бросил вызов ")}<b>{nameOf(c.to)}</b>: {K.label}</p>
+              <p><IcT t={_t("⚔️ Ты бросил вызов ")} /><b>{nameOf(c.to)}</b>: {K.label}</p>
               <small>{_t("Ждём, когда примет. ")}<button type="button" className="link-btn" onClick={() => ch.remove(c.id)}>{_t("Отменить")}</button></small>
             </div>
           );
@@ -312,7 +312,7 @@ export function Challenges({ members, me, today, nameOf, ch }: {
         const both = [c.from, c.to].every((id) => days.every((d) => chHit(byId(id), c.k, d)));
         return (
           <div key={c.id} className="chl-card">
-            <p>⚔️ <b>{nameOf(c.from)}</b>{_t(" и ")}<b>{nameOf(c.to)}</b> · {K.ic} {K.short}</p>
+            <p><Ic e="challenge" cls="lead" /><b>{nameOf(c.from)}</b>{_t(" и ")}<b>{nameOf(c.to)}</b> · {K.ic} {K.short}</p>
             {row(c.from)}{row(c.to)}
             <small>{today > end ? (both ? _t("Оба прошли все 7 дней, машаАллах!") : _t("Вызов закончился. Каждый день, что был, засчитан у Аллаха, ин ша Аллах.")) : _t("День {0} из {1}", Math.min(CH_DAYS, daysBetween(c.start, today) + 1), CH_DAYS)}</small>
           </div>
@@ -334,7 +334,7 @@ export function Challenges({ members, me, today, nameOf, ch }: {
           </div>
         </div>
       ) : others.some((m) => !busy(m.id)) && (
-        <button type="button" className="da-ask" onClick={() => setOpen(true)}>{_t("⚔️ Бросить вызов: 7 дней вместе")}</button>
+        <button type="button" className="da-ask" onClick={() => setOpen(true)}><IcT t={_t("⚔️ Бросить вызов: 7 дней вместе")} /></button>
       )}
     </div>
   );
@@ -352,14 +352,14 @@ export function AmirCard({ members, me, today, nameOf, amir, onAmir }: {
   if (!cur) {
     return (
       <button type="button" className="da-ask am-ask" onClick={() => { onAmir({ w, at: new Date().toISOString(), note: '' }); setEdit(true); }}>
-        {_t("🧭 Стать амиром круга на эту неделю")}
+        <Ic e="amir" cls="lead" />{_t("Стать амиром круга на эту неделю")}
         <small>{_t("Напоминаешь, поддерживаешь, пишешь короткое слово на неделю")}</small>
       </button>
     );
   }
   return (
     <div className="am-card">
-      <p>{_t("🧭 Амир недели: ")}<b>{iAm ? _t("ты") : nameOf(cur.id)}</b> <small>{_t("до пятницы")}</small></p>
+      <p><Ic e="amir" cls="lead" />{_t("Амир недели")}: <b>{iAm ? _t("ты") : nameOf(cur.id)}</b> <small>{_t("до пятницы")}</small></p>
       {iAm && edit ? (
         <>
           <textarea value={note} maxLength={160} rows={2} autoFocus placeholder={_t("Слово на неделю: напоминание, хадис, цель. Например: братья, в эту неделю держимся за Фаджр")} onChange={(e) => setNote(e.target.value)} />
