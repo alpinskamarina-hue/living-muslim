@@ -8,7 +8,7 @@ import type { GoTo } from '../guide';
 import { dayKey } from '../dates';
 import { type AiConfig, type AiMsg, addDuePings, aiName, ask, fold, getAiConfig, getMemory, getUnread, loadChat, onMemory, onUnread, saveChat, setAiConfig, setMemory, setUnread } from '../assistant';
 import { authMe } from '../auth';
-import { _t, LANG } from '../i18n';
+import { _t, _tj, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
 import { useOnb } from './Onboard';
 import { AI_COLORS, AI_FINISHES, AI_PEOPLE, AI_STYLES, Ai3D, AiFace, aiDefaultStyle, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
@@ -24,7 +24,14 @@ interface Props {
   apply?: (s: AppState) => void;
   /** Opens a screen of the app (the chat closes). */
   onGo?: (t: GoTo) => void;
+  /** Opened from the umrah section: umrah questions first, the trip in the summary. */
+  topic?: 'umrah';
+  /** A question to send as soon as the chat opens («Спросить помощника про таваф»). */
+  question?: string;
 }
+
+/** Opens the assistant from anywhere, optionally with a question already sent. */
+export function askAssistant(q?: string) { window.dispatchEvent(new CustomEvent('lm:ai', { detail: q ?? '' })); }
 
 const ERR: Record<string, () => string> = {
   limit: () => _t("На сегодня вопросы закончились. Завтра можно продолжить."),
@@ -35,7 +42,7 @@ const ERR: Record<string, () => string> = {
 };
 
 /** Full-screen chat with the assistant. The conversation stays on this device. */
-export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Props) {
+export function Assistant({ state, onClose, onSignIn, context, apply, onGo, topic, question }: Props) {
   const s = state.settings;
   const name = aiName(s);
   const [msgs, setMsgs] = useState<AiMsg[]>(loadChat);
@@ -196,7 +203,13 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
   };
 
   const clear = () => { if (s.aiMemory !== false) void fold(msgs, true); setMsgs([]); setErr(''); };
-  const starters = [_t("Что у меня сегодня?"), _t("Как идут мои цели?"), _t("Что ты умеешь?"), _t("Как не пропускать Фаджр?")];
+  const um = topic === 'umrah';
+  const starters = um
+    ? [_t("Что взять с собой на умру?"), _t("Как войти в ихрам в самолёте?"), _t("Что если нарушил запрет ихрама?"), _t("Дуа для тавафа"), _t("Что мне сделать для умры на этой неделе?")]
+    : [_t("Что у меня сегодня?"), _t("Как идут мои цели?"), _t("Что ты умеешь?"), _t("Как не пропускать Фаджр?")];
+  // A question from a rite page goes out at once (only signed in: otherwise the hello asks to sign in).
+  const asked = useRef(false);
+  useEffect(() => { if (question && signed && !asked.current) { asked.current = true; void send(question); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={`sess light-sess ai-sess ai-glow-${s.aiGlow || 'ring'}`}>
@@ -204,7 +217,7 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
       <div className="sess-top">
         <button type="button" className="icon-btn" onClick={onClose} aria-label={_t("Закрыть")}>✕</button>
         <AiFace s={s} size={40} className="ai-head-face" />
-        <div className="ai-head"><b>{name}</b><small>{_t("Ответы ИИ, не фетва. Важное уточняй у имама")}</small></div>
+        <div className="ai-head"><b>{um ? _tj("{0} · Умра", name) : name}</b><small>{_t("Ответы ИИ, не фетва. Важное уточняй у имама")}</small></div>
         {msgs.length > 0 && <button type="button" className="ai-clear" onClick={clear}>{_t("Очистить")}</button>}
       </div>
 
@@ -256,6 +269,7 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo }: Pr
         <div ref={end} />
       </div>
 
+      {signed && um && msgs.length > 0 && !busy && <div className="ai-chips ai-um-chips">{starters.slice(0, 4).map((q) => <button key={q} type="button" onClick={() => send(q)}>{q}</button>)}</div>}
       {signed ? (
         <form className={`ai-input${rec ? ' ai-rec' : ''}`} onSubmit={(e) => { e.preventDefault(); if (rec) stopMic(); else send(text, voiced); }}>
           {rec && <button type="button" className="ai-mic-x" onClick={cancelMic} aria-label={_t("Отменить запись")}>✕</button>}

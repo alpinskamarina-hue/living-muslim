@@ -5,6 +5,18 @@ import { uid } from '../store';
 import { UMRAH_VIDEOS, embed } from '../umrah/videos';
 import { SaeeScene, TawafScene } from './LapScene';
 import { _t, _tj } from '../i18n';
+import { AiFace } from '../aiLook';
+import { askAssistant } from './Assistant';
+
+/** «Спросить помощника про …»: opens the assistant with this question already sent. Hidden when the person turned the assistant off. */
+export function AskAi({ state, label, q }: { state: AppState; label: string; q: string }) {
+  if (state.settings.aiFab === false) return null;
+  return (
+    <button type="button" className="um-ask-ai" onClick={() => askAssistant(q)}>
+      <AiFace s={state.settings} size={30} /><span>{label}</span>
+    </button>
+  );
+}
 
 interface Props {
   state: AppState;
@@ -207,6 +219,7 @@ export function StepView({ step, state, update, onBack, onNext, asks = [] }: { s
 
         {step.counter && <StepVideo stepId={step.id} lang={u.vlang ?? 'ru'} />}
         <div className="md">{step.body.map((b) => <p key={b}>{b}</p>)}</div>
+        <AskAi state={state} label={_tj("Спросить помощника про «{0}»", step.title)} q={_tj("Расскажи подробнее про шаг умры «{0}»: как правильно, частые ошибки и что делать, если что-то пошло не так.", step.title)} />
         {step.dua?.map((d) => (
           <div key={d.ar} className="h-card dua">
             <p className="ar-dua" lang="ar" dir="rtl">{d.ar}</p>

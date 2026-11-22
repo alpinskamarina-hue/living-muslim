@@ -135,6 +135,11 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   if (sd) { const m = today.slice(0, 7); const n = Object.entries(sd).filter(([d, x]) => d.startsWith(m) && (x.money || x.deed)).length; if (n) L.push(`Sadaqa: ${n} days this month${sd[today] ? ', given today' : ''}.`); }
   if (s.trip && s.trip.to >= today) L.push(`Travelling (safar): ${s.trip.place}, from ${s.trip.from}${s.trip.open ? (s.trip.open === 'long' ? ', staying long (moving/study/work)' : ', return date unknown') : ` to ${s.trip.to}`}.`);
   const u = s.umrah;
+  if (u?.mode || u?.from) {
+    const left = u.from ? Math.round((Date.parse(u.from) - Date.parse(today)) / 86400000) : null;
+    const how: Record<string, string> = { group: 'with a group', solo: 'alone', agency: 'with an agency', dream: 'only dreaming for now, no dates' };
+    L.push(`Umrah plan: ${u.mode ? how[u.mode] ?? u.mode : 'not chosen'}${left !== null ? (left > 0 ? `, ${left} days until departure` : left === 0 ? ', departs today' : ', already there or back') : ''}${typeof u.ready === 'number' ? `, readiness ${u.ready}%` : ''}${u.ihram ? ', in ihram now' : ''}.`);
+  }
   if (u?.from) L.push(`Umrah trip: ${u.from}${u.to ? ` to ${u.to}` : ''}; preparation items done: ${u.prep?.length ?? 0}; duas on the list: ${u.duas?.length ?? 0}; tawaf counter ${u.tawaf ?? 0}/7, sa'i ${u.saee ?? 0}/7.`);
 
   // Circles

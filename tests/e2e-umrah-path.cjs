@@ -88,7 +88,15 @@ async function signup(pg, name, email) {
     check(/2\/7/.test(await S.locator('.kn-tile', { hasText: 'Сердце' }).innerText()), 'Сердце tile shows 2/7');
     for (const t of ['Обряды по шагам', 'Тальбия', 'Медина']) { await S.locator('.kn-tile', { hasText: t }).click(); await wait(300); check((await S.locator('.um-title h1').first().innerText()).includes(t), `tile ${t} opens`); await S.locator('.um-out').click(); await wait(300); }
     await S.locator('.um-card', { hasText: 'Запреты в ихраме' }).click(); await wait(300);
-    check(await S.locator('ul.rules li').count() >= 6, 'Запреты page'); await S.locator('.um-out').click(); await wait(300);
+    check(await S.locator('ul.rules li').count() >= 6, 'Запреты page');
+    // the assistant: round button bottom right inside umrah, opens as «· Умра»; «Спросить помощника» sends the question
+    check(await S.locator('.ai-fab').isVisible(), 'assistant button is shown in umrah');
+    await S.locator('.um-ask-ai').click(); await wait(800);
+    check(/Умра/.test(await S.locator('.ai-head b').innerText()), 'assistant opens as «· Умра»');
+    check(/нарушил запрет ихрама/.test(await S.locator('.ai-list').innerText()), 'the rules question is sent');
+    await shot(S, 'mp-ai-umrah');
+    await S.locator('.sess-top .icon-btn').first().click(); await wait(400);
+    await S.locator('.um-out').click(); await wait(300);
     await unav(S, 'Путь');
     const ring = (await S.locator('.mp-ring').innerText()).trim();
     const stored = await S.evaluate(() => JSON.parse(localStorage.getItem('qadam.v1') || '{}').umrah?.ready);
