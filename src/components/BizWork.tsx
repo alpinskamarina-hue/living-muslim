@@ -8,7 +8,7 @@ import { anchorLabel, dueLabel, eventAt, isLate, jumuahClash, type BizApi, type 
 import { _t, _tj, LOC } from '../i18n';
 
 type Names = Record<string, { name: string } | undefined>;
-export type BizTab = 'chat' | 'tasks' | 'cal' | 'plan';
+export type BizTab = 'chat' | 'path' | 'tasks' | 'cal' | 'plan';
 /** What a sheet starts with: a new task/meeting/decision, maybe from a chat message. */
 export type BizDraft =
   | { k: 'task'; id?: number; title: string; owner?: string | null; due?: string | null; due_p?: Anchor | null; status?: TaskStatus; msg?: number | null }
@@ -20,10 +20,12 @@ const hm = (ms: number) => new Date(ms).toLocaleTimeString(LOC, { hour: '2-digit
 const PR_SHORT: Record<Anchor, () => string> = { fajr: () => _t("Фаджр"), dhuhr: () => _t("Зухр"), asr: () => _t("Аср"), maghrib: () => _t("Магриб"), isha: () => _t("Иша") };
 const AFTER_P: Record<Anchor, () => string> = { fajr: () => _t("после Фаджра"), dhuhr: () => _t("после Зухра"), asr: () => _t("после Асра"), maghrib: () => _t("после Магриба"), isha: () => _t("после Иши") };
 
-export function BizTabs({ tab, onTab, counts }: { tab: BizTab; onTab: (t: BizTab) => void; counts: { tasks: number } }) {
-  const T: [BizTab, string][] = [['chat', _t("Чат")], ['tasks', _t("Дела")], ['cal', _t("Календарь")], ['plan', _t("План")]];
+export function BizTabs({ tab, onTab, counts, startup }: { tab: BizTab; onTab: (t: BizTab) => void; counts: { tasks: number }; startup?: boolean }) {
+  const T: [BizTab, string][] = startup
+    ? [['chat', _t("Чат")], ['path', _t("Путь")], ['tasks', _t("Дела")], ['cal', _t("Календарь")]]
+    : [['chat', _t("Чат")], ['tasks', _t("Дела")], ['cal', _t("Календарь")], ['plan', _t("План")]];
   return (
-    <div className="bw-tabs" role="tablist">
+    <div className={`bw-tabs${startup ? ' su' : ''}`} role="tablist">
       {T.map(([k, l]) => (
         <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => onTab(k)}>
           {l}{k === 'tasks' && counts.tasks > 0 && <em>{counts.tasks}</em>}

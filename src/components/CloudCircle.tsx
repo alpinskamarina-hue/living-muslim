@@ -19,7 +19,7 @@ function InboxIfReady() {
 /** Create a circle (title + kind) or join one by invite. First visit, or «+ Новый круг». */
 /** What people usually add after the root, as a hint. */
 const OWN_HINT: Partial<Record<CircleKind, string>> = {
-  umrah: _t("с братьями"), family: _t("Каримовы"), brothers: _t("с работы"), sisters: _t("из мечети"), biz: _t("мойка, кафе, партнёры"),
+  umrah: _t("с братьями"), family: _t("Каримовы"), brothers: _t("с работы"), sisters: _t("из мечети"), biz: _t("мойка, кафе, партнёры"), startup: _t("халяль-доставка"),
   friends: _t("со школы"), masjid: _t("по субботам"), study: _t("арабский A1"), work: _t("офис"), other: _t("Например: Бег по утрам"),
 };
 
@@ -93,10 +93,10 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
             <div className="cl-f"><span>{_t("Какой это круг")}</span></div>
             <div className="cl-kinds">
               {CIRCLE_KINDS.filter((x) => !x.old).map((x) => (
-                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : undefined} onClick={() => setKind(x.id)}><i><Ic e={x.ic} /></i>{x.ru}<small className="cl-sub">{KIND_INFO[x.id].sub}</small>{x.fresh && <em className="cl-new">{_t("новое")}</em>}</button>
+                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : x.id === 'startup' ? 'su' : undefined} onClick={() => setKind(x.id)}><i><Ic e={x.ic} /></i>{x.ru}<small className="cl-sub">{KIND_INFO[x.id].sub}</small>{x.fresh && <em className="cl-new">{_t("новое")}</em>}</button>
               ))}
             </div>
-            <div className={`cl-caps${kind === 'biz' ? ' biz' : ''}`}>
+            <div className={`cl-caps${kind === 'biz' ? ' biz' : kind === 'startup' ? ' su' : ''}`}>
               <b>{_tj("Что внутри круга «{0}»", k.ru)}</b>
               <ul>{KIND_INFO[kind].caps.map((c) => <li key={c}>{c}</li>)}</ul>
             </div>

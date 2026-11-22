@@ -38,6 +38,8 @@ import { _t, _tj } from '../i18n';
 import { CircleCourse } from './CircleCourse';
 import type { CCourse } from '../courseSocial';
 import { useBiz, useBizWorkReady, syncPlans } from '../bizWork';
+import { StartupPane } from './Startup';
+import { useStartup, useStartupReady } from '../startup';
 import { BizTabs, BizTasks, BizCalendar, BizPlanPane, BizSheet, guessDay, type BizTab, type BizDraft } from './BizWork';
 
 interface Props {
@@ -136,11 +138,14 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   // otherwise the current circle's new messages were read silently and its number never showed.
   const listShown = listOn && isCloud && myCircles().length > 0;
   // business circle: tabs Чат · Дела · Календарь · План (supabase/biz-work.sql)
-  const bizOn = useBizWorkReady(Boolean(isCloud && joined && currentCircle()?.kind === 'biz'));
+  const isSu = currentCircle()?.kind === 'startup';
+  const bizOn = useBizWorkReady(Boolean(isCloud && joined && (currentCircle()?.kind === 'biz' || isSu)));
+  const suOn = useStartupReady(bizOn && isSu);
   const [bizTab, setBizTab] = useState<BizTab>('chat');
   const [bizDraft, setBizDraft] = useState<BizDraft | null>(null);
   useEffect(() => { setBizTab('chat'); }, [chatCode]);
   const bizApi = useBiz(chatCode, bizOn && !listShown);
+  const suApi = useStartup(chatCode, suOn && !listShown);
   const bizEvKey = (bizApi.data?.events ?? []).map((e) => `${e.id}${e.day}${e.at}${e.after_p}${e.title}`).join('|');
   useEffect(() => {
     if (!bizApi.data || !chatCode) return;
@@ -576,9 +581,11 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             <em>{_t("Открыть ›")}</em>
           </button>
         )}
-        {bizOn && <BizTabs tab={bizTab} onTab={(t) => { setBizTab(t); window.scrollTo(0, 0); }} counts={{ tasks: (bizApi.data?.tasks ?? []).filter((t) => t.owner === me && t.status !== 'done' && (!t.due || t.due <= today)).length }} />}
+        {bizOn && <BizTabs startup={suOn} tab={bizTab} onTab={(t) => { setBizTab(t); window.scrollTo(0, 0); }} counts={{ tasks: (bizApi.data?.tasks ?? []).filter((t) => t.owner === me && t.status !== 'done' && (!t.due || t.due <= today)).length }} />}
         {bizOn && bizTab !== 'chat' && me ? (
-          bizTab === 'tasks' ? <BizTasks {...bizCommon} />
+          bizTab === 'path' && suOn ? <StartupPane su={suApi} biz={bizApi} me={me} names={names} people={bizPeople} today={today} msgs={chat.msgs}
+            post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }} />
+            : bizTab === 'tasks' ? <BizTasks {...bizCommon} />
             : bizTab === 'cal' ? <BizCalendar {...bizCommon} />
               : <BizPlanPane {...bizCommon} />
         ) : (
@@ -591,7 +598,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
               else if (k === 'task') setBizDraft({ k: 'task', title: text.slice(0, 140), owner: m.uid, msg: m.id, ...(() => { const g = guessDay(text, today); return { due: g.day ?? null, due_p: g.after_p ?? null }; })() });
               else { const g = guessDay(text, today); setBizDraft({ k: 'event', title: text.slice(0, 120), day: g.day ?? today, at: g.at ?? null, after_p: g.after_p ?? null, msg: m.id }); }
             },
-            open: (k) => setBizTab(k === 'task' ? 'tasks' : k === 'event' ? 'cal' : 'plan'),
+            open: (k) => setBizTab(k === 'task' ? 'tasks' : k === 'event' ? 'cal' : suOn ? 'path' : 'plan'),
           } : undefined} />
         )}
         {bizDraft && me && (

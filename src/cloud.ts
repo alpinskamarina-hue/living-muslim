@@ -11,7 +11,7 @@ const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
 const LS = 'lm.cloud';
 const POLL_MS = 8000;
 
-export type CircleKind = 'umrah' | 'family' | 'brothers' | 'sisters' | 'biz' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
+export type CircleKind = 'umrah' | 'family' | 'brothers' | 'sisters' | 'biz' | 'startup' | 'friends' | 'masjid' | 'study' | 'work' | 'other';
 export interface CircleRef { code: string; title: string; kind?: CircleKind }
 export interface CloudId { uid: string; token: string; name: string; circle?: string; circles?: CircleRef[] }
 
@@ -21,6 +21,7 @@ export const CIRCLE_KINDS: { id: CircleKind; ru: string; ic: string; hint: strin
   { id: 'brothers', ru: _t("Братья"), ic: '🤝', hint: _t("Держать друг друга в намазе и делах") },
   { id: 'sisters', ru: _t("Сёстры"), ic: '🌸', hint: _t("Закрытый круг только для своих") },
   { id: 'biz', ru: _t("Бизнес"), ic: '💼', hint: _t("Дело рядом с намазом: деловые привычки, шура по четвергам, дуа за сделки. Суммы денег не видны никогда"), fresh: true },
+  { id: 'startup', ru: _t("Стартап"), ic: '🚀', hint: _t("Проверить идею и запустить своё дело командой"), fresh: true },
   { id: 'friends', ru: _t("Друзья"), ic: '👥', hint: _t("Близкие люди, которые поддержат") },
   { id: 'masjid', ru: _t("Мечеть, халака"), ic: '🕌', hint: _t("Община, уроки, общий хатм") },
   { id: 'study', ru: _t("Учёба"), ic: '📚', hint: _t("Коран, арабский, общий курс") },
@@ -35,6 +36,7 @@ export const KIND_INFO: Record<CircleKind, { sub: string; caps: string[] }> = {
   brothers: { sub: _t("держаться вместе"), caps: [_t("👀 Видно, кто сегодня в деле: только итог дня"), _t("🎯 Цель недели и вызов на 7 дней"), _t("🤲 Просьба о дуа, амир недели"), _t("💬 Чат с голосом, фото и опросами")] },
   sisters: { sub: _t("только сёстры"), caps: [_t("🔒 Закрытый круг, только для своих"), _t("🎯 Цель недели и вызовы"), _t("🤲 Дуа друг за друга и чат"), _t("💍 Никах только через вали")] },
   biz: { sub: _t("дело и намаз"), caps: [_t("📋 Дела команды: кто, что и к какому сроку"), _t("📅 Календарь встреч вокруг намаза, без Джума"), _t("🧭 План: ниййат, цели года и квартала"), _t("🤝 Шура по четвергам и журнал решений"), _t("⏰ Деловые привычки после намазов. Суммы денег не видны")] },
+  startup: { sub: _t("от идеи до запуска"), caps: [_t("🪜 Путь из 5 ступеней: от идеи до роста"), _t("📄 Идея на одной странице, помощник ищет слабые места"), _t("⏱ Проверка идеи за 7 дней и разговоры с клиентами"), _t("🤲 Истихара и голос команды перед большим решением"), _t("🎙 Демо-день по четвергам и пульс недели"), _t("📋 Дела и календарь команды вокруг намаза")] },
   friends: { sub: _t("поддержка"), caps: [_t("👀 Итог дня друг друга, без подробностей"), _t("🎯 Цель недели и вызовы"), _t("🤲 Дуа и чат")] },
   masjid: { sub: _t("община, уроки"), caps: [_t("📖 Общий хатм: каждый берёт свой джуз"), _t("🍲 Ифтары в Рамадан"), _t("💬 Чат общины и опросы"), _t("🤲 Просьбы о дуа")] },
   study: { sub: _t("Коран, арабский"), caps: [_t("🎓 Общий курс: проходить вместе, отзывы"), _t("🎯 Цель недели: страницы, уроки"), _t("💬 Чат и голосовые для чтения"), _t("📖 Общий хатм")] },
@@ -43,7 +45,7 @@ export const KIND_INFO: Record<CircleKind, { sub: string; caps: string[] }> = {
 };
 
 /** Our kinds are the root of a circle's name: «Бизнес · Мойка». Only «Своё» is named freely. */
-const RU_ROOT: Partial<Record<CircleKind, string>> = { umrah: 'Умра', family: 'Семья', brothers: 'Братья', sisters: 'Сёстры', biz: 'Бизнес', friends: 'Друзья', masjid: 'Мечеть, халака', study: 'Учёба', work: 'Работа' };
+const RU_ROOT: Partial<Record<CircleKind, string>> = { umrah: 'Умра', family: 'Семья', brothers: 'Братья', sisters: 'Сёстры', biz: 'Бизнес', startup: 'Стартап', friends: 'Друзья', masjid: 'Мечеть, халака', study: 'Учёба', work: 'Работа' };
 export function rootOf(kind?: CircleKind): string { return kind && kind !== 'other' ? kindOf(kind)?.ru ?? '' : ''; }
 /** The part people wrote themselves, without the root (Russian or the current language) in front. */
 export function suffixOf(title: string, kind?: CircleKind): string {
