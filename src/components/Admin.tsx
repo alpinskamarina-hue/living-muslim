@@ -204,7 +204,7 @@ function AdminReports() {
   useEffect(() => { load(); }, []);
   if (err) return <p className="tiny">{err}</p>;
   if (!list) return <p className="tiny">Загружаю…</p>;
-  if (!list.length) return <p className="tiny">Жалоб нет, альхамдулиллях.</p>;
+  if (!list.length) return <div className="adm-rep"><p className="tiny">Жалоб на сообщения нет, альхамдулиллях.</p><StoryReports /></div>;
   return (
     <div className="adm-rep">
       {list.map((r) => (
@@ -216,7 +216,31 @@ function AdminReports() {
           )}
         </div>
       ))}
+      <StoryReports />
     </div>
+  );
+}
+
+interface SReport { id: number; story: number | null; reason: string; body: string; at: string; by: string; author: string; deleted: boolean }
+/** Complaints about stories in circles (supabase/stories.sql). Shown under the chat complaints once that file is run. */
+function StoryReports() {
+  const [list, setList] = useState<SReport[] | null>(null);
+  const load = () => call<SReport[]>('lm_story_reports', {}).then((r) => setList(r ?? [])).catch(() => setList(null));
+  useEffect(() => { load(); }, []);
+  if (!list?.length) return null;
+  return (
+    <>
+      <h3>Жалобы на сторис: {list.length}</h3>
+      {list.map((r) => (
+        <div key={r.id} className="adm-card">
+          <small>{new Date(r.at).toLocaleString('ru-RU')} · пожаловался {r.by || '?'} на {r.author || '?'}{r.reason ? ` · ${r.reason}` : ''}</small>
+          <p style={{ margin: '6px 0', whiteSpace: 'pre-wrap' }}>{r.body}</p>
+          {r.deleted || !r.story ? <small>Сторис уже нет</small> : (
+            <button type="button" className="link-btn" onClick={async () => { if (!confirm('Удалить эту сторис для всех?')) return; await call('lm_story_admin_delete', { p_id: r.story }).catch(() => null); load(); }}>🗑 Удалить сторис</button>
+          )}
+        </div>
+      ))}
+    </>
   );
 }
 

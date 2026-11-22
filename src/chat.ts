@@ -11,7 +11,7 @@ export const FILE_MAX = 5 * 1024 * 1024;
 /** r: reply to a message; t: an event card (dua, ch) or a reply tied to someone's dua request (t 'dua', to). */
 /** tr: the message belongs to an umrah trip's own chat (the host's id); the Circle chat hides it. */
 /** On an assistant answer (kind 'ai'): n its name, at/all/rt the reminder it set (when, for everyone, text), pr the prayer. */
-export interface MsgRef { r?: number; t?: 'dua' | 'ch' | 'pr' | 'poll' | 'in' | 'ask'; d?: string; to?: string; k?: string; tr?: string; um?: string; p?: string; o?: string[]; n?: string; at?: string; all?: boolean; rt?: string; pr?: string }
+export interface MsgRef { r?: number; t?: 'dua' | 'ch' | 'pr' | 'poll' | 'in' | 'ask' | 'st'; d?: string; to?: string; k?: string; tr?: string; um?: string; p?: string; o?: string[]; n?: string; at?: string; all?: boolean; rt?: string; pr?: string }
 /** What the circle assistant needs from the phone besides the message. */
 export interface AiAskExtra { name: string; me?: string; lang?: string; place: Record<string, unknown>; circle: string }
 /** Calls to the assistant in a message: «@Марьям», «@Помощник», or the name the person gave it. */

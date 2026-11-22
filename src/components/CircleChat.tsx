@@ -590,6 +590,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
               <div className={`cc-m${mine ? ' mine' : ''}${m.failed ? ' failed' : ''}`} {...holdProps(m)} onClick={m.failed ? () => chat.retry(m) : undefined}>
                 {!mine && <b className="cc-who" onClick={personOk() ? (e) => { e.stopPropagation(); openPerson(m.uid); } : undefined}>{nm(m.uid)}</b>}
                 {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : shortOf(q)}</span>}
+                {!q && m.ref?.t === 'st' && m.ref.to && <span className="cc-q cc-st"><b>{m.ref.to === me ? _t("Ответ на твою сторис") : _t("Ответ на сторис: {0}", nm(m.ref.to))}</b>{[m.ref.n, m.ref.k].filter(Boolean).join(' ')}</span>}
                 {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
                   : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
                   : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
