@@ -70,7 +70,7 @@ async function compose(pg, text, opts = {}) {
     await signup(A, 'Абдулла', 'a-post@test.lm');
     await nav(A, 'Круг');
     await A.locator('.oc-seg button', { hasText: 'Создать свой' }).click(); await wait(500);
-    await A.locator('.cl-kinds button', { hasText: 'Братья' }).first().click();
+    await A.locator('.cl-kinds button', { hasText: 'Своё' }).first().click();
     await A.locator('.cl-name input').fill('Фаджр в мечети');
     await A.locator('button', { hasText: 'Создать круг' }).click(); await wait(3500);
     if (!(await A.locator('#oc-own').count())) { await A.locator('[aria-label="Данные круга"]').first().click(); await wait(1500); }

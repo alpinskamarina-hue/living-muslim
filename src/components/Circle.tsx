@@ -160,9 +160,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     update((s) => syncPlans(s, chatCode, title, bizApi.data!.events, today) ?? s);
   }, [bizEvKey, chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useChat(joined ? chatCode : undefined, !listShown && (!bizOn || bizTab === 'chat') && (view === 'chat' || (cxOn && !panel)));
-  // Posts: a «Чат · Посты» switch once the circle has posts or I may write them (not in chats of two or business circles).
+  // Posts: a «Чат · Посты» switch once the circle has posts or I may write them. Only in circles of the kind «Своё»:
+  // the ready-made kinds (brothers, sisters, business, study…) have their own tools and stay without posts (22.11, Nasim).
   const postsOn = usePostsReady();
-  const postCircle = Boolean(postsOn && joined && chatCode && !isDm(chatCode) && !bizOn);
+  const postCircle = Boolean(postsOn && joined && chatCode && !isDm(chatCode) && !bizOn && currentCircle()?.kind === 'other');
   const posts = usePosts(postCircle && !listShown, postCircle ? chatCode! : null);
   const [ptab, setPtab] = useState<'chat' | 'posts'>('chat');
   const [ocOpen, setOcOpen] = useState(false);

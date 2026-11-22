@@ -210,7 +210,7 @@ export function OpenCatalog({ today, g, pick, onView }: { today: string; g: '' |
               {!c.today && <em>{_tj("{0} {1}", c.n, plural(c.n, _t("человек"), _t("человека"), _t("человек")))}</em>}
               <em>{c.city || _t("онлайн")}</em>
               {c.who === 'all' && <em>{_t("только текст")}</em>}
-              {c.post_at && Date.now() - Date.parse(c.post_at) < 3 * 86400000 && <em className="nw">📣 {_t("новый пост")}</em>}
+              {c.kind === 'other' && c.post_at && Date.now() - Date.parse(c.post_at) < 3 * 86400000 && <em className="nw">📣 {_t("новый пост")}</em>}
             </span>
           </span>
           <span className={`oc-act${c.member ? ' in' : c.join === 'open' ? ' f' : ''}`}>
@@ -272,7 +272,7 @@ export function OpenPreview({ id, today, sex: g, onBack }: { id: string; today: 
         <span><b>{v.fajr}%</b>{_t("Фаджр вовремя за неделю")}</span>
       </div>
       {v.about && <div className="oc-sec"><h4>{_t("О круге")}</h4><p>{v.about}</p></div>}
-      {postsOn && !v.member && Boolean(posts.d?.posts.length) && (
+      {postsOn && v.kind === 'other' && !v.member && Boolean(posts.d?.posts.length) && (
         <>
           <div className="oc-lbl">{_t("Посты круга")}</div>
           <div className="ps-guest">{posts.d!.posts.map((p) => <PostCard key={p.id} p={p} boss={false} react={false} guest onChange={() => {}} />)}</div>
