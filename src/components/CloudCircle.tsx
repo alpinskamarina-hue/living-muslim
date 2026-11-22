@@ -5,7 +5,7 @@ import { BizPick } from './BizCircle';
 import { BIZ_DEFAULT, rememberBizPick } from '../biz';
 import { ProGate } from './Plan';
 import { limitOf } from '../plan';
-import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, type CircleKind } from '../cloud';
+import { nicksReady, signupName, cloudMe, createCircle, inviteLink, joinCircle, leaveCircle, pendingInvite, pendingInviteMeta, setName, myCircles, kindOf, CIRCLE_KINDS, KIND_INFO, type CircleKind } from '../cloud';
 import { _t, _tj } from '../i18n';
 import { authMe, signInUrl } from '../auth';
 import { ShareRow } from './ShareRow';
@@ -87,10 +87,13 @@ export function CloudSetup({ onCancel }: { onCancel?: () => void } = {}) {
             <div className="cl-f"><span>{_t("Какой это круг")}</span></div>
             <div className="cl-kinds">
               {CIRCLE_KINDS.filter((x) => !x.old).map((x) => (
-                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : undefined} onClick={() => setKind(x.id)}><i><Ic e={x.ic} /></i>{x.ru}{x.fresh && <em className="cl-new">{_t("новое")}</em>}</button>
+                <button key={x.id} type="button" aria-pressed={kind === x.id} className={x.id === 'biz' ? 'biz' : undefined} onClick={() => setKind(x.id)}><i><Ic e={x.ic} /></i>{x.ru}<small className="cl-sub">{KIND_INFO[x.id].sub}</small>{x.fresh && <em className="cl-new">{_t("новое")}</em>}</button>
               ))}
             </div>
-            <p className="tiny">{k.hint}</p>
+            <div className={`cl-caps${kind === 'biz' ? ' biz' : ''}`}>
+              <b>{_tj("Что внутри круга «{0}»", k.ru)}</b>
+              <ul>{KIND_INFO[kind].caps.map((c) => <li key={c}>{c}</li>)}</ul>
+            </div>
             <label className="cl-f">
               <span>{_t("Название")}</span>
               <input value={title} maxLength={40} placeholder={kind === 'umrah' ? _t("Например: Умра с братьями") : kind === 'family' ? _t("Например: Семья Насима") : kind === 'masjid' ? _t("Например: Халака по субботам") : kind === 'biz' ? _t("Например: Партнёры") : _t("Например: {0}", k.ru)} onChange={(e) => setTitle(e.target.value)} />

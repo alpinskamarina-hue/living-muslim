@@ -255,7 +255,7 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other, biz }: {
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
@@ -267,6 +267,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   actions?: ChatAction[];
   /** Opens the umrah trip someone was called to from the chat («Насим зовёт на умру»). */
   onUmrah?: (host: string) => void;
+  /** A business circle: a message can become a task, a meeting or a decision; their cards open the tab. */
+  biz?: { make: (k: 'task' | 'event' | 'dec', m: Msg) => void; open: (k: 'task' | 'event' | 'dec') => void };
 }) {
   const main = Boolean(actions);
   const [plus, setPlus] = useState(false);
@@ -535,6 +537,17 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             );
             return out;
           }
+          if (m.kind === 'event' && m.ref?.t === 'bz') {
+            const k = m.ref.k === 'e' ? 'event' : m.ref.k === 'd' ? 'dec' : 'task';
+            out.push(
+              <div key={m.id} className={`cc-bz b-${k}`}>
+                <span><b>{mine ? _t("Ты") : nm(m.uid)}</b> · {m.body}</span>
+                {biz && !m.deleted && <button type="button" onClick={() => biz.open(k)}>{k === 'task' ? _t("Дела ›") : k === 'event' ? _t("Календарь ›") : _t("План ›")}</button>}
+                <small className="cc-time">{hm(m.at)}</small>
+              </div>,
+            );
+            return out;
+          }
           if (m.kind === 'event' && m.ref?.um) {
             // A call to an umrah trip: the person called gets a card with a button, the others a plain line.
             const forMe = m.ref.to === me;
@@ -701,6 +714,11 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           <div className="cc-menu" role="dialog" aria-label={_t("Сообщение")}>
             {!menu.deleted && menu.kind !== 'event' && <div className="cc-emo">{EMOJI.map((e) => <button key={e} type="button" className={menu.reacts?.[me] === e ? 'on' : ''} onClick={() => { chat.react(menu.id, e); setMenu(null); }}>{e}</button>)}</div>}
             {menu.uid === me && !menu.deleted && (() => { const r = chat.readOf(menu); if (!r || !r.tot) return null; return <p className="cc-read">{r.by.length ? <><Ticks s={r.state} /> {_t("Прочитали:")} {r.by.map(nm).join(', ')}</> : <><Ticks s="sent" /> {_t("Ещё никто не прочитал")}</>}{r.by.length && r.by.length < r.tot ? <small>{_tj("Ещё не прочитали: {0}", r.tot - r.by.length)}</small> : null}</p>; })()}
+            {biz && !menu.deleted && menu.kind !== 'event' && menu.body.trim() && <>
+              <button type="button" className="cc-bzm" onClick={() => { biz.make('task', menu); setMenu(null); }}>{_t("📋 Сделать делом")}</button>
+              <button type="button" className="cc-bzm" onClick={() => { biz.make('event', menu); setMenu(null); }}>{_t("📅 Поставить в календарь")}</button>
+              <button type="button" className="cc-bzm" onClick={() => { biz.make('dec', menu); setMenu(null); }}>{_t("✅ Записать как решение")}</button>
+            </>}
             {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}>{_t("↩️ Ответить")}</button>}
             {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}>{_t("📋 Скопировать")}</button>}
             {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? _t("Жалоба отправлена. Спасибо, разберёмся") : _t("Не получилось отправить жалобу")); }}>{_t("🚩 Пожаловаться")}</button>}
