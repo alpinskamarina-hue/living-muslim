@@ -5266,6 +5266,7 @@ export const EN: Record<string, string> = {
   "Кнопка": "Button",
   "Кружок справа внизу": "Round button at the bottom right",
   "На всех вкладках, кроме открытого чата круга": "On every tab, except inside a circle chat",
+  "На всех вкладках, кроме открытого чата круга. В чате группы умры: над полем ввода": "On every tab, except inside a circle chat. In the umrah group chat: above the message box",
   "Открыть чат": "Open chat",
   "Ас-саляму алейкум! Спроси меня о чём угодно.": "Assalamu alaikum! Ask me anything.",
   "Открыть помощника: {0}": "Open the assistant: {0}",

@@ -412,7 +412,7 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
 
       <h4 className="ai-h">{_t("Кнопка")}</h4>
       <label className="ai-switch">
-        <span><b>{_t("Кружок справа внизу")}</b><small>{_t("На всех вкладках, кроме открытого чата круга")}</small></span>
+        <span><b>{_t("Кружок справа внизу")}</b><small>{_t("На всех вкладках, кроме открытого чата круга. В чате группы умры: над полем ввода")}</small></span>
         <input type="checkbox" checked={s.aiFab !== false} onChange={(e) => set({ aiFab: e.target.checked })} />
       </label>
 
@@ -441,6 +441,16 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
   }, []);
   const [unread, setUn] = useState(getUnread);
   useEffect(() => onUnread(() => setUn(getUnread())), []);
+  // In the umrah group chat the round button sits just above the message box.
+  useEffect(() => {
+    const b = document.body.style;
+    const t = setInterval(() => {
+      const c = document.body.classList.contains('um-on') ? document.querySelector('.um-app .cc-compose') : null;
+      const v = c ? `${Math.round(window.innerHeight - c.getBoundingClientRect().top + 10)}px` : '';
+      if (b.getPropertyValue('--um-cc') !== v) { if (v) b.setProperty('--um-cc', v); else b.removeProperty('--um-cc'); }
+    }, 300);
+    return () => { clearInterval(t); b.removeProperty('--um-cc'); };
+  }, []);
   if (s.aiFab === false) return null;
   const name = aiName(s);
   return (
