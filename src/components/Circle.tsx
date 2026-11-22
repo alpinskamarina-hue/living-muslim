@@ -32,7 +32,9 @@ import { useChat, duaReplies, duaEventId } from '../chat';
 import { CircleChat, DuaReplies, type Draft } from './CircleChat';
 import { CircleList } from './CircleList';
 import { OpenOwnerBox, OpenChatNote } from './OpenCircles';
-import { useOpenReady } from '../openCircles';
+import { useOpenReady, openMe } from '../openCircles';
+import { usePostsReady, usePosts, postSeen } from '../posts';
+import { PostFeed, PinBar } from './Posts';
 import { openPerson, personOk, usePersonReady, useAsks } from '../person';
 import { useRef } from 'react';
 import { CH_KINDS, CH_DAYS, goalFor, circleTotals, valOf, weekStart, amirOf } from '../cweek';
@@ -120,7 +122,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const asks = useAsks(personOn && isCloud);
   const [listOn, setListOn] = useState(() => {
     if (!isCloud || !myCircles().length) return false;
-    try { if (sessionStorage.getItem('lm.asksGo')) return true; } catch { /* */ }
+    try { if (sessionStorage.getItem('lm.asksGo') || sessionStorage.getItem('lm.commonGo')) return true; } catch { /* */ }
     try { if (sessionStorage.getItem('lm.chat') === chatCode || (!cLinkUsed && new URLSearchParams(location.search).get('c')) || sessionStorage.getItem('lm.umrahGo') || sessionStorage.getItem('lm.autojoin')) return false; } catch { /* */ }
     return true;
   });
@@ -157,6 +159,18 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     update((s) => syncPlans(s, chatCode, title, bizApi.data!.events, today) ?? s);
   }, [bizEvKey, chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useChat(joined ? chatCode : undefined, !listShown && (!bizOn || bizTab === 'chat') && (view === 'chat' || (cxOn && !panel)));
+  // Posts: a «Чат · Посты» switch once the circle has posts or I may write them (not in chats of two or business circles).
+  const postsOn = usePostsReady();
+  const postCircle = Boolean(postsOn && joined && chatCode && !isDm(chatCode) && !bizOn);
+  const posts = usePosts(postCircle && !listShown, postCircle ? chatCode! : null);
+  const [ptab, setPtab] = useState<'chat' | 'posts'>('chat');
+  const [ocOpen, setOcOpen] = useState(false);
+  useEffect(() => { setPtab('chat'); }, [chatCode]);
+  useEffect(() => { if (posts.d?.can && chatCode) openMe(chatCode).then((r) => setOcOpen(Boolean(r?.open))); }, [posts.d?.can, posts.d?.posts.length, chatCode, ptab]);
+  const goPost = (id?: number) => {
+    setPtab('posts'); window.scrollTo(0, 0);
+    if (id) setTimeout(() => { const el = document.querySelector(`.ps-card[data-id="${id}"]`); el?.scrollIntoView({ block: 'center' }); el?.classList.add('cx-flash'); setTimeout(() => el?.classList.remove('cx-flash'), 1600); }, 300);
+  };
   const [draft, setDraft] = useState<Draft | null>(null);
   const openChat = (d?: Draft) => { if (d) setDraft(d); setView('chat'); setPanel(false); window.scrollTo(0, 0); };
   useEffect(() => {
@@ -381,6 +395,13 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <p>{_tj("{0} Вместе держаться легче, а дуа друг за друга приходят каждый день.", kind === 'family' ? _t("Жена, муж, родители, взрослые дети.") : biz ? _t("Партнёр, брат с похожим делом, друг-предприниматель.") : kind === 'sisters' ? _t("Подруга, сестра, соседка по мечети.") : kind === 'masjid' ? _t("Братья и сёстры с урока или из мечети.") : _t("Брат, друг, однокурсник."))}</p>
           <button type="button" className="pri-btn big-btn" onClick={invite}>{_t("Пригласить в круг")}</button>
           {openOn && cur && !isDm(cur.code) && <OpenOwnerBox code={cur.code} kind={kind} />}
+          {postCircle && posts.d?.can && (
+            <div className="ps-solo">
+              <div className="oc-lbl">{_t("Посты круга")}</div>
+              <p className="tiny">{ocOpen ? _t("Посты «видят все» показываются в «Найти круг»: по ним видно, что круг живой.") : _t("Пост это объявление амира: его не уносит лентой, его можно закрепить. Участники увидят его, когда придут.")}</p>
+              <PostFeed code={chatCode!} api={posts} open={ocOpen} seenKey={chatCode!} empty="" />
+            </div>
+          )}
         </div>
       ) : cx ? null : (
         <div className={`ch-hero${biz ? ' biz' : ''}`}>
@@ -598,14 +619,27 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           </button>
         )}
         {bizOn && <BizTabs startup={suOn} tab={bizTab} onTab={(t) => { setBizTab(t); window.scrollTo(0, 0); }} counts={{ tasks: (bizApi.data?.tasks ?? []).filter((t) => t.owner === me && t.status !== 'done' && (!t.due || t.due <= today)).length }} />}
-        {bizOn && bizTab !== 'chat' && me ? (
+        {postCircle && posts.d && (posts.d.can || posts.d.posts.length > 0) && (() => {
+          const seen = postSeen(chatCode!);
+          const n = posts.d.posts.filter((p) => p.at > seen && p.uid !== me && !p.later).length;
+          return (
+            <div className="bw-tabs ps-ctabs" role="tablist">
+              <button type="button" role="tab" aria-selected={ptab === 'chat'} onClick={() => setPtab('chat')}>{_t("Чат")}</button>
+              <button type="button" role="tab" aria-selected={ptab === 'posts'} onClick={() => goPost()}>{_t("Посты")}{n > 0 && ptab !== 'posts' && <em>{n}</em>}</button>
+            </div>
+          );
+        })()}
+        {postCircle && ptab === 'chat' && (() => { const pin = posts.d?.posts.find((p) => p.pinned); return pin ? <PinBar post={pin} onOpen={() => goPost(pin.id)} /> : null; })()}
+        {postCircle && ptab === 'posts' ? (
+          <PostFeed code={chatCode!} api={posts} open={ocOpen} seenKey={chatCode!} empty={_t("Постов пока нет. Пост это объявление амира: его не уносит лентой, его можно закрепить.")} />
+        ) : bizOn && bizTab !== 'chat' && me ? (
           bizTab === 'path' && suOn ? <StartupPane su={suApi} biz={bizApi} me={me} names={names} people={bizPeople} today={today} msgs={chat.msgs} code={chatCode} transcribe={chat.transcribe}
             post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }} />
             : bizTab === 'tasks' ? <BizTasks {...bizCommon} />
             : bizTab === 'cal' ? <BizCalendar {...bizCommon} />
               : <BizPlanPane {...bizCommon} />
         ) : (
-        <CircleChat notice={openOn ? <OpenChatNote code={chatCode} /> : undefined} chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
+        <CircleChat notice={openOn ? <OpenChatNote code={chatCode} /> : undefined} onPost={postCircle ? goPost : undefined} chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
           draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} onUmrah={openTrip}
           biz={bizOn ? {
             make: (k, m) => {

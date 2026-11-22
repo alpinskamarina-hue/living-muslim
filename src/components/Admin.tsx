@@ -355,6 +355,33 @@ function GuideReportsBox() {
 // and look at anonymous dua requests people complained about.
 interface AOpen { code: string; title: string; kind: string; about: string; who: string; wants_all: boolean; verified: boolean; join: string; city: string; lang: string; n: number; owner: string; nick: string | null; opened: string }
 interface ADua { id: number; body: string; reports: number; hidden: boolean; created: string }
+interface APost { id: number; body: string; reports: number; hidden: boolean; created: string; circle: string; by: string | null }
+/** Posts with reports (three hide a post until a decision here). */
+function AdminPosts() {
+  const [l, setL] = useState<APost[] | null>(null);
+  const load = () => call<APost[]>('lm_admin_posts', {}).then((r) => setL(r ?? [])).catch(() => setL(null));
+  useEffect(() => { load(); }, []);
+  if (l === null) return null;
+  const act = async (x: APost, hide: boolean | null) => { if (hide === null && !confirm('Удалить пост совсем?')) return; await call('lm_admin_post', { p_id: x.id, p_hide: hide }).catch(() => null); load(); };
+  return (
+    <>
+      <h3>Жалобы на посты</h3>
+      {!l.length && <p className="tiny">Жалоб нет.</p>}
+      {l.map((x) => (
+        <div key={x.id} className="adm-card">
+          <small><b>{x.circle}</b>{x.by ? ` · ${x.by}` : ''}</small>
+          <small>«{x.body.length > 300 ? x.body.slice(0, 298) + '…' : x.body}»</small>
+          <small>{x.reports} жалоб · {x.hidden ? 'скрыт' : 'виден'} · {new Date(x.created).toLocaleString('ru-RU')}</small>
+          <div className="adm-act">
+            {x.hidden ? <button type="button" className="ghost-btn" onClick={() => act(x, false)}>Вернуть</button> : <button type="button" className="ghost-btn" onClick={() => act(x, true)}>Скрыть</button>}
+            <button type="button" className="ghost-btn" onClick={() => act(x, null)}>Удалить</button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 function AdminOpen() {
   const [d, setD] = useState<{ circles: AOpen[]; dua: ADua[] } | null>(null);
   const [err, setErr] = useState('');
@@ -384,6 +411,7 @@ function AdminOpen() {
           </div>
         </div>
       ))}
+      <AdminPosts />
       <h3>Жалобы на просьбы о дуа</h3>
       {!d.dua.length && <p className="tiny">Жалоб нет.</p>}
       {d.dua.map((x) => (

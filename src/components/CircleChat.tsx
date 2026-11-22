@@ -76,6 +76,7 @@ export function shortOf(m: Msg, n = 90) {
   if (m.kind === 'voice') return _t("🎙 Голосовое");
   if (m.ref?.t === 'poll') return `📊 ${m.body.slice(0, n)}`;
   if (m.ref?.t === 'pr') return `✅ ${m.body.slice(0, n)}`;
+  if (m.ref?.t === 'post') return `📣 ${m.body.slice(0, n)}`;
   if (m.kind === 'photo') return _t("📷 Фото") + (m.body ? ` · ${m.body.slice(0, n)}` : '');
   if (m.kind === 'file') return `📄 ${m.file?.name || _t("Файл")}` + (m.body ? ` · ${m.body.slice(0, n)}` : '');
   return m.body.slice(0, n);
@@ -295,9 +296,10 @@ function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) 
   return { supported, rec, sec, msg, setMsg, start, stop, release };
 }
 
-export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other, biz, notice }: {
+export function CircleChat({ chat: all, me, names, members, reacts, today, isOwner, state, update, draft, onDraftUsed, onAmin, title, topic, emptyNote, placeholder, actions, onUmrah, other, biz, notice, onPost }: {
   /** A line on top of the composer (the newcomer rules of an open circle). */
   notice?: import('react').ReactNode;
+  onPost?: (id: number) => void;
   chat: ChatApi; me: string; names: Names; members: Member[]; reacts: Reacts; today: string; isOwner: boolean;
   state: AppState; update: (fn: (s: AppState) => AppState) => void;
   draft: Draft | null; onDraftUsed: () => void; onAmin: (asker: string) => void; title: string;
@@ -589,6 +591,17 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                   {personOk() && <button type="button" onClick={() => openPerson(m.uid)}>{mine ? _t("Мой профиль") : _t("Открыть профиль")}</button>}
                   {!mine && <button type="button" onClick={() => { setText(`${nm(m.uid).split(' ')[0]}, `); setRef({ r: m.id }); setTimeout(() => ta.current?.focus(), 50); }}>{_t("Подсказать")}</button>}
                 </div>
+                <small className="cc-time">{hm(m.at)}</small>
+              </div>,
+            );
+            return out;
+          }
+          if (m.kind === 'event' && m.ref?.t === 'post') {
+            out.push(
+              <div key={m.id} className="cc-post">
+                <b>📣 {mine ? _t("Твой новый пост") : _tj("Новый пост · {0}", nm(m.uid))}</b>
+                <span>{m.body.replace(/\s+/g, ' ')}</span>
+                {onPost && <button type="button" onClick={() => onPost(Number(m.ref?.p))}>{_t("Открыть пост")}</button>}
                 <small className="cc-time">{hm(m.at)}</small>
               </div>,
             );
