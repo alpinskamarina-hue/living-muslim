@@ -165,7 +165,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       const r = await meRpc<ListRes | null>('lm_chat_list', { p_code: code, p_after: full ? 0 : last.current, p_before: 0 });
       if (!r) return;
       if (open && readsOn.current) meRpc<Record<string, [number, number]> | null>('lm_chat_reads', { p_code: code }).then((x) => { if (x) setReads(x); }).catch(() => {});
-      setVoiceOn(r.voice !== false); setOwner(r.owner || ''); setSeen((s) => Math.max(s, r.seen || 0)); setError('');
+      setVoiceOn(r.voice !== false); setOwner(r.owner || ''); setSeen((s) => Math.max(s, r.seen || 0)); setError((e) => (DM_ERRS().includes(e) ? e : ''));
       if (wantSeen.current) { wantSeen.current = false; setSeenAtOpen(r.seen || 0); }
       if (full) { setMore(r.msgs.length >= 60); if (open) loadAi(); }
       if (full || r.msgs.length) {
@@ -231,10 +231,12 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       setMsgs((m) => merge(m.filter((x) => x !== local), [r]));
       last.current = Math.max(last.current, r.id);
       lastSent.current = r.id;
+      setError((e) => (DM_ERRS().includes(e) ? '' : e));
       return true;
     } catch (e) {
       setMsgs((m) => m.map((x) => (x === local ? { ...x, failed: true } : x)));
-      setError(String((e as Error).message) === 'slow' ? _t("Слишком часто. Подожди минуту") : _t("Не отправилось. Нажми на сообщение, чтобы повторить"));
+      const em = String((e as Error).message);
+      setError(em === 'slow' ? _t("Слишком часто. Подожди минуту") : dmErr(em) || _t("Не отправилось. Нажми на сообщение, чтобы повторить"));
       return false;
     }
   };
@@ -255,7 +257,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       setMsgs((m) => merge(m, [r]));
       last.current = Math.max(last.current, r.id);
       return '';
-    } catch { return 'error'; }
+    } catch (e) { const d = dmCode(String((e as Error)?.message)); if (d) setError(dmErr(d)); return d || 'error'; }
   };
 
   const react = (id: number, e: string) => {
@@ -322,7 +324,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       setMsgs((m) => merge(m, [r]));
       last.current = Math.max(last.current, r.id);
       return '';
-    } catch { return 'error'; }
+    } catch (e) { const d = dmCode(String((e as Error)?.message)); if (d) setError(dmErr(d)); return d || 'error'; }
   };
 
   const fileUrl = async (id: number) => {
@@ -443,4 +445,14 @@ async function shrinkPhoto(f: File): Promise<{ blob: Blob; thumb: string; w: num
     const thumb = draw(48).toDataURL('image/jpeg', 0.6);
     return { blob, thumb, w: big.width, h: big.height };
   } finally { URL.revokeObjectURL(url); }
+}
+
+/** Errors from the chat-of-two guard (supabase/dm.sql). They stay on screen until a message goes through. */
+const DM_ERRS = () => ['dm_first', 'dm_blocked', 'dm_locked'].map(dmErr);
+export function dmCode(m: string): string { const x = /dm_(first|blocked|locked)/.exec(m || ''); return x ? x[0] : ''; }
+export function dmErr(m: string): string {
+  const c = dmCode(m);
+  return c === 'dm_first' ? _t("Ссылки, фото и файлы можно после первого ответа собеседника.")
+    : c === 'dm_blocked' ? _t("Этот чат закрыт: один из вас заблокировал другого.")
+      : c === 'dm_locked' ? _t("Личные сообщения закрыты до проверки жалоб.") : '';
 }

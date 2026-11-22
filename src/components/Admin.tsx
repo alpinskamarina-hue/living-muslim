@@ -205,7 +205,7 @@ function AdminReports() {
   useEffect(() => { load(); }, []);
   if (err) return <p className="tiny">{err}</p>;
   if (!list) return <p className="tiny">Загружаю…</p>;
-  if (!list.length) return <div className="adm-rep"><p className="tiny">Жалоб на сообщения нет, альхамдулиллях.</p><StoryReports /></div>;
+  if (!list.length) return <div className="adm-rep"><p className="tiny">Жалоб на сообщения нет, альхамдулиллях.</p><StoryReports /><AdminDm /></div>;
   return (
     <div className="adm-rep">
       {list.map((r) => (
@@ -218,7 +218,43 @@ function AdminReports() {
         </div>
       ))}
       <StoryReports />
+      <AdminDm />
     </div>
+  );
+}
+
+interface ADmReport { id: number; reason: string; msgs: { who: 'by' | 'him'; kind: string; body: string; at: string }[]; done: boolean; at: string; by: string; who: string; who_uid: string; locked: boolean; n: number }
+/** Reports about private chats (supabase/dm.sql): the last 20 messages; 3 reports close the person's DMs until a decision here. */
+function AdminDm() {
+  const [l, setL] = useState<ADmReport[] | null>(null);
+  const [open, setOpen] = useState(0);
+  const load = () => call<ADmReport[]>('lm_admin_dm_reports', {}).then((r) => setL(r ?? [])).catch(() => setL(null));
+  useEffect(() => { load(); }, []);
+  if (l === null) return null;
+  const act = async (x: ADmReport, a: 'ok' | 'lock') => { await call('lm_admin_dm_report', { p_id: x.id, p_act: a }).catch(() => null); load(); };
+  return (
+    <>
+      <h3>Жалобы на личные сообщения</h3>
+      {!l.length && <p className="tiny">Жалоб нет.</p>}
+      {l.map((x) => (
+        <div key={x.id} className="adm-card" style={x.done ? { opacity: 0.6 } : undefined}>
+          <small>{new Date(x.at).toLocaleString('ru-RU')} · {x.by || '?'} пожаловался на <b>{x.who || '?'}</b> · всего жалоб за 30 дней: {x.n}{x.locked ? ' · личка закрыта' : ''}{x.done ? ' · решено' : ''}</small>
+          {x.reason && <small>Причина: {x.reason}</small>}
+          <button type="button" className="link-btn" onClick={() => setOpen(open === x.id ? 0 : x.id)}>{open === x.id ? 'Скрыть переписку' : `Показать переписку (${x.msgs.length})`}</button>
+          {open === x.id && (
+            <div className="adm-dm">
+              {x.msgs.map((m, i) => <p key={i} style={{ margin: '4px 0', whiteSpace: 'pre-wrap' }}><b>{m.who === 'by' ? x.by : x.who}:</b> {m.body}</p>)}
+            </div>
+          )}
+          {!x.done && (
+            <div className="adm-act">
+              <button type="button" className="ghost-btn" onClick={() => act(x, 'ok')}>Всё в порядке, открыть личку</button>
+              <button type="button" className="ghost-btn" onClick={() => act(x, 'lock')}>Оставить закрытой</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </>
   );
 }
 
