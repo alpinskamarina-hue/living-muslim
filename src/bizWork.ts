@@ -92,7 +92,8 @@ export function dueLabel(t: { due: string | null; due_p: Anchor | null }, today:
 export const isLate = (t: BizTask, today: string) => t.status !== 'done' && Boolean(t.due && t.due < today);
 
 /** Meetings of my business circles go into my own «Планы» with a reminder; changes and deletions follow. */
-export function syncPlans(s: AppState, code: string, title: string, events: BizEvent[], today: string): AppState | null {
+export function syncPlans(s: AppState, code: string, title: string, events: BizEvent[], today: string, study = false): AppState | null {
+  const ic = (e: BizEvent) => (e.kind === 'due' ? '📄' : study ? '📚' : '🤝');
   const pre = `bz-${code}-`;
   const want = new Map(events.filter((e) => e.day >= today).map((e) => [pre + e.id, e]));
   const have = (s.plans ?? []).filter((p) => p.id.startsWith(pre));
@@ -101,14 +102,14 @@ export function syncPlans(s: AppState, code: string, title: string, events: BizE
   for (const p of have) {
     const e = want.get(p.id);
     if (!e) { if (!p.del && p.date >= today) { next.push({ ...p, del: true, upd: Date.now() }); changed = true; } else next.push(p); continue; }
-    const text = `${e.kind === 'due' ? '📄' : '🤝'} ${e.title} · ${title}`;
+    const text = `${ic(e)} ${e.title} · ${title}`;
     const time = e.after_p ? undefined : e.at ?? undefined;
     const after = e.after_p ?? undefined;
     if (p.text !== text || p.date !== e.day || p.time !== time || p.after !== after || p.del) { next.push({ ...p, text, date: e.day, time, after, del: false, upd: Date.now() }); changed = true; } else next.push(p);
     want.delete(p.id);
   }
   for (const [id, e] of want) {
-    next.push({ id, text: `${e.kind === 'due' ? '📄' : '🤝'} ${e.title} · ${title}`, date: e.day, time: e.after_p ? undefined : e.at ?? undefined, after: e.after_p ?? undefined, remind: e.at || e.after_p ? 'h1' : undefined, list: _t("Работа"), made: Date.now(), upd: Date.now() });
+    next.push({ id, text: `${ic(e)} ${e.title} · ${title}`, date: e.day, time: e.after_p ? undefined : e.at ?? undefined, after: e.after_p ?? undefined, remind: e.at || e.after_p ? 'h1' : undefined, list: study ? _t("Учёба") : _t("Работа"), made: Date.now(), upd: Date.now() });
     changed = true;
   }
   if (!changed) return null;

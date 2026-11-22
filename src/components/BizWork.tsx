@@ -21,22 +21,24 @@ const hm = (ms: number) => new Date(ms).toLocaleTimeString(LOC, { hour: '2-digit
 const PR_SHORT: Record<Anchor, () => string> = { fajr: () => _t("Фаджр"), dhuhr: () => _t("Зухр"), asr: () => _t("Аср"), maghrib: () => _t("Магриб"), isha: () => _t("Иша") };
 const AFTER_P: Record<Anchor, () => string> = { fajr: () => _t("после Фаджра"), dhuhr: () => _t("после Зухра"), asr: () => _t("после Асра"), maghrib: () => _t("после Магриба"), isha: () => _t("после Иши") };
 
-export function BizTabs({ tab, onTab, counts, startup }: { tab: BizTab; onTab: (t: BizTab) => void; counts: { tasks: number }; startup?: boolean }) {
-  const T: [BizTab, string][] = startup
-    ? [['chat', _t("Чат")], ['path', _t("Путь")], ['tasks', _t("Дела")], ['cal', _t("Календарь")]]
-    : [['chat', _t("Чат")], ['tasks', _t("Дела")], ['cal', _t("Календарь")], ['plan', _t("План")]];
+export function BizTabs({ tab, onTab, counts, startup, study }: { tab: BizTab; onTab: (t: BizTab) => void; counts: { tasks: number; path?: number }; startup?: boolean; study?: boolean }) {
+  const T: [BizTab, string][] = study
+    ? [['chat', _t("Чат")], ['path', _t("Учёба")], ['cal', _t("Занятия")]]
+    : startup
+      ? [['chat', _t("Чат")], ['path', _t("Путь")], ['tasks', _t("Дела")], ['cal', _t("Календарь")]]
+      : [['chat', _t("Чат")], ['tasks', _t("Дела")], ['cal', _t("Календарь")], ['plan', _t("План")]];
   return (
-    <div className={`bw-tabs${startup ? ' su' : ''}`} role="tablist">
+    <div className={`bw-tabs${startup ? ' su' : ''}${study ? ' su sy' : ''}`} role="tablist">
       {T.map(([k, l]) => (
         <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => onTab(k)}>
-          {l}{k === 'tasks' && counts.tasks > 0 && <em>{counts.tasks}</em>}
+          {l}{k === 'tasks' && counts.tasks > 0 && <em>{counts.tasks}</em>}{k === 'path' && (counts.path ?? 0) > 0 && <em>{counts.path}</em>}
         </button>
       ))}
     </div>
   );
 }
 
-interface Common { api: BizApi; me: string; names: Names; people: string[]; state: AppState; today: string; onDraft: (d: BizDraft) => void }
+interface Common { api: BizApi; me: string; names: Names; people: string[]; state: AppState; today: string; onDraft: (d: BizDraft) => void; study?: boolean }
 const firstName = (names: Names, me: string, id?: string | null) => (!id ? '' : id === me ? _t("Ты") : (names[id]?.name || _t("Участник")).split(' ')[0]);
 const initial = (names: Names, id?: string | null) => ((id && names[id]?.name) || '?').trim().charAt(0).toUpperCase();
 
@@ -82,7 +84,7 @@ export function BizTasks({ api, me, names, today, onDraft }: Common) {
 }
 
 /** «Календарь»: a week, day by day, with the prayers; Friday shows Jumu'ah. */
-export function BizCalendar({ api, state, today, me, names, onDraft }: Common) {
+export function BizCalendar({ api, state, today, me, names, onDraft, study }: Common) {
   const [mon, setMon] = useState(today); // 7 days from today; arrows move by a week
   const st = state.settings;
   const events = api.data?.events ?? [];
@@ -106,7 +108,7 @@ export function BizCalendar({ api, state, today, me, names, onDraft }: Common) {
             <div className="bw-dh">
               <b>{D(k).toLocaleDateString(LOC, { weekday: 'short', day: 'numeric' })}</b>
               <span className="bw-pt">{ANCHORS.map((a) => <span key={a}>{fri && a === 'dhuhr' ? _t("Джума") : PR_SHORT[a]()} {hm(pt[a].getTime())}</span>)}</span>
-              <button type="button" className="bw-add" aria-label={_t("Встреча в этот день")} onClick={() => onDraft({ k: 'event', title: '', day: k })}>＋</button>
+              <button type="button" className="bw-add" aria-label={study ? _t("Занятие в этот день") : _t("Встреча в этот день")} onClick={() => onDraft({ k: 'event', title: '', day: k })}>＋</button>
             </div>
             {list.map((e) => (
               <button key={e.id} type="button" className={`bw-ev k-${e.kind}`} onClick={() => onDraft({ k: 'event', ...e })}>
@@ -122,8 +124,8 @@ export function BizCalendar({ api, state, today, me, names, onDraft }: Common) {
           {next.map((e) => <div key={e.id} className="bw-li"><span><Ic e={e.kind === 'due' ? 'due' : 'meet'} /></span><span className="bw-lt">{e.title}</span><small>{D(e.day).toLocaleDateString(LOC, { weekday: 'short', day: 'numeric' })} · {whenOf(e)}</small></div>)}
         </div>
       )}
-      <p className="bw-note">{_t("Встречи круга сами попадают в твои «Планы» и напоминают за час.")}</p>
-      <button type="button" className="bw-fab" onClick={() => onDraft({ k: 'event', title: '', day: today >= mon && today <= addDays(mon, 6) ? today : mon })}>{_t("＋ Встреча")}</button>
+      <p className="bw-note">{study ? _t("Занятия круга сами попадают в твои «Планы» и напоминают за час. Время Джумы занято.") : _t("Встречи круга сами попадают в твои «Планы» и напоминают за час.")}</p>
+      <button type="button" className={`bw-fab${study ? ' sy-fab' : ''}`} onClick={() => onDraft({ k: 'event', title: '', day: today >= mon && today <= addDays(mon, 6) ? today : mon })}>{study ? _t("＋ Занятие") : _t("＋ Встреча")}</button>
     </div>
   );
 }
@@ -217,8 +219,9 @@ export function BizPlanPane({ api, me, names, people, onDraft }: Common) {
 }
 
 /** The sheet for a task, a meeting or a decision: new or open. */
-export function BizSheet({ draft, api, me, names, people, state, today, onClose, onSaved }: Omit<Common, 'onDraft'> & { draft: BizDraft; onClose: () => void; onSaved: (k: BizDraft['k'], id: number, title: string, isNew: boolean, extra: string) => void }) {
+export function BizSheet({ draft, api, me, names, people, state, today, onClose, onSaved, study }: Omit<Common, 'onDraft'> & { draft: BizDraft; onClose: () => void; onSaved: (k: BizDraft['k'], id: number, title: string, isNew: boolean, extra: string) => void }) {
   const [d, setD] = useState<BizDraft>(draft);
+  const [weekly, setWeekly] = useState(false);
   const [busy, setBusy] = useState(false);
   const st = state.settings;
   const isNew = !d.id;
@@ -235,6 +238,8 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
     } else if (d.k === 'event') {
       title = d.title.trim();
       id = await api.setEvent(d.id ?? 0, { title, day: d.day ?? today, at: d.after_p ? null : d.at ?? null, after_p: d.after_p ?? null, kind: d.kind ?? 'meet', msg: d.msg ?? null });
+      // a lesson every week: 7 more copies on the same weekday and time (each one can be moved or removed later)
+      if (id && study && isNew && weekly) for (let w = 1; w <= 7; w++) await api.setEvent(0, { title, day: addDays(d.day ?? today, w * 7), at: d.after_p ? null : d.at ?? null, after_p: d.after_p ?? null, kind: 'meet', msg: null });
       extra = `${D(d.day ?? today).toLocaleDateString(LOC, { weekday: 'short', day: 'numeric', month: 'short' })}${d.after_p ? `, ${AFTER_P[d.after_p]()}` : d.at ? `, ${d.at}` : ''}`;
     } else {
       title = d.body.trim();
@@ -249,7 +254,7 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
     onClose();
   };
   const ok = (d.k === 'dec' ? d.body : d.title).trim().length > 0 && (d.k !== 'event' || Boolean(d.day));
-  const head = d.k === 'task' ? (isNew ? _t("📋 Новое дело") : _t("📋 Дело")) : d.k === 'event' ? (isNew ? _t("📅 Новая встреча") : _t("📅 Встреча")) : (isNew ? _t("✅ Решение шуры") : _t("✅ Решение"));
+  const head = d.k === 'task' ? (isNew ? _t("📋 Новое дело") : _t("📋 Дело")) : d.k === 'event' ? (study ? (isNew ? _t("📅 Новое занятие") : _t("📅 Занятие")) : isNew ? _t("📅 Новая встреча") : _t("📅 Встреча")) : (isNew ? _t("✅ Решение шуры") : _t("✅ Решение"));
   const dayChips: [string, string][] = [[today, _t("Сегодня")], [addDays(today, 1), _t("Завтра")], ...(fri && fri !== today && fri !== addDays(today, 1) ? [[fri, _t("Пятница")] as [string, string]] : []), [addDays(weekStart(today), 7), _t("След. пн")]];
 
   return (
@@ -260,7 +265,7 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
         {d.k === 'dec' ? (
           <textarea rows={3} maxLength={300} value={d.body} onChange={(e) => setD({ ...d, body: e.target.value })} placeholder={_t("Что решили. Например: кредит не берём, ищем партнёра-инвестора")} autoFocus={isNew} />
         ) : (
-          <input maxLength={d.k === 'task' ? 140 : 120} value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} placeholder={d.k === 'task' ? _t("Что сделать. Например: позвонить поставщику") : _t("Например: встреча с инвестором")} autoFocus={isNew} />
+          <input maxLength={d.k === 'task' ? 140 : 120} value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} placeholder={d.k === 'task' ? _t("Что сделать. Например: позвонить поставщику") : study ? _t("Например: урок 7, ихфа и иклаб") : _t("Например: встреча с инвестором")} autoFocus={isNew} />
         )}
 
         {d.k === 'task' && (
@@ -286,7 +291,7 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
         {d.k === 'event' && (
           <>
             <div className="bw-chips">
-              <button type="button" aria-pressed={(d.kind ?? 'meet') === 'meet'} onClick={() => setD({ ...d, kind: 'meet' })}><Ic e="meet" cls="lead" />{_t("Встреча")}</button>
+              <button type="button" aria-pressed={(d.kind ?? 'meet') === 'meet'} onClick={() => setD({ ...d, kind: 'meet' })}><Ic e="meet" cls="lead" />{study ? _t("Занятие") : _t("Встреча")}</button>
               <button type="button" aria-pressed={d.kind === 'due'} onClick={() => setD({ ...d, kind: 'due' })}><Ic e="due" cls="lead" />{_t("Срок")}</button>
             </div>
             <span className="bw-sl">{_t("День")}</span>
@@ -299,9 +304,10 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
               {ANCHORS.map((a) => <button key={a} type="button" aria-pressed={d.after_p === a} onClick={() => setD({ ...d, after_p: d.after_p === a ? null : a, at: null })}>{AFTER_P[a]()}</button>)}
               <input type="time" value={d.after_p ? '' : d.at ?? ''} onChange={(e) => setD({ ...d, at: e.target.value || null, after_p: null })} aria-label={_t("Время")} />
             </div>
+            {study && isNew && (d.kind ?? 'meet') === 'meet' && <label className="sy-chk"><input type="checkbox" checked={weekly} onChange={(e) => setWeekly(e.target.checked)} /> {_t("Каждую неделю (8 занятий)")}</label>}
             {clash && (
               <div className="bw-warn">
-                <span><Ic e="warn" cls="lead" />{_t("Это время Джума. Поставим встречу после намаза?")}</span>
+                <span><Ic e="warn" cls="lead" />{study ? _t("Это время Джума. Поставим занятие после намаза?") : _t("Это время Джума. Поставим встречу после намаза?")}</span>
                 <button type="button" onClick={() => setD({ ...d, at: clash, after_p: null })}>{_tj("Поставить на {0}", clash)}</button>
               </div>
             )}

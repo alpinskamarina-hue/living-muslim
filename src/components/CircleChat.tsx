@@ -24,7 +24,7 @@ const QUICK = [_t("🤲 Амин"), _t("✨ МашаАллах"), _t("💪 Я с
 const EMOJI = ['🤲', '❤️', '✨', '💪', '👍'];
 const RX_NAME: Record<string, string> = { '🤲': _t("Амин"), '❤️': _t("Люблю ради Аллаха"), '✨': _t("МашаАллах"), '💪': _t("Я с тобой"), '👍': _t("Согласен") };
 const PRAYER: Record<string, string> = { fajr: _t("Фаджр"), dhuhr: _t("Зухр"), asr: _t("Аср"), maghrib: _t("Магриб"), isha: _t("Иша") };
-const MAX_SEC = 60;
+export const MAX_SEC = 60;
 
 const hm = (iso: string) => new Date(iso).toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
 const dayKey = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
@@ -134,7 +134,7 @@ function Ava({ id, names }: { id: string; names: Names }) {
   return p?.avatarUrl ? <img className="cc-ava" src={p.avatarUrl} alt="" onClick={open} /> : <span className="cc-ava" style={{ background: p?.color || '#1f7a4d' }} onClick={open}>{(p?.name || '?').slice(0, 1).toUpperCase()}</span>;
 }
 
-function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
+export function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
   const [state, setState] = useState<'idle' | 'load' | 'play'>('idle');
   const [pos, setPos] = useState(0);
   const a = useRef<HTMLAudioElement | null>(null);
@@ -228,7 +228,7 @@ function useTrReady() {
 }
 
 /** Hold the mic to record, release to send, slide left to cancel. A short tap records hands-free with buttons. */
-function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) {
+export function useRecorder(onDone: (blob: Blob, sec: number, bars: number[]) => void) {
   const relRef = useRef<() => void>(() => {});
   const [rec, setRec] = useState<null | { start: number; locked: boolean }>(null);
   const [sec, setSec] = useState(0);

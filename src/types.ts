@@ -132,6 +132,8 @@ export interface AppState {
   prayers: Record<string, Partial<Record<Anchor, PrayerMark>>>;
   settings: Settings;
   videos?: import('./videos').VideoState;
+  /** Study circle plans finished and confirmed (badges in the profile). */
+  studyDone?: { k: string; t: string; d: string; ic?: string }[];
   /** Practice ids pinned to the top of Practice (up to 4). */
   practiceFav?: string[];
   /** started[day] = keys of today's practice items the person already started (h:<habitId>, g:<goalId>). */
