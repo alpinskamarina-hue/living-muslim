@@ -5759,3 +5759,16 @@ p.ug-terms { padding-left: 0; }
 .wa-hbtn .li { width: 22px; height: 22px; color: currentColor; }
 .cc-menu .li.lead, .cc-sheet .li.lead { color: var(--ink-2); }
 .wa-bigav .li { width: 46px; height: 46px; color: var(--green-2); }
+
+/* voice → text («Расшифровать») */
+.cc-vwrap { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
+.cc-voice { max-width: 100%; }
+.cc-tr { display: block; font-size: 14px; line-height: 1.4; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; border-left: 2px solid var(--line); padding: 1px 0 1px 8px; }
+.cc-tr.cut { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+.cc-tr.none { color: var(--ink-2); font-style: italic; font-size: 12.5px; }
+.cc-tr-more { align-self: flex-start; border: 0; background: none; padding: 0 0 0 10px; font-weight: 600; color: var(--green-2); font-size: 12.5px; cursor: pointer; }
+.cc-tr-btn { align-self: flex-start; border: 1px solid var(--line); background: var(--surface); color: var(--green-2); border-radius: 12px; padding: 3px 10px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.cc-tr-btn span { font-family: var(--f-display); font-weight: 700; margin-right: 2px; }
+.cc-tr-btn.wait { color: var(--ink-2); cursor: default; }
+.su-sum { white-space: pre-wrap; font-size: 14px; line-height: 1.45; margin: 6px 0 0; }
+.su-demo .link-btn { margin-top: 6px; }

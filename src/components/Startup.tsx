@@ -1,8 +1,9 @@
 // The startup circle's «Путь» tab: the path of 5 stages, the idea on one page, the 7-day idea check,
 // customer talks, the team vote (with istikhara first), demo day on Thursdays and the weekly pulse.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { BizApi } from '../bizWork';
-import type { Msg } from '../chat';
+import { trReady, type Msg } from '../chat';
+import { cloudMe } from '../cloud';
 import { CHECK_DAYS, IDEA_FIELDS, QUESTIONS, STAGES, checkDay, forecast, isThursday, keyOf, mondayOf, talkSummary, thursdayOf, type Idea, type SuApi, type Vote } from '../startup';
 import { askAssistant } from './Assistant';
 import { _t, _tj, LOC } from '../i18n';
@@ -16,6 +17,9 @@ interface Props {
   post: (body: string) => void;
   /** opens the chat tab */
   toChat: () => void;
+  code?: string;
+  /** voice → text (chat-transcribe.sql); missing until it is run */
+  transcribe?: (id: number) => Promise<{ text?: string; err?: string }>;
 }
 const D = (k: string) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d, 12); };
 const first = (names: Names, me: string, id?: string | null) => (!id ? '' : id === me ? _t("Ты") : (names[id]?.name || _t("Участник")).split(' ')[0]);
@@ -110,6 +114,7 @@ function PathView(p: Props & { go: (s: Seg) => void }) {
             ? _tj("В четверг {0} записали минуту: {1}. Послушайте в чате и ответьте советом.", dm(thu), spoke.map((u) => first(names, me, u)).join(', '))
             : _t("В четверг каждый записывает в чат минуту голосом: что сделал, где застрял, что нужно. Остальные отвечают советом.")}</p>
         )}
+        {spoke.length > 0 && <DemoSum {...p} thu={thu} />}
       </div>
 
       <div className="bw-card">
@@ -401,6 +406,54 @@ function PulseView({ su, today }: Props) {
         </div>
         <button type="button" className="link-btn bw-edit" onClick={() => setSetup(true)}>{_t("✏️ Другая цифра или цель")}</button>
       </div>
+    </>
+  );
+}
+
+/** «Итог демо-дня»: transcribes that Thursday's voice minutes (once, for the whole circle), then a short summary. */
+function DemoSum(p: Props & { thu: string }) {
+  const { msgs, names, me, thu, code } = p;
+  const [on, setOn] = useState(false);
+  const key = `lm.demo.${code}.${thu}`;
+  const [sum, setSum] = useState<string>(() => { try { return localStorage.getItem(key) || ''; } catch { return ''; } });
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+  useEffect(() => { if (p.transcribe) trReady().then(setOn); }, [p.transcribe]);
+  if (!on || !p.transcribe || !code) return null;
+  const voices = msgs.filter((m) => m.kind === 'voice' && !m.deleted && keyOf(new Date(m.at)) === thu);
+  const run = async () => {
+    setErr('');
+    const texts = new Map<number, string>(voices.filter((m) => m.body).map((m) => [m.id, m.body]));
+    const todo = voices.filter((m) => !m.body && m.voice);
+    for (let i = 0; i < todo.length; i++) {
+      setBusy(_tj("Расшифровываю {0} из {1}…", i + 1, todo.length));
+      const r = await p.transcribe!(todo[i].id);
+      if (r.err && r.err !== 'gone' && r.err !== 'auth') { setBusy(''); setErr(r.err === 'limit' ? _t("На сегодня расшифровки закончились") : r.err === 'nokey' || r.err === 'nosql' ? _t("Расшифровка ещё не подключена") : _t("Не получилось, нажми ещё раз")); return; }
+      if (r.text) texts.set(todo[i].id, r.text);
+    }
+    const by = new Map<string, string[]>();
+    for (const m of voices) { const t = texts.get(m.id); if (t && t !== '…') by.set(m.uid, [...(by.get(m.uid) ?? []), t]); }
+    if (!by.size) { setBusy(''); setErr(_t("В голосовых не разобрать слов")); return; }
+    setBusy(_t("Помощник собирает итог…"));
+    const id = cloudMe();
+    try {
+      const r = await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        mode: 'sum', uid: id?.uid, token: id?.token, code,
+        items: [...by].map(([u, t]) => ({ name: u === me ? (names[u]?.name || _t("Я")) : (names[u]?.name || _t("Участник")), text: t.join(' ') })),
+      }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.text) throw new Error(j.error || 'busy');
+      setSum(j.text);
+      try { localStorage.setItem(key, j.text); } catch { /* */ }
+    } catch { setErr(_t("Не получилось, нажми ещё раз")); }
+    setBusy('');
+  };
+  return (
+    <>
+      {sum && <p className="su-sum">{sum}</p>}
+      {busy ? <p className="bw-sm">{busy}</p>
+        : <button type="button" className="link-btn" onClick={run}>{sum ? _t("Обновить итог") : _t("Аа Итог демо-дня: расшифровать и собрать")}</button>}
+      {err && <p className="bw-sm">{err}</p>}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Ic, IcT, Rx } from './LIcon';
-import { FILE_MAX, callsAi, type ChatApi, type Msg, type MsgRef, type ReadState } from '../chat';
+import { FILE_MAX, callsAi, trReady, type ChatApi, type Msg, type MsgRef, type ReadState } from '../chat';
 import { aiName } from '../assistant';
 import { placeOf } from '../plansCloud';
 import { setAskFor } from '../cweek';
@@ -157,15 +157,54 @@ function Voice({ m, chat, mine }: { m: Msg; chat: ChatApi; mine: boolean }) {
     window.addEventListener('lm-voice', stop);
     return () => window.removeEventListener('lm-voice', stop);
   }, [m.id]);
-  if (!m.voice) return <span className="cc-gone">{_t("🎙 Голосовое больше не доступно")}</span>;
+  const trOn = useTrReady();
+  const [tr, setTr] = useState<'' | 'load' | string>('');
+  const [open, setOpen] = useState(false);
+  const text = m.body;
+  const doTr = async () => {
+    setTr('load');
+    const r = await chat.transcribe(m.id);
+    setTr(r.err ? (TR_ERR[r.err] ?? TR_ERR.busy)() : '');
+    if (!r.err) setOpen(true);
+  };
+  if (!m.voice && !text) return <span className="cc-gone">{_t("🎙 Голосовое больше не доступно")}</span>;
   const bars = m.bars?.length ? m.bars : Array.from({ length: 24 }, (_, i) => 3 + ((m.id * 7 + i * 13) % 6));
+  const long = text.length > 140;
   return (
-    <span className={`cc-voice${mine ? ' mine' : ''}`}>
-      <button type="button" className="cc-play" onClick={toggle} aria-label={state === 'play' ? _t("Пауза") : _t("Слушать")}>{state === 'play' ? '❚❚' : state === 'load' ? '…' : '▶'}</button>
-      <span className="cc-wave" aria-hidden="true">{bars.map((b, i) => <i key={i} className={i / bars.length < pos ? 'on' : ''} style={{ height: `${4 + b * 2.2}px` }} />)}</span>
-      <small>0:{String(m.sec || 0).padStart(2, '0')}</small>
+    <span className="cc-vwrap">
+      {m.voice ? (
+        <span className={`cc-voice${mine ? ' mine' : ''}`}>
+          <button type="button" className="cc-play" onClick={toggle} aria-label={state === 'play' ? _t("Пауза") : _t("Слушать")}>{state === 'play' ? '❚❚' : state === 'load' ? '…' : '▶'}</button>
+          <span className="cc-wave" aria-hidden="true">{bars.map((b, i) => <i key={i} className={i / bars.length < pos ? 'on' : ''} style={{ height: `${4 + b * 2.2}px` }} />)}</span>
+          <small>0:{String(m.sec || 0).padStart(2, '0')}</small>
+        </span>
+      ) : <span className="cc-gone">{_t("🎙 Голосовое удалено через 30 дней, текст остался")}</span>}
+      {text ? (
+        text === '…' ? <span className="cc-tr none">{_t("Слов не разобрать")}</span>
+          : <><span className={`cc-tr${long && !open ? ' cut' : ''}`} onClick={long ? () => setOpen((o) => !o) : undefined}>{text}</span>{long && <button type="button" className="cc-tr-more" onClick={() => setOpen((o) => !o)}>{open ? _t("свернуть") : _t("читать дальше")}</button>}</>
+      ) : trOn && m.voice && (
+        tr === 'load' ? <span className="cc-tr-btn wait">{_t("Расшифровываю…")}</span>
+          : <button type="button" className="cc-tr-btn" onClick={doTr}><span aria-hidden="true">Аа</span> {tr || _t("Расшифровать")}</button>
+      )}
     </span>
   );
+}
+
+const TR_ERR: Record<string, () => string> = {
+  limit: () => _t("На сегодня расшифровки закончились"),
+  net: () => _t("Нет связи, нажми ещё раз"),
+  busy: () => _t("Не получилось, нажми ещё раз"),
+  nosql: () => _t("Расшифровка ещё не подключена"),
+  nokey: () => _t("Расшифровка ещё не подключена"),
+  auth: () => _t("Нет доступа к этому голосовому"),
+  gone: () => _t("Голосовое удалено"),
+};
+
+let trCache: boolean | null = null;
+function useTrReady() {
+  const [ok, setOk] = useState(trCache ?? false);
+  useEffect(() => { if (trCache == null) trReady().then((v) => { trCache = v; setOk(v); }); }, []);
+  return ok;
 }
 
 /** Hold the mic to record, release to send, slide left to cancel. A short tap records hands-free with buttons. */
@@ -735,13 +774,13 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           <div className="cc-menu" role="dialog" aria-label={_t("Сообщение")}>
             {!menu.deleted && menu.kind !== 'event' && <div className="cc-emo">{EMOJI.map((e) => <button key={e} type="button" data-e={e} aria-label={RX_NAME[e] ?? e} className={menu.reacts?.[me] === e ? 'on' : ''} onClick={() => { chat.react(menu.id, e); setMenu(null); }}><Rx e={e} /></button>)}</div>}
             {menu.uid === me && !menu.deleted && (() => { const r = chat.readOf(menu); if (!r || !r.tot) return null; return <p className="cc-read">{r.by.length ? <><Ticks s={r.state} /> {_t("Прочитали:")} {r.by.map(nm).join(', ')}</> : <><Ticks s="sent" /> {_t("Ещё никто не прочитал")}</>}{r.by.length && r.by.length < r.tot ? <small>{_tj("Ещё не прочитали: {0}", r.tot - r.by.length)}</small> : null}</p>; })()}
-            {biz && !menu.deleted && menu.kind !== 'event' && menu.body.trim() && <>
+            {biz && !menu.deleted && menu.kind !== 'event' && menu.body.trim() && menu.body !== '…' && <>
               <button type="button" className="cc-bzm" onClick={() => { biz.make('task', menu); setMenu(null); }}><IcT t={_t("📋 Сделать делом")} /></button>
               <button type="button" className="cc-bzm" onClick={() => { biz.make('event', menu); setMenu(null); }}><IcT t={_t("📅 Поставить в календарь")} /></button>
               <button type="button" className="cc-bzm" onClick={() => { biz.make('dec', menu); setMenu(null); }}><IcT t={_t("✅ Записать как решение")} /></button>
             </>}
             {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}><IcT t={_t("↩️ Ответить")} /></button>}
-            {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}><IcT t={_t("📋 Скопировать")} /></button>}
+            {!menu.deleted && (menu.kind !== 'voice' || (menu.body && menu.body !== '…')) && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}><IcT t={_t("📋 Скопировать")} /></button>}
             {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? _t("Жалоба отправлена. Спасибо, разберёмся") : _t("Не получилось отправить жалобу")); }}><IcT t={_t("🚩 Пожаловаться")} /></button>}
             {menu.uid !== me && <button type="button" onClick={async () => { if (!confirm(_t("Скрыть все сообщения {0} и запретить ему приглашать тебя?", nm(menu.uid)))) return; const ok = await blockUser(menu.uid); setMenu(null); flash(ok ? _t("Его сообщения скрыты") : _t("Не получилось")); }}><IcT t={_t("🙈 Скрыть сообщения человека")} /></button>}
             {(menu.uid === me || isOwner) && !menu.deleted && <button type="button" className="danger-t" onClick={async () => { if (!confirm(_t("Удалить сообщение для всех?"))) return; const ok = await chat.remove(menu.id); setMenu(null); flash(ok ? _t("Удалено") : _t("Не получилось удалить")); }}><IcT t={_tj("🗑 Удалить{0}", menu.uid !== me ? _t(" (ты владелец круга)") : '')} /></button>}
