@@ -428,7 +428,7 @@ function DemoSum(p: Props & { thu: string }) {
     for (let i = 0; i < todo.length; i++) {
       setBusy(_tj("Расшифровываю {0} из {1}…", i + 1, todo.length));
       const r = await p.transcribe!(todo[i].id);
-      if (r.err === 'limit' || r.err === 'nosql' || r.err === 'net') { setBusy(''); setErr(r.err === 'limit' ? _t("На сегодня расшифровки закончились") : _t("Не получилось, нажми ещё раз")); return; }
+      if (r.err && r.err !== 'gone' && r.err !== 'auth') { setBusy(''); setErr(r.err === 'limit' ? _t("На сегодня расшифровки закончились") : r.err === 'nokey' || r.err === 'nosql' ? _t("Расшифровка ещё не подключена") : _t("Не получилось, нажми ещё раз")); return; }
       if (r.text) texts.set(todo[i].id, r.text);
     }
     const by = new Map<string, string[]>();

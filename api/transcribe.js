@@ -79,7 +79,11 @@ export default async function handler(req, res) {
   if (!ctx.b64) return res.status(404).json({ error: 'gone' });
 
   let text;
-  try { text = await toText(Buffer.from(ctx.b64, 'base64'), ctx.mime); } catch { return res.status(502).json({ error: 'busy' }); }
+  try { text = await toText(Buffer.from(ctx.b64, 'base64'), ctx.mime); } catch (e) {
+    // the gateway is not switched on for the team yet (no card on file): say so instead of «try again»
+    const off = /credit card|authentication|api key|unauthor/i.test(String(e?.message || e));
+    return res.status(off ? 503 : 502).json({ error: off ? 'nokey' : 'busy' });
+  }
   let msg = null;
   try { msg = await rpc('lm_chat_tr_save', { p_secret: secret, p_id: id, p_text: text }); } catch { /* the text still goes back */ }
   return res.status(200).json({ text: msg?.body ?? (text || '…'), msg });
