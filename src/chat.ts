@@ -107,6 +107,8 @@ export interface ChatApi {
   older: () => Promise<void>;
   setVoice: (on: boolean) => Promise<boolean>;
   voiceUrl: (id: number) => Promise<string>;
+  /** Id of the last voice message I sent from this phone (0 = none yet). */
+  lastVoiceId: () => number;
   /** Photo or document: '' when sent, else an error code (big, type, day, error). */
   sendFile: (f: File, caption: string, ref?: MsgRef | null) => Promise<string>;
   fileUrl: (id: number) => Promise<string>;
@@ -127,6 +129,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [seen, setSeen] = useState(0);
   const [seenAtOpen, setSeenAtOpen] = useState<number | null>(null);
+  const lastVoice = useRef(0);
   const wantSeen = useRef(false);
   // others' read marks: uid → [last message read, joined at (ms)]
   const [reads, setReads] = useState<Record<string, [number, number]> | null>(null);
@@ -248,6 +251,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
       const r = await meRpc<Msg & { error?: string }>('lm_chat_voice_send', { p_code: code, p_mime: blob.type || 'audio/webm', p_b64: b64, p_sec: Math.round(sec), p_bars: bars, p_ref: ref });
       if (r?.error) return r.error;
       voiceCache.set(r.id, URL.createObjectURL(blob));
+      lastVoice.current = r.id;
       setMsgs((m) => merge(m, [r]));
       last.current = Math.max(last.current, r.id);
       return '';
@@ -369,7 +373,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     return ok;
   };
 
-  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, readOf, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl, transcribe };
+  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, readOf, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, lastVoiceId: () => lastVoice.current, sendFile, fileUrl, transcribe };
 }
 
 /** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */

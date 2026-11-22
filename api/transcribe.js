@@ -2,9 +2,10 @@
 // person is in that circle and hands over the audio (supabase/chat-transcribe.sql), Vercel AI Gateway turns it into
 // text, and the text is saved once into the message, so the whole circle sees it and nobody pays for it twice.
 // Mode "sum": { uid, token, code, items: [{ name, text }] } → a short demo-day summary (startup circle).
+// Mode "study": { uid, token, code, title, text } → 3 main points and review cards of a lesson (study circle notes).
 import { transcribe } from 'ai';
 import Anthropic from '@anthropic-ai/sdk';
-import { HAIKU, logUsage } from './_route.js';
+import { HAIKU, SONNET, logUsage } from './_route.js';
 
 const SB = 'https://pbpllsoiesquknuibyyj.supabase.co';
 const KEY = 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo';
@@ -34,6 +35,21 @@ const SUM_SYSTEM = `You summarize the weekly «demo day» of a small startup tea
 Format, plain text, no markdown headings:
 one line per person: «Имя: сделал … · застрял … · нужно …» (skip a part they did not mention);
 then «Команде:» and 1 to 3 short practical suggestions (who can help whom, what to decide this week).`;
+
+const STUDY_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  properties: {
+    points: { type: 'array', items: { type: 'string' }, description: 'Exactly 3 main points of the lesson, each one short sentence.' },
+    cards: {
+      type: 'array', description: 'Up to 8 review cards from the lesson: a word, term, example or short question on the front, a short answer on the back.',
+      items: { type: 'object', additionalProperties: false, properties: { a: { type: 'string' }, t: { type: 'string' } }, required: ['a', 't'] },
+    },
+  },
+  required: ['points', 'cards'],
+};
+const STUDY_SYSTEM = `You help a Muslim study circle (Quran, tajweed, Arabic, books) turn the text of one lesson into notes.
+Write exactly 3 main points in the language of the lesson text (Russian or English), each one plain sentence, and up to 8 review cards (front a: a term, Arabic word or short question, max 60 characters; back t: the short answer, max 60 characters).
+Use only what the lesson text says. Never add hadith, verses, rulings or sources that are not in the text, and never correct the teacher. If the text is too short or not a lesson, return fewer points and no cards.`;
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -67,6 +83,25 @@ export default async function handler(req, res) {
       const text = r.content.filter((c) => c.type === 'text').map((c) => c.text).join('').trim();
       return res.status(200).json({ text });
     } catch { return res.status(502).json({ error: 'busy' }); }
+  }
+
+  if (b.mode === 'study') {
+    const text = str(b.text, 15000).trim();
+    if (text.length < 80) return res.status(400).json({ error: 'empty' });
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'nokey' });
+    const code = str(b.code, 40);
+    try { const ctx = await rpc('lm_chat_ai_ctx', { p_secret: secret, p_uid: uid, p_token: token, p_code: code }); if (!ctx?.ok) return res.status(403).json({ error: 'auth' }); } catch { return res.status(503).json({ error: 'nosql' }); }
+    try {
+      const client = new Anthropic();
+      const model = text.length > 3000 ? SONNET : HAIKU;
+      const r = await client.messages.create({ model, max_tokens: 1500, output_config: { effort: 'low', format: { type: 'json_schema', schema: STUDY_SCHEMA } }, system: STUDY_SYSTEM, messages: [{ role: 'user', content: `Lesson: ${str(b.title, 120)}\n\n${text}` }] });
+      logUsage('study-notes', model, r.usage);
+      if (r.stop_reason === 'refusal') return res.status(200).json({ points: [], cards: [] });
+      const out = JSON.parse(r.content.filter((c) => c.type === 'text').map((c) => c.text).join(''));
+      const points = (Array.isArray(out.points) ? out.points : []).map((x) => str(x, 300)).filter(Boolean).slice(0, 3);
+      const cards = (Array.isArray(out.cards) ? out.cards : []).map((c) => ({ a: str(c?.a, 80), t: str(c?.t, 80) })).filter((c) => c.a && c.t).slice(0, 8);
+      return res.status(200).json({ points, cards });
+    } catch (e) { console.error('study notes', e?.status, e?.message); return res.status(502).json({ error: 'busy' }); }
   }
 
   const id = Number(b.id);

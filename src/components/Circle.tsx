@@ -17,7 +17,7 @@ import { IftarSection } from './Iftar';
 import { CloudSetup, CloudInvite } from './CloudCircle';
 import { AsksBox } from './Person';
 import { InviteByNick, InviteInbox } from './Nick';
-import { nicksReady, meRpc, serverHas, leaveCircle } from '../cloud';
+import { nicksReady, meRpc, serverHas, leaveCircle, cloudMe } from '../cloud';
 import { shareInvite } from './CloudCircle';
 import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite, isDm, renameCircle, rootOf, suffixOf, circleTitle, SUFFIX_MAX } from '../cloud';
 import { useEffect, useState } from 'react';
@@ -46,6 +46,8 @@ import type { CCourse } from '../courseSocial';
 import { useBiz, useBizWorkReady, syncPlans } from '../bizWork';
 import { StartupPane } from './Startup';
 import { useStartup, useStartupReady } from '../startup';
+import { StudyPane, StudyLessons } from './Study';
+import { useStudy, useStudyReady, revFromSubs, syncHomework, hasPlan } from '../study';
 import { BizTabs, BizTasks, BizCalendar, BizPlanPane, BizSheet, guessDay, type BizTab, type BizDraft } from './BizWork';
 
 interface Props {
@@ -146,18 +148,39 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const listShown = listOn && isCloud && myCircles().length > 0;
   // business circle: tabs Чат · Дела · Календарь · План (supabase/biz-work.sql)
   const isSu = currentCircle()?.kind === 'startup';
-  const bizOn = useBizWorkReady(Boolean(isCloud && joined && (currentCircle()?.kind === 'biz' || isSu)));
+  // study circle: tabs Чат · Учёба · Занятия (supabase/study.sql + biz-work.sql for the lessons)
+  const isSt = currentCircle()?.kind === 'study';
+  const bizBase = useBizWorkReady(Boolean(isCloud && joined && (currentCircle()?.kind === 'biz' || isSu || isSt)));
+  const stOn = useStudyReady(bizBase && isSt);
+  const bizOn = bizBase && (!isSt || stOn);
   const suOn = useStartupReady(bizOn && isSu);
   const [bizTab, setBizTab] = useState<BizTab>('chat');
   const [bizDraft, setBizDraft] = useState<BizDraft | null>(null);
   useEffect(() => { setBizTab('chat'); }, [chatCode]);
   const bizApi = useBiz(chatCode, bizOn && !listShown);
   const suApi = useStartup(chatCode, suOn && !listShown);
+  const stApi = useStudy(chatCode, stOn && !listShown);
+  // a new study circle opens on «Учёба», where the circle picks what it learns
+  useEffect(() => {
+    if (!stApi.data || hasPlan(stApi.data.state.plan) || !chatCode) return;
+    try { if (sessionStorage.getItem(`lm.stsetup.${chatCode}`)) return; sessionStorage.setItem(`lm.stsetup.${chatCode}`, '1'); } catch { /* */ }
+    setBizTab('path');
+  }, [Boolean(stApi.data), chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the teacher's marks change my revision; my homework deadlines go into my «Планы»
+  const stKey = stApi.data ? `${stApi.data.subs.map((x) => `${x.id}${x.status}`).join()}|${stApi.data.tasks.map((t) => `${t.id}${t.due}${t.due_p}${t.title}`).join()}` : '';
+  useEffect(() => {
+    const d = stApi.data; const me0 = cloudMe()?.uid;
+    if (!d || !chatCode || !me0) return;
+    const mine = d.prog.find((x) => x.uid === me0);
+    const rev = revFromSubs(mine?.rev ?? {}, d.subs, me0);
+    if (rev) void stApi.prog({ rev });
+    update((s) => syncHomework(s, chatCode, currentCircle()?.title || _t("Учёба"), d, me0, today) ?? s);
+  }, [stKey, chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
   const bizEvKey = (bizApi.data?.events ?? []).map((e) => `${e.id}${e.day}${e.at}${e.after_p}${e.title}`).join('|');
   useEffect(() => {
     if (!bizApi.data || !chatCode) return;
     const title = currentCircle()?.title || _t("Бизнес");
-    update((s) => syncPlans(s, chatCode, title, bizApi.data!.events, today) ?? s);
+    update((s) => syncPlans(s, chatCode, title, bizApi.data!.events, today, isSt) ?? s);
   }, [bizEvKey, chatCode]); // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useChat(joined ? chatCode : undefined, !listShown && (!bizOn || bizTab === 'chat') && (view === 'chat' || (cxOn && !panel)));
   // Posts: a «Чат · Посты» switch once the circle has posts or I may write them. Only in circles of the kind «Своё»:
@@ -621,7 +644,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             <em>{_t("Открыть ›")}</em>
           </button>
         )}
-        {bizOn && <BizTabs startup={suOn} tab={bizTab} onTab={(t) => { setBizTab(t); window.scrollTo(0, 0); }} counts={{ tasks: (bizApi.data?.tasks ?? []).filter((t) => t.owner === me && t.status !== 'done' && (!t.due || t.due <= today)).length }} />}
+        {bizOn && <BizTabs startup={suOn} study={isSt} tab={bizTab} onTab={(t) => { setBizTab(t); window.scrollTo(0, 0); }} counts={{ tasks: (bizApi.data?.tasks ?? []).filter((t) => t.owner === me && t.status !== 'done' && (!t.due || t.due <= today)).length,
+          path: isSt && stApi.data ? (stApi.data.me.teacher || !stApi.data.state.teachers.length ? stApi.data.subs.filter((x) => x.status === 'wait' && x.uid !== me).length : 0) + (stApi.data.quiz && !stApi.data.quiz.mine ? 1 : 0) : 0 }} />}
         {postCircle && posts.d && (posts.d.can || posts.d.posts.length > 0) && (() => {
           const seen = postSeen(chatCode!);
           const n = posts.d.posts.filter((p) => p.at > seen && p.uid !== me && !p.later).length;
@@ -636,7 +660,13 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         {postCircle && ptab === 'posts' ? (
           <PostFeed code={chatCode!} api={posts} open={ocOpen} seenKey={chatCode!} empty={_t("Постов пока нет. Пост это объявление амира: его не уносит лентой, его можно закрепить.")} />
         ) : bizOn && bizTab !== 'chat' && me ? (
-          bizTab === 'path' && suOn ? <StartupPane su={suApi} biz={bizApi} me={me} names={names} people={bizPeople} today={today} msgs={chat.msgs} code={chatCode} transcribe={chat.transcribe}
+          isSt && me ? (bizTab === 'path'
+            ? <StudyPane st={stApi} chat={chat} me={me} names={names} people={bizPeople} today={today} state={state} update={update}
+              post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }} />
+            : <StudyLessons st={stApi} chat={chat} me={me} names={names} people={bizPeople} today={today} state={state} update={update}
+              post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }}
+              calendar={<BizCalendar {...bizCommon} study />} />)
+          : bizTab === 'path' && suOn ? <StartupPane su={suApi} biz={bizApi} me={me} names={names} people={bizPeople} today={today} msgs={chat.msgs} code={chatCode} transcribe={chat.transcribe}
             post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }} />
             : bizTab === 'tasks' ? <BizTasks {...bizCommon} />
             : bizTab === 'cal' ? <BizCalendar {...bizCommon} />
@@ -644,7 +674,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         ) : (
         <CircleChat notice={openOn ? <OpenChatNote code={chatCode} /> : undefined} onPost={postCircle ? goPost : undefined} chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
           draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} onUmrah={openTrip}
-          biz={bizOn ? {
+          biz={bizOn && !isSt ? {
             make: (k, m) => {
               const text = m.body.replace(/\s+/g, ' ').trim();
               if (k === 'dec') setBizDraft({ k: 'dec', body: text.slice(0, 300), msg: m.id });
@@ -655,10 +685,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           } : undefined} />
         )}
         {bizDraft && me && (
-          <BizSheet draft={bizDraft} api={bizApi} me={me} names={names} people={bizPeople} state={state} today={today} onClose={() => setBizDraft(null)}
+          <BizSheet study={isSt} draft={bizDraft} api={bizApi} me={me} names={names} people={bizPeople} state={state} today={today} onClose={() => setBizDraft(null)}
             onSaved={(k, id, title, isNew, extra) => {
               if (!isNew || !chatOn) return;
-              const body = k === 'task' ? _tj("📋 Новое дело: «{0}»{1}", title, extra ? ` · ${extra}` : '') : k === 'event' ? _tj("📅 Встреча: «{0}» · {1}", title, extra) : _tj("✅ Решение: {0}", title);
+              const body = k === 'task' ? _tj("📋 Новое дело: «{0}»{1}", title, extra ? ` · ${extra}` : '') : k === 'event' ? (isSt ? _tj("📅 Занятие: «{0}» · {1}", title, extra) : _tj("📅 Встреча: «{0}» · {1}", title, extra)) : _tj("✅ Решение: {0}", title);
               chat.send(body.slice(0, 300), { t: 'bz', k: k === 'task' ? 't' : k === 'event' ? 'e' : 'd', bz: id }, 'event');
             }} />
         )}
