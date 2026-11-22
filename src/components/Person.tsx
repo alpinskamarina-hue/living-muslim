@@ -14,6 +14,7 @@ import { plural } from '../dates';
 import { guideMine, guidesOk, type MyGuide } from '../guides';
 import { _t, _tj, LOC } from '../i18n';
 import { PathView, PathSettingsPage, TOPICS, topicLabel } from './PathView';
+import { useDmReady, dmCan, openDm, dmWhy, type DmMode } from '../dm';
 import { dayKey } from '../dates';
 
 const daysSince = (iso: string) => Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 86400000));
@@ -27,6 +28,7 @@ const ago = (iso: string) => {
   const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
   return d <= 0 ? _t("сегодня") : d === 1 ? _t("вчера") : _tj("{0}  {1} назад", d, plural(d, _t("день"), _t("дня"), _t("дней")));
 };
+const PRACTICAL = ['question', 'umrah', 'learn', 'job', 'biz'];
 const askTemplate = (k: AskKind, name: string, i?: Intent) => {
   const first = name.split(' ')[0];
   if (k === 'umrah') return _t("Ассаляму алейкум, {0}! Хочу на умру с вами{1}. Расскажешь подробнее?", first, i?.title ? ` (${i.title})` : '');
@@ -70,7 +72,11 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
   const [nk, setNk] = useState<NkCard | null>(null);
   const [menu, setMenu] = useState(false);
   const nkOn = useNikahReady();
+  const dmOn = useDmReady();
+  const [dmc, setDmc] = useState<{ mode: DmMode; chat: string | null; ask: string; hi: string } | null>(null);
+  const [biz, setBiz] = useState(false);
   useEffect(() => { getPerson(uid).then(setP); }, [uid]);
+  useEffect(() => { if (dmOn && uid !== me) dmCan(uid).then(setDmc); }, [dmOn, uid, me]);
   // the nikah card comes from the nikah feed of a circle we share, so the wali rules stay the same
   useEffect(() => {
     if (!nkOn || !p || !p.intents.some((i) => i.kind === 'nikah')) return;
@@ -96,9 +102,9 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
   const visible = p.intents.filter((i) => i.kind !== 'nikah' || nk || self);
   const sister = p.gender === 'f' && p.can.hi === 'sister';
   const cur = currentCircle();
-  const canInvite = !self && cur && !p.shared.includes(cur.code) && p.can.hi !== 'sister' && p.can.hi !== 'closed';
+  const canInvite = !self && cur && !p.shared.includes(cur.code) && !['sister', 'sister_topic', 'closed'].includes(p.can.hi ?? '');
   // «Написать» starts with a topic: the person sees what you want and decides; about a published intent the topic is known.
-  const startAsk = (k: AskKind, i?: Intent) => { setAsk({ k, i }); setTopic(''); setText(k === 'hi' ? '' : askTemplate(k, p.name, i)); setMsg(''); };
+  const startAsk = (k: AskKind, i?: Intent, practical = false) => { setBiz(practical); setAsk({ k, i }); setTopic(''); setText(k === 'hi' ? '' : askTemplate(k, p.name, i)); setMsg(''); };
   const first = p.name.split(' ')[0];
   const minLen = ask?.k === 'hi' ? 20 : 10;
   const send = async (kind?: AskKind) => {
@@ -106,7 +112,7 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
     if (!k || k === 'hi') return;
     const r = await sendAsk(p.uid, k, text.trim());
     if (r === 'ok') { setAsk(null); setP({ ...p, asked: true }); setMsg(_t("Просьба отправлена. Когда {0} примет её, у вас откроется чат в «Кругах».", first)); }
-    else setMsg(r === 'already' ? _t("Ты уже написал. Ждём ответа.") : r === 'slow' ? _t("Сегодня уже 5 просьб. Попробуй завтра.") : r === 'sister' ? _t("Сёстрам могут писать только сёстры.")
+    else setMsg(r === 'sister_topic' ? _t("Сестре можно написать только по делу: вопрос, умра, учёба, работа или бизнес.") : r === 'new' ? dmWhy('new') : r === 'locked' ? dmWhy('locked') : r === 'already' ? _t("Ты уже написал. Ждём ответа.") : r === 'slow' ? _t("Сегодня уже 5 просьб. Попробуй завтра.") : r === 'sister' ? _t("Сёстрам могут писать только сёстры.")
       : r === 'later' ? _t("{0} уже ответил «не сейчас». Написать снова можно через 30 дней.", first) : r === 'circles' ? _t("{0} принимает просьбы только от людей из своих кругов.", first)
       : r === 'short' ? _t("Напиши чуть подробнее, что ты хочешь.") : r === 'closed' ? _t("{0} сейчас не принимает просьбы.", first) : _t("Не удалось отправить."));
   };
@@ -138,7 +144,9 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
         ) : (
           <div className="pp-btns">
             {chatRef ? <button type="button" onClick={() => openCircleChat(chatRef)}><i>💬</i>{_t("Чат")}</button>
-              : p.can.hi === 'ok' && <button type="button" disabled={p.asked} onClick={() => startAsk('hi')}><i>💬</i>{p.asked ? _t("Ждём ответа") : _t("Написать")}</button>}
+              : dmc?.mode === 'direct' ? <button type="button" onClick={async () => { const e = await openDm(p.uid); if (e) setMsg(dmWhy(e, first)); }}><i>💬</i>{_t("Написать")}</button>
+                : p.can.hi === 'ok' ? <button type="button" disabled={p.asked} onClick={() => startAsk('hi')}><i>💬</i>{p.asked ? _t("Ждём ответа") : _t("Написать")}</button>
+                  : dmc?.ask === 'ok' && <button type="button" disabled={p.asked} onClick={() => startAsk('hi', undefined, true)}><i>💬</i>{p.asked ? _t("Ждём ответа") : _t("Написать по делу")}</button>}
             {canInvite && <button type="button" onClick={invite}><i>➕</i>{_t("В круг")}</button>}
           </div>
         )}
@@ -147,9 +155,10 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
       {ask && ask.k === 'hi' && (
         <div className="pp-ask pp-topic">
           <b>{_t("О чём ты хочешь написать?")}</b>
+          {biz && <p className="note">{_tj("🤍 Переписка брата и сестры только по делу. {0} сама решит, принять ли просьбу. Хочешь познакомиться для никаха? Это делается через раздел «Никах», с вали.", first)}</p>}
           <small>{_t("Выбери тему. {0} увидит тему, твоё имя и это сообщение, и сам решит, отвечать или нет.", first)}</small>
           <div className="pp-why" role="radiogroup" aria-label={_t("Тема")}>
-            {TOPICS.map((t) => <button key={t.k} type="button" role="radio" aria-checked={topic === t.k} onClick={() => setTopic(t.k)}>{t.l}</button>)}
+            {TOPICS.filter((t) => !biz || PRACTICAL.includes(t.k)).map((t) => <button key={t.k} type="button" role="radio" aria-checked={topic === t.k} onClick={() => setTopic(t.k)}>{t.l}</button>)}
           </div>
           <textarea rows={4} maxLength={300} value={text} onChange={(e) => setText(e.target.value)} placeholder={_t("Ассаляму алейкум! Коротко: кто ты и чего хочешь")} />
           <small className="pp-cnt">{_tj("{0} / 300 · минимум {1} знаков", text.trim().length, minLen)}</small>

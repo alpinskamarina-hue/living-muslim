@@ -33,6 +33,8 @@ import { useChat, duaReplies, duaEventId } from '../chat';
 import { CircleChat, DuaReplies, type Draft } from './CircleChat';
 import { CircleList } from './CircleList';
 import { OpenOwnerBox, OpenChatNote } from './OpenCircles';
+import { DmHead, DmNote } from './Dm';
+import { useDmReady, dmOf } from '../dm';
 import { useOpenReady, openMe } from '../openCircles';
 import { usePostsReady, usePosts, postSeen } from '../posts';
 import { PostFeed, PinBar } from './Posts';
@@ -120,6 +122,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   // WhatsApp-like: the Circles tab opens on the list of my circles; a circle opens as its chat.
   const personOn = usePersonReady();
   const openOn = useOpenReady();
+  const dmOn = useDmReady();
   const asks = useAsks(personOn && isCloud);
   const [listOn, setListOn] = useState(() => {
     if (!isCloud || !myCircles().length) return false;
@@ -550,6 +553,8 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       setSheet('');
     };
     const others = sorted.filter((m) => m.id !== me).map((m) => (names[m.id]?.name || _t("Участник")).split(' ')[0]);
+    const dmChat = dmOn && isDm(cur?.code);
+    const backBtn = backToList ? <button type="button" className="wa-back" aria-label={_t("Назад к кругам")} onClick={backToList}>←{(() => { const n = Object.entries(chatUnread ?? {}).filter(([c]) => c !== cur?.code).reduce((a, [, v]) => a + v, 0); return n ? <em>{n > 99 ? '99+' : n}</em> : null; })()}</button> : null;
     if (panel) {
       return (
         <div className="page wa-info">
@@ -603,8 +608,9 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     }
     return (
       <div className="page cx wa">
+        {dmChat ? <DmHead d={dmOf(cur?.code)} code={cur?.code} title={cur?.title || _t("Чат")} onBack={backToList ?? undefined} back={backBtn} /> : (
         <header className="wa-head">
-          {backToList && <button type="button" className="wa-back" aria-label={_t("Назад к кругам")} onClick={backToList}>←{(() => { const n = Object.entries(chatUnread ?? {}).filter(([c]) => c !== cur?.code).reduce((a, [, v]) => a + v, 0); return n ? <em>{n > 99 ? '99+' : n}</em> : null; })()}</button>}
+          {backBtn}
           <button type="button" className="wa-who" onClick={() => openPanel()}>
             <span className="wa-hav"><Ic e={kindOf(kind)?.ic ?? '👥'} /></span>
             <span className="wa-ht"><b>{cur?.title || _t("Круг")}</b><small>{others.length ? `${_t("Ты")}, ${others.join(', ')}` : _t("Ты")}</small></span>
@@ -612,6 +618,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <button type="button" className="wa-hbtn" aria-label={_t("Общие дела")} onClick={() => openPanel(chips[0]?.k === 'n' ? 'cx-goal' : undefined)}><Ic e="goal" /></button>
           <button type="button" className="wa-hbtn" aria-label={_t("Данные круга")} onClick={() => openPanel()}>⋮</button>
         </header>
+        )}
         {isCloud && nicks && <InviteInbox />}
         {asks.list.length > 0 && <button type="button" className="wa-asks" onClick={() => { setListOn(true); window.scrollTo(0, 0); }}>{_tj("📩 {0} хочет написать тебе ›", asks.list.length === 1 ? asks.list[0].from.name : _t("{0} человека", asks.list.length))}</button>}
         {uCall && (
@@ -642,7 +649,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             : bizTab === 'cal' ? <BizCalendar {...bizCommon} />
               : <BizPlanPane {...bizCommon} />
         ) : (
-        <CircleChat notice={openOn ? <OpenChatNote code={chatCode} /> : undefined} onPost={postCircle ? goPost : undefined} chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
+        <CircleChat notice={dmChat ? <DmNote msgs={chat.msgs} me={me} /> : openOn ? <OpenChatNote code={chatCode} /> : undefined} onPost={postCircle ? goPost : undefined} chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
           draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} onUmrah={openTrip}
           biz={bizOn ? {
             make: (k, m) => {

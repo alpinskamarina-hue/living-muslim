@@ -84,7 +84,7 @@ async function rpc<T>(fn: string, args: Record<string, unknown>, bearer?: string
     headers: { apikey: KEY, 'Content-Type': 'application/json', ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}) },
     body: JSON.stringify(args),
   });
-  if (!r.ok) throw new Error(`rpc ${fn} ${r.status}`);
+  if (!r.ok) { let m = ''; try { m = String((await r.json())?.message || ''); } catch { /* */ } throw new Error(`rpc ${fn} ${r.status}${m ? ` ${m}` : ''}`); }
   return (await r.json()) as T;
 }
 
@@ -137,7 +137,9 @@ export function switchCircle(code: string, to?: string) {
 const DM = 'lm.dm';
 /** Chats of two opened by an ask: joined without the «Присоединиться» card. */
 export function isDm(code?: string): boolean { try { return Boolean(code) && (JSON.parse(localStorage.getItem(DM) || '[]') as string[]).includes(code!); } catch { return false; } }
-function markDm(code: string) { try { const l = JSON.parse(localStorage.getItem(DM) || '[]') as string[]; if (!l.includes(code)) localStorage.setItem(DM, JSON.stringify([...l, code].slice(-200))); } catch { /* */ } }
+function markDm(code: string) { markDms([code]); }
+/** Marks chats of two (from the server list, supabase/dm.sql). */
+export function markDms(codes: string[]) { try { const l = JSON.parse(localStorage.getItem(DM) || '[]') as string[]; const add = codes.filter((c) => !l.includes(c)); if (add.length) localStorage.setItem(DM, JSON.stringify([...l, ...add].slice(-500))); } catch { /* */ } }
 /** Adds a circle to my list without opening it (a chat of two that someone accepted). */
 export function addCircleQuiet(ref: CircleRef) {
   const me = load();
