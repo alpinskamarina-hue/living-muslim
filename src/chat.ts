@@ -39,6 +39,17 @@ export function chatReady(): Promise<boolean> {
 
 /** Read ticks need supabase/chat-reads.sql; until it is run, my messages show one tick as before. */
 let readsP: Promise<boolean> | null = null;
+let trP: Promise<boolean> | null = null;
+/** Whether chat-transcribe.sql is run: until then «Расшифровать» is not shown. */
+export function trReady(): Promise<boolean> {
+  try { if (sessionStorage.getItem('lm.chattr') === '1') return Promise.resolve(true); } catch { /* */ }
+  trP ??= serverHas('lm_chat_tr_save', { p_secret: null, p_id: 0, p_text: null }).then((ok) => {
+    if (ok) try { sessionStorage.setItem('lm.chattr', '1'); } catch { /* */ }
+    return ok;
+  });
+  return trP;
+}
+
 export function readsReady(): Promise<boolean> {
   if (!isCloud) return Promise.resolve(false);
   try { if (sessionStorage.getItem('lm.reads.ok') === '1') return Promise.resolve(true); } catch { /* */ }
@@ -99,6 +110,8 @@ export interface ChatApi {
   /** Photo or document: '' when sent, else an error code (big, type, day, error). */
   sendFile: (f: File, caption: string, ref?: MsgRef | null) => Promise<string>;
   fileUrl: (id: number) => Promise<string>;
+  /** «Расшифровать»: the text of a voice message ('…' = no words made out), or an error code (limit, nosql, busy, net). */
+  transcribe: (id: number) => Promise<{ text?: string; err?: string }>;
   /** The assistant in this circle: on/off, who may ask it to remind everyone, and its live reminders (msg id → on for me; missing = cancelled or past). */
   ai: { ready: boolean; on: boolean; all: 'owner' | 'all'; mine: Record<number, boolean> };
   askAi: (body: string, extra: AiAskExtra) => Promise<{ dua?: string; err?: string }>;
@@ -318,6 +331,19 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     return url;
   };
 
+  const transcribe = async (id: number) => {
+    const me = cloudMe();
+    if (!me) return { err: 'auth' };
+    try {
+      const r = await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: me.uid, token: me.token, id }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return { err: j.error || 'net' };
+      const text = String(j.text ?? '');
+      setMsgs((m) => (j.msg?.id ? merge(m, [j.msg]) : m.map((x) => (x.id === id ? { ...x, body: text } : x))));
+      return { text };
+    } catch { return { err: 'net' }; }
+  };
+
   const askAi = async (body: string, extra: AiAskExtra) => {
     const id = cloudMe();
     if (!code || !id) return { err: 'auth' };
@@ -343,7 +369,7 @@ export function useChat(code: string | undefined, open: boolean): ChatApi {
     return ok;
   };
 
-  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, readOf, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl };
+  return { code, ai, askAi, aiPing, setAi, ready, filesOn, msgs, seenAtOpen, readOf, seen, unread, voiceOn, owner, more, error, send, sendVoice, react, retry, remove, report, older, setVoice, voiceUrl, sendFile, fileUrl, transcribe };
 }
 
 /** Unread messages in each of my circles, for the bottom bar and the circle chips. Every 30 s while visible. */

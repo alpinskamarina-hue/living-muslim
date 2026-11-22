@@ -584,7 +584,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         )}
         {bizOn && <BizTabs startup={suOn} tab={bizTab} onTab={(t) => { setBizTab(t); window.scrollTo(0, 0); }} counts={{ tasks: (bizApi.data?.tasks ?? []).filter((t) => t.owner === me && t.status !== 'done' && (!t.due || t.due <= today)).length }} />}
         {bizOn && bizTab !== 'chat' && me ? (
-          bizTab === 'path' && suOn ? <StartupPane su={suApi} biz={bizApi} me={me} names={names} people={bizPeople} today={today} msgs={chat.msgs}
+          bizTab === 'path' && suOn ? <StartupPane su={suApi} biz={bizApi} me={me} names={names} people={bizPeople} today={today} msgs={chat.msgs} code={chatCode} transcribe={chat.transcribe}
             post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }} />
             : bizTab === 'tasks' ? <BizTasks {...bizCommon} />
             : bizTab === 'cal' ? <BizCalendar {...bizCommon} />
