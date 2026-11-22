@@ -7545,4 +7545,7 @@ export const EN: Record<string, string> = {
   "Личные сообщения": "Private messages",
   "Кто может мне писать, заблокированные": "Who can message me, blocked people",
   "Этот чат закрыт: один из вас заблокировал другого.": "This chat is closed: one of you blocked the other.",
+  "Другая страна…": "Another country…",
+  "Название страны": "Country name",
+  "Нужно выбрать, кто ищет, страну, и написать возраст и город.{0}": "Choose who is looking and the country, and enter age and city.{0}",
 };

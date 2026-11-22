@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { isCloud, meRpc, serverHas, cloudMe } from './cloud';
 import { _t } from './i18n';
+import { COUNTRIES } from './places';
 
 // «Никах через свои круги»: a short profile without photo or contacts, seen only by chosen circles and trusted people;
 // proposals come through someone who knows a family and asked them first; families talk through the wali.
 // Server: supabase/nikah.sql. Until it is run, every nikah screen stays hidden.
 
-export interface NkData { age?: string; city?: string; prayer?: string; madhab?: string; kids?: string; move?: string; work?: string }
+export interface NkData { age?: string; country?: string; city?: string; prayer?: string; madhab?: string; kids?: string; move?: string; work?: string }
 export interface NkMine {
   gender: 'm' | 'f'; data: NkData; about: string; circles: string[]; shared: { uid: string; name: string; nick: string | null }[];
   wali: string | null; wali_name: string | null; wali_rel: string; wali_ok: boolean; active: boolean;
@@ -21,6 +22,7 @@ export interface NkPerson { uid: string; name: string; nick: string | null; colo
 
 export const FIELDS: { k: keyof NkData; label: string; opts?: string[]; ph?: string }[] = [
   { k: 'age', label: _t("Возраст"), ph: '27' },
+  { k: 'country', label: _t("Страна") },
   { k: 'city', label: _t("Город"), ph: _t("Амстердам") },
   { k: 'prayer', label: _t("Намаз"), opts: [_t("5 раз в день"), _t("стараюсь 5 раз"), _t("начинаю")] },
   { k: 'madhab', label: _t("Мазхаб"), opts: [_t("ханафи"), _t("шафии"), _t("малики"), _t("ханбали"), _t("не важно")] },
@@ -49,7 +51,11 @@ export const MEET_QUESTIONS = [
   _t("Отношения с родителями обеих сторон"),
   _t("Что для тебя важно в муже или жене?"),
 ];
-export const brief = (d: NkData) => [d.age && _t("{0} лет", d.age), d.city, d.prayer && _t("намаз {0}", d.prayer), d.madhab, d.kids && _t("дети: {0}", d.kids), d.move && _t("переезд: {0}", d.move), d.work].filter(Boolean).join(' · ');
+/** A country is kept as its code from our list (shown in the reader's language) or as typed when it is not in the list. */
+export const countryName = (c?: string) => (c ? COUNTRIES.find((x) => x.id === c)?.name ?? c : '');
+/** «Амстердам, Нидерланды». */
+export const where = (d: NkData) => [d.city, countryName(d.country)].filter(Boolean).join(', ');
+export const brief = (d: NkData) => [d.age && _t("{0} лет", d.age), where(d), d.prayer && _t("намаз {0}", d.prayer), d.madhab, d.kids && _t("дети: {0}", d.kids), d.move && _t("переезд: {0}", d.move), d.work].filter(Boolean).join(' · ');
 
 let readyP: Promise<boolean> | null = null;
 export function nikahReady(): Promise<boolean> {

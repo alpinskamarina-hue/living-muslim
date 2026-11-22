@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { myCircles, kindOf, cloudMe } from '../cloud';
 import type { Reacts } from '../circle';
 import {
-  FIELDS, STEPS, NEXT, MEET_QUESTIONS, brief, useNikahMe, refreshNikah, saveNikah, deleteNikah, answerWali, nikahFeed, nikahPeople,
+  FIELDS, STEPS, NEXT, MEET_QUESTIONS, brief, where, countryName, useNikahMe, refreshNikah, saveNikah, deleteNikah, answerWali, nikahFeed, nikahPeople,
   propose, answerProp, withdrawProp, useNikahReady,
   type NkData, type NkMine, type NkCard, type NkPerson, type NkProp, type NkStatus,
 } from '../nikah';
 import { _t, _tj } from '../i18n';
+import { COUNTRIES } from '../places';
 
 const RELS = [_t("отец"), _t("брат"), _t("дядя"), _t("дедушка"), _t("имам"), _t("другой")];
 const STATUS_RU: Record<NkStatus, string> = { new: _t("ждёт ответа"), interested: _t("интересно, идёт истихара"), contacts: _t("семьи на связи"), meet: _t("встреча семей"), done: _t("решение принято"), declined: _t("с уважением, нет") };
@@ -17,7 +18,8 @@ function DataFields({ d, set, lead }: { d: NkData; set: (d: NkData) => void; lea
       {FIELDS.map((f) => (
         <label key={f.k} className="nk-f">
           <span>{f.k === 'age' && lead ? _t("{0}, возраст", lead) : f.label}</span>
-          {f.opts ? (
+          {f.k === 'country' ? <CountryField v={d.country ?? ''} set={(v) => set({ ...d, country: v })} />
+          : f.opts ? (
             <div className="nk-opts">{f.opts.map((o) => <button key={o} type="button" aria-pressed={d[f.k] === o} onClick={() => set({ ...d, [f.k]: d[f.k] === o ? '' : o })}>{o}</button>)}</div>
           ) : (
             <input value={d[f.k] ?? ''} maxLength={f.k === 'age' ? 3 : 40} inputMode={f.k === 'age' ? 'numeric' : undefined} placeholder={f.ph} onChange={(e) => set({ ...d, [f.k]: e.target.value })} />
@@ -28,10 +30,26 @@ function DataFields({ d, set, lead }: { d: NkData; set: (d: NkData) => void; lea
   );
 }
 
+/** Country from our list, or «Другая страна» typed by hand. */
+function CountryField({ v, set }: { v: string; set: (v: string) => void }) {
+  const listed = COUNTRIES.some((c) => c.id === v);
+  const [other, setOther] = useState(Boolean(v) && !listed);
+  return (
+    <>
+      <select className="nk-country" value={listed ? v : other ? '_other' : ''} onChange={(e) => { const x = e.target.value; setOther(x === '_other'); set(x === '_other' || !x ? '' : x); }}>
+        <option value="">{_t("Выбери страну")}</option>
+        {COUNTRIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <option value="_other">{_t("Другая страна…")}</option>
+      </select>
+      {other && <input value={listed ? '' : v} maxLength={40} placeholder={_t("Название страны")} onChange={(e) => set(e.target.value)} />}
+    </>
+  );
+}
+
 function Facts({ d }: { d: NkData }) {
   const list = FIELDS.filter((f) => d[f.k]);
   if (!list.length) return null;
-  return <div className="nk-facts">{list.map((f) => <div key={f.k}><small>{f.label}</small><b>{d[f.k]}</b></div>)}</div>;
+  return <div className="nk-facts">{list.map((f) => <div key={f.k}><small>{f.label}</small><b>{f.k === 'country' ? countryName(d.country) : d[f.k]}</b></div>)}</div>;
 }
 
 /** Profile → «Никах»: my profile, wali requests, proposals and their steps. */
@@ -123,7 +141,7 @@ function NikahForm({ mine, onDone }: { mine: NkMine | null; onDone: () => void }
   const [err, setErr] = useState('');
   useEffect(() => { nikahPeople().then(setPeople); }, []);
   const toggle = (l: string[], v: string) => (l.includes(v) ? l.filter((x) => x !== v) : [...l, v]);
-  const ok = gender && d.age && d.city;
+  const ok = gender && d.age && d.country && d.city;
   const save = async () => {
     setBusy(true); setErr('');
     const r = await saveNikah({ gender: gender as 'm' | 'f', data: d, about, circles, shared, wali: wali || null, wali_rel: wali ? rel : '', active: mine?.active ?? true });
@@ -170,7 +188,7 @@ function NikahForm({ mine, onDone }: { mine: NkMine | null; onDone: () => void }
       </div>
       {err && <div className="warn">{err}</div>}
       <button type="button" className="pri-btn big-btn" disabled={!ok || busy || (gender === 'f' && !wali)} onClick={save}>{busy ? _t("Сохраняю…") : _t("Сохранить анкету")}</button>
-      {!ok && <p className="tiny">{_tj("Нужно выбрать, кто ищет, и написать возраст и город.{0}", gender === 'f' && !wali ? _t(" Сестре нужен вали.") : '')}</p>}
+      {!ok && <p className="tiny">{_tj("Нужно выбрать, кто ищет, страну, и написать возраст и город.{0}", gender === 'f' && !wali ? _t(" Сестре нужен вали.") : '')}</p>}
       <p className="tiny nk-priv">{_t("🔒 Фото, фамилия и контакты в анкете не показываются никогда.")}</p>
     </div>
   );
@@ -188,8 +206,8 @@ function PropCard({ p, forWard }: { p: NkProp; forWard: string }) {
   return (
     <div className="nk-card nk-prop">
       <span className="k">{_tj("{0}предложил: {1}", forWard ? _t("Для: {0} · ", forWard) : '', p.from_name)}</span>
-      <b className="nk-who">{p.data.age ? _t("{0} лет", p.data.age) : _t("Кандидат")}{p.data.city ? ` · ${p.data.city}` : ''}</b>
-      <p className="nk-line">{brief({ ...p.data, age: undefined, city: undefined })}</p>
+      <b className="nk-who">{p.data.age ? _t("{0} лет", p.data.age) : _t("Кандидат")}{where(p.data) ? ` · ${where(p.data)}` : ''}</b>
+      <p className="nk-line">{brief({ ...p.data, age: undefined, city: undefined, country: undefined })}</p>
       {p.note && <q className="nk-about">{p.note}</q>}
       {p.contact && <p className="nk-contact">{_t("📞 Контакт вали: ")}<b>{p.contact}</b></p>}
       <div className="nk-steps">
