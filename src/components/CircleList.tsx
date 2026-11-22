@@ -96,7 +96,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
   const openOn = useOpenReady();
   const [tab, setTab] = useState<'mine' | 'find'>(() => { try { return sessionStorage.getItem('lm.findTab') === 'find' ? 'find' : 'mine'; } catch { return 'mine'; } });
   useEffect(() => { try { sessionStorage.setItem('lm.findTab', tab); } catch { /* */ } }, [tab]);
-  const [common, setCommon] = useState(false);
+  const [common, setCommon] = useState(() => { try { const g = sessionStorage.getItem('lm.commonGo'); sessionStorage.removeItem('lm.commonGo'); return Boolean(g); } catch { return false; } });
   useEffect(() => { if (!common) return; history.pushState({ lmCommon: 1 }, ''); window.scrollTo(0, 0); const f = (e: Event) => { e.stopImmediatePropagation(); setCommon(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [common]);
   const sex = state.settings.me ?? '';
   const [pend, setPend] = useState<{ code: string; title: string; n: number }[]>([]);

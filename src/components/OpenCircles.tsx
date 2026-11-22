@@ -6,6 +6,8 @@ import { _t, _tj, LANG } from '../i18n';
 import { Ic } from './LIcon';
 import { plural } from '../dates';
 import { DAY_AYAHS } from '../ayahs';
+import { usePosts, usePostsReady, postSeen } from '../posts';
+import { PostFeed, PostCard } from './Posts';
 import { ensureMe, enterCircle, getProfile, saveProfile, kindOf, cloudMe, signupName, isCloud, type CircleKind } from '../cloud';
 import {
   OPEN_KINDS, openList, openView, openJoin, openAskCancel, openMine, openSet, openAnswer, openMe, useCommon, commonJuz, commonDuaAdd,
@@ -32,8 +34,18 @@ function useGender(fallback: '' | 'm' | 'f') {
 
 // ---------- the common circle ----------
 
+/** Posts of the common circle I have not seen yet. */
+function useCommonNew(on: boolean) {
+  const api = usePosts(on, null);
+  const seen = postSeen('common');
+  const fresh = (api.d?.posts ?? []).filter((p) => !p.later && !p.hidden && p.at > seen);
+  return { api, fresh };
+}
+
 export function CommonCard({ today, onOpen, sis }: { today: string; onOpen: () => void; sis?: boolean }) {
   const { c } = useCommon(true, today);
+  const postsOn = usePostsReady();
+  const { fresh } = useCommonNew(postsOn);
   const taken = c?.khatm.length ?? 0;
   return (
     <button type="button" className={`oc-common${sis ? ' oc-csis' : ''}`} onClick={onOpen}>
@@ -43,6 +55,7 @@ export function CommonCard({ today, onOpen, sis }: { today: string; onOpen: () =
         <span><b>{taken} / 30</b>{_t("джузов хатма месяца")}</span>
         <span><b>{c ? c.dua.length : '…'}</b>{_t("просьб о дуа")}</span>
       </span>
+      {fresh.length > 0 && <span className="oc-cpost">📣 <b>{_t("Новый пост:")}</b> {fresh[0].body.replace(/\s+/g, ' ').slice(0, 90)}</span>}
     </button>
   );
 }
@@ -56,6 +69,12 @@ const DUA_ERR: Record<string, string> = {
 
 export function CommonCircle({ today, onBack, onFind }: { today: string; onBack: () => void; onFind: () => void }) {
   const { c, month, reload } = useCommon(true, today);
+  const postsOn = usePostsReady();
+  const { api: posts, fresh } = useCommonNew(postsOn);
+  // Opens on «Посты» when there are any (or I write them), else on «Вместе»; a tab picked by hand is kept for the session.
+  const [picked, setPicked] = useState<'posts' | 'together' | null>(() => { try { const t = sessionStorage.getItem('lm.commonTab'); return t === 'posts' || t === 'together' ? t : null; } catch { return null; } });
+  const tab: 'posts' | 'together' = picked ?? (posts.d && (posts.d.posts.length || posts.d.can) ? 'posts' : 'together');
+  const pickTab = (t: 'posts' | 'together') => { setPicked(t); try { sessionStorage.setItem('lm.commonTab', t); } catch { /* */ } };
   const [asking, setAsking] = useState(false);
   const [text, setText] = useState('');
   const [msg, setMsg] = useState('');
@@ -87,6 +106,13 @@ export function CommonCircle({ today, onBack, onFind }: { today: string; onBack:
     <div className="page oc-page">
       <div className="wa-ibar"><button type="button" aria-label={_t("Назад")} onClick={onBack}>←</button><b>{_t("Общий круг Living Muslim")}</b></div>
       <p className="oc-sub">{c ? _tj("{0} участников · ведёт команда приложения · без чата и личных сообщений", nf(c.people)) : _t("Ведёт команда приложения")}</p>
+      {postsOn && (
+        <div className="ps-tabs" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'posts'} onClick={() => pickTab('posts')}>{_t("Посты")}{fresh.length > 0 && tab !== 'posts' && <em>{fresh.length}</em>}</button>
+          <button type="button" role="tab" aria-selected={tab === 'together'} onClick={() => pickTab('together')}>{_t("Вместе")}</button>
+        </div>
+      )}
+      {postsOn && tab === 'posts' ? <PostFeed code={null} api={posts} seenKey="common" empty={_t("Здесь будут новости и напоминания от команды Living Muslim.")} /> : <>
       {msg && <p className="uo-msg" role="status">{msg}</p>}
       {ayah && (
         <div className="oc-pin">
@@ -137,6 +163,7 @@ export function CommonCircle({ today, onBack, onFind }: { today: string; onBack:
           <button type="button" onClick={onFind}>{_t("Найти малый круг ›")}</button>
         </div>
       )}
+      </>}
     </div>
   );
 }
@@ -183,6 +210,7 @@ export function OpenCatalog({ today, g, pick, onView }: { today: string; g: '' |
               {!c.today && <em>{_tj("{0} {1}", c.n, plural(c.n, _t("человек"), _t("человека"), _t("человек")))}</em>}
               <em>{c.city || _t("онлайн")}</em>
               {c.who === 'all' && <em>{_t("только текст")}</em>}
+              {c.post_at && Date.now() - Date.parse(c.post_at) < 3 * 86400000 && <em className="nw">📣 {_t("новый пост")}</em>}
             </span>
           </span>
           <span className={`oc-act${c.member ? ' in' : c.join === 'open' ? ' f' : ''}`}>
@@ -206,6 +234,8 @@ const JOIN_ERR: Record<string, string> = {
 
 export function OpenPreview({ id, today, sex: g, onBack }: { id: string; today: string; sex: '' | 'm' | 'f'; onBack: () => void }) {
   const [v, setV] = useState<OpenView | null | undefined>(undefined);
+  const postsOn = usePostsReady();
+  const posts = usePosts(postsOn, null, id);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -242,6 +272,12 @@ export function OpenPreview({ id, today, sex: g, onBack }: { id: string; today: 
         <span><b>{v.fajr}%</b>{_t("Фаджр вовремя за неделю")}</span>
       </div>
       {v.about && <div className="oc-sec"><h4>{_t("О круге")}</h4><p>{v.about}</p></div>}
+      {postsOn && !v.member && Boolean(posts.d?.posts.length) && (
+        <>
+          <div className="oc-lbl">{_t("Посты круга")}</div>
+          <div className="ps-guest">{posts.d!.posts.map((p) => <PostCard key={p.id} p={p} boss={false} react={false} guest onChange={() => {}} />)}</div>
+        </>
+      )}
       <div className="oc-sec">
         <h4>{_t("Правила круга")}</h4>
         <ul>

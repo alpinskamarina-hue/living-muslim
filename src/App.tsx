@@ -91,6 +91,7 @@ export function App() {
   const [tab, setTab] = useState<Tab>(() => {
     try { const t = sessionStorage.getItem('lm.tab'); sessionStorage.removeItem('lm.tab'); if (t === 'circle') return 'circle' as Tab; } catch { /* */ }
     try { const q = new URLSearchParams(location.search); if (q.get('c')) { if (q.has('umrah')) sessionStorage.setItem('lm.umrahGo', '1'); return 'circle' as Tab; } if (q.has('umrah') || q.get('course')) return 'practice' as Tab; } catch { /* */ }
+    try { if (new URLSearchParams(location.search).has('common')) { sessionStorage.setItem('lm.commonGo', '1'); return 'circle' as Tab; } } catch { /* */ }
     try { if (new URLSearchParams(location.search).has('asks')) { sessionStorage.setItem('lm.asksGo', '1'); return 'circle' as Tab; } } catch { /* */ }
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     return 'today';

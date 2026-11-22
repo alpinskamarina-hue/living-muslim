@@ -326,6 +326,27 @@ async function askPush(secret) {
   return sent;
 }
 
+// Posts of the team in the common circle with «Пуш» on (supabase/posts.sql), once each.
+async function postPush(secret) {
+  let list;
+  try { list = (await rpc('lm_post_push', { p_secret: secret })) || []; } catch { return 0; } // posts.sql not run yet
+  let sent = 0;
+  for (const p of list) {
+    const prefs = p.prefs || {};
+    const en = prefs.lang === 'en';
+    const msg = prefs.quiet
+      ? { title: 'Living Muslim', body: en ? 'A new post from the team. Open the app to read it.' : 'Новый пост от команды. Открой приложение, чтобы прочитать.' }
+      : { title: en ? '📣 Common circle Living Muslim' : '📣 Общий круг Living Muslim', body: String(p.body || '').replace(/\s+/g, ' ').slice(0, 160) };
+    try {
+      await webpush.sendNotification({ endpoint: p.endpoint, keys: { p256dh: p.p256dh, auth: p.auth } }, JSON.stringify({ ...msg, tag: `post-${p.id}`, url: '/app/?common=1' }), { TTL: 6 * 3600 });
+      sent++;
+    } catch (err) {
+      if (err.statusCode === 404 || err.statusCode === 410) await rpc('lm_push_delete', { p_endpoint: p.endpoint }).catch(() => {});
+    }
+  }
+  return sent;
+}
+
 export default async function handler(req, res) {
   const secret = process.env.PUSH_SECRET;
   if (!secret || req.headers['x-push-secret'] !== secret) return res.status(401).json({ error: 'unauthorized' });
@@ -358,5 +379,6 @@ export default async function handler(req, res) {
   const ai = await aiPush(secret);
   const um = await umrahPush(secret);
   const asks = await askPush(secret);
-  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai, um, asks });
+  const posts = await postPush(secret);
+  res.status(200).json({ ok: true, subs: subs.length, sent, dropped, chat, ai, um, asks, posts });
 }
