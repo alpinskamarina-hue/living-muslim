@@ -5609,3 +5609,20 @@ p.ug-terms { padding-left: 0; }
 .wa-renf { width: 100%; max-width: 360px; display: grid; gap: 6px; margin: 4px 0; text-align: left; }
 .wa-renf small { color: var(--ink-2); font-size: 12px; }
 .wa-renb { display: flex; gap: 8px; justify-content: flex-end; }
+/* Narrow phones and big system fonts: the kind tiles shrink to 3 in a row instead of pushing the card off screen */
+.cl-kinds { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); }
+.cl-kinds button { min-width: 0; overflow-wrap: anywhere; hyphens: auto; line-height: 1.2; }
+.cl-setup, .cl-setup > *, .cl-f, .cl-row { min-width: 0; }
+.cl-f input, .cl-row input { width: 100%; min-width: 0; box-sizing: border-box; }
+.cl-row { display: flex; gap: 8px; }
+.cl-row input { flex: 1; }
+.nav button { min-width: 0; }
+.nav button small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav .k { max-width: 100%; }
+@media (max-width: 360px) {
+  .nav button small { font-size: 10.5px; }
+  .nav.six button small { font-size: 9.5px; letter-spacing: -.2px; }
+  .nav.six .k { width: 42px; }
+  .wa-ht b { font-size: 15px; }
+  .page { padding-left: 12px; padding-right: 12px; }
+}
