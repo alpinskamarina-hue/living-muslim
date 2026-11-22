@@ -2,6 +2,7 @@ import { inRamadan } from '../rplan';
 import { THANKS, g, say, type Sex, type To } from '../words';
 import { sexOf } from './Words';
 import type { CircleApi, Member, Reacts } from '../circle';
+import { Ic, IcT, Rx } from './LIcon';
 import { plural } from '../dates';
 import type { UmrahApi } from '../umrahCircle';
 import { lazyNamed } from '../lazy';
@@ -319,7 +320,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                   <span>
                     <b>{isMe ? _t("{0} (ты)", p?.name || _t("Ты")) : p?.name || _t("Участник")}</b>
                     <small>{fresh ? _t("Намазы {0}/5 · {1}привычки {2}/{3}{4}", m.prayers, biz && m.biz?.t ? _t("дела {0}/{1} · ", m.biz.d, m.biz.t) : '', m.done, m.total, m.fast ? _t(" · постится ✓") : '') : _t("Сегодня ещё не отмечался")}</small>
-                    {(m.goals ?? []).map((g) => <small key={g.t} className="m-goal">🎯 {g.t} · {g.p}%</small>)}
+                    {(m.goals ?? []).map((g) => <small key={g.t} className="m-goal"><Ic e="goal" cls="lead" />{g.t} · {g.p}%</small>)}
                   </span>
                   {Object.keys(got).length > 0 && <em className="ch-got">{Object.entries(got).map(([e, n]) => `${e} ${n}`).join('  ')}</em>}
                 </div>
@@ -328,12 +329,12 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
                   <div className="ch-acts">
                     {REACTIONS.map((r) => {
                       const on = mine?.e === r.e && mine.day === today;
-                      return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}>{r.e} {r.short}{on ? ' ✓' : ''}</button>;
+                      return <button key={r.e} type="button" aria-pressed={on} onClick={() => { if (!on) say(r.e === '🤲' ? 'dua_sent' : 'masha_sent'); circle.react(m.id, r.e, today); }}><Rx e={r.e} /> {r.short}{on ? ' ✓' : ''}</button>;
                     })}
                     {personOk() && <button type="button" onClick={() => openPerson(m.id)}>{_t("👤 Профиль")}</button>}
                     {chatOn && <button type="button" aria-label={_t("Написать {0} в чате", p?.name || _t("участнику"))} onClick={() => openChat({ text: `${(p?.name || '').split(' ')[0]}, `, ref: null })}>💬</button>}
                     {kickOn && <button type="button" className="kick" onClick={() => kick(m.id, p?.name || _t("участника"))}>{_t("Убрать из круга")}</button>}
-                    {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}>{nudged ? _t("👋 Отправлено") : _t("👋 Подтолкнуть")}</button>}
+                    {empty && <button type="button" className="nd" aria-pressed={nudged} onClick={() => { if (!nudged) say('nudge_sent'); circle.nudge(m.id, today); }}><IcT t={nudged ? _t("👋 Отправлено") : _t("👋 Подтолкнуть")} /></button>}
                   </div>
                 )}
               </div>
@@ -417,7 +418,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
       {joined && !cx && feed.length > 0 && (
         <>
           <h3 className="ch-h">{_t("Что нового")}</h3>
-          <div className="ch-feed">{feed.slice(0, 5).map((f, i) => <div key={i}><em>{f.e}</em><span>{f.t}</span></div>)}</div>
+          <div className="ch-feed">{feed.slice(0, 5).map((f, i) => <div key={i}><em><Rx e={f.e} /></em><span>{f.t}</span></div>)}</div>
         </>
       )}
 
@@ -495,14 +496,14 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     if (am) chips.push({ k: 'a', t: _t("👑 Амир: {0}", nm(am.id).split(' ')[0]), go: () => openPanel('cx-amir') });
     if (!chips.length) chips.push({ k: 'n', t: _t("＋ Начать общее дело"), go: () => openPanel('cx-goal') });
     const acts = [
-      { ic: '🤲', c: '#25a55f', label: _t("Дуа"), run: () => { setDuaText(''); setSheet('dua'); } },
-      { ic: '📊', c: '#02a698', label: _t("Опрос"), run: () => { setPoll({ q: '', o: ['', ''] }); setSheet('poll'); } },
-      { ic: '🎯', c: '#1f7aec', label: _t("Цель недели"), run: () => openPanel('cx-goal') },
-      { ic: '⚔️', c: '#e8763a', label: _t("Вызов"), run: () => openPanel('cx-ch') },
-      { ic: '📖', c: '#11553a', label: kind === 'family' || kind === 'masjid' ? _t("Хатм, ифтар") : _t("Хатм"), run: () => { setJobs(true); openPanel('cx-deeds'); } },
-      { ic: '🕋', c: '#b88a2c', label: _t("Умра"), run: () => { setUmra('trip'); window.scrollTo(0, 0); } },
-      { ic: '👑', c: '#c79a1e', label: _t("Амир"), run: () => openPanel('cx-amir') },
-      { ic: '➕', c: '#54656f', label: _t("Позвать"), run: invite },
+      { ic: 'dua', c: '#25a55f', label: _t("Дуа"), run: () => { setDuaText(''); setSheet('dua'); } },
+      { ic: 'poll', c: '#02a698', label: _t("Опрос"), run: () => { setPoll({ q: '', o: ['', ''] }); setSheet('poll'); } },
+      { ic: 'goal', c: '#1f7aec', label: _t("Цель недели"), run: () => openPanel('cx-goal') },
+      { ic: 'challenge', c: '#e8763a', label: _t("Вызов"), run: () => openPanel('cx-ch') },
+      { ic: 'khatm', c: '#11553a', label: kind === 'family' || kind === 'masjid' ? _t("Хатм, ифтар") : _t("Хатм"), run: () => { setJobs(true); openPanel('cx-deeds'); } },
+      { ic: 'umrah', c: '#b88a2c', label: _t("Умра"), run: () => { setUmra('trip'); window.scrollTo(0, 0); } },
+      { ic: 'amir', c: '#c79a1e', label: _t("Амир"), run: () => openPanel('cx-amir') },
+      { ic: 'invite', c: '#54656f', label: _t("Позвать"), run: invite },
     ];
     const pollOk = poll.q.trim() && poll.o.filter((x) => x.trim()).length >= 2;
     const sendPoll = () => {
@@ -520,7 +521,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             <b>{_t("Данные круга")}</b>
           </div>
           <div className="wa-ihead">
-            <span className="wa-bigav">{kindOf(kind)?.ic ?? '👥'}</span>
+            <span className="wa-bigav"><Ic e={kindOf(kind)?.ic ?? '👥'} /></span>
             {nameEdit === null ? (
               <b className="wa-iname">{cur?.title || _t("Круг")}{cur && !isDm(cur.code) && <button type="button" className="wa-ren" aria-label={_t("Изменить название")} onClick={() => setNameEdit(suffixOf(cur.title, kind))}>✎</button>}</b>
             ) : (
@@ -535,15 +536,15 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             )}
             <small>{_tj("Круг · {0}  {1}", members.length, plural(members.length, _t("участник"), _t("участника"), _t("участников")))}{am ? _t(" · амир {0}", nm(am.id)) : ''}</small>
             <div className="wa-ibtn">
-              <button type="button" onClick={invite}><span>➕</span>{_t("Позвать")}</button>
-              <button type="button" onClick={() => { goBack(() => setPanel(false)); setTimeout(() => { setDuaText(''); setSheet('dua'); }, 80); }}><span>🤲</span>{_t("Дуа")}</button>
-              <button type="button" onClick={() => goBack(() => setPanel(false))}><span>💬</span>{_t("Чат")}</button>
+              <button type="button" onClick={invite}><span><Ic e="invite" /></span>{_t("Позвать")}</button>
+              <button type="button" onClick={() => { goBack(() => setPanel(false)); setTimeout(() => { setDuaText(''); setSheet('dua'); }, 80); }}><span><Ic e="dua" /></span>{_t("Дуа")}</button>
+              <button type="button" onClick={() => goBack(() => setPanel(false))}><span><Ic e="chat" /></span>{_t("Чат")}</button>
             </div>
           </div>
           {chips.length > 0 && chips[0].k !== 'n' && (
             <div className="wa-isec">
               <h4>{_t("Общие дела")}</h4>
-              <div className="wa-deeds">{chips.map((c) => <button key={c.k} type="button" onClick={c.go}>{c.t}</button>)}</div>
+              <div className="wa-deeds">{chips.map((c) => <button key={c.k} type="button" onClick={c.go}><IcT t={c.t} /></button>)}</div>
             </div>
           )}
           <div className="wa-isec">
@@ -566,10 +567,10 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <header className="wa-head">
           {backToList && <button type="button" className="wa-back" aria-label={_t("Назад к кругам")} onClick={backToList}>←{(() => { const n = Object.entries(chatUnread ?? {}).filter(([c]) => c !== cur?.code).reduce((a, [, v]) => a + v, 0); return n ? <em>{n > 99 ? '99+' : n}</em> : null; })()}</button>}
           <button type="button" className="wa-who" onClick={() => openPanel()}>
-            <span className="wa-hav">{kindOf(kind)?.ic ?? '👥'}</span>
+            <span className="wa-hav"><Ic e={kindOf(kind)?.ic ?? '👥'} /></span>
             <span className="wa-ht"><b>{cur?.title || _t("Круг")}</b><small>{others.length ? `${_t("Ты")}, ${others.join(', ')}` : _t("Ты")}</small></span>
           </button>
-          <button type="button" className="wa-hbtn" aria-label={_t("Общие дела")} onClick={() => openPanel(chips[0]?.k === 'n' ? 'cx-goal' : undefined)}>🎯</button>
+          <button type="button" className="wa-hbtn" aria-label={_t("Общие дела")} onClick={() => openPanel(chips[0]?.k === 'n' ? 'cx-goal' : undefined)}><Ic e="goal" /></button>
           <button type="button" className="wa-hbtn" aria-label={_t("Данные круга")} onClick={() => openPanel()}>⋮</button>
         </header>
         {isCloud && nicks && <InviteInbox />}
@@ -614,7 +615,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <>
             <div className="dim" onClick={() => setSheet('')} />
             <div className="sheet cx-sheet" role="dialog" aria-label={_t("Попросить дуа")}>
-              <b>{_t("🤲 Попросить круг о дуа")}</b>
+              <b><IcT t={_t("🤲 Попросить круг о дуа")} /></b>
               <p>{_t("Коротко, о чём дуа. Увидят только люди круга, просьба держится 3 дня.")}</p>
               <textarea rows={3} maxLength={140} value={duaText} onChange={(e) => setDuaText(e.target.value)} placeholder={_t("Например: за маму, завтра операция")} autoFocus />
               <div className="cx-sheet-row">
@@ -657,7 +658,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
         <div className="ch-tabs">
           {myCircles().map((c) => (
             <button key={c.code} type="button" aria-pressed={c.code === cur?.code} onClick={() => c.code !== cur?.code && switchCircle(c.code)}>
-              {kindOf(c.kind)?.ic ?? '👥'} {c.title}{c.code !== cur?.code && (chatUnread?.[c.code] ?? 0) > 0 && <span className="cc-badge">{chatUnread![c.code]}</span>}
+              <Ic e={kindOf(c.kind)?.ic ?? '👥'} cls="lead" />{c.title}{c.code !== cur?.code && (chatUnread?.[c.code] ?? 0) > 0 && <span className="cc-badge">{chatUnread![c.code]}</span>}
             </button>
           ))}
           <button type="button" className="ch-add" onClick={() => setAdding(true)}>{_t("+ Новый")}</button>

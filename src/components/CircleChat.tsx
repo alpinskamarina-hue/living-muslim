@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Ic } from './LIcon';
+import { Ic, IcT, Rx } from './LIcon';
 import { FILE_MAX, callsAi, type ChatApi, type Msg, type MsgRef, type ReadState } from '../chat';
 import { aiName } from '../assistant';
 import { placeOf } from '../plansCloud';
@@ -20,6 +20,7 @@ export interface Draft { text: string; ref: MsgRef | null; label?: string }
 
 const QUICK = [_t("🤲 Амин"), _t("✨ МашаАллах"), _t("💪 Я с тобой")];
 const EMOJI = ['🤲', '❤️', '✨', '💪', '👍'];
+const RX_NAME: Record<string, string> = { '🤲': _t("Амин"), '❤️': _t("Люблю ради Аллаха"), '✨': _t("МашаАллах"), '💪': _t("Я с тобой"), '👍': _t("Согласен") };
 const PRAYER: Record<string, string> = { fajr: _t("Фаджр"), dhuhr: _t("Зухр"), asr: _t("Аср"), maghrib: _t("Магриб"), isha: _t("Иша") };
 const MAX_SEC = 60;
 
@@ -414,7 +415,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   const ayah = DAY_AYAHS[Math.floor(Date.parse(today) / 86400000) % DAY_AYAHS.length];
   const ayahCard = main && ayah ? (
     <div key="ayah" className="cc-ayah">
-      <small>{_t("📖 Аят дня")}</small>
+      <small><IcT t={_t("📖 Аят дня")} /></small>
       <p lang="ar" dir="rtl">{ayah.ar}</p>
       <span>«{isEn ? ayah.en : ayah.ru}»</span>
       <small>{isEn ? `${ayah.ne} ${ayah.s}:${ayah.a}` : _t("Коран, {0} {1}:{2}", ayah.n, ayah.s, ayah.a)}</small>
@@ -431,8 +432,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
       { ic: '🖼', label: _t("Галерея"), c: '#bf59cf', run: () => pickKind(true) },
     ] : []),
     ...(actions ?? []),
-    { ic: '📍', label: _t("Иду в мечеть"), c: '#1f7a4d', run: () => send(_t("📍 Иду в мечеть")) },
-    ...(nowP && !prayed(nowP) ? [{ ic: '✅', label: _t("Помолился"), c: '#25a35a', run: sayPrayed }] : []),
+    { ic: 'mosque-go', label: _t("Иду в мечеть"), c: '#1f7a4d', run: () => send(_t("📍 Иду в мечеть")) },
+    ...(nowP && !prayed(nowP) ? [{ ic: 'prayed', label: _t("Помолился"), c: '#25a35a', run: sayPrayed }] : []),
   ] : [];
 
   return (
@@ -444,7 +445,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
       {opts && (
         <div className="cc-opts">
           <button type="button" onClick={toggleChatPush}>{chatPushOn ? _t("🔔 Уведомления о сообщениях: вкл") : _t("🔕 Уведомления о сообщениях: выкл")}</button>
-          {isOwner && <button type="button" onClick={async () => { const on = !chat.voiceOn; if (await chat.setVoice(on)) flash(on ? _t("Голосовые включены") : _t("Теперь в круге только текст")); }}>{chat.voiceOn ? _t("🎙 Голосовые в круге: вкл") : _t("🎙 Голосовые в круге: выкл (только текст)")}</button>}
+          {isOwner && <button type="button" onClick={async () => { const on = !chat.voiceOn; if (await chat.setVoice(on)) flash(on ? _t("Голосовые включены") : _t("Теперь в круге только текст")); }}><IcT t={chat.voiceOn ? _t("🎙 Голосовые в круге: вкл") : _t("🎙 Голосовые в круге: выкл (только текст)")} /></button>}
           {isOwner && chat.ai.ready && <button type="button" onClick={async () => { const on = !chat.ai.on; if (await chat.setAi(on, chat.ai.all)) flash(on ? _t("Помощник в круге включён") : _t("Помощника в круге больше нет")); }}>{chat.ai.on ? _t("✨ Помощник в круге: вкл") : _t("✨ Помощник в круге: выкл")}</button>}
           {isOwner && chat.ai.ready && chat.ai.on && <button type="button" onClick={async () => { const all = chat.ai.all === 'all' ? 'owner' : 'all'; if (await chat.setAi(true, all)) flash(all === 'all' ? _t("Напомнить всем может любой участник") : _t("Напомнить всем может только амир")); }}>{chat.ai.all === 'all' ? _t("📣 Напоминания всем: любой участник") : _t("📣 Напоминания всем: только амир")}</button>}
           {chat.ai.ready && chat.ai.on && <small>{_tj("Напиши «@{0}», чтобы попросить помощника: напомнить тебе или всем, записать просьбу о дуа, рассказать итоги круга. Без «@» он переписку не читает.", myAi)}</small>}
@@ -495,12 +496,12 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             const done = got.includes(me);
             out.push(
               <div key={m.id} className="cc-ev" {...holdProps(m)}>
-                <p>🤲 <b>{mine ? _t("Ты просишь дуа") : _t("{0} просит дуа", nm(m.uid))}</b></p>
+                <p><Ic e="dua" cls="lead" /><b>{mine ? _t("Ты просишь дуа") : _t("{0} просит дуа", nm(m.uid))}</b></p>
                 <q>{m.deleted ? _t("Просьба снята") : m.body}</q>
                 {!m.deleted && (
                   <div className="cc-ev-row">
-                    {mine ? <small>{got.length ? _t("🤲 Дуа сделали: {0}", got.map(nm).join(', ')) : _t("Пока никто не ответил")}</small> : (
-                      <button type="button" className={done ? 'on' : ''} onClick={() => { if (!done) { onAmin(m.uid); chat.send(_t("🤲 Амин"), { r: m.id }); } }}>{done ? _t("✓ Ты сделал дуа") : _t("🤲 Амин")}{got.length ? ` · ${got.length}` : ''}</button>
+                    {mine ? <small>{got.length ? <IcT t={_t("🤲 Дуа сделали: {0}", got.map(nm).join(', '))} /> : _t("Пока никто не ответил")}</small> : (
+                      <button type="button" className={done ? 'on' : ''} onClick={() => { if (!done) { onAmin(m.uid); chat.send(_t("🤲 Амин"), { r: m.id }); } }}>{done ? _t("✓ Ты сделал дуа") : <IcT t={_t("🤲 Амин")} />}{got.length ? ` · ${got.length}` : ''}</button>
                     )}
                     <button type="button" onClick={() => replyTo(m)}>{_t("Ответить")}</button>
                   </div>
@@ -541,7 +542,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             const im = INTENTS[k] ?? INTENTS.job;
             out.push(
               <div key={m.id} className={`cc-in-card i-${im.cls}`}>
-                <span>{im.ic} <b>{mine ? _t("Ты") : nm(m.uid)}</b> {m.body}</span>
+                <span><Ic e={im.ic} cls="lead" /><b>{mine ? _t("Ты") : nm(m.uid)}</b> {m.body}</span>
                 {!mine && <small>{_t("Знаешь, кто может помочь? Подскажи или напиши.")}</small>}
                 <div className="cc-ev-row">
                   {personOk() && <button type="button" onClick={() => openPerson(m.uid)}>{mine ? _t("Мой профиль") : _t("Открыть профиль")}</button>}
@@ -628,11 +629,11 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                   : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
                   : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <span className="cc-t cc-cap">{m.body}</span>}</>
                   : <span className="cc-t">{m.body}</span>}
-                <small className="cc-time">{m.failed ? _t("⚠ Не отправлено · нажми, чтобы повторить") : <>{hm(m.at)}{mine ? (m.pending ? ' ⏳' : <> <Ticks s={chat.readOf(m)?.state ?? 'sent'} /></>) : ''}</>}</small>
+                <small className="cc-time">{m.failed ? <IcT t={_t("⚠ Не отправлено · нажми, чтобы повторить")} /> : <>{hm(m.at)}{mine ? (m.pending ? <> <Ic e="clock" cls="rx" /></> : <> <Ticks s={chat.readOf(m)?.state ?? 'sent'} /></>) : ''}</>}</small>
               </div>
               {rs.length > 0 && (
                 <div className="cc-rs">
-                  {Object.entries(groups).map(([e, us]) => <button key={e} type="button" className={us.includes(me) ? 'on' : ''} title={us.map(nm).join(', ')} onClick={() => chat.react(m.id, e)}>{e} {us.length}</button>)}
+                  {Object.entries(groups).map(([e, us]) => <button key={e} type="button" data-e={e} className={us.includes(me) ? 'on' : ''} title={us.map(nm).join(', ')} onClick={() => chat.react(m.id, e)}><Rx e={e} /> {us.length}</button>)}
                 </div>
               )}
             </div>,
@@ -665,18 +666,18 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             {recorder.rec.locked ? (
               <>
                 <button type="button" className="link-btn" onClick={() => recorder.stop(true)}>{_t("Отменить")}</button>
-                <button type="button" className="cc-send" aria-label={_t("Отправить голосовое")} onClick={() => recorder.stop(false)}>➤</button>
+                <button type="button" className="cc-send" aria-label={_t("Отправить голосовое")} onClick={() => recorder.stop(false)}><Ic e="send" /></button>
               </>
             ) : (
               <>
                 <small className="cc-swipe">{_t("‹ влево, чтобы отменить")}</small>
-                <span className="cc-mic big" aria-hidden="true">🎙</span>
+                <span className="cc-mic big" aria-hidden="true"><Ic e="mic" /></span>
               </>
             )}
           </div>
         ) : (
           <>
-            {quick.length > 0 && <div className="cc-quick">{quick.map(([t, f]) => <button key={t} type="button" onClick={f}>{t}</button>)}</div>}
+            {quick.length > 0 && <div className="cc-quick">{quick.map(([t, f]) => <button key={t} type="button" onClick={f}><IcT t={t} rx /></button>)}</div>}
             {file && (
               <div className="cc-reply cc-pick">
                 <span><b>{/^image\//.test(file.type) ? _t("📷 Фото") : `${iconOf(file.name)} ${_t("Файл")}`}</b>{file.name} · {sizeOf(file.size)}</span>
@@ -688,7 +689,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             )}
             <div className="cc-in">
               <input ref={fileIn} type="file" hidden onChange={(e) => { pickFile(e.target.files?.[0]); e.target.value = ''; }} />
-              {!main && chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : '📎'}</button>}
+              {!main && chat.filesOn && <button type="button" className="cc-clip" disabled={sending} aria-label={_t("Прикрепить фото или файл")} onClick={() => fileIn.current?.click()}>{sending ? '…' : <Ic e="clip" />}</button>}
               <div className={main ? 'cc-field' : 'cc-field plain'}>
               <textarea ref={ta} rows={1} value={text} maxLength={2000} placeholder={file ? _t("Подпись, можно без неё") : ref ? _t("Ответ…") : placeholder ?? _t("Написать в круг…")}
                 onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(110, e.target.scrollHeight)}px`; }}
@@ -697,11 +698,11 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
               {main && chat.filesOn && !text.trim() && !file && <button type="button" className="cc-cam" disabled={sending} aria-label={_t("Камера")} onClick={() => pickKind(true, true)}><CamIcon /></button>}
               </div>
               {file || text.trim() || !recorder.supported || !chat.voiceOn ? (
-                <button type="button" className="cc-send" disabled={(!text.trim() && !file) || sending} aria-label={_t("Отправить")} onClick={() => { if (file) sendFile(); else send(); if (ta.current) ta.current.style.height = 'auto'; }}>➤</button>
+                <button type="button" className="cc-send" disabled={(!text.trim() && !file) || sending} aria-label={_t("Отправить")} onClick={() => { if (file) sendFile(); else send(); if (ta.current) ta.current.style.height = 'auto'; }}><Ic e="send" /></button>
               ) : (
                 <button type="button" className="cc-mic" disabled={sending} aria-label={_t("Удерживай, чтобы записать голосовое")}
                   onPointerDown={(e) => { e.preventDefault(); recorder.start(e.clientX); }}
-                  onContextMenu={(e) => e.preventDefault()}>{sending ? '…' : '🎙'}</button>
+                  onContextMenu={(e) => e.preventDefault()}>{sending ? '…' : <Ic e="mic" />}</button>
               )}
             </div>
           </>
@@ -713,7 +714,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           <div className="dim" onClick={() => setPlus(false)} />
           <div className="sheet cc-acts" role="dialog" aria-label={_t("Действия круга")}>
             <div className="cc-acts-g">
-              {sheet.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span style={{ background: a.c || '#1d6b49' }}><Ic e={a.ic} /></span>{a.label}</button>)}
+              {sheet.map((a) => <button key={a.label} type="button" onClick={() => { setPlus(false); a.run(); }}><span><Ic e={a.ic} /></span>{a.label}</button>)}
             </div>
             <button type="button" className="link-btn" onClick={() => setPlus(false)}>{_t("Закрыть")}</button>
           </div>
@@ -732,18 +733,18 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         <>
           <div className="dim" onClick={() => setMenu(null)} />
           <div className="cc-menu" role="dialog" aria-label={_t("Сообщение")}>
-            {!menu.deleted && menu.kind !== 'event' && <div className="cc-emo">{EMOJI.map((e) => <button key={e} type="button" className={menu.reacts?.[me] === e ? 'on' : ''} onClick={() => { chat.react(menu.id, e); setMenu(null); }}>{e}</button>)}</div>}
+            {!menu.deleted && menu.kind !== 'event' && <div className="cc-emo">{EMOJI.map((e) => <button key={e} type="button" data-e={e} aria-label={RX_NAME[e] ?? e} className={menu.reacts?.[me] === e ? 'on' : ''} onClick={() => { chat.react(menu.id, e); setMenu(null); }}><Rx e={e} /></button>)}</div>}
             {menu.uid === me && !menu.deleted && (() => { const r = chat.readOf(menu); if (!r || !r.tot) return null; return <p className="cc-read">{r.by.length ? <><Ticks s={r.state} /> {_t("Прочитали:")} {r.by.map(nm).join(', ')}</> : <><Ticks s="sent" /> {_t("Ещё никто не прочитал")}</>}{r.by.length && r.by.length < r.tot ? <small>{_tj("Ещё не прочитали: {0}", r.tot - r.by.length)}</small> : null}</p>; })()}
             {biz && !menu.deleted && menu.kind !== 'event' && menu.body.trim() && <>
-              <button type="button" className="cc-bzm" onClick={() => { biz.make('task', menu); setMenu(null); }}>{_t("📋 Сделать делом")}</button>
-              <button type="button" className="cc-bzm" onClick={() => { biz.make('event', menu); setMenu(null); }}>{_t("📅 Поставить в календарь")}</button>
-              <button type="button" className="cc-bzm" onClick={() => { biz.make('dec', menu); setMenu(null); }}>{_t("✅ Записать как решение")}</button>
+              <button type="button" className="cc-bzm" onClick={() => { biz.make('task', menu); setMenu(null); }}><IcT t={_t("📋 Сделать делом")} /></button>
+              <button type="button" className="cc-bzm" onClick={() => { biz.make('event', menu); setMenu(null); }}><IcT t={_t("📅 Поставить в календарь")} /></button>
+              <button type="button" className="cc-bzm" onClick={() => { biz.make('dec', menu); setMenu(null); }}><IcT t={_t("✅ Записать как решение")} /></button>
             </>}
-            {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}>{_t("↩️ Ответить")}</button>}
-            {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}>{_t("📋 Скопировать")}</button>}
-            {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? _t("Жалоба отправлена. Спасибо, разберёмся") : _t("Не получилось отправить жалобу")); }}>{_t("🚩 Пожаловаться")}</button>}
-            {menu.uid !== me && <button type="button" onClick={async () => { if (!confirm(_t("Скрыть все сообщения {0} и запретить ему приглашать тебя?", nm(menu.uid)))) return; const ok = await blockUser(menu.uid); setMenu(null); flash(ok ? _t("Его сообщения скрыты") : _t("Не получилось")); }}>{_t("🙈 Скрыть сообщения человека")}</button>}
-            {(menu.uid === me || isOwner) && !menu.deleted && <button type="button" className="danger-t" onClick={async () => { if (!confirm(_t("Удалить сообщение для всех?"))) return; const ok = await chat.remove(menu.id); setMenu(null); flash(ok ? _t("Удалено") : _t("Не получилось удалить")); }}>{_tj("🗑 Удалить{0}", menu.uid !== me ? _t(" (ты владелец круга)") : '')}</button>}
+            {!menu.deleted && <button type="button" onClick={() => replyTo(menu)}><IcT t={_t("↩️ Ответить")} /></button>}
+            {!menu.deleted && menu.kind !== 'voice' && <button type="button" onClick={() => { navigator.clipboard?.writeText(menu.body).catch(() => {}); setMenu(null); flash(_t("Скопировано")); }}><IcT t={_t("📋 Скопировать")} /></button>}
+            {menu.uid !== me && !menu.deleted && <button type="button" onClick={async () => { const ok = await chat.report(menu.id, 'chat'); setMenu(null); flash(ok ? _t("Жалоба отправлена. Спасибо, разберёмся") : _t("Не получилось отправить жалобу")); }}><IcT t={_t("🚩 Пожаловаться")} /></button>}
+            {menu.uid !== me && <button type="button" onClick={async () => { if (!confirm(_t("Скрыть все сообщения {0} и запретить ему приглашать тебя?", nm(menu.uid)))) return; const ok = await blockUser(menu.uid); setMenu(null); flash(ok ? _t("Его сообщения скрыты") : _t("Не получилось")); }}><IcT t={_t("🙈 Скрыть сообщения человека")} /></button>}
+            {(menu.uid === me || isOwner) && !menu.deleted && <button type="button" className="danger-t" onClick={async () => { if (!confirm(_t("Удалить сообщение для всех?"))) return; const ok = await chat.remove(menu.id); setMenu(null); flash(ok ? _t("Удалено") : _t("Не получилось удалить")); }}><IcT t={_tj("🗑 Удалить{0}", menu.uid !== me ? _t(" (ты владелец круга)") : '')} /></button>}
             <button type="button" className="link-btn" onClick={() => setMenu(null)}>{_t("Закрыть")}</button>
           </div>
         </>
@@ -752,13 +753,14 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   );
 }
 
-/** WhatsApp-like ticks on my message: one = sent, nobody has read it yet; two grey = some have read it; two blue = everyone has. */
+/** WhatsApp-like ticks on my message: one = sent, nobody has read it yet; two grey = some have read it; two brass with a little star = everyone has (our own look, not blue). */
 export function Ticks({ s }: { s: ReadState }) {
   const label = s === 'sent' ? _t("Отправлено, ещё не прочитано") : s === 'all' ? _t("Прочитали все") : _t("Прочитано");
   return (
-    <svg className={`cc-tick t-${s}`} viewBox="0 0 18 11" width="18" height="11" role="img" aria-label={label}>
+    <svg className={`cc-tick t-${s}`} viewBox="0 0 19 11" width="19" height="11" role="img" aria-label={label}>
       <title>{label}</title>
       {s === 'sent' ? <path d="M3 5.6 6.2 8.8 13 2" /> : <><path d="M1 5.6 4.2 8.8 11 2" /><path d="M6.4 7.6 7.6 8.8 14.4 2" /></>}
+      {s === 'all' && <path className="st" d="M16.4 6.2l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z" />}
     </svg>
   );
 }

@@ -5724,3 +5724,38 @@ p.ug-terms { padding-left: 0; }
 .su-pin { display: flex; gap: 8px; }
 .su-pin input { flex: 1; min-width: 0; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); padding: 0 12px; font: inherit; font-size: 18px; font-weight: 700; background: var(--surface); color: var(--ink); }
 .bw-tabs.su button { flex: 1; }
+
+/* Brand icon set «фирменные мелочи» (22.11): one brass detail per icon, icons inside text */
+.li .a { stroke: var(--gold); }
+.li .af { fill: var(--gold); stroke: none; }
+.li .ff { fill: currentColor; stroke: none; }
+.li { overflow: visible; }
+.li.lead, .li.rx { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -.22em; }
+.li.lead { margin-right: .3em; }
+/* chat: our icons instead of phone emoji */
+.cc-tick.t-all { color: var(--gold); }
+:root[data-theme="dark"] .cc-tick.t-all { color: var(--gold); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cc-tick.t-all { color: var(--gold); } }
+.cc-tick { overflow: visible; }
+.cc-tick .st { fill: currentColor; stroke: none; }
+.cc-send .li, .cc-mic .li { width: 22px; height: 22px; color: #fff; }
+.cc-send .li .a, .cc-mic .li .a { stroke: var(--gold-soft); }
+.cc-mic.big .li { width: 28px; height: 28px; }
+.cc-clip .li { width: 22px; height: 22px; margin: 0 auto; color: var(--ink-2); }
+.cc-emo button .li.rx { width: 28px; height: 28px; color: var(--green-2); vertical-align: middle; }
+.cc-rs .li.rx { color: var(--green-2); }
+.cc-quick .li.lead { color: var(--green-2); }
+.cc-acts-g button span { background: var(--surface-2); border: 1px solid var(--line); border-radius: 18px; box-shadow: none; }
+.cc-acts-g span .li { width: 26px; height: 26px; color: var(--green-2); }
+.cc-ev .li.lead, .cc-in-card .li.lead { color: var(--green-2); }
+.wa-ibtn span .li { width: 22px; height: 22px; color: var(--green-2); }
+.ch-feed em .li.rx, .ch-acts .li.rx, .wa-deeds .li.lead { color: var(--green-2); }
+.st-ic .li, .st-nudge-go span .li { width: 1em; height: 1em; display: inline-block; }
+.bz-l i .li { width: 18px; height: 18px; color: var(--green-2); }
+.wa-av .li { width: 22px; height: 22px; color: var(--green-2); }
+.bw-li > span:first-child .li, .bw-ev i .li { width: 18px; height: 18px; color: var(--green-2); }
+.cs-line > span .li, .cg-empty > span:first-child .li { width: 22px; height: 22px; display: inline-block; vertical-align: middle; color: var(--gold); }
+.wa-hav .li { width: 24px; height: 24px; color: var(--green-2); }
+.wa-hbtn .li { width: 22px; height: 22px; color: currentColor; }
+.cc-menu .li.lead, .cc-sheet .li.lead { color: var(--ink-2); }
+.wa-bigav .li { width: 46px; height: 46px; color: var(--green-2); }

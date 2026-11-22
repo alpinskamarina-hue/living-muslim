@@ -6,6 +6,7 @@ import { prayerTimes } from '../prayer';
 import { addDays, keyOf, weekStart } from '../plans';
 import { anchorLabel, dueLabel, eventAt, isLate, jumuahClash, type BizApi, type BizEvent, type BizGoal, type BizTask, type TaskStatus } from '../bizWork';
 import { _t, _tj, LOC } from '../i18n';
+import { Ic, IcT } from './LIcon';
 
 type Names = Record<string, { name: string } | undefined>;
 export type BizTab = 'chat' | 'path' | 'tasks' | 'cal' | 'plan';
@@ -109,7 +110,7 @@ export function BizCalendar({ api, state, today, me, names, onDraft }: Common) {
             </div>
             {list.map((e) => (
               <button key={e.id} type="button" className={`bw-ev k-${e.kind}`} onClick={() => onDraft({ k: 'event', ...e })}>
-                <i>{e.kind === 'due' ? '📄' : '🤝'}</i><span><b>{e.title}</b><small>{whenOf(e)}{e.by && e.by !== me ? ` · ${firstName(names, me, e.by)}` : ''}</small></span>
+                <i><Ic e={e.kind === 'due' ? 'due' : 'meet'} /></i><span><b>{e.title}</b><small>{whenOf(e)}{e.by && e.by !== me ? ` · ${firstName(names, me, e.by)}` : ''}</small></span>
               </button>
             ))}
           </div>
@@ -118,7 +119,7 @@ export function BizCalendar({ api, state, today, me, names, onDraft }: Common) {
       {next.length > 0 && (
         <div className="bw-card">
           <span className="bw-k">{_t("Ближайшее")}</span>
-          {next.map((e) => <div key={e.id} className="bw-li"><span>{e.kind === 'due' ? '📄' : '🤝'}</span><span className="bw-lt">{e.title}</span><small>{D(e.day).toLocaleDateString(LOC, { weekday: 'short', day: 'numeric' })} · {whenOf(e)}</small></div>)}
+          {next.map((e) => <div key={e.id} className="bw-li"><span><Ic e={e.kind === 'due' ? 'due' : 'meet'} /></span><span className="bw-lt">{e.title}</span><small>{D(e.day).toLocaleDateString(LOC, { weekday: 'short', day: 'numeric' })} · {whenOf(e)}</small></div>)}
         </div>
       )}
       <p className="bw-note">{_t("Встречи круга сами попадают в твои «Планы» и напоминают за час.")}</p>
@@ -199,7 +200,7 @@ export function BizPlanPane({ api, me, names, people, onDraft }: Common) {
               ))}
             </div>
           )}
-          <button type="button" className="link-btn bw-edit" onClick={start}>{_t("✏️ Изменить план")}</button>
+          <button type="button" className="link-btn bw-edit" onClick={start}><IcT t={_t("✏️ Изменить план")} /></button>
         </>
       )}
 
@@ -207,7 +208,7 @@ export function BizPlanPane({ api, me, names, people, onDraft }: Common) {
         <div className="bw-dech"><span className="bw-k">{_t("Решения шуры")}</span><button type="button" className="link-btn" onClick={() => onDraft({ k: 'dec', body: '' })}>{_t("+ Решение")}</button></div>
         {decisions.length ? decisions.map((d) => (
           <button key={d.id} type="button" className="bw-dec" onClick={() => onDraft({ k: 'dec', id: d.id, body: d.body })}>
-            <i>✅</i><span><b>{D(d.day).toLocaleDateString(LOC, { day: '2-digit', month: '2-digit' })}</b> {d.body}{d.by && <small> · {firstName(names, me, d.by)}</small>}</span>
+            <i><Ic e="task" /></i><span><b>{D(d.day).toLocaleDateString(LOC, { day: '2-digit', month: '2-digit' })}</b> {d.body}{d.by && <small> · {firstName(names, me, d.by)}</small>}</span>
           </button>
         )) : <p className="bw-none">{_t("Что решили на шуре, записывайте сюда, чтобы не спорить заново. Можно и из чата: долгое нажатие на сообщение → «Записать как решение».")}</p>}
       </div>
@@ -285,8 +286,8 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
         {d.k === 'event' && (
           <>
             <div className="bw-chips">
-              <button type="button" aria-pressed={(d.kind ?? 'meet') === 'meet'} onClick={() => setD({ ...d, kind: 'meet' })}>{_t("🤝 Встреча")}</button>
-              <button type="button" aria-pressed={d.kind === 'due'} onClick={() => setD({ ...d, kind: 'due' })}>{_t("📄 Срок")}</button>
+              <button type="button" aria-pressed={(d.kind ?? 'meet') === 'meet'} onClick={() => setD({ ...d, kind: 'meet' })}><Ic e="meet" cls="lead" />{_t("Встреча")}</button>
+              <button type="button" aria-pressed={d.kind === 'due'} onClick={() => setD({ ...d, kind: 'due' })}><Ic e="due" cls="lead" />{_t("Срок")}</button>
             </div>
             <span className="bw-sl">{_t("День")}</span>
             <div className="bw-chips">
@@ -300,7 +301,7 @@ export function BizSheet({ draft, api, me, names, people, state, today, onClose,
             </div>
             {clash && (
               <div className="bw-warn">
-                <span>{_t("⚠ Это время Джума. Поставим встречу после намаза?")}</span>
+                <span><Ic e="warn" cls="lead" />{_t("Это время Джума. Поставим встречу после намаза?")}</span>
                 <button type="button" onClick={() => setD({ ...d, at: clash, after_p: null })}>{_tj("Поставить на {0}", clash)}</button>
               </div>
             )}

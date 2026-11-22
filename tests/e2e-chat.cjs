@@ -96,7 +96,7 @@ async function signup(pg, name, email) {
     const ab = await am.boundingBox();
     await B.mouse.move(ab.x + 30, ab.y + 15); await B.mouse.down(); await wait(700); await B.mouse.up(); await wait(400);
     await shot(B, 'chat-b2-menu');
-    await B.locator('.cc-emo button', { hasText: '❤️' }).click(); await wait(1200);
+    await B.locator('.cc-emo button[data-e="❤️"]').click(); await wait(1200);
     await shot(B, 'chat-b3-chat');
 
     // A: sees answers, plays voice, sees reply under the dua card

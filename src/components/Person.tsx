@@ -1,3 +1,4 @@
+import { Ic } from './LIcon';
 import { useEffect, useRef, useState } from 'react';
 import { cloudMe, myCircles, switchCircle, openCircleChat, blockUser, kindOf, meRpc, currentCircle, sendInvite } from '../cloud';
 import { Ava } from './Nick';
@@ -192,7 +193,7 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
           <h4>{_tj("Общие круги · {0}", shared.length)}</h4>
           {shared.map((c) => (
             <button key={c.code} type="button" className="pp-cr" onClick={() => { onClose(); setTimeout(() => switchCircle(c.code), 60); }}>
-              <span>{kindOf(c.kind)?.ic ?? '👥'}</span><b>{c.title}</b><i>›</i>
+              <span><Ic e={kindOf(c.kind)?.ic ?? '👥'} /></span><b>{c.title}</b><i>›</i>
             </button>
           ))}
         </div>
