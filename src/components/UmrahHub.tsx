@@ -5,7 +5,7 @@ import { shareCard, SITE } from '../share';
 import type { AppState, UmrahState } from '../types';
 import type { UmrahApi } from '../umrahCircle';
 import { IHRAM_RULES, PREP, STEPS, type Step } from '../umrah/guide';
-import { DuaList, StepView, umrahOf } from './Umrah';
+import { AskAi, DuaList, StepView, umrahOf } from './Umrah';
 import { UmrahTrips } from './UmrahTrips';
 import { CircleChat } from './CircleChat';
 import { useChat } from '../chat';
@@ -594,7 +594,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
             </>
           )}
           {kn === 'madinah' && <><div className="um-title"><h1>{_t("Медина")}</h1></div><MadinahGuide /><h3>{_t("Умра за другого")}</h3><Badal /></>}
-          {kn === 'rules' && <><div className="um-title"><h1>{_t("Запреты в ихраме")}</h1></div>{rulesList}{madhab}</>}
+          {kn === 'rules' && <><div className="um-title"><h1>{_t("Запреты в ихраме")}</h1></div>{rulesList}<AskAi state={state} label={_t("Спросить помощника про запреты")} q={_t("Я в ихраме. Что делать, если я по ошибке нарушил запрет ихрама?")} />{madhab}</>}
         </div>
       )}
 

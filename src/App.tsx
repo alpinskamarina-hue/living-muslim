@@ -171,6 +171,8 @@ export function App() {
   const [khutba, setKhutba] = useState(() => { try { return new URLSearchParams(location.search).has('khutba'); } catch { return false; } });
   const [halal, setHalal] = useState<'' | 'cam' | 'hist'>('');
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiAsk, setAiAsk] = useState('');
+  useEffect(() => { const f = (e: Event) => { setAiAsk(String((e as CustomEvent).detail || '')); setAiOpen(true); }; window.addEventListener('lm:ai', f); return () => window.removeEventListener('lm:ai', f); }, []);
   // Reminders the assistant set: when one comes due, it goes into her chat as a message (the FAB shows how many are new).
   const pingsNow = useRef(state.pings);
   pingsNow.current = state.pings;
@@ -505,7 +507,7 @@ export function App() {
       {khutba && <Khutba state={state} update={update} today={today} onClose={() => setKhutba(false)} />}
       {halal && <HalalScan state={state} today={today} start={halal} onClose={() => setHalal('')} />}
       {safar && <Safar state={state} update={update} today={today} onClose={() => setSafar(false)} circle={circle} joined={joined} />}
-      {aiOpen && <Assistant state={state} onClose={() => setAiOpen(false)} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={(st) => buildContext(st, today, new Date(), times, circle)} apply={(st) => update(() => st)} onGo={(t) => { setAiOpen(false); go(t); }} />}
+      {aiOpen && <Assistant state={state} topic={document.body.classList.contains('um-on') ? 'umrah' : undefined} question={aiAsk} onClose={() => { setAiOpen(false); setAiAsk(''); }} onSignIn={() => { setAiOpen(false); go({ profile: 'account' }); }} context={(st) => buildContext(st, today, new Date(), times, circle) + (document.body.classList.contains('um-on') ? '\nThe person opened you from the Umrah section of the app: answer about umrah and their trip first.' : '')} apply={(st) => update(() => st)} onGo={(t) => { setAiOpen(false); go(t); }} />}
       {adhan.open && <AdhanPlayer key={adhan.open.n} open={adhan.open} s={state.settings} set={setSettings} onClose={adhan.close} />}
       {adhan.toast && <AdhanToast a={adhan.toast} onClose={adhan.closeToast} />}
       {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}

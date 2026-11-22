@@ -3588,7 +3588,11 @@ button.ud-wait em { font-style: normal; }
 body:has(.fab) .ai-fab { bottom: calc(var(--nav-h) + 80px + env(safe-area-inset-bottom, 0px)); }
 body:has(.wa-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-inset-bottom, 0px)); }
 body:has(.bw-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-inset-bottom, 0px)); }
-body:has(.cc-compose) .ai-fab, body:has(.cc-compose) .ai-tip, body.um-on .ai-fab, body.um-on .ai-tip { display: none; }
+body:has(.cc-compose) .ai-fab, body:has(.cc-compose) .ai-tip { display: none; }
+/* In the umrah section the round button sits above its own bottom keys. */
+body.um-on .ai-fab { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 8; }
+body.um-on:has(.um-next) .ai-fab { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+body.um-on .ai-tip { bottom: calc(90px + env(safe-area-inset-bottom, 0px)); z-index: 8; }
 .ai-tip { position: fixed; right: calc(max(16px, calc(50vw - 240px + 16px)) + 72px); bottom: calc(var(--nav-h) + 20px + env(safe-area-inset-bottom, 0px)); max-width: 220px; text-align: left; border: 0; background: var(--surface); color: var(--ink); border-radius: 16px 16px 4px 16px; padding: 9px 12px; font: inherit; font-size: 13px; line-height: 1.35; box-shadow: 0 10px 26px -10px rgba(0, 0, 0, .35); z-index: 5; }
 .ai-tip b { display: block; font-size: 12.5px; }
 body:has(.fab) .ai-tip { bottom: calc(var(--nav-h) + 86px + env(safe-area-inset-bottom, 0px)); }
@@ -5587,3 +5591,10 @@ p.ug-terms { padding-left: 0; }
 .pg-row span { display: flex; flex-direction: column; }
 .pg-row small { color: var(--ink-2); font-size: 12.5px; }
 .cc-sys.cc-fold { border: 0; font: inherit; cursor: pointer; }
+
+/* «Спросить помощника про …» on umrah pages */
+.um-ask-ai { display: flex; align-items: center; gap: 10px; width: 100%; margin: 10px 0; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface-2); color: var(--green-2); font: inherit; font-weight: 700; font-size: 14px; text-align: left; }
+.um-ask-ai span { flex: 1; }
+.um-dk .um-ask-ai { color: #f3dca4; }
+.ai-um-chips { padding: 0 14px 6px; display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.ai-um-chips button { flex: 0 0 auto; }
