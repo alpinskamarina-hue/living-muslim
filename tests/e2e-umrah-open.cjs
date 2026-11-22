@@ -87,8 +87,10 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     await signup(B, 'Тимур', 'timur@test.dev');
     await L.q(`update users set nick = 'timur_nl' where name = 'Тимур'`);
     await B.goto(BASE + '/app/?umrah'); await wait(3000);
-    check(await B.locator('.um-card', { hasText: 'Группы на умру' }).count() > 0, 'a person without a trip sees «Группы на умру» on «Сейчас»');
-    await B.locator('.um-card', { hasText: 'Группы на умру' }).click(); await wait(2500);
+    // since 21.11 the list lives in Люди → «Ищут людей»
+    await B.locator('nav.um-nav button', { hasText: 'Люди' }).click(); await wait(1500);
+    await B.locator('.uo-seg button', { hasText: 'Ищут людей' }).click(); await wait(2500);
+    check(await B.locator('.uo-card').count() > 0, 'a person without a trip finds the group in Люди → «Ищут людей»');
     const card = await txt(B, '.uo-card');
     say('   card:', card);
     check(/Умра с братьями/.test(card) && /нужно ещё 2/.test(card) && /амир Ильгиз/.test(card) && /едут 1 из 3/.test(card), 'the card: title, places, amir first name, how many go');
