@@ -272,6 +272,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
 }) {
   const main = Boolean(actions);
   const [plus, setPlus] = useState(false);
+  const [unfold, setUnfold] = useState<number[]>([]);
   const chat = useTopic(all, topic);
   const [text, setText] = useState('');
   const [ref, setRef] = useState<MsgRef | null>(null);
@@ -396,6 +397,20 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   const prGroups = new Map<string, string[]>();
   const prLast = new Map<string, number>();
   for (const m of chat.msgs) if (m.kind === 'event' && m.ref?.t === 'pr' && !m.deleted) { const k = `${m.ref.d}|${m.ref.p}`; const l = prGroups.get(k) ?? []; if (!l.includes(m.uid)) l.push(m.uid); prGroups.set(k, l); prLast.set(k, m.id); }
+  // Several trip events in a row («Юсуф едет», «назначил амира») fold into one line until tapped.
+  const foldOf = new Map<number, number>(); // message id → first id of its run
+  const foldN = new Map<number, number>(); // first id → run length
+  {
+    let run: number[] = [];
+    let runDay = '';
+    const flush = () => { if (run.length >= 2) { foldN.set(run[0], run.length); for (const id of run) foldOf.set(id, run[0]); } run = []; };
+    for (const m of chat.msgs) {
+      const plain = m.kind === 'event' && m.ref?.tr && !m.ref?.um && !m.ref?.t && !m.deleted;
+      if (plain && (!run.length || dayKey(m.at) === runDay)) { if (!run.length) runDay = dayKey(m.at); run.push(m.id); }
+      else { flush(); if (plain) { runDay = dayKey(m.at); run.push(m.id); } }
+    }
+    flush();
+  }
   const ayah = DAY_AYAHS[Math.floor(Date.parse(today) / 86400000) % DAY_AYAHS.length];
   const ayahCard = main && ayah ? (
     <div key="ayah" className="cc-ayah">
@@ -560,6 +575,11 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             ) : (
               <div key={m.id} className="cc-sys cc-trip">{mine ? _t("Ты") : nm(m.uid)}: {m.body}{onUmrah && !m.deleted && <> · <button type="button" className="link-btn" onClick={() => onUmrah(m.ref!.um!)}>{_t("поездка ›")}</button></>}</div>
             ));
+            return out;
+          }
+          if (m.kind === 'event' && foldOf.has(m.id) && !unfold.includes(foldOf.get(m.id)!)) {
+            const f = foldOf.get(m.id)!;
+            if (f === m.id) out.push(<button key={m.id} type="button" className="cc-sys cc-trip cc-fold" onClick={() => setUnfold((u) => [...u, f])}>🕋 {_tj("{0} событий группы ›", foldN.get(f) ?? 0)}</button>);
             return out;
           }
           if (m.kind === 'event') {

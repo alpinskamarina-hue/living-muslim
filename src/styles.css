@@ -5563,3 +5563,27 @@ p.ug-terms { padding-left: 0; }
 .cl-caps b { display: block; font-size: 13.5px; margin-bottom: 4px; }
 .cl-caps ul { list-style: none; margin: 0; padding: 0; }
 .cl-caps li { font-size: 13px; line-height: 1.35; padding: 3px 0; color: var(--ink); }
+/* «Люди»: one strip on top, the group chat below, the rest in sheets */
+.pg-strip { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 8px 10px; display: grid; gap: 8px; margin: 6px 0 8px; }
+.pg-ppl { display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--ink); padding: 0; text-align: left; width: 100%; }
+.pg-faces { display: flex; flex-shrink: 0; }
+.pg-faces i, .pg-row > i { display: block; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--gold); overflow: hidden; background: var(--surface); }
+.pg-faces i + i { margin-left: -8px; }
+.pg-faces i > span, .pg-faces i > img, .pg-row > i > span, .pg-row > i > img { width: 100%; height: 100%; display: grid; place-items: center; font-weight: 800; font-size: 14px; color: #2b2219; object-fit: cover; }
+.pg-faces i.more span { background: var(--surface-2); color: var(--ink-2); font-size: 11px; }
+.pg-who { display: flex; flex-direction: column; min-width: 0; }
+.pg-who b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-who small { font-size: 12px; color: var(--ink-2); }
+.pg-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.pg-chips button { flex: 0 0 auto; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 999px; padding: 7px 11px; font: inherit; font-size: 12.5px; font-weight: 700; min-height: 34px; }
+.pg-chips button.ok { background: #dcefe3; color: #0f5132; border-color: #bfe0cb; }
+.pg-chips button.on { background: #f6e3b8; color: #6b4a0c; border-color: #ecd28f; }
+.pg-sheet { max-height: 88vh; overflow-y: auto; }
+.pg-sheet .uo-open { border: 0; padding: 0; margin: 0; background: none; }
+.pg-grab { justify-self: center; width: 40px; height: 4px; border-radius: 4px; background: var(--line); }
+.pg-list { display: grid; gap: 10px; }
+.pg-row { display: flex; align-items: center; gap: 10px; }
+.pg-row > i { width: 40px; height: 40px; flex-shrink: 0; }
+.pg-row span { display: flex; flex-direction: column; }
+.pg-row small { color: var(--ink-2); font-size: 12.5px; }
+.cc-sys.cc-fold { border: 0; font: inherit; cursor: pointer; }

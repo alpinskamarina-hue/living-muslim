@@ -29,7 +29,7 @@ import { umrahCall } from './UmrahBanner';
 import { AsksToMe, OpenGroups, OpenSwitch, useOpenList } from './UmrahOpen';
 import { GuidesPane } from './UmrahGuides';
 import { useGuides } from '../guides';
-import { useUmrahAsks } from '../umrahOpen';
+import { openMine, useUmrahAsks } from '../umrahOpen';
 import { GroupRadar, useStopSharingAfter } from './UmrahGroup';
 import { plural } from '../dates';
 import { UMRAH_VIDEOS, embed, mins } from '../umrah/videos';
@@ -626,7 +626,7 @@ export function UmrahHub({ state, update, today, api: rawApi, nameOf, onExit, ba
 
       {tab === 'people' && (
         <PeopleTab away={awayCard} becomeFirst={umOpen === 'become'} code={chatCode} onAccepted={(uid, name) => callTo(uid, name, me)} view={peopleView} setView={setPeopleView} api={api} me={me} tripHost={tripHost} hosts={newest} onPick={setPick}
-          people={<>{people}{rollCall}</>} myReady={model.ready} nameOf={nameOf} onInvite={chatCode && tripHost ? () => setInviting('sheet') : undefined}
+          people={ask} roll={rollCall} rollOn={Boolean(roll)} canCall={canCall} names={circle?.names} myReady={model.ready} nameOf={nameOf} onInvite={chatCode && tripHost ? () => setInviting('sheet') : undefined}
           radar={onSite && groupHost && me ? <GroupRadar state={state} update={update} api={rawApi} host={groupHost} members={groupMembers} nameOf={nameOf} /> : null}
           chat={chatOn && tripHost && circle?.me ? (
             <CircleChat chat={chat} me={circle.me} names={circle.names} members={circle.members} reacts={circle.reacts} today={today} isOwner={circle.isOwner} state={state} update={update}
@@ -767,14 +767,20 @@ function InviteSheet({ code, title, onNick, onClose }: { code: string; title: st
 }
 
 /** «Люди»: my group (faces, roll call, chat) and the groups that look for people, behind one switch. */
-function PeopleTab({ away, becomeFirst, code, onAccepted, view, setView, api, me, tripHost, hosts, onPick, people, myReady, nameOf, chat, noChat, radar, onInvite }: {
+function PeopleTab({ away, becomeFirst, code, onAccepted, view, setView, api, me, tripHost, hosts, onPick, people, roll, rollOn, canCall, names, myReady, nameOf, chat, noChat, radar, onInvite }: {
   away?: React.ReactNode; becomeFirst?: boolean; code?: string; onAccepted: (uid: string, name: string) => void; view: PView; setView: (v: PView) => void;
   api: UmrahApi; me: string | null; tripHost: string | null; hosts: string[]; onPick: (h: string) => void; people: React.ReactNode; myReady: number;
+  roll: React.ReactNode; rollOn: boolean; canCall: boolean; names?: CircleApi['names'];
   nameOf: (id: string) => string; chat: React.ReactNode; noChat: string; radar: React.ReactNode; onInvite?: () => void;
 }) {
   const asks = useUmrahAsks(isCloud);
   const open = useOpenList(isCloud);
   const guides = useGuides(isCloud);
+  // The group screen is the chat: one strip on top, the rest opens in sheets.
+  const [sheet, setSheet] = useState<'' | 'group' | 'seek'>('');
+  const [listing, setListing] = useState<{ places: number } | null | undefined>(undefined);
+  const amHost = Boolean(tripHost && me && tripHost === me);
+  useEffect(() => { if (amHost && code && asks.ok !== false && sheet === '') openMine().then((m) => setListing(m ?? null)); }, [amHost, code, asks.ok, sheet]);
   useEffect(() => { if (view === 'open') open.reload(); if (view === 'guides') guides.reload(); }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
   const gOn = guides.ok !== false, oOn = asks.ok !== false;
   const seg = isCloud && (gOn || oOn) ? (
@@ -792,6 +798,14 @@ function PeopleTab({ away, becomeFirst, code, onAccepted, view, setView, api, me
   const trip = api.trips[tripHost];
   const going = 1 + Object.keys(api.rsvp).filter((id) => id !== tripHost && api.rsvp[id]?.[tripHost]?.s === 'go').length;
   const myAsks = me && api.trips[me] ? <AsksToMe asks={asks.to_me} title={api.trips[me].title} onAccepted={onAccepted} /> : null;
+  const st = (id: string) => api.rsvp[id]?.[tripHost]?.s;
+  const ids = [...new Set([tripHost, ...Object.keys(api.rsvp).filter((id) => st(id))])].filter((id) => st(id) !== 'no');
+  ids.sort((a, b) => Number(b === trip.amir) - Number(a === trip.amir) || Number(st(b) === 'go') - Number(st(a) === 'go'));
+  const label = (id: string) => (trip.amir === id ? _t("амир") : st(id) === 'go' || id === tripHost ? _t("едет") : st(id) === 'maybe' ? _t("думает") : _t("молчит"));
+  const first = (id: string) => (names?.[id]?.name || nameOf(id) || '?').split(' ')[0];
+  const face = (id: string) => { const p = names?.[id]; const nm = p?.name || nameOf(id) || '?'; return p?.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <span style={{ background: p?.color || '#d9ad55' }}>{nm.slice(0, 1).toUpperCase()}</span>; };
+  const who = ids.slice(0, 2).map((id) => `${first(id)} ${label(id)}`).join(' · ');
+  const seekOn = amHost && code && asks.ok !== false;
   return (
     <div className="um-sec um-group">
       <div className="um-title"><h1>{_t("Люди")}</h1><small>{trip.title}{trip.month ? ` · ${trip.month}` : ''}{trip.city ? _t(" · из {0}", trip.city) : ''}</small></div>
@@ -801,12 +815,44 @@ function PeopleTab({ away, becomeFirst, code, onAccepted, view, setView, api, me
         <div className="um-trips">{hosts.map((h) => <button key={h} type="button" aria-pressed={h === tripHost} onClick={() => onPick(h)}>{api.trips[h].title}</button>)}</div>
       )}
       {people}
-      {radar}
-      {onInvite && <button type="button" className="ghost-btn mp-invite" onClick={onInvite}>{_t("+ Позвать в поездку")}</button>}
-      {tripHost === me && code && asks.ok !== false && <OpenSwitch code={code} going={going} title={trip.title} month={trip.month} amir={nameOf(me)} />}
+      <div className="pg-strip">
+        <button type="button" className="pg-ppl" onClick={() => setSheet('group')} aria-label={_t("Вся группа")}>
+          <span className="pg-faces">{ids.slice(0, 4).map((id) => <i key={id}>{face(id)}</i>)}{ids.length > 4 && <i className="more"><span>+{ids.length - 4}</span></i>}</span>
+          <span className="pg-who"><b>{who}{ids.length > 2 ? _tj(" и ещё {0}", ids.length - 2) : ''}</b><small>{_tj("Едут {0}", going)}{listing ? _tj(" · нужно ещё {0}", listing.places) : ''} ›</small></span>
+        </button>
+        <div className="pg-chips">
+          {canCall && <button type="button" className={rollOn ? 'on' : ''} onClick={() => setSheet('group')}>📣 {_t("Перекличка")}</button>}
+          {seekOn && <button type="button" className={listing ? 'ok' : ''} onClick={() => setSheet('seek')}>{listing ? '✓ ' : ''}{_t("Ищем людей")} ›</button>}
+          {onInvite && <button type="button" onClick={onInvite}>+ {_t("Позвать")}</button>}
+        </div>
+      </div>
+      {rollOn && !canCall && roll}
       {!chat && noChat && <p className="tiny">{noChat}</p>}
-      {chat && <h3>{_t("Чат поездки")}</h3>}
       {chat}
+      {sheet && (
+        <div className="um-sheet-bg" onClick={() => setSheet('')}>
+          <div className="um-sheet pg-sheet" role="dialog" aria-modal="true" aria-label={sheet === 'seek' ? _t("Ищем людей") : _t("Вся группа")} onClick={(e) => e.stopPropagation()}>
+            <span className="pg-grab" aria-hidden="true" />
+            {sheet === 'seek' && code && <OpenSwitch code={code} going={going} title={trip.title} month={trip.month} amir={nameOf(me!)} />}
+            {sheet === 'group' && (
+              <>
+                <div className="um-sheet-h"><b>{_tj("Группа · едут {0}", going)}</b><button type="button" onClick={() => setSheet('')} aria-label={_t("Закрыть")}>✕</button></div>
+                <div className="pg-list">
+                  {ids.map((id) => {
+                    const r = api.rsvp[id]?.[tripHost]?.ready;
+                    return (
+                      <div key={id} className="pg-row"><i>{face(id)}</i><span><b>{names?.[id]?.name || nameOf(id) || _t("Участник")}</b><small>{label(id)}{typeof r === 'number' && st(id) === 'go' ? _tj(" · готов на {0}%", r) : ''}</small></span></div>
+                    );
+                  })}
+                </div>
+                {roll}
+                {radar}
+                {onInvite && <button type="button" className="ghost-btn mp-invite" onClick={() => { setSheet(''); onInvite(); }}>{_t("+ Позвать в поездку")}</button>}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

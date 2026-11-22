@@ -33,6 +33,7 @@ async function newCircle(pg, title) {
   const t = pg.locator('input[placeholder^="Например"]'); if (await t.count()) await t.first().fill(title);
   await pg.locator('button', { hasText: 'Создать круг' }).click(); await wait(2500);
 }
+const openSeek = async (pg) => { if (!(await pg.locator('.uo-open').count())) { await pg.locator('.pg-chips button', { hasText: 'Ищем людей' }).click(); await wait(600); } };
 const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await wait(3500); };
 
 (async () => {
@@ -57,6 +58,13 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     await group(A);
     const tripSeg = A.locator('.um-gseg button', { hasText: /Поездка/ });
     if (await tripSeg.count()) { await tripSeg.first().click(); await wait(800); }
+    check(await A.locator('.pg-strip').count() === 1, 'Люди: one strip on top');
+    check(await A.locator('.um-sec.um-group > .uo-open').count() === 0, 'no big «Ищем людей» card on the screen');
+    await A.locator('.pg-ppl').click(); await wait(500);
+    check(await A.locator('.pg-sheet .pg-row').count() >= 1, `group sheet lists people: ${await txt(A, '.pg-sheet')}`);
+    await shot(A, 'pg-group-sheet');
+    await A.locator('.um-sheet-bg').click({ position: { x: 10, y: 10 } }); await wait(400);
+    await openSeek(A);
     check(await A.locator('.uo-open').count() > 0, `amir sees «Ищем людей»: ${await txt(A, '.uo-open-h')}`);
     await A.locator('.uo-places button', { hasText: '2' }).click();
     await A.locator('.uo-who button', { hasText: 'Братья' }).click();
@@ -64,6 +72,7 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     await A.locator('.uo-open textarea').fill('Билеты берём вместе в начале месяца, отель рядом с Харамом');
     // the draft survives leaving the screen
     await A.reload(); await wait(2500); await group(A); if (await tripSeg.count()) { await tripSeg.first().click(); await wait(800); }
+    await openSeek(A);
     check((await A.locator('.uo-open textarea').inputValue()).startsWith('Билеты'), 'draft kept on the phone');
     await A.locator('.uo-go', { hasText: 'Показать группу' }).click(); await wait(1500);
     check(/Видна в «Ищут людей» · сохранено \d\d:\d\d/.test(await txt(A, '.uo-pill')), `saved pill: ${await txt(A, '.uo-pill')}`);
@@ -167,6 +176,7 @@ const group = async (pg) => { await pg.goto(BASE + '/app/?umrah=group'); await w
     await group(A);
     const tripSegA = A.locator('.um-gseg button', { hasText: /Поездка/ });
     if (await tripSegA.count()) { await tripSegA.first().click(); await wait(800); }
+    await openSeek(A);
     await A.locator('.uo-hide').click(); await wait(1500);
     check(/Черновик/.test(await txt(A, '.uo-pill')), 'hidden → back to draft');
     check((await L.q(`select count(*)::int n from umrah_open`))[0].n === 0, 'the amir closed the group');

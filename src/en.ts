@@ -7052,4 +7052,12 @@ export const EN: Record<string, string> = {
   "Амир {0} · едут {1} · нужно мест: {2} · {3}": "Amir {0} · going {1} · places needed: {2} · {3}",
   "Скрыть группу из списка": "Hide the group from the list",
   "Группа скрыта из списка. Текст остался, можно показать снова.": "The group is hidden from the list. The text is kept, you can show it again.",
+  "Вся группа": "The whole group",
+  "Едут {0}": "Going {0}",
+  " · нужно ещё {0}": " · {0} more needed",
+  " и ещё {0}": " and {0} more",
+  "Перекличка": "Roll call",
+  "Группа · едут {0}": "Group · {0} going",
+  " · готов на {0}%": " · {0}% ready",
+  "{0} событий группы ›": "{0} group events ›",
 };

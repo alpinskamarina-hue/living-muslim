@@ -56,7 +56,7 @@ async function callByNick(A, nick, who) {
     await signup(A, 'Насим', 'nasim@test.dev');
     const code = await newCircle(A, 'Братья');
     await A.goto(BASE + '/app/?umrah'); await wait(2500);
-    await A.locator('.um-nav button', { hasText: 'Группа' }).click(); await wait(900);
+    await A.locator('.um-nav button', { hasText: 'Люди' }).click(); await wait(900);
     await A.locator('button', { hasText: 'Собрать поездку на умру' }).click(); await wait(300);
     await A.locator('.join input').first().fill('Умра с братьями');
     await A.locator('.join input').nth(1).fill('декабрь 2026');
