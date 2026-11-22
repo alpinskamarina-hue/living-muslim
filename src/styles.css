@@ -5598,3 +5598,14 @@ p.ug-terms { padding-left: 0; }
 .um-dk .um-ask-ai { color: #f3dca4; }
 .ai-um-chips { padding: 0 14px 6px; display: flex; gap: 6px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
 .ai-um-chips button { flex: 0 0 auto; }
+
+/* Circle name: our kind is the fixed root, people add their own part */
+.cl-name { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 0 10px; }
+.cl-name input { flex: 1; min-width: 0; border: 0 !important; background: none !important; padding: 11px 0 !important; box-shadow: none !important; outline: none; }
+.cl-name:focus-within { border-color: var(--gold, #b8892f); }
+.cl-root { flex-shrink: 0; font-style: normal; font-weight: 700; color: var(--ink); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.wa-iname { display: inline-flex; align-items: center; gap: 6px; font-size: 22px; }
+.wa-ren { border: 0; background: none; color: var(--wa-ink2, var(--ink-2)); font-size: 17px; padding: 2px 4px; cursor: pointer; }
+.wa-renf { width: 100%; max-width: 360px; display: grid; gap: 6px; margin: 4px 0; text-align: left; }
+.wa-renf small { color: var(--ink-2); font-size: 12px; }
+.wa-renb { display: flex; gap: 8px; justify-content: flex-end; }

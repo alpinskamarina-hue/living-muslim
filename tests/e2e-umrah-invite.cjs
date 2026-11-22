@@ -30,7 +30,7 @@ async function newCircle(pg, title) {
   const add = pg.locator('button', { hasText: /\+ Новый|Новый круг/ });
   if (await add.count()) { await add.first().click(); await wait(600); }
   await pg.locator('button', { hasText: 'Братья' }).first().click();
-  const t = pg.locator('input[placeholder^="Например"]'); if (await t.count()) await t.fill(title);
+  const t = pg.locator('.cl-name input'); if (await t.count()) await t.fill(title);
   await pg.locator('button', { hasText: 'Создать круг' }).click(); await wait(2500);
   return JSON.parse(await pg.evaluate(() => localStorage.getItem('lm.cloud'))).circle;
 }
@@ -140,11 +140,11 @@ async function callByNick(A, nick, who) {
     check(/Умра/.test(kinds[0] || ''), `«Умра» is the first circle kind: ${kinds.map((x) => x.replace(/\n/g, ' ')).join(' · ')}`);
     await E.locator('.cl-kinds button', { hasText: 'Умра' }).click(); await wait(300);
     await shot(E, 'ui-8-kind');
-    await E.locator('input[placeholder^="Например: Умра"]').fill('Умра весной');
+    await E.locator('.cl-name input').fill('весной');
     await E.locator('input[placeholder^="Например: март"]').fill('март 2027');
     await E.locator('button', { hasText: 'Собрать поездку' }).click(); await wait(6000);
     const tr = await L.q(`select d.data->>'title' t, d.data->>'month' m from docs d join users u on u.uid = d.key where d.coll = 'umrahTrip' and u.name = 'Рустам'`);
-    check(tr.length === 1 && tr[0].t === 'Умра весной' && tr[0].m === 'март 2027', `trip made: ${JSON.stringify(tr)}`);
+    check(tr.length === 1 && tr[0].t === 'Умра · весной' && tr[0].m === 'март 2027', `trip made: ${JSON.stringify(tr)}`);
     check(await E.locator('.um-app').count() > 0 && await E.locator('.um-sheet').count() > 0, `umrah screen with «Позвать в поездку»: ${await txt(E, '.um-sheet')}`);
     await shot(E, 'ui-9-new-umrah');
 

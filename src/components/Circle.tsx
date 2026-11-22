@@ -17,7 +17,7 @@ import { AsksBox } from './Person';
 import { InviteByNick, InviteInbox } from './Nick';
 import { nicksReady, meRpc, serverHas, leaveCircle } from '../cloud';
 import { shareInvite } from './CloudCircle';
-import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite, isDm } from '../cloud';
+import { isCloud, currentCircle, myCircles, switchCircle, kindOf, pendingInvite, isDm, renameCircle, rootOf, suffixOf, circleTitle, SUFFIX_MAX } from '../cloud';
 import { useEffect, useState } from 'react';
 import type { Anchor, AppState } from '../types';
 import { FamilySection } from './Family';
@@ -83,6 +83,7 @@ let cLinkUsed = false;
 export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah, myReady, khatm, iftar, state, update, current, onCircleGoal, myAsk, onAsk, ch, amir, onAmir, shura, onShura, adv, giveAdv, onNikah, chatUnread, onCC, onOpenCourse }: Props) {
   const { status, me, members, reacts, names, isOwner } = circle;
   const [range, setRange] = useState<'today' | 'week'>('today');
+  const [nameEdit, setNameEdit] = useState<string | null>(null);
   const [jobs, setJobs] = useState(false);
   const [umra, setUmra] = useState<false | HubTab>(false);
   const [adding, setAdding] = useState(false);
@@ -515,7 +516,18 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           </div>
           <div className="wa-ihead">
             <span className="wa-bigav">{kindOf(kind)?.ic ?? '👥'}</span>
-            <b>{cur?.title || _t("Круг")}</b>
+            {nameEdit === null ? (
+              <b className="wa-iname">{cur?.title || _t("Круг")}{cur && !isDm(cur.code) && <button type="button" className="wa-ren" aria-label={_t("Изменить название")} onClick={() => setNameEdit(suffixOf(cur.title, kind))}>✎</button>}</b>
+            ) : (
+              <form className="wa-renf" onSubmit={(e) => { e.preventDefault(); if (cur) { renameCircle(cur.code, circleTitle(kind, nameEdit), kind); } setNameEdit(null); }}>
+                <span className={`cl-name${rootOf(kind) ? ' has-root' : ''}`}>
+                  {rootOf(kind) && <em className="cl-root">{rootOf(kind)} ·</em>}
+                  <input autoFocus value={nameEdit} maxLength={SUFFIX_MAX(kind)} placeholder={rootOf(kind) ? _t("своё к названию") : _t("Название")} onChange={(e) => setNameEdit(e.target.value)} />
+                </span>
+                {rootOf(kind) && <small>{_tj("«{0}» встроено и не меняется. Меняется только твоя часть.", rootOf(kind))}</small>}
+                <span className="wa-renb"><button type="button" className="ghost-btn" onClick={() => setNameEdit(null)}>{_t("Отмена")}</button><button type="submit" className="pri-btn">{_t("Сохранить")}</button></span>
+              </form>
+            )}
             <small>{_tj("Круг · {0}  {1}", members.length, plural(members.length, _t("участник"), _t("участника"), _t("участников")))}{am ? _t(" · амир {0}", nm(am.id)) : ''}</small>
             <div className="wa-ibtn">
               <button type="button" onClick={invite}><span>➕</span>{_t("Позвать")}</button>
@@ -644,7 +656,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <button type="button" className="ch-add" onClick={() => setAdding(true)}>{_t("+ Новый")}</button>
         </div>
       )}
-      <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && kindInfo.ru !== cur.title ? ` · ${kindInfo.ru}` : ''} · </> : null}{_tj("{0}  {1} · видят только итог дня", members.length, plural(members.length, _t("человек"), _t("человека"), _t("человек")))}</p>
+      <p className="ch-sub">{cur ? <><b>{cur.title}</b>{kindInfo && !cur.title.startsWith(kindInfo.ru) ? ` · ${kindInfo.ru}` : ''} · </> : null}{_tj("{0}  {1} · видят только итог дня", members.length, plural(members.length, _t("человек"), _t("человека"), _t("человек")))}</p>
 
       {chatOn && (
         <div className="cc-tabs" role="tablist">
