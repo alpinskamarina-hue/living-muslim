@@ -3,7 +3,8 @@ import { meRpc, myCircles, currentCircle, kindOf, type CircleRef } from '../clou
 import type { Member } from '../circle';
 import { readsReady, readStateOf, type Msg } from '../chat';
 import { Ticks, shortOf } from './CircleChat';
-import { _t, LOC } from '../i18n';
+import { _t, _tj, LOC } from '../i18n';
+import { plural } from '../dates';
 import { Ic, IcT } from './LIcon';
 import { openPerson, usePersonReady, useAsks } from '../person';
 import { AsksBox, IntentsFeed } from './Person';
@@ -11,6 +12,8 @@ import { InviteInbox } from './Nick';
 import type { AppState } from '../types';
 import { useStories, type StoryGroup } from '../stories';
 import { StoryStrip, StoryViewer, StoryCreate, StoryNudge } from './Stories';
+import { useOpenReady, openPending } from '../openCircles';
+import { FindCircle, CommonCircle } from './OpenCircles';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 interface Row { last: Msg | null; who: Record<string, string>; rd: [number, number] | null }
@@ -89,10 +92,33 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
   const ringOf = (m: Member) => (m.day !== today ? 0 : Math.min(1, (m.prayers / 5) * 0.6 + (m.total ? (m.done / m.total) * 0.4 : 0)));
   const people = [...members].sort((a, b) => (a.id === me ? -1 : b.id === me ? 1 : ringOf(b) - ringOf(a)));
 
+  // open circles: «Мои · Найти круг» and the common circle (supabase/open-circles.sql)
+  const openOn = useOpenReady();
+  const [tab, setTab] = useState<'mine' | 'find'>(() => { try { return sessionStorage.getItem('lm.findTab') === 'find' ? 'find' : 'mine'; } catch { return 'mine'; } });
+  useEffect(() => { try { sessionStorage.setItem('lm.findTab', tab); } catch { /* */ } }, [tab]);
+  const [common, setCommon] = useState(false);
+  useEffect(() => { if (!common) return; history.pushState({ lmCommon: 1 }, ''); window.scrollTo(0, 0); const f = (e: Event) => { e.stopImmediatePropagation(); setCommon(false); }; window.addEventListener('popstate', f, true); return () => window.removeEventListener('popstate', f, true); }, [common]);
+  const sex = state.settings.me ?? '';
+  const [pend, setPend] = useState<{ code: string; title: string; n: number }[]>([]);
+  useEffect(() => { if (openOn) openPending().then(setPend); }, [openOn]);
+
   if (seekers) return <IntentsFeed onBack={() => history.back()} />;
+  if (common) return <CommonCircle today={today} onBack={() => history.back()} onFind={() => { history.back(); setTab('find'); }} />;
   return (
     <div className="page wa-list">
       <div className="wa-lt"><h1>{_t("Круги")}</h1></div>
+      {openOn && (
+        <div className="oc-seg" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>{_t("Мои")}</button>
+          <button type="button" role="tab" aria-selected={tab === 'find'} onClick={() => setTab('find')}>{_t("Найти круг")}</button>
+        </div>
+      )}
+      {openOn && tab === 'find' ? <FindCircle today={today} sex={sex} onCommon={() => setCommon(true)} /> : <>
+      {pend.filter((p) => circles.some((c) => c.code === p.code)).map((p) => (
+        <button key={p.code} type="button" className="wa-asks oc-pend" onClick={() => { try { sessionStorage.setItem('lm.ocOwn', p.code); } catch { /* */ } onOpen(circles.find((c) => c.code === p.code)!); }}>
+          {_tj("📩 {0} {1} в «{2}» ›", p.n, plural(p.n, _t("просится"), _t("просятся"), _t("просятся")), p.title)}
+        </button>
+      ))}
       <input className="wa-search" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={_t("🔍 Поиск")} />
       <InviteInbox />
       {personOn && <AsksBox list={asks.list} reload={asks.reload} />}
@@ -130,6 +156,15 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
         </div>
       )}
       <div className="wa-rows">
+        {openOn && !q.trim() && f === 'all' && (
+          <button type="button" className="wa-row oc-pinrow" onClick={() => setCommon(true)}>
+            <span className="wa-av oc-cav">☪</span>
+            <span className="wa-rt">
+              <span className="wa-l1"><b>{_t("Общий круг Living Muslim")}</b></span>
+              <span className="wa-l2"><span>{_t("Аят дня, хатм месяца и просьбы о дуа")}</span></span>
+            </span>
+          </button>
+        )}
         {list.map((c) => {
           const r = rows[c.code];
           const m = r?.last;
@@ -148,6 +183,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
         })}
         {!list.length && <p className="wa-none">{_t("Ничего не найдено")}</p>}
       </div>
+      </>}
       <button type="button" className="wa-fab" aria-label={_t("Новый круг")} onClick={onNew}>＋</button>
     </div>
   );

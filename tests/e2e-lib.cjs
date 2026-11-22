@@ -2,7 +2,7 @@
 const http = require('http'), fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { Client } = require('pg');
 const { chromium } = require('playwright');
-const ROOT = '/home/claude/habits/dist';
+const ROOT = process.env.LM_DIST || '/home/claude/habits/dist';
 const db = new Client({ host: '/tmp', port: 5455, user: 'postgres', database: 'lmtest' });
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const jwt = (c) => `h.${b64(c)}.s`;

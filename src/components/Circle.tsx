@@ -31,6 +31,8 @@ import { ShuraCard, BizHabitsOffer, AdviceBox, bizLine } from './BizCircle';
 import { useChat, duaReplies, duaEventId } from '../chat';
 import { CircleChat, DuaReplies, type Draft } from './CircleChat';
 import { CircleList } from './CircleList';
+import { OpenOwnerBox, OpenChatNote } from './OpenCircles';
+import { useOpenReady } from '../openCircles';
 import { openPerson, personOk, usePersonReady, useAsks } from '../person';
 import { useRef } from 'react';
 import { CH_KINDS, CH_DAYS, goalFor, circleTotals, valOf, weekStart, amirOf } from '../cweek';
@@ -114,6 +116,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
   const chatCode = isCloud ? currentCircle()?.code : undefined;
   // WhatsApp-like: the Circles tab opens on the list of my circles; a circle opens as its chat.
   const personOn = usePersonReady();
+  const openOn = useOpenReady();
   const asks = useAsks(personOn && isCloud);
   const [listOn, setListOn] = useState(() => {
     if (!isCloud || !myCircles().length) return false;
@@ -199,6 +202,16 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
     if (status !== 'ready' || joined) return;
     try { if (sessionStorage.getItem('lm.autojoin') || isDm(currentCircle()?.code)) { sessionStorage.removeItem('lm.autojoin'); onJoin(); } } catch { /* */ }
   }, [status, joined]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // «N просятся в круг» on the list of circles opens the requests here.
+  useEffect(() => {
+    if (!openOn || status !== 'ready' || !chatCode || listShown) return;
+    try {
+      if (sessionStorage.getItem('lm.ocOwn') !== chatCode) return;
+      sessionStorage.removeItem('lm.ocOwn');
+    } catch { return; }
+    setTimeout(() => { const el = document.getElementById('oc-own'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); else openPanel('oc-own'); }, 600);
+  }, [openOn, status, chatCode, listShown]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === 'loading')
     return <div className="page"><h1 className="page-h">{_t("Круг")}</h1><p className="page-sub">{_t("Подключаюсь…")}</p></div>;
@@ -367,6 +380,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <b>{_t("Позови первого человека")}</b>
           <p>{_tj("{0} Вместе держаться легче, а дуа друг за друга приходят каждый день.", kind === 'family' ? _t("Жена, муж, родители, взрослые дети.") : biz ? _t("Партнёр, брат с похожим делом, друг-предприниматель.") : kind === 'sisters' ? _t("Подруга, сестра, соседка по мечети.") : kind === 'masjid' ? _t("Братья и сёстры с урока или из мечети.") : _t("Брат, друг, однокурсник."))}</p>
           <button type="button" className="pri-btn big-btn" onClick={invite}>{_t("Пригласить в круг")}</button>
+          {openOn && cur && !isDm(cur.code) && <OpenOwnerBox code={cur.code} kind={kind} />}
         </div>
       ) : cx ? null : (
         <div className={`ch-hero${biz ? ' biz' : ''}`}>
@@ -541,6 +555,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
               <button type="button" onClick={() => goBack(() => setPanel(false))}><span><Ic e="chat" /></span>{_t("Чат")}</button>
             </div>
           </div>
+          {openOn && cur && !isDm(cur.code) && <OpenOwnerBox code={cur.code} kind={kind} />}
           {chips.length > 0 && chips[0].k !== 'n' && (
             <div className="wa-isec">
               <h4>{_t("Общие дела")}</h4>
@@ -590,7 +605,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
             : bizTab === 'cal' ? <BizCalendar {...bizCommon} />
               : <BizPlanPane {...bizCommon} />
         ) : (
-        <CircleChat chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
+        <CircleChat notice={openOn ? <OpenChatNote code={chatCode} /> : undefined} chat={chat} me={me} names={names} members={members} reacts={reacts} today={today} isOwner={isOwner} state={state} update={update} actions={acts}
           draft={draft} onDraftUsed={() => setDraft(null)} onAmin={(asker) => { say('dua_sent'); circle.react(`a:${asker}`, '🤲', today); }} title={cur?.title || _t("Круг")} placeholder={_t("Сообщение")} other={isDm(cur?.code) ? cur?.title : undefined} onUmrah={openTrip}
           biz={bizOn ? {
             make: (k, m) => {
