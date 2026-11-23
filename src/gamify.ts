@@ -6,6 +6,7 @@ import { isTripDay } from './safar';
 import { ramadanHidden } from './rplan';
 import { hOf } from './ramadan';
 import { _t } from './i18n';
+import { prayersSeen, sisDay } from './sisters';
 
 /**
  * Gamification without points: the "light of the day" (five prayer windows), a soft streak
@@ -24,7 +25,7 @@ function habitsOn(s: AppState, date: string): Habit[] {
 export function windowLight(s: AppState, date: string, a: Anchor, habits = habitsOn(s, date)) {
   const list = habits.filter((h) => h.anchor === a);
   const log = s.log[date] ?? {};
-  const got = (s.prayers[date]?.[a] ? 1 : 0) + list.filter((h) => isCounted(log[h.id])).length;
+  const got = (prayersSeen(s, date)[a] ? 1 : 0) + list.filter((h) => isCounted(log[h.id])).length;
   return got / (1 + list.length);
 }
 
@@ -37,8 +38,8 @@ export function dayLight(s: AppState, date: string) {
   return { windows, total, lit: total >= 0.5 || allHabits };
 }
 
-/** A day that neither counts nor breaks the streak: travel, or a day marked "Тяжёлый день". */
-const pausedDay = (s: AppState, d: string) => isTripDay(s, d) || (s.hard[d]?.length ?? 0) > 0;
+/** A day that neither counts nor breaks the streak: travel, a day marked "Тяжёлый день", or a sister's day without prayer. */
+const pausedDay = (s: AppState, d: string) => isTripDay(s, d) || (s.hard[d]?.length ?? 0) > 0 || sisDay(s, d);
 
 export function firstDay(s: AppState) {
   const keys = [...Object.keys(s.log), ...Object.keys(s.prayers), ...s.habits.map((h) => h.createdAt)].filter(Boolean).sort();
@@ -131,7 +132,7 @@ export function weekTotals(s: AppState, today: string) {
   let p = 0, h = 0;
   for (let i = 0; i < 7; i++) {
     const d = addDays(today, -i);
-    p += Object.keys(s.prayers[d] ?? {}).length;
+    p += Object.keys(prayersSeen(s, d)).length;
     h += Object.values(s.log[d] ?? {}).filter((m) => isCounted(m)).length;
   }
   return { p, h };

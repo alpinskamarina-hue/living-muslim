@@ -10,6 +10,7 @@ import { AiFace } from '../aiLook';
 import { inviteFriend } from '../plan';
 import { startPath } from './NewPath';
 import { _t } from '../i18n';
+import { SisterPrivacyCard } from './Sisters';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 
@@ -42,7 +43,7 @@ const HABITS: { ic: string; action: string; min: string; anchor: Anchor }[] = [
 ];
 
 /** Card on Today: the brother/sister question, then the helper's greeting with 3 steps. */
-export function OnboardCard({ state, update, times, today, onGo }: { state: AppState; update: Update; times: DayTimes; today: string; onGo: (t: 'circle' | 'assistant') => void }) {
+export function OnboardCard({ state, update, times, today, onGo }: { state: AppState; update: Update; times: DayTimes; today: string; onGo: (t: 'circle' | 'assistant' | 'privacy') => void }) {
   const st = useOnb();
   const [open, setOpen] = useState(false);
   const over = st === 'done' || st === 'skip';
@@ -69,6 +70,7 @@ export function OnboardCard({ state, update, times, today, onGo }: { state: AppS
   const herSelf = s.me === 'f';
   return (
     <>
+      {herSelf && !over && <SisterPrivacyCard state={state} update={update} onOwn={() => onGo('privacy')} />}
       {!over && <div className="onb">
         <div className="onb-hd"><AiFace s={s} size={44} /><span>
           <b>{herSelf ? _t("Я {0}, твоя помощница", name) : _t("Я {0}, твой помощник", name)}</b>

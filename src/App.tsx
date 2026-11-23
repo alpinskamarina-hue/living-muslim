@@ -48,6 +48,8 @@ import { QiblaScreen, type QiblaTab } from './components/Mosques';
 import { Ramadan } from './components/Ramadan';
 import { ramadanHidden } from './rplan';
 import { weekTotals } from './gamify';
+import { prayersSeen } from './sisters';
+import { useSisSync } from './components/Sisters';
 import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { FirstWeek, Hint } from './components/Guide';
@@ -229,7 +231,9 @@ export function App() {
   const onb = useOnb();
   const [onbFor, setOnbFor] = useState(() => onb !== 'done' && onb !== 'skip' && (onb !== '' || (active.length === 0 && !state.settings.path)));
   useEffect(() => { if (onb === 'again') setOnbFor(true); }, [onb]);
-  const prayersToday = state.prayers?.[today] ?? {};
+  // A sister's days without prayer look like ordinary days to the circle: a dhikr at a prayer time counts (sisters.ts).
+  useSisSync(state);
+  const prayersToday = prayersSeen(state, today);
   // the common circle counts everyone who marked Fajr today (supabase/open-circles.sql)
   const fajrMarked = Boolean(prayersToday.fajr);
   useEffect(() => { if (fajrMarked) markFajrOnce(today); }, [fajrMarked, today]);
@@ -435,7 +439,7 @@ export function App() {
   const choice = !state.settings.path && active.length === 0 ? <PathChoice state={state} update={update} today={today} /> : null;
   const onbOver = onb === 'done' || onb === 'skip';
   const pathCard = npOn ? <PathToday state={state} update={update} today={today} prayer={teachA} />
-    : onbFor ? <><OnboardCard state={state} update={update} times={times} today={today} onGo={(t) => (t === 'circle' ? go({ tab: 'circle' }) : setAiOpen(true))} />{onbOver && choice}</>
+    : onbFor ? <><OnboardCard state={state} update={update} times={times} today={today} onGo={(t) => (t === 'circle' ? go({ tab: 'circle' }) : t === 'privacy' ? go({ profile: 'me' }) : setAiOpen(true))} />{onbOver && choice}</>
     : choice;
   const pathGo = (g: OutGo) => {
     setPathOpen(null);
@@ -463,7 +467,8 @@ export function App() {
             onPlans={() => go({ profile: 'plans' })} onQuit={(id) => setQuitOpen({ id, view: 'home' })}
             notes={<><WordCard t={todayTrigger(now, times)} state={state} today={today} /><GiftNudge today={today} /></>}
             quitCheck={<QuitCheck state={state} update={update} today={today} onSlip={(id) => setQuitOpen({ id, view: 'tawba' })} />} firstWeek={npOn || (onbFor && !onbOver) ? null : <FirstWeek state={state} joined={joined} go={go} />} pathCard={pathCard}
-            onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }} />
+            onGoal={(id) => { setGoalOpen(id); setReviewOpen(false); setTab('progress'); }} onReview={() => { setGoalOpen(null); setReviewOpen(true); setTab('progress'); }}
+            onPractice={(g) => { setPracticeStart((x) => ({ n: x.n + 1, mode: g })); setTab('practice'); window.scrollTo(0, 0); }} />
         )}
         {tab === 'circle' && <Hint id="circle" />}
         {tab === 'circle' && (

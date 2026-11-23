@@ -5,7 +5,7 @@ import { _t } from './i18n';
 export type GoTo =
   | { tab: 'today' | 'circle' | 'progress' | 'profile' }
   | { practice: 'quran' | 'tasbih' | 'focus' | 'books' | 'videos' | 'langs' | 'health' | 'food' | 'sadaqa' | 'umrah' | 'azkar' | 'tests' }
-  | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' | 'nikah' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'seek' | 'seekers' }
+  | { profile: 'prayer' | 'remind' | 'habits' | 'garden' | 'account' | 'words' | 'data' | 'pro' | 'nikah' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'seek' | 'seekers' | 'sisters' | 'me' }
   | { add: true }
   | { ramadan: true }
   | { safar: true }

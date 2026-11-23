@@ -179,6 +179,8 @@ export interface AppState {
   /** «Планы»: things to do on a day, between the prayers. */
   plans?: import('./plans').Plan[];
   plansSet?: import('./plans').PlansSettings;
+  /** «Для сестёр»: days without prayer, kept on this phone only. */
+  sis?: import('./sisters').SisState;
 }
 
 export interface Idea { id: string; at: number; text: string }
