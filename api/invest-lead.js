@@ -13,6 +13,8 @@ const SITE = 'https://living-muslim.vercel.app';
 const DECK_PATH = '/investors/LivingMuslim-deck-q7m4x2.pdf';
 let pdf = null; // the PDF goes with the function (vercel.json includeFiles) and is attached as a file
 const deckFile = () => (pdf ??= readFileSync(join(process.cwd(), 'landing/investors-deck.pdf')).toString('base64'));
+/** The PDF as an attachment; if the file is not with the function, the letter still goes out with the link. */
+const attachment = () => { try { return { attachment: [{ content: deckFile(), name: 'LivingMuslim-investors.pdf' }] }; } catch (e) { console.error('invest-lead: deck file missing', e?.message); return {}; } };
 
 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -74,6 +76,9 @@ async function brevo(payload) {
     headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
     body: JSON.stringify(payload)
   });
+  // Brevo answers 201 with a messageId; anything else is logged so the owner can see why a letter did not go out
+  if (!r.ok) console.error('invest-lead: brevo', r.status, (await r.text().catch(() => '')).slice(0, 300), 'to', payload.to?.map((x) => x.email).join(','));
+  else console.log('invest-lead: brevo sent to', payload.to?.map((x) => x.email).join(','));
   return r.ok;
 }
 
@@ -100,7 +105,7 @@ export default async function handler(req, res) {
   await telegram(rowsBase).catch(() => false);
 
   const sender = process.env.BREVO_SENDER;
-  if (!process.env.BREVO_API_KEY || !sender) return res.status(200).json({ ok: true, mailed: false });
+  if (!process.env.BREVO_API_KEY || !sender) { console.log('invest-lead: no BREVO env, mail skipped'); return res.status(200).json({ ok: true, mailed: false }); }
   const t = TEXT[lang];
   const host = String(req.headers?.host || '');
   const deck = (/^living-muslim[\w.-]*\.vercel\.app$/.test(host) ? `https://${host}` : SITE) + DECK_PATH;
@@ -110,8 +115,8 @@ export default async function handler(req, res) {
     to: [{ email, name }],
     subject: t.subject,
     htmlContent: mail(t, name, deck),
-    attachment: [{ content: deckFile(), name: 'LivingMuslim-investors.pdf' }]
-  }).catch(() => false);
+    ...attachment()
+  }).catch((e) => { console.error('invest-lead: mail to investor failed', e?.message); return false; });
   const rows = [...rowsBase, ['Презентация отправлена', mailed ? 'да' : 'нет']];
   await brevo({
     sender: { name: 'Living Muslim', email: sender },
@@ -119,6 +124,6 @@ export default async function handler(req, res) {
     replyTo: { email, name },
     subject: `Новая заявка инвестора: ${name}`,
     htmlContent: `<div style="font-family:Arial,sans-serif"><h3>Новая заявка с /investors</h3><table cellpadding="6">${rows.filter((r) => r[1]).map((r) => `<tr><td style="color:#6E5E49">${r[0]}</td><td>${esc(r[1])}</td></tr>`).join('')}</table><p>Все заявки: Supabase → Table Editor → invest_leads.</p></div>`
-  }).catch(() => false);
+  }).catch((e) => { console.error('invest-lead: owner copy failed', e?.message); return false; });
   return res.status(200).json({ ok: true, mailed });
 }
