@@ -2,6 +2,8 @@
 // configured, emails the investor deck to the person and a copy of the request to the owner.
 // Env: BREVO_API_KEY (Brevo → SMTP & API → API keys), BREVO_SENDER (a sender address verified in Brevo),
 // INVEST_NOTIFY (where the copy of each request goes, several addresses comma-separated; default BREVO_SENDER).
+// Telegram: TG_BOT_TOKEN (from @BotFather) and TG_CHAT_ID (the owner's chat id, several comma-separated): each request
+// also comes as a Telegram message, with or without Brevo.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -41,6 +43,21 @@ const notifyTo = (sender) => {
   return (list.length ? list : [sender]).map((e) => ({ email: e }));
 };
 
+/** The request as a Telegram message to the owner (TG_BOT_TOKEN + TG_CHAT_ID). */
+async function telegram(rows) {
+  const token = process.env.TG_BOT_TOKEN;
+  const chats = String(process.env.TG_CHAT_ID || '').split(',').map((x) => x.trim()).filter(Boolean);
+  if (!token || !chats.length) return false;
+  const text = ['<b>Новая заявка инвестора</b> (/investors)', ...rows.filter((r) => r[1]).map((r) => `<b>${r[0]}:</b> ${esc(r[1])}`), '', 'Все заявки: Supabase → Table Editor → invest_leads'].join('\n');
+  const res = await Promise.all(chats.map((chat_id) => fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id, text, parse_mode: 'HTML', disable_web_page_preview: true })
+  }).then((r) => r.ok).catch(() => false)));
+  if (!res.every(Boolean)) console.error('invest-lead: telegram send failed');
+  return res.some(Boolean);
+}
+
 function mail(t, name, deck) {
   return `<div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#2B2219;line-height:1.5">
 <div style="background:#11553A;color:#F1E8D8;padding:24px 28px;border-radius:16px 16px 0 0"><b style="font-size:20px">Living Muslim</b></div>
@@ -79,6 +96,9 @@ export default async function handler(req, res) {
   }).then((r) => r.ok).catch(() => false);
   if (!saved) return res.status(502).json({ error: 'save' });
 
+  const rowsBase = [['Имя', name], ['Почта', email], ['Телефон', phone], ['Страна', str(b.country, 60)], ['Сумма', str(b.amount, 40)], ['О себе', str(b.about, 1000)], ['Язык', lang]];
+  await telegram(rowsBase).catch(() => false);
+
   const sender = process.env.BREVO_SENDER;
   if (!process.env.BREVO_API_KEY || !sender) return res.status(200).json({ ok: true, mailed: false });
   const t = TEXT[lang];
@@ -92,7 +112,7 @@ export default async function handler(req, res) {
     htmlContent: mail(t, name, deck),
     attachment: [{ content: deckFile(), name: 'LivingMuslim-investors.pdf' }]
   }).catch(() => false);
-  const rows = [['Имя', name], ['Почта', email], ['Телефон', phone], ['Страна', str(b.country, 60)], ['Сумма', str(b.amount, 40)], ['О себе', str(b.about, 1000)], ['Язык', lang], ['Презентация отправлена', mailed ? 'да' : 'нет']];
+  const rows = [...rowsBase, ['Презентация отправлена', mailed ? 'да' : 'нет']];
   await brevo({
     sender: { name: 'Living Muslim', email: sender },
     to: notifyTo(sender),
