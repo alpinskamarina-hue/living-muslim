@@ -7884,4 +7884,18 @@ export const EN: Record<string, string> = {
   "✓ Pro навсегда: вы в Круге основателей": "✓ Pro forever: you are in the Founders Circle",
   "ДжазакаЛлаху хайран за вклад в приложение": "JazakAllahu khairan for your contribution to the app",
   "Основатель Living Muslim": "Living Muslim founder",
+  // Круг основателей: «Два плода» (23.11)
+  "Два плода вашего участия": "Two fruits of your participation",
+  "Духовный · уже сейчас": "Spiritual · right now",
+  "Садака джария": "Sadaqah jariyah",
+  "Каждый намаз, страница Корана и дуа, совершённые с помощью приложения, становятся и вашей садакой: вы помогли его построить. Ваше имя в основании проекта, пока он живёт.": "Every prayer, Quran page and dua performed with the app becomes your sadaqah too: you helped build it. Your name stays in the foundation of the project as long as it lives.",
+  "Финансовый · на раунде": "Financial · at the round",
+  "Запись вклада и право первого предложения": "Recorded contribution and the right of first offer",
+  "За вами записывается {0} из {1}: это ваш вклад после привилегий. Когда компания откроет раунд, члены круга первыми получат предложение доли по договору мудараба, пропорционально вкладу.": "{0} of {1} is recorded in your name: your contribution after the privileges. When the company opens a round, members of the circle are the first to receive an offer of a share under a mudarabah agreement, in proportion to the contribution.",
+  "Это право первого предложения, не обещание дохода. Условия доли появятся после проверки юристом и имамом.": "This is a right of first offer, not a promise of income. The terms of the share will appear after review by a lawyer and an imam.",
+  "привилегии уровня и запись вклада": "the privileges of the level and the recorded contribution",
+  "Раунд": "Round",
+  "предложение доли членам круга, первым": "an offer of a share to the circle, first",
+  "Договор": "Agreement",
+  "мудараба, отдельно и по вашему согласию": "mudarabah, separate and with your consent",
 };

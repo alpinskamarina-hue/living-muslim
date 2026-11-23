@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TIERS, tierOf, eur, certNo, checkout, testOrder, myFounder, useGift, foundersWall, type Tier, type Mine, type Wall, type FounderRec } from '../founders';
+import { TIERS, tierOf, eur, certNo, checkout, testOrder, myFounder, useGift, foundersWall, type Tier, type Mine, type Wall, type FounderRec, type TierInfo } from '../founders';
 import { cloudMe } from '../cloud';
 import { authMe } from '../auth';
 import { cachedProfile } from './Nick';
@@ -124,6 +124,32 @@ function GiftCode({ onDone, gift }: { onDone: () => void; gift?: string }) {
   );
 }
 
+/** «Два плода»: the spiritual fruit now and the recorded contribution with the first offer of a share at the round.
+ *  No income, percentages or forecasts here (payment goes through Stripe; the share terms wait for the lawyer). */
+function TwoFruits({ t }: { t: TierInfo }) {
+  return (
+    <section className="fd-fruits" aria-label={_t("Два плода вашего участия")}>
+      <h3>{_t("Два плода вашего участия")}</h3>
+      <div className="fd-fruit fd-fruit-a">
+        <small>{_t("Духовный · уже сейчас")}</small>
+        <b>{_t("Садака джария")}</b>
+        <p>{_t("Каждый намаз, страница Корана и дуа, совершённые с помощью приложения, становятся и вашей садакой: вы помогли его построить. Ваше имя в основании проекта, пока он живёт.")}</p>
+      </div>
+      <div className="fd-fruit fd-fruit-b">
+        <small>{_t("Финансовый · на раунде")}</small>
+        <b>{_t("Запись вклада и право первого предложения")}</b>
+        <p>{_tj("За вами записывается {0} из {1}: это ваш вклад после привилегий. Когда компания откроет раунд, члены круга первыми получат предложение доли по договору мудараба, пропорционально вкладу.", <strong>{eur(t.amount - t.service)}</strong>, eur(t.amount))}</p>
+        <p className="fd-fruit-fine">{_t("Это право первого предложения, не обещание дохода. Условия доли появятся после проверки юристом и имамом.")}</p>
+      </div>
+      <ol className="fd-steps">
+        <li><b>{_t("Сейчас")}</b><span>{_t("привилегии уровня и запись вклада")}</span></li>
+        <li><b>{_t("Раунд")}</b><span>{_t("предложение доли членам круга, первым")}</span></li>
+        <li><b>{_t("Договор")}</b><span>{_t("мудараба, отдельно и по вашему согласию")}</span></li>
+      </ol>
+    </section>
+  );
+}
+
 const DRAFT = 'lm.founderDraft';
 interface Draft { tier: Tier; name: string; email: string; country: string; anon: boolean; wall: string; agree: boolean }
 function Order({ start, admin, hasOne, onTerms, onDone }: { start?: FounderStart | null; admin: boolean; hasOne: boolean; onTerms: () => void; onDone: (r: FounderRec) => void }) {
@@ -182,6 +208,7 @@ function Order({ start, admin, hasOne, onTerms, onDone }: { start?: FounderStart
           </button>
         ))}
       </div>
+      <TwoFruits t={t} />
       <div className="fd-form">
         <div className="fd-row fd-sum"><span>{tierName(tier)}</span><b>{eur(t.amount)}</b></div>
         <div className="fd-m">{t.perks.slice(0, 3).join(' · ')}</div>
