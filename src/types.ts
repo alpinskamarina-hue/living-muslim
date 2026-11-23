@@ -179,6 +179,8 @@ export interface AppState {
   /** «Планы»: things to do on a day, between the prayers. */
   plans?: import('./plans').Plan[];
   plansSet?: import('./plans').PlansSettings;
+  /** «Для сестёр»: days without prayer, kept on this phone only. */
+  sis?: import('./sisters').SisState;
 }
 
 export interface Idea { id: string; at: number; text: string }
@@ -395,7 +397,7 @@ export interface FoodState {
   log?: Record<string, FoodItem[]>;
 }
 
-export type FoodMode = 'mera' | 'lose' | 'sport' | 'keep';
+export type FoodMode = 'mera' | 'lose' | 'sport' | 'keep' | 'preg' | 'feed';
 export interface FoodBody { h: number; age: number; sex: 'm' | 'f'; act: 1 | 2 | 3 | 4 }
 /** One logged food: name, grams, kcal, protein, fat, carbs, meal slot. */
 export interface FoodItem { id: string; n: string; g: number; k: number; p: number; f: number; c: number; m: Meal }

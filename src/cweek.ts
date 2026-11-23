@@ -6,6 +6,7 @@ import type { Member, Reacts } from './circle';
 import { isCloud, currentCircle } from './cloud';
 import { bizMarks } from './biz';
 import { _t } from './i18n';
+import { prayersSeen } from './sisters';
 
 // The circle's week runs Saturday to Friday, so it closes on Jumu'ah.
 // Each member shares only weekly totals; the goal lives in the member docs of whoever set it (latest wins),
@@ -40,7 +41,7 @@ export function totals(s: AppState, w: string, today: string): WeekTotals {
   for (let i = 0; i < 7; i++) {
     const d = addDays(w, i);
     if (d > today) break;
-    const pr = s.prayers[d] ?? {};
+    const pr = prayersSeen(s, d);
     t.p += Object.keys(pr).length;
     t.o += Object.values(pr).filter((m) => m === 'ontime').length;
     if (pr.fajr === 'ontime') t.f++;
@@ -126,7 +127,7 @@ export function activeDays(s: AppState, today: string, n = 30): string[] {
   const out: string[] = [];
   for (let i = 0; i < n; i++) {
     const d = addDays(today, -i);
-    if (Object.keys(s.prayers[d] ?? {}).length || Object.values(s.log[d] ?? {}).some((m) => isCounted(m))) out.push(d);
+    if (Object.keys(prayersSeen(s, d)).length || Object.values(s.log[d] ?? {}).some((m) => isCounted(m))) out.push(d);
   }
   return out;
 }
@@ -156,7 +157,7 @@ export function chDays(s: AppState, today: string): { fj: string[]; p5: string[]
   const fj: string[] = [], p5: string[] = [];
   for (let i = 0; i < 14; i++) {
     const d = addDays(today, -i);
-    const pr = s.prayers[d] ?? {};
+    const pr = prayersSeen(s, d);
     if (pr.fajr === 'ontime') fj.push(d);
     if (Object.keys(pr).length >= 5) p5.push(d);
   }

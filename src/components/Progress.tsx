@@ -1,4 +1,5 @@
 import type { AppState } from '../types';
+import { sisDay } from '../sisters';
 import { Ic } from './LIcon';
 import { ANCHORS, ANCHOR_LABEL, sphereName } from '../types';
 import { consistency, isCounted, streak } from '../store';
@@ -52,9 +53,10 @@ export function Progress({ state, today, onOpenGoal }: { state: AppState; today:
 
   const prayerDays = days.filter((d) => d < today || Object.keys(state.prayers[d] ?? {}).length > 0);
   const firstPrayer = Object.keys(state.prayers).filter((d) => Object.keys(state.prayers[d] ?? {}).length).sort()[0];
-  const pDays = firstPrayer ? prayerDays.filter((d) => d >= firstPrayer) : [];
+  // A sister's days without prayer are left out: nothing was owed on them.
+  const pDays = firstPrayer ? prayerDays.filter((d) => d >= firstPrayer && !sisDay(state, d)) : [];
   // Today is still in progress, so only what is already marked counts toward it.
-  const pTotal = pDays.filter((d) => d !== today).length * 5 + Object.keys(state.prayers[today] ?? {}).length;
+  const pTotal = pDays.filter((d) => d !== today).length * 5 + (pDays.includes(today) ? Object.keys(state.prayers[today] ?? {}).length : 0);
   const pDone = pDays.reduce((a, d) => a + Object.keys(state.prayers[d] ?? {}).length, 0);
   const pOn = pDays.reduce((a, d) => a + Object.values(state.prayers[d] ?? {}).filter((m) => m === 'ontime').length, 0);
   const prayerBlock = firstPrayer ? (

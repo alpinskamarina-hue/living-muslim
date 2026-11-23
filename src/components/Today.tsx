@@ -25,6 +25,8 @@ import { MosqueCard, QiblaChip, type QiblaTab } from './Mosques';
 import { KhutbaCard } from './Khutba';
 import { fridayWindow } from '../khutba';
 import { aiName } from '../assistant';
+import { forgiveLimit, isSister, mamaEasy, sisNow, toggleZk, zikrAt, zkDone } from '../sisters';
+import { GhuslSheet, PrayerPick, SisBand, SisEnd, useSisSheets } from './Sisters';
 
 interface Props {
   state: AppState;
@@ -56,9 +58,11 @@ interface Props {
   onQibla: (tab: QiblaTab) => void;
   /** «Новый путь»: the path card, or the choice for someone new. */
   pathCard?: React.ReactNode;
+  /** Open morning/evening adhkar or the Quran in Practice (a sister's dhikr on days without prayer). */
+  onPractice?: (g: 'azkar' | 'quran') => void;
 }
 
-export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onKhutba, onAssistant, onReview, onRamadan, onGarden, support, firstWeek, plan, onQuit, onPlans, quitCheck, notes, onQibla, pathCard }: Props) {
+export function Today({ state, update, today, now, times, onEdit, onAdd, circleLine, onSafar, onKhutba, onAssistant, onReview, onRamadan, onGarden, support, firstWeek, plan, onQuit, onPlans, quitCheck, notes, onQibla, pathCard, onPractice }: Props) {
   const { current, next, end } = windowState(times, now);
   const [khHidden, setKhHidden] = useState(() => { try { return localStorage.getItem('lm.khutbaHide') ?? ''; } catch { return ''; } });
   const [open, setOpen] = useState<Anchor | null>(null);
@@ -87,6 +91,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
     : _t("Все намазы дня прошли");
   const sub = current ? _t("Сейчас окно {0}", ANCHOR_LABEL[current].after.replace(_t("После"), _t("после"))) : _t("До Фаджра");
 
+  const easy = mamaEasy(state);
   const renderCards = (a: Anchor) => {
     const list = active.filter((h) => h.anchor === a);
     if (!list.length)
@@ -105,6 +110,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         onMark={mark(h.id)}
         onOpen={() => onEdit(h)}
         ramadanMin={ramadanMode(state, h, today) === 'min'}
+        easyMin={easy}
       />
     );
     const done = list.filter((h) => isCounted(log[h.id]) && !fresh.includes(h.id));
@@ -131,6 +137,11 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
   const prayedToday = ANCHORS.filter((a) => state.prayers[today]?.[a]).length;
   const hardOn = (state.hard[today] ?? []).includes(nowAnchor);
   const pc = prayerCtl({ state, update, today, now, times });
+  // Sisters: a tap on a prayer circle opens a choice with «Дни без намаза»; on those days circles are moons with a dhikr.
+  const sister = isSister(state);
+  const sd = sisNow(state);
+  const ss = useSisSheets();
+  const dotTap = (a: Anchor) => (sd ? update((s) => toggleZk(s, today, a)) : sister ? ss.setPick(a) : pc.tap(a));
   // A few days of marking teach the circles; the hint goes away then.
   const newToPrayers = Object.keys(state.prayers).filter((k) => Object.keys(state.prayers[k] ?? {}).length).length < 3;
   const evening = current === 'isha' || current === 'maghrib';
@@ -177,7 +188,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <span>
           <b>{j.streak > 0 ? _t("Серия {0} {1}", j.streak, plural(j.streak, _t("день"), _t("дня"), _t("дней"))) : _t("Начни серию сегодня")}</b>
           <small>
-            {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
+            {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? (forgiveLimit(state) > 1 ? _t("Пропуски простятся: до 3 в неделю") : _t("Один пропуск в неделю простится")) : _t("Пропуск на этой неделе уже был: сегодня важно")}
           </small>
         </span>
         <i aria-hidden="true">›</i>
@@ -208,22 +219,30 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
     const m = pc.day[a];
     const locked = !pc.unlocked(a) && !m;
     const undone = list.some((h) => !isCounted(log[h.id]));
+    const zk = sd ? zikrAt(state, a) : null;
     const sum = list.length
       ? (done === list.length ? <span className="tk"><Ticks />{_tj("{0} из {1}", done, list.length)}</span> : <span className="n">{done}/{list.length}</span>)
       : pl.length ? <span className="n">{_t("{0} {1}", pl.length, plural(pl.length, _t("план"), _t("плана"), _t("планов")))}</span> : null;
     return (
       <div key={a} className={`dl-node ${st}${expanded ? ' open' : ''}`}>
-        <button type="button" className="dl-dot" data-m={m ?? (locked ? 'locked' : 'none')} disabled={locked} onClick={() => pc.tap(a)}
+        {sd ? (
+          <button type="button" className="dl-dot" data-m={zkDone(state, today, a) ? 'zk' : m ?? 'moon'} disabled={locked} onClick={() => dotTap(a)}
+            aria-label={`${ANCHOR_LABEL[a].ru}: ${zkDone(state, today, a) ? _t("зикр сделан") : _t("время зикра")}`}>
+            {zkDone(state, today, a) || m ? <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M4 6.5l3 3 7-8" /></svg> : <span className="moon">☾</span>}
+          </button>
+        ) : (
+        <button type="button" className="dl-dot" data-m={m ?? (locked ? 'locked' : 'none')} disabled={locked} onClick={() => dotTap(a)}
           aria-label={`${ANCHOR_LABEL[a].ru}: ${m === 'ontime' ? _t("вовремя") : m === 'late' ? _t("с опозданием") : _t("не отмечен")}`}>
           {m === 'ontime' && <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M1 6.5l3 3 6-7M7 9.5l1 .5 7-8" /></svg>}
           {m === 'late' && <svg viewBox="0 0 18 12" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M4 6.5l3 3 7-8" /></svg>}
           {!m && <span className="ar">{ANCHOR_LABEL[a].ar}</span>}
         </button>
+        )}
         <div className="dl-main">
           {cur ? (
             <div className="dl-h">
               <span><b>{ANCHOR_LABEL[a].ru}</b><small>{current ? _t("сейчас · до {0}", hhmm(end(a))) : _t("скоро · {0}", hhmm(times.fajr))}</small></span>
-              {(hardOn || undone) && (
+              {!sd && (hardOn || undone) && (
                 <button type="button" className="hard" aria-pressed={hardOn} onClick={() => update((s) => toggleHard(s, today, nowAnchor))}>{_t("Тяжёлый день")}</button>
               )}
             </div>
@@ -231,6 +250,12 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
             <button type="button" className="dl-h" onClick={() => setOpen(open === a ? null : a)} aria-expanded={expanded}>
               <span><b>{ANCHOR_LABEL[a].ru}</b><small>{hhmm(times[a])}</small></span>
               {sum}
+            </button>
+          )}
+          {sd && zk && !locked && (
+            <button type="button" className={`dl-zk${zkDone(state, today, a) ? ' ok' : ''}`}
+              onClick={() => (zk.go && !zkDone(state, today, a) && onPractice ? (update((s) => toggleZk(s, today, a)), onPractice(zk.go)) : update((s) => toggleZk(s, today, a)))}>
+              {zkDone(state, today, a) ? `✓ ${zk.t}` : _tj("{0} · {1} мин", zk.t, zk.m)}
             </button>
           )}
           {!expanded && (list.length > 0 || pl.length > 0 || qs.length > 0) && (
@@ -306,10 +331,15 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
           </div>
         )}
         <TravelBar state={state} update={update} today={today} now={now} times={times} />
+        {sd && <SisBand state={state} update={update} today={today} onEnd={() => ss.setEnd(true)} />}
         <section className="dayline" aria-label={_t("День по намазам")}>
           {ANCHORS.map(node)}
         </section>
-        {newToPrayers && <p className="dl-tip dl-hint">{_t("Кружок слева — намаз: касание — вовремя (две галочки), ещё касание — с опозданием (одна), ещё — снять.")}</p>}
+        {ss.pick && <PrayerPick state={state} update={update} today={today} a={ss.pick} onClose={() => ss.setPick(null)} />}
+        {ss.end && <SisEnd state={state} update={update} today={today} next={next ? `${ANCHOR_LABEL[next].ru} ${hhmm(times[next])}` : ''} onClose={() => ss.setEnd(false)} onGhusl={() => ss.setGhusl(true)} />}
+        {ss.ghusl && <GhuslSheet onClose={() => ss.setGhusl(false)} />}
+        {newToPrayers && sister && !sd && <p className="dl-tip dl-hint">{_t("Кружок слева — намаз: касание откроет выбор «вовремя», «с опозданием» или «дни без намаза».")}</p>}
+        {newToPrayers && !sister && <p className="dl-tip dl-hint">{_t("Кружок слева — намаз: касание — вовремя (две галочки), ещё касание — с опозданием (одна), ещё — снять.")}</p>}
       </div>
     </>
   );

@@ -1,4 +1,6 @@
 import { inRamadan } from '../rplan';
+import { isSister, mamaOf, sisNow } from '../sisters';
+import { preferFemale } from '../speech';
 import { Ic } from './LIcon';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -57,7 +59,15 @@ export function Health({ state, update, today, habitName, onExit, onFinish, onFo
   const fastToday = sunnahFast(fromKey(today));
   const setH = (fn: (x: HealthState) => Partial<HealthState>) => update((s) => patchHealth(s, fn));
   const addEntry = (day: string, e: string) => setH((x) => ({ workouts: { ...x.workouts, [day]: [...(x.workouts[day] ?? []), e] } }));
-  const start = (w: Workout) => { try { localStorage.setItem(LAST_KEY, w.id); } catch { /* */ } setRun(w); };
+  const go = (w: Workout) => { try { localStorage.setItem(LAST_KEY, w.id); } catch { /* */ } setRun(w); };
+  // Sisters: own programmes, a woman's voice, and a softer choice on days without prayer or in pregnancy.
+  const sister = isSister(state);
+  const [wseg, setWseg] = useState<'all' | 'sis'>(() => (sister ? 'sis' : 'all'));
+  const [soft, setSoft] = useState<Workout | null>(null);
+  const needSoft = sister && (sisNow(state) || mamaOf(state)?.k === 'preg');
+  const start = (w: Workout) => (needSoft && w.sis !== 'soft' && w.sis !== 'preg' && w.id !== 'back' ? setSoft(w) : go(w));
+  useEffect(() => { preferFemale(sister); }, [sister]);
+  const timers = WORKOUTS.filter((w) => (sister && wseg === 'sis' ? Boolean(w.sis) : !w.sis));
 
   if (run) return <Runner w={run} h={h} today={today} habitName={habitName} onClose={() => setRun(null)}
     onSound={(v) => setH(() => ({ wsound: v }))}
@@ -127,7 +137,13 @@ export function Health({ state, update, today, habitName, onExit, onFinish, onFo
           {log(today, _t("Сегодня"))}
           {log(yday, _t("Вчера"))}
           <h2 className="sub-h">{_t("Дома с таймером")}</h2>
-          {WORKOUTS.map((w) => {
+          {sister && (
+            <div className="sis-chips sis-wseg">
+              <button type="button" aria-pressed={wseg === 'sis'} onClick={() => setWseg('sis')}>{_t("Сёстрам")}</button>
+              <button type="button" aria-pressed={wseg === 'all'} onClick={() => setWseg('all')}>{_t("Все")}</button>
+            </div>
+          )}
+          {timers.map((w) => {
             const doneToday = wEntries(h, today).some((e) => e.timer === w.id);
             return (
               <button type="button" key={w.id} className="h-card wk-timer" onClick={() => start(w)}>
@@ -141,6 +157,21 @@ export function Health({ state, update, today, habitName, onExit, onFinish, onFo
           })}
           <p className="q-msg">{_t("Если есть боль или проблемы со здоровьем, сначала посоветуйся с врачом.")}</p>
         </div>
+        {soft && (
+          <>
+            <div className="dim" onClick={() => setSoft(null)} />
+            <div className="sheet sis-sheet" role="dialog" aria-modal="true" aria-label={_t("Сегодня полегче?")}>
+              <div className="grab" />
+              <h2 className="sis-h">{_t("Сегодня полегче?")}</h2>
+              <p className="sis-q">{mamaOf(state)?.k === 'preg' ? _t("Во время беременности лучше мягкая нагрузка. Решать тебе и твоему врачу.") : _t("В эти дни многим сёстрам лучше подходит мягкая нагрузка. Решать тебе.")}</p>
+              {(() => { const alt = WORKOUTS.find((x) => x.id === (mamaOf(state)?.k === 'preg' ? 'sis-preg' : 'sis-soft'))!; return (
+                <button type="button" className="sis-opt moon" onClick={() => { setSoft(null); go(alt); }}><i>☾</i><span><b>{_tj("Мягко, ~{0} мин", workoutMin(alt))}</b><small>{alt.title}</small></span></button>
+              ); })()}
+              <button type="button" className="sis-opt" onClick={() => { const w = soft; setSoft(null); go(w); }}><i>✦</i><span><b>{_t("Как обычно")}</b><small>{soft.title}</small></span></button>
+              <p className="sis-lock">{_t("Видишь только ты. В «Спорте» круга это обычная тренировка.")}</p>
+            </div>
+          </>
+        )}
         {own && <OwnSheet h={h} today={today} sport={sport} onClose={() => setOwn(false)} onSave={(day, e) => { addEntry(day, e); setOwn(false); }} />}
       </div>
     );

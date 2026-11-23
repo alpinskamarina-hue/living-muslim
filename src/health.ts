@@ -37,7 +37,7 @@ export function sunnahFast(d: Date): string | null {
 }
 
 export interface Exercise { n: string; hint: string; sec: number }
-export interface Workout { id: string; title: string; sub: string; rest: number; rounds: number; ex: Exercise[] }
+export interface Workout { id: string; title: string; sub: string; rest: number; rounds: number; ex: Exercise[]; /** «Сёстрам»: shown to sisters. soft = fine on days without prayer and in pregnancy. */ sis?: 'soft' | 'mid' | 'preg' | 'post' }
 
 export const WORKOUTS: Workout[] = [
   {
@@ -74,6 +74,62 @@ export const WORKOUTS: Workout[] = [
       { n: _t("Скалолаз"), hint: _t("В упоре лёжа поочерёдно подтягивай колени к груди"), sec: 30 },
     ],
   },
+  // ───── «Сёстрам»: at home, 10–15 minutes, no music ─────
+  {
+    id: 'sis-strength', title: _t("Сила дома"), sub: _t("Сёстрам · без инвентаря"), rest: 15, rounds: 2, sis: 'mid',
+    ex: [
+      { n: _t("Приседания"), hint: _t("Спина прямая, вес на пятках"), sec: 40 },
+      { n: _t("Отжимания от колен"), hint: _t("Тело одной линией от колен до головы"), sec: 35 },
+      { n: _t("Выпады назад"), hint: _t("Поочерёдно, колено почти касается пола"), sec: 40 },
+      { n: _t("Ягодичный мост"), hint: _t("Задержка наверху на 2 сек"), sec: 40 },
+      { n: _t("Планка на локтях"), hint: _t("Живот подтянут, не проваливай поясницу"), sec: 30 },
+      { n: _t("Подъёмы на носки"), hint: _t("Медленно вверх и вниз"), sec: 35 },
+    ],
+  },
+  {
+    id: 'sis-back', title: _t("Спина и осанка"), sub: _t("Сёстрам · для тех, кто носит малыша"), rest: 10, rounds: 1, sis: 'soft',
+    ex: [
+      { n: _t("Сведение лопаток"), hint: _t("Сидя или стоя, сведи лопатки и задержи 3 сек"), sec: 45 },
+      { n: _t("Кошка-корова"), hint: _t("На четвереньках, медленно, с дыханием"), sec: 60 },
+      { n: _t("Поза ребёнка"), hint: _t("Колени широко, руки вперёд, расслабь поясницу"), sec: 60 },
+      { n: _t("Растяжка груди у стены"), hint: _t("Рука на стене, разворачивай корпус от неё"), sec: 60 },
+      { n: _t("Птица-собака"), hint: _t("На четвереньках вытяни противоположные руку и ногу"), sec: 50 },
+      { n: _t("Наклоны головы"), hint: _t("Плавно, ухо к плечу, без боли"), sec: 40 },
+    ],
+  },
+  {
+    id: 'sis-soft', title: _t("Мягко: растяжка и дыхание"), sub: _t("Сёстрам · подходит в дни без намаза"), rest: 10, rounds: 1, sis: 'soft',
+    ex: [
+      { n: _t("Дыхание животом"), hint: _t("Лёжа, рука на животе: медленный вдох носом, длинный выдох"), sec: 60 },
+      { n: _t("Колени к груди"), hint: _t("Лёжа на спине, обними колени, покачайся"), sec: 45 },
+      { n: _t("Скручивание лёжа"), hint: _t("Колени в сторону, плечи на полу, по 20 сек"), sec: 45 },
+      { n: _t("Поза ребёнка"), hint: _t("Расслабь поясницу и плечи"), sec: 60 },
+      { n: _t("Бабочка"), hint: _t("Сидя, стопы вместе, колени мягко вниз"), sec: 45 },
+      { n: _t("Ходьба по дому"), hint: _t("Спокойно, с ровным дыханием"), sec: 90 },
+    ],
+  },
+  {
+    id: 'sis-preg', title: _t("Беременность: мягко"), sub: _t("Сёстрам · если врач не запретил"), rest: 15, rounds: 1, sis: 'preg',
+    ex: [
+      { n: _t("Ходьба на месте"), hint: _t("Спокойно, можно держаться за стул"), sec: 90 },
+      { n: _t("Круги тазом"), hint: _t("Стоя, руки на поясе, плавно в обе стороны"), sec: 45 },
+      { n: _t("Приседания у стула"), hint: _t("Неглубоко, сзади стул для опоры"), sec: 40 },
+      { n: _t("Кошка-корова"), hint: _t("Без прогиба вниз, больше вверх"), sec: 45 },
+      { n: _t("Подъёмы рук"), hint: _t("Сидя, руки вверх на вдохе, вниз на выдохе"), sec: 45 },
+      { n: _t("Дыхание"), hint: _t("Сидя, длинный выдох. Если кружится голова — остановись"), sec: 60 },
+    ],
+  },
+  {
+    id: 'sis-post', title: _t("После родов: первые недели"), sub: _t("Сёстрам · после разрешения врача"), rest: 15, rounds: 1, sis: 'post',
+    ex: [
+      { n: _t("Дыхание и мышцы тазового дна"), hint: _t("На выдохе мягко подтяни мышцы, на вдохе отпусти"), sec: 60 },
+      { n: _t("Наклоны таза лёжа"), hint: _t("Прижми поясницу к полу и отпусти"), sec: 45 },
+      { n: _t("Ягодичный мост"), hint: _t("Невысоко, без натуги"), sec: 40 },
+      { n: _t("Птица-собака"), hint: _t("Медленно, живот не провисает"), sec: 45 },
+      { n: _t("Сведение лопаток"), hint: _t("Для спины после кормления"), sec: 40 },
+      { n: _t("Ходьба"), hint: _t("Спокойно, 1–2 минуты"), sec: 90 },
+    ],
+  },
 ];
 
 // ───── Workouts v2: own workouts, the week, the streak in weeks, extra kcal ─────
@@ -91,7 +147,7 @@ export const WTYPES: { id: string; ic: string; n: string; k: [number, number, nu
 ];
 export const LEVELS = [_t("Легко"), _t("Средне"), _t("Тяжело")];
 /** Timer workouts: how hard they are, for kcal. */
-const TIMER_LVL: Record<string, 1 | 2 | 3> = { morning: 1, back: 1, strength: 2 };
+const TIMER_LVL: Record<string, 1 | 2 | 3> = { morning: 1, back: 1, strength: 2, 'sis-strength': 2 };
 
 export const workoutMin = (w: Workout) => Math.round((w.rounds * w.ex.reduce((a, e) => a + e.sec + w.rest, 0)) / 60);
 

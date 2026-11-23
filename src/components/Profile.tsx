@@ -1,4 +1,6 @@
 import { BadgeShelf } from './Badges';
+import { SisterPrivacyCard, SistersPage } from './Sisters';
+import { isSister, sisDayN, sisNow } from '../sisters';
 import { Ic } from './LIcon';
 import { themeMode } from '../theme';
 import { themeLabel } from './ThemeSwitch';
@@ -40,6 +42,8 @@ import { CityPicker } from './CityPicker';
 import { addDays, dayKey, daysBetween, hhmm, plural } from '../dates';
 import { activeLimit, initialState, slotsUsed } from '../store';
 import { _t, _tj, LANG } from '../i18n';
+import { TeacherPage } from './Teacher';
+import { useSisCirclesReady } from '../sisCircles';
 
 interface Props {
   state: AppState;
@@ -64,6 +68,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const nk = useNikahMe(nikahOn);
   const nkTodo = nikahTodo(nk);
   const admin = useIsAdmin();
+  const teachOn = useSisCirclesReady();
   const plan = usePlan();
   useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
@@ -107,6 +112,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'ideas') return <Sub title={_t("Мои идеи")} onBack={back} label={bl}><IdeasPage state={state} update={update} onAsk={() => onGo?.({ assistant: true })} /></Sub>;
   if (page === 'help') return <Sub title={_t("Помощь")} onBack={back} label={bl}><HelpPage /></Sub>;
   if (page === 'me') return <Sub title={_t("Аккаунт и приватность")} onBack={back} label={bl}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} />{!onClaude && <><h3 className="pf-sub">{_t("Вход по почте")}</h3><AccountCard /></>}</Sub>;
+  if (page === 'teacher') return <Sub title={_t("Я учительница")} onBack={back} label={bl}><TeacherPage /></Sub>;
+  if (page === 'sisters') return <Sub title={_t("Для сестёр")} onBack={back} label={bl}><SisterPrivacyCard state={state} update={update} onOwn={() => go(isCloud && nicks ? 'me' : 'account')} /><SistersPage state={state} update={update} today={dayKey(new Date())} onPrivacy={() => go(isCloud && nicks ? 'me' : 'account')} /></Sub>;
   if (page === 'account') return <Sub title={_t("Аккаунт")} onBack={back} label={bl}><AccountPage s={s} set={set} /></Sub>;
 
   const me = authMe();
@@ -232,6 +239,16 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         ))}
       </div>
 
+      {isSister(state) && (
+        <>
+          <div className="pf-h">{_t("Для сестёр")}</div>
+          <div className="menu">
+            <Row icon="🌙" title={_t("Для сестёр")} sub={sisNow(state) ? _tj("Дни без намаза: день {0}", sisDayN(state, today)) : _t("Дни без намаза, приватность")} onClick={() => go('sisters')} />
+            {teachOn && <Row icon="🎓" title={_t("Я учительница")} sub={_t("Значок «проверенная учительница» на твоих кругах")} onClick={() => go('teacher')} />}
+          </div>
+        </>
+      )}
+
       {people && (
         <>
           <div className="pf-h">{_t("Люди")}</div>
@@ -252,7 +269,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'teacher' | 'sisters' | 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

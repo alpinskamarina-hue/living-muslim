@@ -6,6 +6,7 @@ import { isTripDay } from './safar';
 import { ramadanHidden } from './rplan';
 import { hOf } from './ramadan';
 import { _t } from './i18n';
+import { forgiveLimit, prayersSeen, sisDay } from './sisters';
 
 /**
  * Gamification without points: the "light of the day" (five prayer windows), a soft streak
@@ -24,7 +25,7 @@ function habitsOn(s: AppState, date: string): Habit[] {
 export function windowLight(s: AppState, date: string, a: Anchor, habits = habitsOn(s, date)) {
   const list = habits.filter((h) => h.anchor === a);
   const log = s.log[date] ?? {};
-  const got = (s.prayers[date]?.[a] ? 1 : 0) + list.filter((h) => isCounted(log[h.id])).length;
+  const got = (prayersSeen(s, date)[a] ? 1 : 0) + list.filter((h) => isCounted(log[h.id])).length;
   return got / (1 + list.length);
 }
 
@@ -37,8 +38,8 @@ export function dayLight(s: AppState, date: string) {
   return { windows, total, lit: total >= 0.5 || allHabits };
 }
 
-/** A day that neither counts nor breaks the streak: travel, or a day marked "Тяжёлый день". */
-const pausedDay = (s: AppState, d: string) => isTripDay(s, d) || (s.hard[d]?.length ?? 0) > 0;
+/** A day that neither counts nor breaks the streak: travel, a day marked "Тяжёлый день", or a sister's day without prayer. */
+const pausedDay = (s: AppState, d: string) => isTripDay(s, d) || (s.hard[d]?.length ?? 0) > 0 || sisDay(s, d);
 
 export function firstDay(s: AppState) {
   const keys = [...Object.keys(s.log), ...Object.keys(s.prayers), ...s.habits.map((h) => h.createdAt)].filter(Boolean).sort();
@@ -55,8 +56,8 @@ export interface Journey {
 }
 
 /**
- * Walk from the first day to today. A missed day is forgiven if no other miss was forgiven
- * in the 7 days before it; a second miss within that week ends the streak. Today never breaks it.
+ * Walk from the first day to today. A missed day is forgiven if fewer than the limit (1, or 3 for a mother)
+ * were forgiven in the 7 days before it; one more within that week ends the streak. Today never breaks it.
  */
 export function journey(s: AppState, today: string): Journey {
   const start = firstDay(s);
@@ -64,7 +65,9 @@ export function journey(s: AppState, today: string): Journey {
   if (!start) return out;
   let d = daysBetween(start, today) > 1500 ? addDays(today, -1500) : start;
   let cur = 0;
-  let repair: string | null = null;
+  // Forgiven misses in the last 7 days: one a week, three for a mother («Мама», sisters.ts).
+  const lim = forgiveLimit(s);
+  let repairs: string[] = [];
   for (; d <= today; d = addDays(d, 1)) {
     const { lit } = dayLight(s, d);
     if (lit) {
@@ -73,16 +76,15 @@ export function journey(s: AppState, today: string): Journey {
       if (d === today) out.litToday = true;
     } else if (d === today || pausedDay(s, d)) {
       /* today is still open; paused days neither count nor break */
-    } else if (!repair || daysBetween(repair, d) >= 7) {
-      repair = d;
     } else {
-      cur = 0;
-      repair = null;
+      repairs = repairs.filter((r) => daysBetween(r, d) < 7);
+      if (repairs.length < lim) repairs.push(d);
+      else { cur = 0; repairs = []; }
     }
     out.best = Math.max(out.best, cur);
   }
   out.streak = cur;
-  out.repairLeft = !repair || daysBetween(repair, today) >= 7;
+  out.repairLeft = repairs.filter((r) => daysBetween(r, today) < 7).length < lim;
   return out;
 }
 
@@ -131,7 +133,7 @@ export function weekTotals(s: AppState, today: string) {
   let p = 0, h = 0;
   for (let i = 0; i < 7; i++) {
     const d = addDays(today, -i);
-    p += Object.keys(s.prayers[d] ?? {}).length;
+    p += Object.keys(prayersSeen(s, d)).length;
     h += Object.values(s.log[d] ?? {}).filter((m) => isCounted(m)).length;
   }
   return { p, h };

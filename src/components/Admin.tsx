@@ -59,7 +59,7 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
@@ -69,8 +69,9 @@ export function AdminPage() {
         <button type="button" aria-pressed={tab === 'halal'} onClick={() => setTab('halal')}>☪ Халяль</button>
         <button type="button" aria-pressed={tab === 'guides'} onClick={() => setTab('guides')}>🧭 Гиды</button>
         <button type="button" aria-pressed={tab === 'open'} onClick={() => setTab('open')}>👥 Открытые круги</button>
+        <button type="button" aria-pressed={tab === 'teach'} onClick={() => setTab('teach')}>🎓 Учителя</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : <AdminReports />}
     </div>
   );
 }
@@ -457,6 +458,42 @@ function AdminOpen() {
           <div className="adm-act">
             {x.hidden ? <button type="button" className="ghost-btn" onClick={() => dua(x, false)}>Вернуть</button> : <button type="button" className="ghost-btn" onClick={() => dua(x, true)}>Скрыть</button>}
             <button type="button" className="ghost-btn" onClick={() => dua(x, null)}>Удалить</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface ATeach { uid: string; name: string; nick: string | null; gender: string | null; subjects: string[]; proof: string; ref: string; about: string; status: 'pending' | 'ok' | 'no'; created: string; circles: number }
+const SUBJ: Record<string, string> = { tajwid: 'Таджвид', hifz: 'Хифз', arabic: 'Арабский', new: 'Основы для новых', fiqh: 'Фикх для сестёр', kids: 'Для детей' };
+
+/** Teachers who sent their ijazah or diploma: look at the photo, contact the reference, then approve or decline. */
+function AdminTeachers() {
+  const [d, setD] = useState<ATeach[] | null>(null);
+  const [err, setErr] = useState('');
+  const [big, setBig] = useState('');
+  const load = () => call<ATeach[]>('lm_admin_teachers', {}).then((r) => setD(r ?? [])).catch((e) => setErr(/404|Could not find/.test(String(e)) ? 'Сначала запусти supabase/sisters-circles.sql в Supabase → SQL Editor.' : 'Не получилось загрузить. Проверь интернет.'));
+  useEffect(() => { load(); }, []);
+  if (err) return <p className="tiny">{err}</p>;
+  if (!d) return <p className="tiny">Загружаю…</p>;
+  const set = async (t: ATeach, ok: boolean) => { await call('lm_admin_teacher_set', { p_uid: t.uid, p_ok: ok }).catch(() => null); load(); };
+  const ST = { pending: 'ждёт проверки', ok: '✓ проверена', no: 'отказано' };
+  return (
+    <div className="adm-rep">
+      <p className="tiny">Посмотри фото иджазы или диплома и свяжись с тем, кто рекомендовал. После «Проверена» на открытых кругах учительницы появится значок. Фото видят только владельцы.</p>
+      {!d.length && <p className="tiny">Заявок пока нет.</p>}
+      {d.map((t) => (
+        <div key={t.uid} className="adm-card adm-halal">
+          <b>{t.name || 'Без имени'}{t.nick ? ` @${t.nick}` : ''}</b>
+          <small>{t.gender === 'f' ? 'сестра' : t.gender === 'm' ? 'брат' : 'пол не указан'} · {t.subjects.map((x) => SUBJ[x] ?? x).join(', ')} · открытых кругов: {t.circles} · {new Date(t.created).toLocaleDateString('ru-RU')}</small>
+          <small><b>Сейчас:</b> {ST[t.status]}</small>
+          {t.ref && <small><b>Рекомендация:</b> {t.ref}</small>}
+          {t.about && <small className="adm-ing">{t.about}</small>}
+          {t.proof ? <img className="adm-proof" src={t.proof} alt="Документ" onClick={() => setBig(big === t.uid ? '' : t.uid)} style={{ maxWidth: big === t.uid ? '100%' : 160 }} /> : <small>Фото документа нет</small>}
+          <div className="adm-act">
+            {t.status !== 'ok' && <button type="button" className="pri-btn" onClick={() => set(t, true)}>Проверена</button>}
+            {t.status !== 'no' && <button type="button" className="ghost-btn" onClick={() => set(t, false)}>{t.status === 'ok' ? 'Снять значок' : 'Отказать'}</button>}
           </div>
         </div>
       ))}

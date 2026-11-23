@@ -11,8 +11,14 @@ function voicesFor(lang: string) {
   } catch { return []; }
 }
 
+/** Sisters hear a woman's voice where the phone has one (names of the common system voices). */
+let fem = false;
+export const preferFemale = (on: boolean) => { fem = on; };
+const FEM = /female|женск|milena|alena|alyona|irina|katya|ekaterina|elena|anna|samantha|karen|victoria|zira|susan|serena|tessa|moira|fiona|allison|ava|joanna|kendra|salli|tatyana|sveta/i;
+
 function pickVoice(lang: string) {
   const v = voicesFor(lang);
+  if (fem) { const f = v.find((x) => FEM.test(x.name)); if (f) return f; }
   if (lang.startsWith('en')) return v.find((x) => /en-(US|GB)/i.test(x.lang) && /google|samantha|daniel|natural/i.test(x.name)) ?? v.find((x) => /en-(US|GB)/i.test(x.lang)) ?? v[0];
   return v.find((x) => /google|natural/i.test(x.name)) ?? v[0];
 }
