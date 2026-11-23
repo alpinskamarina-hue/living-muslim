@@ -44,6 +44,8 @@ export function ProPlans({ onBack }: { onBack: () => void }) {
 
       {p.owner ? (
         <div className="pro-on">{_t("✓ Ты владелец приложения: всё открыто, тарифов для тебя нет")}</div>
+      ) : p.founder ? (
+        <div className="pro-on">{p.founderUntil ? _tj("✓ Pro от Круга основателей, до {0}", p.founderUntil.toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' })) : _t("✓ Pro навсегда: вы в Круге основателей")}<small>{_t("ДжазакаЛлаху хайран за вклад в приложение")}</small></div>
       ) : p.gift && p.giftEnds ? (
         <div className="pro-on">{_tj("✓ Pro в подарок на первый год, до {0}", p.giftEnds.toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' }))}<small>{_t("Для тех, кто недавно принял ислам. Платить ничего не нужно")}</small></div>
       ) : p.early ? (

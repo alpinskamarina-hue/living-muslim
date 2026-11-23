@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { _t } from './i18n';
+import { founderPro } from './founders';
 
 // Living Muslim plans: 7 days of Pro from the first day in the app, then Free with «по 3»:
 // 3 habits, 3 circles, 3 goals, 3 books, 3 video courses. Everything about worship stays free for ever.
@@ -62,6 +63,8 @@ export interface PlanInfo {
   owner: boolean;        // the app's owner (email in lm_admins): everything open, no tariff at all
   gift: boolean;         // a year of Pro as a gift for a new Muslim
   giftEnds: Date | null;
+  founder: boolean;      // Pro from «Круг основателей» (own level or a gift code), given by the server
+  founderUntil: Date | null; // null with forever
 }
 // The owner (lm_is_admin said yes for the signed-in email) never sees a tariff. Cleared on sign-out.
 const OWNER = 'lm.owner';
@@ -81,8 +84,9 @@ export function planInfo(now = Date.now()): PlanInfo {
   const early = Boolean(s.early);
   const giftEnds = s.gift ? new Date(s.gift + GIFT_DAYS * DAY) : null;
   const gift = Boolean(giftEnds && giftEnds.getTime() > now);
-  const pro = owner || trial || early || gift || !LIMITS_ON;
-  return { owner, gift, giftEnds, pro, trial: trial && !owner && !gift && LIMITS_ON, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: SOFT ? { ...OPEN } : pro ? { ...PRO } : { ...FREE } };
+  const fp = founderPro(now);
+  const pro = owner || trial || early || gift || fp.on || !LIMITS_ON;
+  return { owner, gift, giftEnds, founder: fp.on, founderUntil: fp.until, pro, trial: trial && !owner && !gift && !fp.on && LIMITS_ON, early, day: Math.floor((now - s.trial) / DAY) + 1, msLeft, daysLeft: Math.ceil(msLeft / DAY), ends, limits: SOFT ? { ...OPEN } : pro ? { ...PRO } : { ...FREE } };
 }
 export const limitOf = (k: LimitKey) => planInfo().limits[k];
 export function usePlan(): PlanInfo {
@@ -105,7 +109,7 @@ export function giveGift() { if (!get().gift) set({ gift: Date.now() }); }
 /** Reminder sheets on day 5, day 7 and the first day after the trial; each shown once. */
 export function dueSheet(): 5 | 7 | 8 | null {
   const p = planInfo();
-  if (p.owner || p.early || p.gift || !LIMITS_ON) return null;
+  if (p.owner || p.early || p.gift || p.founder || !LIMITS_ON) return null;
   const seen = get().seen ?? [];
   const d = p.trial ? p.day : 8;
   for (const k of [8, 7, 5] as const) if (d >= k && !seen.includes(k)) return k;

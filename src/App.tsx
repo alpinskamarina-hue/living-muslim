@@ -52,6 +52,7 @@ import { prayersSeen } from './sisters';
 import { useSisSync } from './components/Sisters';
 import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
+import { takeFounderStart } from './founders';
 import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
 import { useNikahReady, useNikahMe, nikahTodo } from './nikah';
@@ -96,6 +97,7 @@ export function App() {
     try { if (new URLSearchParams(location.search).has('common')) { sessionStorage.setItem('lm.commonGo', '1'); return 'circle' as Tab; } } catch { /* */ }
     try { if (new URLSearchParams(location.search).has('asks')) { sessionStorage.setItem('lm.asksGo', '1'); return 'circle' as Tab; } } catch { /* */ }
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.has('founder') || q.has('gift')) return 'profile' as Tab; } catch { /* */ }
     return 'today';
   });
   const [umStart, setUmStart] = useState(0);
@@ -205,7 +207,12 @@ export function App() {
     return { n: 0 };
   });
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [profileStart, setProfileStart] = useState<{ p: ProfilePage; n: number }>({ p: 'main', n: 0 });
+  const [profileStart, setProfileStart] = useState<{ p: ProfilePage; n: number }>(() => {
+    // /app/?founder=… or ?gift=…: straight to «Круг основателей» (the details wait in sessionStorage for the page)
+    const f = takeFounderStart();
+    if (f) { try { sessionStorage.setItem('lm.founderStart', JSON.stringify(f)); } catch { /* */ } return { p: f.terms ? 'founders-terms' : 'founders', n: 0 }; }
+    return { p: 'main', n: 0 };
+  });
   const openGarden = () => { setProfileStart((x) => ({ p: 'garden', n: x.n + 1 })); setTab('profile'); window.scrollTo(0, 0); };
   useEffect(() => { update((s) => snapshot(s, today)); }, [today, state.quran, state.books, state.summaryRead, state.course, state.prayers, state.health, state.umrah, state.log, state.goals?.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const current = windowState(times, now).current ?? 'fajr';

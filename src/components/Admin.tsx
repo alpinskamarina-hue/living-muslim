@@ -59,7 +59,7 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach' | 'founders'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
@@ -70,8 +70,9 @@ export function AdminPage() {
         <button type="button" aria-pressed={tab === 'guides'} onClick={() => setTab('guides')}>🧭 Гиды</button>
         <button type="button" aria-pressed={tab === 'open'} onClick={() => setTab('open')}>👥 Открытые круги</button>
         <button type="button" aria-pressed={tab === 'teach'} onClick={() => setTab('teach')}>🎓 Учителя</button>
+        <button type="button" aria-pressed={tab === 'founders'} onClick={() => setTab('founders')}>◆ Основатели</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : tab === 'founders' ? <AdminFounders /> : <AdminReports />}
     </div>
   );
 }
@@ -169,7 +170,7 @@ function List({ title, rows }: { title: string; rows: KN[] | null }) {
     <section className="adm-box">
       <h3>{title}</h3>
       {rows.map((r) => (
-        <div key={r.k} className="adm-row">
+        <div key={r.k} className="fd-arow">
           <span className="adm-k">{r.k}</span>
           <span className="adm-bar"><i style={{ width: `${(r.n / max) * 100}%` }} /></span>
           <b>{r.n}</b>
@@ -469,6 +470,32 @@ interface ATeach { uid: string; name: string; nick: string | null; gender: strin
 const SUBJ: Record<string, string> = { tajwid: 'Таджвид', hifz: 'Хифз', arabic: 'Арабский', new: 'Основы для новых', fiqh: 'Фикх для сестёр', kids: 'Для детей' };
 
 /** Teachers who sent their ijazah or diploma: look at the photo, contact the reference, then approve or decline. */
+interface AFounder { no: number | null; code: string; tier: string; amount: number; name: string; email: string; country: string; wall: string; status: string; paid: string | null; created: string; session: string | null }
+const TIER_RU: Record<string, string> = { f100: 'Основатель', f250: 'Ансар', f500: 'Мухсин', f1000: 'Партнёр' };
+function AdminFounders() {
+  const [d, setD] = useState<{ sum: number; list: AFounder[]; pending: number } | null>(null);
+  const [err, setErr] = useState('');
+  useEffect(() => { call<{ sum: number; list: AFounder[]; pending: number }>('lm_admin_founders', {}).then((r) => setD(r)).catch((e) => setErr(/404|Could not find/.test(String(e)) ? 'Сначала запусти supabase/founders.sql в Supabase → SQL Editor.' : 'Не получилось загрузить. Проверь интернет.')); }, []);
+  if (err) return <p className="pro-note">{err}</p>;
+  if (!d) return <p className="tiny">Загружаю…</p>;
+  return (
+    <div className="adm-sec">
+      <p><b>Собрано: €{(d.sum / 100).toLocaleString('ru-RU')}</b> · записей: {d.list.filter((x) => x.status === 'paid').length} оплаченных, {d.list.filter((x) => x.status === 'test').length} тестовых{d.pending ? `, ${d.pending} незавершённых за сутки` : ''}</p>
+      <p className="tiny">Оплата идёт через Stripe (ключи STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET и SUPABASE_SERVICE_KEY в Vercel). Чеки и возвраты: в панели Stripe. Тестовые записи на стене не показываются и в сумму не входят.</p>
+      {!d.list.length && <p className="tiny">Пока никого. Тестовую запись можно сделать в Профиль → Круг основателей (кнопка владельца).</p>}
+      <div className="fd-alist">
+        {d.list.map((x) => (
+          <div key={x.code} className="fd-arow">
+            <b>{x.no ? `F-${String(x.no).padStart(4, '0')}` : '—'} · {TIER_RU[x.tier] ?? x.tier} · €{(x.amount / 100).toLocaleString('ru-RU')}{x.status === 'test' ? ' · тест' : x.status === 'refunded' ? ' · возврат' : ''}</b>
+            <small>{x.name} · {x.email}{x.country ? ` · ${x.country}` : ''} · на стене: {x.wall || 'анонимно'} · {new Date(x.paid || x.created).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>
+            <small><a href={`/api/founder-cert?code=${encodeURIComponent(x.code)}`} target="_blank" rel="noopener">Сертификат</a>{x.session ? ` · Stripe ${x.session.slice(0, 18)}…` : ''}</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AdminTeachers() {
   const [d, setD] = useState<ATeach[] | null>(null);
   const [err, setErr] = useState('');

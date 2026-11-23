@@ -172,6 +172,35 @@ section { padding: 84px 0; }
 .sharia div { display: flex; gap: 12px; align-items: flex-start; color: #d9d2c2; }
 .sharia svg { flex: none; width: 22px; height: 22px; color: var(--brass-2); margin-top: 2px; }
 
+/* «Круг основателей» (23.11): from €100, four levels, the wall */
+.founders .wrap > .sub { margin-bottom: 8px; }
+.fd-prog { margin: 22px 0 6px; display: grid; gap: 8px; }
+.fd-prog .l { display: flex; justify-content: space-between; font-size: 14px; flex-wrap: wrap; gap: 6px; color: var(--ink-2); }
+.fd-prog .l b { font-family: var(--f-serif); font-size: 24px; color: var(--emerald-2); }
+.fd-prog i { display: block; height: 12px; border-radius: 6px; background: var(--sand); position: relative; overflow: hidden; }
+.fd-prog i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w, 0%); min-width: 6px; background: linear-gradient(90deg, var(--emerald), var(--emerald-2)); border-radius: 6px; transition: width .6s ease; }
+.tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+.tier { background: var(--card); border: 1px solid var(--sand); border-radius: 22px; padding: 18px 16px; display: flex; flex-direction: column; min-width: 0; }
+.tier .tag { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 800; color: var(--ink-2); }
+.tier .nm { font-family: var(--f-serif); font-size: 25px; font-weight: 700; margin-top: 2px; }
+.tier .p { font-family: var(--f-serif); font-size: 34px; font-weight: 700; line-height: 1; margin: 8px 0 0; }
+.tier ul { margin: 12px 0 16px; padding: 0; list-style: none; font-size: 13px; color: var(--ink-2); flex: 1; }
+.tier li { padding: 4px 0 4px 16px; position: relative; }
+.tier li::before { content: ""; position: absolute; left: 1px; top: 11px; width: 6px; height: 6px; background: var(--brass); transform: rotate(45deg); }
+.tier .btn { justify-content: center; padding: 12px 18px; box-shadow: none; }
+.tier .btn.ghost { color: var(--ink); border-color: var(--sand); margin: 0; }
+.tier.hot { border-color: var(--brass); box-shadow: inset 0 0 0 1px var(--brass); } .tier.hot .tag { color: var(--brass); }
+.tier.t4 { background: linear-gradient(160deg, #13402d, #0b2219); color: var(--warm); border-color: #2c5a44; }
+.tier.t4 .tag, .tier.t4 ul { color: #c8c0ae; } .tier.t4 li::before { background: var(--brass-2); }
+.wall { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+.wall span { background: var(--card); border: 1px solid var(--sand); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+.wall span b { color: var(--brass); } .wall span.t4 { border-color: var(--brass); }
+.wall .empty { background: none; border: 0; color: var(--ink-2); padding-left: 0; }
+.fine { margin-top: 16px; font-size: 12.5px; color: var(--ink-2); max-width: 80ch; }
+.fine a { color: var(--ink-2); }
+@media (max-width: 900px) { .tiers { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 460px) { .tiers { grid-template-columns: 1fr; } }
+
 /* form */
 .contact .wrap { display: grid; grid-template-columns: .9fr 1.1fr; gap: 40px; }
 form { display: grid; gap: 14px; background: var(--card); border: 1px solid var(--sand); border-radius: 24px; padding: 26px; }
@@ -379,6 +408,29 @@ footer .disc { border-top: 1px solid var(--sand); padding-top: 22px; }
   </div>
 </section>
 
+<section class="founders" id="founders"><div class="wrap">
+  <div class="eyebrow"><span lang="ru">Круг основателей · от €100</span><span lang="en">Founders Circle · from €100</span></div>
+  <h2><span lang="ru">Войдите в круг тех, кто сделал Living Muslim</span><span lang="en">Join the circle of those who made Living Muslim</span></h2>
+  <p class="sub"><span lang="ru">Вы помогаете собрать приложение и получаете награду за каждый намаз, совершённый с его помощью. А ещё привилегии, по уровню: Pro, имя на стене основателей, именной сертификат.</span><span lang="en">You help build the app and receive reward for every prayer performed with its help. Plus privileges by level: Pro, your name on the wall of founders, a named certificate.</span></p>
+  <div class="fd-prog" id="fd-prog" hidden><div class="l"><span><b id="fd-sum">€0</b> <span lang="ru">из €20 000</span><span lang="en">of €20,000</span></span><span><span id="fd-n">0</span> <span lang="ru">в круге</span><span lang="en">in the circle</span></span></div><i id="fd-bar"></i></div>
+  <div class="tiers">
+    <div class="tier"><div class="tag"><span lang="ru">Уровень 1</span><span lang="en">Level 1</span></div><div class="nm"><span lang="ru">Основатель</span><span lang="en">Founder</span></div><div class="p">€100</div>
+      <ul><li><span lang="ru">Pro на 3 месяца</span><span lang="en">Pro for 3 months</span></li><li><span lang="ru">Имя на стене основателей</span><span lang="en">Name on the wall of founders</span></li><li><span lang="ru">Значок рядом с ником</span><span lang="en">Founder’s mark next to your nick</span></li><li><span lang="ru">Именной сертификат</span><span lang="en">Named certificate</span></li></ul>
+      <a class="btn ghost" href="/app/?founder=f100"><span lang="ru">Войти в круг</span><span lang="en">Join the circle</span></a></div>
+    <div class="tier hot"><div class="tag"><span lang="ru">Чаще всего выбирают</span><span lang="en">Most chosen</span></div><div class="nm"><span lang="ru">Ансар</span><span lang="en">Ansar</span></div><div class="p">€250</div>
+      <ul><li><span lang="ru">Pro на год</span><span lang="en">Pro for a year</span></li><li><span lang="ru">Голос по дорожной карте</span><span lang="en">A vote on the roadmap</span></li><li><span lang="ru">Закрытый круг с основателем</span><span lang="en">Private circle with the founder</span></li><li><span lang="ru">Всё из уровня 1</span><span lang="en">Everything from level 1</span></li></ul>
+      <a class="btn" href="/app/?founder=f250"><span lang="ru">Войти в круг</span><span lang="en">Join the circle</span></a></div>
+    <div class="tier"><div class="tag"><span lang="ru">Уровень 3</span><span lang="en">Level 3</span></div><div class="nm"><span lang="ru">Мухсин</span><span lang="en">Muhsin</span></div><div class="p">€500</div>
+      <ul><li><span lang="ru">Pro на год</span><span lang="en">Pro for a year</span></li><li><span lang="ru">1 подарочный Pro близкому</span><span lang="en">1 gift Pro for someone close</span></li><li><span lang="ru">Звонок с командой раз в год</span><span lang="en">A yearly call with the team</span></li><li><span lang="ru">Всё из уровней 1–2</span><span lang="en">Everything from levels 1–2</span></li></ul>
+      <a class="btn ghost" href="/app/?founder=f500"><span lang="ru">Войти в круг</span><span lang="en">Join the circle</span></a></div>
+    <div class="tier t4"><div class="tag"><span lang="ru">Уровень 4</span><span lang="en">Level 4</span></div><div class="nm"><span lang="ru">Партнёр</span><span lang="en">Partner</span></div><div class="p">€1 000</div>
+      <ul><li><span lang="ru">Pro навсегда</span><span lang="en">Pro forever</span></li><li><span lang="ru">3 подарочных Pro близким</span><span lang="en">3 gift Pro for people close to you</span></li><li><span lang="ru">Имя в титрах приложения</span><span lang="en">Your name in the app’s credits</span></li><li><span lang="ru">Приоритет в будущем раунде долей и на поездки умры</span><span lang="en">Priority in a future equity round and on umrah trips</span></li></ul>
+      <a class="btn" href="/app/?founder=f1000"><span lang="ru">Войти в круг</span><span lang="en">Join the circle</span></a></div>
+  </div>
+  <div class="wall" id="fd-wall"><span class="empty"><span lang="ru">Первые имена появятся здесь. Пусть первым будет ваше.</span><span lang="en">The first names will appear here. Let yours be the first.</span></span></div>
+  <p class="fine"><span lang="ru">Круг основателей это покупка привилегий и вклад в дело, не доля в компании и не обещание дохода. Оплата через Stripe, карты, выпущенные в России, не принимаются. <a href="/app/?founder=terms">Условия</a>.</span><span lang="en">The Founders Circle is a purchase of privileges and a contribution to the cause, not a share in the company and not a promise of income. Payment via Stripe; cards issued in Russia are not accepted. <a href="/app/?founder=terms">Terms</a>.</span></p>
+</div></section>
+
 <section class="contact" id="contact"><div class="wrap">
   <div>
     <div class="eyebrow"><span lang="ru">Знакомство</span><span lang="en">Get in touch</span></div>
@@ -488,6 +540,25 @@ document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
       .catch(function () { m.hidden = false; m.className = 'msg err'; m.textContent = T[l].err; b.disabled = false; });
   });
   if (/^en/.test(navigator.language || '') && !/[?&]l=ru/.test(location.search)) document.querySelector('[data-set="en"]').click();
+})();
+// Founders Circle: the progress bar and the wall from Supabase (lm_founders_wall, supabase/founders.sql).
+(function () {
+  var l = document.documentElement.dataset.l === 'en' ? 'en' : 'ru';
+  fetch('https://pbpllsoiesquknuibyyj.supabase.co/rest/v1/rpc/lm_founders_wall', { method: 'POST', headers: { apikey: 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo', 'Content-Type': 'application/json' }, body: '{}' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (w) {
+      if (!w) return;
+      var eur = function (c) { return '€' + Math.round(c / 100).toLocaleString(l === 'en' ? 'en-GB' : 'ru-RU'); };
+      document.getElementById('fd-sum').textContent = eur(w.sum);
+      document.getElementById('fd-n').textContent = w.count;
+      document.getElementById('fd-bar').style.setProperty('--w', Math.min(100, Math.round(w.sum / w.goal * 100)) + '%');
+      document.getElementById('fd-prog').hidden = false;
+      if (w.names.length + w.anon > 0) {
+        var wall = document.getElementById('fd-wall'); wall.innerHTML = '';
+        w.names.forEach(function (n) { var s = document.createElement('span'); if (n.t === 'f1000') s.className = 't4'; if (n.t !== 'f100') { var b = document.createElement('b'); b.textContent = '◆ '; s.appendChild(b); } s.appendChild(document.createTextNode(n.w)); wall.appendChild(s); });
+        if (w.anon) { var a = document.createElement('span'); a.textContent = (l === 'en' ? 'Anonymous · ' : 'Анонимно · ') + w.anon; wall.appendChild(a); }
+      }
+    }).catch(function () {});
 })();
 </script>
 </body>
