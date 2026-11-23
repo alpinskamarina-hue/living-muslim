@@ -668,7 +668,7 @@ export function Circle({ circle, joined, today, summary, onJoin, onLeave, umrah,
           <PostFeed code={chatCode!} api={posts} open={ocOpen} seenKey={chatCode!} empty={_t("Постов пока нет. Пост это объявление амира: его не уносит лентой, его можно закрепить.")} />
         ) : bizOn && bizTab !== 'chat' && me ? (
           isSt && me ? (bizTab === 'path'
-            ? <StudyPane st={stApi} chat={chat} me={me} names={names} people={bizPeople} today={today} state={state} update={update}
+            ? <StudyPane name={currentCircle()?.title} st={stApi} chat={chat} me={me} names={names} people={bizPeople} today={today} state={state} update={update}
               post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }} />
             : <StudyLessons st={stApi} chat={chat} me={me} names={names} people={bizPeople} today={today} state={state} update={update}
               post={(b) => { if (chatOn) chat.send(b.slice(0, 300), null, 'event'); }} toChat={() => { setBizTab('chat'); window.scrollTo(0, 0); }}

@@ -26,9 +26,11 @@ export interface StudyProps {
   /** posts a line into the circle chat (an event card) */
   post: (body: string) => void;
   toChat: () => void;
+  /** the circle's name, to guess what it studies («Учёба · Арабский язык» → Арабский) */
+  name?: string;
 }
 const D = (k: string) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d, 12); };
-const dm = (k: string) => D(k).toLocaleDateString(LOC, { day: 'numeric', month: 'short' });
+const dm = (k: string) => D(k).toLocaleDateString(LOC, { day: 'numeric', month: 'short' }).replace(/\.$/, '');
 const first = (names: Names, me: string, id?: string | null) => (!id ? '' : id === me ? _t("Ты") : (names[id]?.name || _t("Участник")).split(' ')[0]);
 const ini = (names: Names, id?: string | null) => ((id && names[id]?.name) || '?').trim().charAt(0).toUpperCase();
 const AV_C = ['#2f7f7a', '#b5832a', '#b4583a', '#1f7a52', '#5b6fb0', '#8a5a9e'];
@@ -85,9 +87,18 @@ function openHw(tasks: StTask[], subs: StSub[], me: string, today: string): StTa
 }
 
 // ——— «Что учим» ———
-function SetupView({ st, today, post, onDone, onCancel }: StudyProps & { onDone: () => void; onCancel?: () => void }) {
+/** A new plan starts from what the circle's name says it studies. */
+function guessSubj(name = ''): Subj {
+  const n = name.toLowerCase();
+  if (/араб|arab|نحو|صرف/.test(n)) return 'arabic';
+  if (/таджв|tajw|tajweed/.test(n)) return 'tajwid';
+  if (/книг|book/.test(n)) return 'book';
+  if (/курс|course/.test(n)) return 'course';
+  return 'hifz';
+}
+function SetupView({ st, today, post, onDone, onCancel, name }: StudyProps & { onDone: () => void; onCancel?: () => void }) {
   const old = st.data!.state.plan;
-  const [subj, setSubj] = useState<Subj>(old.subj ?? 'hifz');
+  const [subj, setSubj] = useState<Subj>(old.subj ?? guessSubj(name));
   const [set, setSet] = useState(() => HIFZ_PLANS().find((h) => JSON.stringify(h.refs) === JSON.stringify(old.refs))?.id ?? 'amma');
   const [title, setTitle] = useState(old.subj && old.subj !== 'hifz' ? old.title ?? '' : '');
   const [total, setTotal] = useState(String(old.subj && old.subj !== 'hifz' ? old.total ?? '' : ''));
