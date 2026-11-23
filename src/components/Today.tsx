@@ -3,6 +3,7 @@ import { ThemeSwitch } from './ThemeSwitch';
 import type React from 'react';
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { dayLight, journey } from '../gamify';
+import { backRecent } from '../comeback';
 import type { Anchor, AppState, Habit, Mark } from '../types';
 import { ANCHORS, ANCHOR_LABEL } from '../types';
 import { atRisk, isCounted, setMark, streak, toggleHard } from '../store';
@@ -177,7 +178,8 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <span>
           <b>{j.streak > 0 ? _t("Серия {0} {1}", j.streak, plural(j.streak, _t("день"), _t("дня"), _t("дней"))) : _t("Начни серию сегодня")}</b>
           <small>
-            {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
+            {backRecent(state, today) && j.best > j.streak && !j.pausedToday ? _t("Лучшая была {0} {1}. Ты это уже умеешь.", j.best, plural(j.best, _t("день"), _t("дня"), _t("дней")))
+              : j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
           </small>
         </span>
         <i aria-hidden="true">›</i>
