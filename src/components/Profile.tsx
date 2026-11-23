@@ -44,6 +44,7 @@ import { activeLimit, initialState, slotsUsed } from '../store';
 import { _t, _tj, LANG } from '../i18n';
 import { TeacherPage } from './Teacher';
 import { FoundersPage, FounderTerms, tierName, type FounderStart } from './Founders';
+import { FounderBadge } from './FounderBadge';
 import { useFoundersReady, cachedFounder } from '../founders';
 import { useSisCirclesReady } from '../sisCircles';
 
@@ -228,7 +229,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
 
       {foundersOn && (
         <button type="button" className="pro-entry fd-entry" onClick={() => go('founders')}>
-          <span className="pro-badge fd-pbadge">◆</span>
+          <span className="pro-badge fd-pbadge">{cachedFounder()?.tier ? <FounderBadge tier={cachedFounder()!.tier!} size={24} /> : '◆'}</span>
           <span>{cachedFounder()?.tier ? <><b>{_tj("Мой вклад · {0}", tierName(cachedFounder()!.tier!))}</b><small>{_t("Сертификат, подарочные Pro, стена основателей")}</small></> : <><b>{_t("Круг основателей · от €100")}</b><small>{_t("Pro, имя на стене, сертификат. Войти в круг тех, кто сделал приложение")}</small></>}</span>
           <i aria-hidden="true">›</i>
         </button>

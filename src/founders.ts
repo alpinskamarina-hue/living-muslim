@@ -65,6 +65,44 @@ export async function myFounder(): Promise<Mine | null> {
 export const foundersWall = () => (fetch(`${SB}/rest/v1/rpc/lm_founders_wall`, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: '{}' }).then((r) => (r.ok ? r.json() : null)) as Promise<Wall | null>).catch(() => null);
 export const founderOf = (uid: string) => fetch(`${SB}/rest/v1/rpc/lm_founder_of`, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_other: uid }) }).then((r) => (r.ok ? r.json() : null)).then((t) => (t as Tier | null) || null).catch(() => null);
 export interface GiftResult { ok?: boolean; until?: string; error?: string }
+
+// The badge next to names (founders-badges.sql, lm_founder_tiers): levels asked for in batches, remembered for the session.
+const tiers = new Map<string, Tier | null>();
+const waiters = new Map<string, Set<(t: Tier | null) => void>>();
+let queue = new Set<string>();
+let timer: ReturnType<typeof setTimeout> | null = null;
+let tiersOk: Promise<boolean> | null = null;
+const tiersReady = () => (tiersOk ??= (isCloud ? serverHas('lm_founder_tiers', { p_uids: [] }) : Promise.resolve(false)));
+function flush() {
+  timer = null;
+  const uids = [...queue]; queue = new Set();
+  if (!uids.length) return;
+  const done = (list: { u: string; t: Tier }[]) => {
+    const got = new Map(list.map((x) => [x.u, x.t]));
+    for (const u of uids) { const t = got.get(u) ?? null; tiers.set(u, t); waiters.get(u)?.forEach((f) => f(t)); waiters.delete(u); }
+  };
+  tiersReady().then((ok) => {
+    if (!ok) return done([]);
+    return fetch(`${SB}/rest/v1/rpc/lm_founder_tiers`, { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_uids: uids }) })
+      .then((r) => (r.ok ? r.json() : [])).then((l) => done(Array.isArray(l) ? l : [])).catch(() => done([]));
+  });
+}
+export function founderTier(uid: string, cb: (t: Tier | null) => void): () => void {
+  if (tiers.has(uid)) { cb(tiers.get(uid)!); return () => {}; }
+  if (!waiters.has(uid)) waiters.set(uid, new Set());
+  waiters.get(uid)!.add(cb);
+  queue.add(uid);
+  timer ??= setTimeout(flush, 60);
+  return () => { waiters.get(uid)?.delete(cb); };
+}
+/** Someone's founder level for the badge, or null. */
+export function useFounderTier(uid: string): Tier | null {
+  const [t, setT] = useState<Tier | null>(() => tiers.get(uid) ?? null);
+  useEffect(() => { if (!uid || !isCloud) return; setT(tiers.get(uid) ?? null); return founderTier(uid, setT); }, [uid]);
+  return t;
+}
+/** After my own record changes: forget my cached level so the badge updates. */
+export const forgetTier = (uid: string) => { tiers.delete(uid); };
 export const useGift = (code: string): Promise<GiftResult> => meRpc<GiftResult>('lm_founder_gift_use', { p_code: code.trim().toUpperCase() }).then((r) => { if (r?.ok) myFounder(); return r; }).catch(() => ({ error: 'net' } as GiftResult));
 
 export interface Order { tier: Tier; name: string; email: string; country: string; wall: string }

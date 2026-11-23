@@ -64,6 +64,7 @@ async function signup(pg, name, email) {
     ok(rows.length === 1 && rows[0].status === 'test' && rows[0].tier === 'f500' && rows[0].no === 1, 'test record F-0001 (f500)');
     ok(rows[0].wall === 'Ильгиз, София', `wall text from name + city: ${rows[0].wall}`);
     ok(/Сертификат № F-0001/.test(await A.locator('.fd-card').first().textContent()), '«Мой вклад» shows the certificate');
+    ok(await A.locator('.fd-card .fb-f500').count() === 1, 'the Мухсин badge on the card');
     const gifts = await Q(`select code, used from founder_gifts`);
     ok(gifts.length === 1 && !gifts[0].used, 'one gift code for Мухсин');
     ok((await A.locator('.fd-codes span').textContent()) === gifts[0].code, 'the gift code is on the screen');
@@ -108,6 +109,8 @@ async function signup(pg, name, email) {
     await B.evaluate((u) => window.dispatchEvent(new CustomEvent('lm-person', { detail: { uid: u } })), uidA); await wait(2000);
     await shot(B, '09-person', true);
     ok(/Основатель Living Muslim · Мухсин/.test(await B.locator('.pp-tag.t-founder').textContent()), 'founder mark on the person view');
+    ok(await B.locator('.pp-founder .fb-f500').count() === 2, 'the big and the small badge on the person view');
+    ok(await A.locator('.fd-names .fb-f500').count() === 1, 'the badge on the wall');
 
     // English
     await A.evaluate(() => { const s = JSON.parse(localStorage.getItem('qadam.v1') || '{}'); s.settings = { ...(s.settings || {}), lang: 'en' }; localStorage.setItem('qadam.v1', JSON.stringify(s)); });
@@ -121,6 +124,7 @@ async function signup(pg, name, email) {
     await A.locator('#founders').scrollIntoViewIfNeeded(); await wait(1200);
     ok(/€500/.test(await A.locator('#fd-prog').textContent()), 'landing progress bar filled from Supabase');
     ok(/Ильгиз, София/.test(await A.locator('#fd-wall').textContent()), 'landing wall shows the name');
+    ok(await A.locator('#fd-wall svg').count() === 1, 'the badge on the landing wall');
     await A.locator('#founders').screenshot({ path: OUT + '11-landing.png' });
     const D = await br.newContext({ viewport: { width: 1280, height: 900 } });
     const dp = await D.newPage();

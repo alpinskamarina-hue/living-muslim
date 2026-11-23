@@ -17,6 +17,7 @@ import { PathView, PathSettingsPage, TOPICS, topicLabel } from './PathView';
 import { useDmReady, dmCan, openDm, dmWhy, type DmMode } from '../dm';
 import { dayKey } from '../dates';
 import { foundersReady, founderOf, type Tier } from '../founders';
+import { FounderBadge } from './FounderBadge';
 import { tierName } from './Founders';
 
 const daysSince = (iso: string) => Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 86400000));
@@ -142,7 +143,7 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
         <b>{p.name || _t("Участник")}</b>
         <small>{[p.nick && `@${p.nick}`, p.city, sinceLine(p.since)].filter(Boolean).join(' · ')}</small>
         {p.bio && <p className="pp-bio">{p.bio}</p>}
-        {founder && <div className="pp-tags"><span className={`pp-tag t-founder t-${founder}`}>◆ {_t("Основатель Living Muslim")} · {tierName(founder)}</span></div>}
+        {founder && <div className="pp-founder"><FounderBadge tier={founder} size={64} open title={tierName(founder)} /><div className="pp-tags"><span className={`pp-tag t-founder t-${founder}`}><FounderBadge tier={founder} size={14} /> {_t("Основатель Living Muslim")} · {tierName(founder)}</span></div></div>}
         {visible.length > 0 && <div className="pp-tags">{visible.map((i) => <span key={i.kind} className={`pp-tag t-${INTENTS[i.kind].cls}`}>{INTENTS[i.kind].ic} {i.kind === 'nikah' ? _t("Ищет никах") : modeOf(i).tag}</span>)}</div>}
         {self ? (
           <div className="pp-btns"><button type="button" onClick={onSeek}><i>✎</i>{_t("Что я ищу")}</button></div>

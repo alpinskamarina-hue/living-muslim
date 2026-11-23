@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { meRpc, myCircles, currentCircle, kindOf, isDm, type CircleRef } from '../cloud';
 import type { Member } from '../circle';
+import { FounderMark } from './FounderBadge';
 import { readsReady, readStateOf, type Msg } from '../chat';
 import { Ticks, shortOf } from './CircleChat';
 import { _t, _tj, LOC } from '../i18n';
@@ -153,7 +154,7 @@ export function CircleList({ state, me, unread, members, names, today, onOpen, o
                 <span className="wa-ring" style={{ background: `conic-gradient(var(--wa-acc) ${fr * 360}deg, var(--line) 0)` }}>
                   {p?.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <i style={{ background: p?.color || '#1f7a4d' }}>{(p?.name || '?').slice(0, 1).toUpperCase()}</i>}
                 </span>
-                <small>{m.id === me ? _t("Ты") : (p?.name || _t("Участник")).split(' ')[0]}</small>
+                <small>{m.id === me ? _t("Ты") : (p?.name || _t("Участник")).split(' ')[0]}<FounderMark uid={m.id} size={12} /></small>
               </button>
             );
           })}

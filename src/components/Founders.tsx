@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { FounderBadge } from './FounderBadge';
 import { TIERS, tierOf, eur, certNo, checkout, testOrder, myFounder, useGift, foundersWall, type Tier, type Mine, type Wall, type FounderRec, type TierInfo } from '../founders';
 import { cloudMe } from '../cloud';
 import { authMe } from '../auth';
@@ -64,7 +65,7 @@ function MyContribution({ list, onUpgrade, onTerms }: { list: FounderRec[]; onUp
       <h3 className="pf-sub">{_t("Мой вклад")}</h3>
       {list.map((r) => (
         <div key={r.id} className={`fd-card t-${r.tier}`}>
-          <div className="fd-row"><span className="fd-badge">◆ {tierName(r.tier)}</span><b>{eur(r.amount)}</b></div>
+          <div className="fd-row"><span className="fd-badge"><FounderBadge tier={r.tier} size={20} /> {tierName(r.tier)}</span><b>{eur(r.amount)}</b></div>
           <h3>{_t("Сертификат № {0}", certNo(r.no))}</h3>
           <div className="fd-m">{dateOf(r.paid)} · {r.pro_forever ? _t("Pro навсегда") : r.pro_until ? _t("Pro активен до {0}", dateOf(r.pro_until)) : ''}{r.status === 'test' ? ` · ${_t("тестовая запись")}` : ''}</div>
           <div className="fd-m">{_tj("Привилегии {0} · запись вклада {1}", eur(r.service), eur(r.contrib))}{r.wall ? ` · ${_t("на стене: {0}", r.wall)}` : ` · ${_t("на стене анонимно")}`}</div>
@@ -203,7 +204,7 @@ function Order({ start, admin, hasOne, onTerms, onDone }: { start?: FounderStart
       <div className="fd-tiers" role="radiogroup" aria-label={_t("Уровень")}>
         {TIERS.map((x) => (
           <button key={x.id} type="button" role="radio" aria-checked={tier === x.id} className={`fd-tier${x.hot ? ' hot' : ''}${x.top ? ' top' : ''}`} onClick={() => setTier(x.id)}>
-            <small>{x.tag}</small><b>{tierName(x.id)}</b><em>{eur(x.amount)}</em>
+            <FounderBadge tier={x.id} size={28} /><small>{x.tag}</small><b>{tierName(x.id)}</b><em>{eur(x.amount)}</em>
             <ul>{x.perks.map((p) => <li key={p}>{p}</li>)}</ul>
           </button>
         ))}
@@ -238,7 +239,7 @@ export function WallBlock({ wall }: { wall: Wall | null }) {
       <div className="fd-prog"><div className="l"><span><b>{eur(wall.sum)}</b> {_t("из {0}", eur(wall.goal))}</span><span>{_tj("{0} в круге", wall.count)}</span></div><i style={{ '--w': `${pct}%` } as React.CSSProperties} /></div>
       {wall.names.length + wall.anon > 0 ? (
         <div className="fd-names">
-          {wall.names.map((n, i) => <span key={i} className={`t-${n.t}`}>{n.t !== 'f100' && <b>◆ </b>}{n.w}</span>)}
+          {wall.names.map((n, i) => <span key={i} className={`t-${n.t}`}><FounderBadge tier={n.t} size={14} />{n.w}</span>)}
           {wall.anon > 0 && <span>{_t("Анонимно · {0}", wall.anon)}</span>}
         </div>
       ) : <p className="tiny">{_t("Первые имена появятся здесь. Пусть первым будет ваше.")}</p>}

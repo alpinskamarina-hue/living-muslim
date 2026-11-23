@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Ic, IcT, Rx } from './LIcon';
+import { FounderMark } from './FounderBadge';
 import { FILE_MAX, callsAi, trReady, type ChatApi, type Msg, type MsgRef, type ReadState } from '../chat';
 import { aiName } from '../assistant';
 import { placeOf } from '../plansCloud';
@@ -732,7 +733,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
             <div key={m.id} className={`cc-row${mine ? ' mine' : ''}`}>
               {!mine && <Ava id={m.uid} names={names} />}
               <div className={`cc-m${mine ? ' mine' : ''}${m.failed ? ' failed' : ''}`} {...holdProps(m)} onClick={m.failed ? () => chat.retry(m) : undefined}>
-                {!mine && <b className="cc-who" onClick={personOk() ? (e) => { e.stopPropagation(); openPerson(m.uid); } : undefined}>{nm(m.uid)}</b>}
+                {!mine && <b className="cc-who" onClick={personOk() ? (e) => { e.stopPropagation(); openPerson(m.uid); } : undefined}>{nm(m.uid)}<FounderMark uid={m.uid} /></b>}
                 {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : shortOf(q)}</span>}
                 {!q && m.ref?.t === 'st' && m.ref.to && <span className="cc-q cc-st"><b>{m.ref.to === me ? _t("Ответ на твою сторис") : _t("Ответ на сторис: {0}", nm(m.ref.to))}</b>{[m.ref.n, m.ref.k].filter(Boolean).join(' ')}</span>}
                 {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />

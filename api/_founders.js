@@ -98,11 +98,8 @@ export async function certificatePdf(f) {
   p.drawText(T.sig, { x: left, y: 44, size: 8.5, font: sans, color: soft });
   p.drawText(T.who, { x: left, y: 31, size: 12, font: serif, color: white });
   p.drawText(`${T.site} · ${f.code || ''}`, { x: W - 44 - sans.widthOfTextAtSize(`${T.site} · ${f.code || ''}`, 8), y: 31, size: 8, font: sans, color: soft });
-  // the seal: a brass ring with the crescent-like mark
-  p.drawCircle({ x: W - 78, y: 86, size: 26, borderColor: brass, borderWidth: 1.2, borderOpacity: 0.9 });
-  p.drawCircle({ x: W - 78, y: 86, size: 21, borderColor: brass, borderWidth: 0.5, borderOpacity: 0.5 });
-  p.drawText('Living', { x: W - 78 - serif.widthOfTextAtSize('Living', 9) / 2, y: 88, size: 9, font: serif, color: brass });
-  p.drawText('Muslim', { x: W - 78 - serif.widthOfTextAtSize('Muslim', 9) / 2, y: 77, size: 9, font: serif, color: brass });
+  // the seal: the level's badge (the same drawing as FounderBadge.tsx, flat colours), 60pt wide
+  badge(p, f.tier, W - 108, 116, 60 / 48, { brass, night, night2, light: rgb(0.965, 0.886, 0.71), gold2: rgb(0.71, 0.514, 0.165) });
   return Buffer.from(await doc.save());
 }
 
@@ -183,4 +180,28 @@ export function rawBody(req) {
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
+}
+
+/** The founder's badge on the certificate: x, y = the top-left corner in page points, k = scale of the 48-unit drawing. */
+function badge(p, tier, x, y, k, c) {
+  const P = (d, o) => p.drawSvgPath(d, { x, y, scale: k, ...o });
+  if (tier === 'f100') {
+    P('M8 17 L24 25 L24 41 L8 33 Z', { color: c.night });
+    P('M24 25 L40 17 L40 33 L24 41 Z', { color: c.night2 });
+    P('M24 9 L40 17 L24 25 L8 17 Z', { color: c.light, borderColor: c.brass, borderWidth: 1 });
+  } else if (tier === 'f250') {
+    P('M19 9 A15 15 0 1 0 19 39 A21 21 0 0 1 19 9 Z', { color: c.brass });
+    P('M29 9 A15 15 0 1 1 29 39 A21 21 0 0 0 29 9 Z', { color: c.gold2 });
+    p.drawCircle({ x: x + 24 * k, y: y - 24 * k, size: 3.2 * k, color: c.light });
+  } else if (tier === 'f500') {
+    P('M10 10 H38 V38 H10 Z', { color: c.night, borderColor: c.brass, borderWidth: 1.4 });
+    P('M24 4.2 L43.8 24 L24 43.8 L4.2 24 Z', { color: c.night, borderColor: c.brass, borderWidth: 1.4 });
+    p.drawCircle({ x: x + 24 * k, y: y - 24 * k, size: 9 * k, color: c.night2, borderColor: c.gold2, borderWidth: 0.8 });
+    p.drawCircle({ x: x + 24 * k, y: y - 24 * k, size: 4 * k, color: c.light });
+  } else {
+    p.drawCircle({ x: x + 24 * k, y: y - 24 * k, size: 23 * k, color: c.night });
+    p.drawCircle({ x: x + 24 * k, y: y - 24 * k, size: 20.5 * k, borderColor: c.brass, borderWidth: 2 });
+    P('M22 8.5 A15.5 15.5 0 1 0 22 39.5 A19.5 19.5 0 0 1 22 8.5 Z', { color: c.light });
+    P('M31 17 L32.6 21.4 L37 23 L32.6 24.6 L31 29 L29.4 24.6 L25 23 L29.4 21.4 Z', { color: c.brass });
+  }
 }

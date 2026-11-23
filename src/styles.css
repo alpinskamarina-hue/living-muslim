@@ -6400,3 +6400,37 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .fd-steps li { position: relative; padding: 10px 8px 8px 8px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 2px; font-size: 11.5px; line-height: 1.3; color: var(--ink-2); counter-increment: s; }
 .fd-steps li::before { content: counter(s); position: absolute; top: -8px; left: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--green-2); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
 .fd-steps b { color: var(--ink); font-size: 12.5px; margin-top: 2px; }
+
+/* Значки основателей (FounderBadge.tsx): дыхание свечения, жест при открытии (.open), reduced-motion = статика */
+.fb { display: inline-block; vertical-align: middle; flex: none; line-height: 0; animation: fbBreathe 4.5s ease-in-out infinite; }
+.fb svg { display: block; overflow: visible; }
+@keyframes fbBreathe { 0%, 100% { filter: drop-shadow(0 0 0 rgba(224,180,92,0)); } 50% { filter: drop-shadow(0 0 3px rgba(224,180,92,.75)); } }
+.fb-f100 .shine { opacity: 0; animation: fbStoneShine 6s ease-in-out infinite; }
+@keyframes fbStoneShine { 0%, 70%, 100% { opacity: 0; } 80% { opacity: .9; } 90% { opacity: 0; } }
+.fb-f100 .stone { transform-origin: 50% 60%; }
+.fb.open.fb-f100 .stone { animation: fbDrop .7s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes fbDrop { from { transform: translateY(-10px) scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+.fb-f250 .cl, .fb-f250 .cr { transform-origin: 50% 50%; }
+.fb.open.fb-f250 .cl { animation: fbMeetL .9s cubic-bezier(.2,.8,.2,1.1) both; }
+.fb.open.fb-f250 .cr { animation: fbMeetR .9s cubic-bezier(.2,.8,.2,1.1) both; }
+@keyframes fbMeetL { from { transform: translateX(-9px) rotate(-12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fbMeetR { from { transform: translateX(9px) rotate(12deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.fb-f250 .heart, .fb-f500 .core { animation: fbPulse 4.5s ease-in-out infinite; transform-origin: 50% 50%; }
+@keyframes fbPulse { 0%, 100% { opacity: .55; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.08); } }
+.fb-f500 .star { transform-origin: 50% 50%; }
+.fb.open.fb-f500 .star { animation: fbStarOpen 1s cubic-bezier(.2,.8,.25,1.15) both; }
+@keyframes fbStarOpen { from { transform: rotate(-60deg) scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.fb-f1000 .rim { animation: fbRim 4.5s ease-in-out infinite; }
+@keyframes fbRim { 0%, 100% { stroke: #b5832a; } 50% { stroke: #f6e2b5; } }
+.fb-f1000 .moon { transform-origin: 50% 50%; }
+.fb.open.fb-f1000 .moon { animation: fbMoonIn 1s cubic-bezier(.2,.8,.25,1.1) both; }
+@keyframes fbMoonIn { from { transform: rotate(-70deg) scale(.5); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .fb, .fb * { animation: none !important; } .fb-f100 .shine { opacity: 0 !important; } }
+.fd-tier { position: relative; }
+.fd-tier > .fb { position: absolute; top: 10px; right: 10px; }
+.fd-badge { display: inline-flex; align-items: center; gap: 6px; }
+.fd-names span { display: inline-flex; align-items: center; gap: 5px; }
+.pp-tag.t-founder { display: inline-flex; align-items: center; gap: 6px; }
+.pp-founder { display: grid; justify-items: center; gap: 6px; margin-top: 8px; }
+.cc-who .fb, .wa-people small .fb { margin-left: 4px; }
+.fd-entry .fb { margin: 0 auto; }

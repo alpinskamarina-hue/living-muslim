@@ -519,6 +519,15 @@ document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
 // Founders Circle: the progress bar and the wall from Supabase (lm_founders_wall, supabase/founders.sql).
 (function () {
   var l = document.documentElement.dataset.l === 'en' ? 'en' : 'ru';
+  // the founder's badge by level, the still version of FounderBadge.tsx
+  function fdBadge(t) {
+    var G = '#e0b45c', G2 = '#b5832a', D = '#13402d', D2 = '#0b2219', L = '#f6e2b5', b;
+    if (t === 'f100') b = '<polygon points="8,17 24,25 24,41 8,33" fill="' + D + '"/><polygon points="24,25 40,17 40,33 24,41" fill="' + D2 + '"/><polygon points="24,9 40,17 24,25 8,17" fill="' + L + '" stroke="' + G + '" stroke-width="1.2"/>';
+    else if (t === 'f250') b = '<path d="M19 9 A15 15 0 1 0 19 39 A21 21 0 0 1 19 9 Z" fill="' + G + '"/><path d="M29 9 A15 15 0 1 1 29 39 A21 21 0 0 0 29 9 Z" fill="' + G2 + '"/><circle cx="24" cy="24" r="3.2" fill="' + L + '"/>';
+    else if (t === 'f500') b = '<rect x="10" y="10" width="28" height="28" rx="3" fill="' + D + '" stroke="' + G + '" stroke-width="1.6"/><rect x="10" y="10" width="28" height="28" rx="3" fill="' + D + '" stroke="' + G + '" stroke-width="1.6" transform="rotate(45 24 24)"/><circle cx="24" cy="24" r="9" fill="' + D2 + '" stroke="' + G2 + '"/><circle cx="24" cy="24" r="4" fill="' + L + '"/>';
+    else b = '<circle cx="24" cy="24" r="23" fill="' + D + '"/><circle cx="24" cy="24" r="20.5" fill="none" stroke="' + G + '" stroke-width="2.2"/><path d="M22 8.5 A15.5 15.5 0 1 0 22 39.5 A19.5 19.5 0 0 1 22 8.5 Z" fill="' + L + '"/><path d="M31 17 L32.6 21.4 L37 23 L32.6 24.6 L31 29 L29.4 24.6 L25 23 L29.4 21.4 Z" fill="' + G + '"/>';
+    return '<svg viewBox="0 0 48 48" width="15" height="15" aria-hidden="true" style="vertical-align:-3px">' + b + '</svg>';
+  }
   fetch('https://pbpllsoiesquknuibyyj.supabase.co/rest/v1/rpc/lm_founders_wall', { method: 'POST', headers: { apikey: 'sb_publishable_hKSYzKUSU94W_1OXxQxvxQ_bhLfzzdo', 'Content-Type': 'application/json' }, body: '{}' })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (w) {
@@ -530,7 +539,7 @@ document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
       document.getElementById('fd-prog').hidden = false;
       if (w.names.length + w.anon > 0) {
         var wall = document.getElementById('fd-wall'); wall.innerHTML = '';
-        w.names.forEach(function (n) { var s = document.createElement('span'); if (n.t === 'f1000') s.className = 't4'; if (n.t !== 'f100') { var b = document.createElement('b'); b.textContent = '◆ '; s.appendChild(b); } s.appendChild(document.createTextNode(n.w)); wall.appendChild(s); });
+        w.names.forEach(function (n) { var s = document.createElement('span'); if (n.t === 'f1000') s.className = 't4'; s.innerHTML = fdBadge(n.t) + ' '; s.appendChild(document.createTextNode(n.w)); wall.appendChild(s); });
         if (w.anon) { var a = document.createElement('span'); a.textContent = (l === 'en' ? 'Anonymous · ' : 'Анонимно · ') + w.anon; wall.appendChild(a); }
       }
     }).catch(function () {});
