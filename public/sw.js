@@ -66,15 +66,55 @@ async function sisFlag() {
 const SIS_RU = { fajr: 'Утренние азкары, пара минут.', dhuhr: 'СубханАллах 33 раза, одна минута.', asr: 'Послушай суру аль-Мульк.', maghrib: 'Вечерние азкары, пара минут.', isha: 'Короткое дуа своими словами.' };
 const SIS_EN = { fajr: 'Morning adhkar, a couple of minutes.', dhuhr: 'SubhanAllah 33 times, one minute.', asr: 'Listen to Surah al-Mulk.', maghrib: 'Evening adhkar, a couple of minutes.', isha: 'A short dua in your own words.' };
 
+// «Мой цикл»: a reminder 2 days before the guessed start (with the Dhuhr reminder) and «tomorrow you can make up
+// a fast» (with the Isha reminder). Shown by the phone itself, once a day; the server never learns about it.
+async function cycFlag() {
+  try {
+    const c = await caches.open('lm-local');
+    const r = await c.match('/__lm-cyc');
+    return r ? await r.json() : null;
+  } catch { return null; }
+}
+const localKey = (dt) => dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+async function onceToday(kind) {
+  try {
+    const c = await caches.open('lm-local');
+    const k = '/__lm-cyc-shown-' + kind;
+    const r = await c.match(k);
+    const today = localKey(new Date());
+    if (r && (await r.text()) === today) return false;
+    await c.put(k, new Response(today));
+    return true;
+  } catch { return true; }
+}
+async function cycExtra(tag) {
+  const f = await cycFlag();
+  if (!f) return;
+  const now = new Date();
+  const modest = f.modest !== false;
+  const say = (body) => self.registration.showNotification('Living Muslim', { body: modest ? (f.en ? 'A reminder from Living Muslim' : 'Напоминание от Living Muslim') : body, icon: '/icon-192.png', badge: '/icon-192.png', tag: 'lm-cyc', data: { url: '/app/?go=cycle' } });
+  if (tag === 'prayer-dhuhr' && f.rem && f.rem === localKey(now) && (await onceToday('rem'))) {
+    return say(f.en ? 'In about 2 days your days without prayer may begin.' : 'Через 2 дня, возможно, начнутся дни без намаза.');
+  }
+  if (tag === 'prayer-isha' && Array.isArray(f.qd)) {
+    const tm = new Date(now.getTime() + 86400000);
+    const wd = (tm.getDay() + 6) % 7;
+    if (f.qd.includes(wd) && (await onceToday('qd'))) return say(f.en ? 'Tomorrow you can make up a fast. Bismillah.' : 'Завтра можно восполнить пост. Бисмиллях.');
+  }
+}
+
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Living Muslim', body: e.data && e.data.text() }; }
-  e.waitUntil((/^prayer-/.test(d.tag || '') ? sisFlag() : Promise.resolve(null)).then((sis) => {
+  const tag0 = d.tag || '';
+  e.waitUntil((/^prayer-/.test(tag0) ? sisFlag() : Promise.resolve(null)).then((sis) => {
     if (sis && sis.on) {
       const a = String(d.tag).slice(7);
-      d = { ...d, title: sis.en ? '☾ Time for dhikr' : '☾ Время зикра', body: (sis.en ? SIS_EN : SIS_RU)[a] || (sis.en ? 'A short dhikr.' : 'Короткий зикр.'), url: '/app/', actions: undefined };
+      d = sis.modest
+        ? { ...d, title: 'Living Muslim', body: sis.en ? 'A reminder from Living Muslim' : 'Напоминание от Living Muslim', url: '/app/', actions: undefined }
+        : { ...d, title: sis.en ? '☾ Time for dhikr' : '☾ Время зикра', body: (sis.en ? SIS_EN : SIS_RU)[a] || (sis.en ? 'A short dhikr.' : 'Короткий зикр.'), url: '/app/', actions: undefined };
     }
-    return self.registration.showNotification(d.title || 'Living Muslim', {
+    return Promise.all([/^prayer-(dhuhr|isha)$/.test(tag0) ? cycExtra(tag0).catch(() => {}) : null, self.registration.showNotification(d.title || 'Living Muslim', {
     body: d.body || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',
@@ -83,7 +123,7 @@ self.addEventListener('push', (e) => {
     data: { url: d.url || '/app/' },
     // Plans: «Сделано», «Через час», «Завтра» (Android and installed iPhone apps show up to 2–3 buttons).
     ...(Array.isArray(d.actions) ? { actions: d.actions.slice(0, 3) } : {}),
-  });
+  })]);
   }));
 });
 

@@ -415,7 +415,7 @@ export function App() {
       if (g === 'workouts') { try { sessionStorage.setItem('lm.hview', 'workouts'); } catch { /* */ } go({ practice: 'health' }); return true; }
       if (g === 'ai') { setAiOpen(true); return true; }
       if (g === 'sadaqa') { go({ practice: 'sadaqa' }); return true; }
-      if (g !== 'pings' && g !== 'ideas' && g !== 'plans') return false;
+      if (g !== 'pings' && g !== 'ideas' && g !== 'plans' && g !== 'cycle') return false;
       if (g === 'plans') setPlanStart({ plan: u.searchParams.get('pl') || undefined, act: u.searchParams.get('do') || undefined, day: u.searchParams.get('d') || undefined });
       go({ profile: g });
       return true;
