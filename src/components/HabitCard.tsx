@@ -18,6 +18,8 @@ interface Props {
   onMark: (m: Mark | null) => void;
   onOpen: () => void;
   ramadanMin?: boolean;
+  /** «Мама»: the minimum is enough now. */
+  easyMin?: boolean;
 }
 
 const OPEN = -168;
@@ -32,7 +34,7 @@ const Star = () => (
   </span>
 );
 
-export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMin }: Props) {
+export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMin, easyMin }: Props) {
   const [x, setX] = useState(0);
   const [drag, setDrag] = useState(false);
   const start = useRef<{ x: number; y: number; base: number; moved: boolean } | null>(null);
@@ -109,7 +111,7 @@ export function HabitCard({ habit, mark, streak, risk, onMark, onOpen, ramadanMi
           <div className="nm">{habit.action}</div>
           <div className="mt">
             <span className="sp">{sphereName(habit.sphere)}</span>
-            {habit.min && <span className="minl">{ramadanMin ? _t("🌙 в Рамадан хватит: ") : _t("минимум: ")}{habit.min}</span>}
+            {habit.min && <span className="minl">{ramadanMin ? _t("🌙 в Рамадан хватит: ") : easyMin ? _t("сейчас хватит: ") : _t("минимум: ")}{habit.min}</span>}
             {state === 'later' && <span className="later-tag">{_t("отложено")}</span>}
           </div>
           {risk && <div className="risk">{_t("Вчера пропуск. Сегодня хватит и минимума")}</div>}

@@ -25,7 +25,7 @@ import { MosqueCard, QiblaChip, type QiblaTab } from './Mosques';
 import { KhutbaCard } from './Khutba';
 import { fridayWindow } from '../khutba';
 import { aiName } from '../assistant';
-import { isSister, sisNow, toggleZk, zikrAt, zkDone } from '../sisters';
+import { forgiveLimit, isSister, mamaEasy, sisNow, toggleZk, zikrAt, zkDone } from '../sisters';
 import { GhuslSheet, PrayerPick, SisBand, SisEnd, useSisSheets } from './Sisters';
 
 interface Props {
@@ -91,6 +91,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
     : _t("Все намазы дня прошли");
   const sub = current ? _t("Сейчас окно {0}", ANCHOR_LABEL[current].after.replace(_t("После"), _t("после"))) : _t("До Фаджра");
 
+  const easy = mamaEasy(state);
   const renderCards = (a: Anchor) => {
     const list = active.filter((h) => h.anchor === a);
     if (!list.length)
@@ -109,6 +110,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         onMark={mark(h.id)}
         onOpen={() => onEdit(h)}
         ramadanMin={ramadanMode(state, h, today) === 'min'}
+        easyMin={easy}
       />
     );
     const done = list.filter((h) => isCounted(log[h.id]) && !fresh.includes(h.id));
@@ -186,7 +188,7 @@ export function Today({ state, update, today, now, times, onEdit, onAdd, circleL
         <span>
           <b>{j.streak > 0 ? _t("Серия {0} {1}", j.streak, plural(j.streak, _t("день"), _t("дня"), _t("дней"))) : _t("Начни серию сегодня")}</b>
           <small>
-            {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? _t("Один пропуск в неделю простится") : _t("Пропуск на этой неделе уже был: сегодня важно")}
+            {j.pausedToday ? _t("Сегодня пауза: серия не сгорит") : j.litToday ? _t("Сегодня засчитан, машаАллах") : j.repairLeft ? (forgiveLimit(state) > 1 ? _t("Пропуски простятся: до 3 в неделю") : _t("Один пропуск в неделю простится")) : _t("Пропуск на этой неделе уже был: сегодня важно")}
           </small>
         </span>
         <i aria-hidden="true">›</i>

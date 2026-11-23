@@ -397,7 +397,7 @@ export interface FoodState {
   log?: Record<string, FoodItem[]>;
 }
 
-export type FoodMode = 'mera' | 'lose' | 'sport' | 'keep';
+export type FoodMode = 'mera' | 'lose' | 'sport' | 'keep' | 'preg' | 'feed';
 export interface FoodBody { h: number; age: number; sex: 'm' | 'f'; act: 1 | 2 | 3 | 4 }
 /** One logged food: name, grams, kcal, protein, fat, carbs, meal slot. */
 export interface FoodItem { id: string; n: string; g: number; k: number; p: number; f: number; c: number; m: Meal }

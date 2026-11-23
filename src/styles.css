@@ -6251,3 +6251,30 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .sis-priv .pri-btn { width: 100%; margin-top: 10px; }
 .sis-priv .link-btn { display: block; margin: 8px auto 0; }
 .sis-page + .sis-priv, .sub .sis-priv { margin: 0 0 14px; }
+.sis-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.sis-chips button { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 18px; padding: 6px 12px; }
+.sis-chips button[aria-pressed="true"] { background: var(--sis); border-color: var(--sis); color: #fff; font-weight: 700; }
+.sis-wseg { margin: 0 0 10px; }
+.sis-mama { padding-bottom: 10px; }
+.sis-mama .sis-li { padding: 9px 2px; }
+.sis-li input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--sis); flex: none; margin: 1px 1px 0; }
+.sis-note { margin: 8px 0 4px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--gold) 12%, var(--surface)); font-size: 12.5px; line-height: 1.45; color: var(--ink); }
+.sis-note b { display: block; margin-bottom: 2px; }
+.sis-born { width: 100%; margin-top: 10px; background: var(--sis); }
+.sis-name { width: 100%; font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--ink); margin-top: 8px; }
+.sis-nap-it { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; margin-bottom: 9px; }
+.sis-nap-it.ok { border-color: color-mix(in srgb, var(--green-2) 40%, var(--line)); }
+.sis-nap-h { font: inherit; display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; background: none; border: 0; padding: 0; color: var(--ink); }
+.sis-nap-h b { display: block; font-size: 15px; }
+.sis-nap-h small { color: var(--ink-2); font-size: 12px; }
+.sis-nap-ic { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; font-size: 21px; background: color-mix(in srgb, var(--sis) 11%, var(--surface)); flex: none; }
+.sis-nap-it.ok .sis-nap-ic { background: var(--green-2); color: #fff; font-weight: 800; }
+.sis-nap-body { padding: 8px 2px 0; }
+.sis-nap-tick { font: inherit; font-size: 13px; font-weight: 700; margin-top: 8px; width: 100%; padding: 9px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--green-2); }
+.sis-nap-tick[aria-pressed="true"] { background: var(--green-2); color: #fff; border-color: var(--green-2); }
+.sis-food { margin-top: 8px; }
+.sis-food > b { display: block; margin-bottom: 2px; }
+.sis-mama > p, .sis-mama > .sis-chips, .sis-mama > .sis-li, .sis-mama > .sis-note { margin-left: 12px; margin-right: 12px; }
+.sis-mama > .sis-li { width: auto; }
+.sis-mama > .sis-born { width: calc(100% - 24px); margin: 10px 12px 0; }
+.sis-page .sis-li:last-of-type { border-bottom: 1px solid var(--line); }

@@ -2,12 +2,14 @@
 import { useRef, useState } from 'react';
 import { PIcon } from './PIcon';
 import type { AppState, FoodBody, FoodItem, FoodState, Meal } from '../types';
-import { ACT, FOODS, MODES, itemFrom, lastWeight, parseQuery, search, sum, target, type FoodRow } from '../foodcalc';
+import { ACT, FOODS, MODES, modesFor, itemFrom, lastWeight, parseQuery, search, sum, target, type FoodRow } from '../foodcalc';
 import { _t, _tj } from '../i18n';
 import { PhotoEntry, PhotoLine } from './FoodPhoto';
 import { PHOTO_LIMIT, photosLeft, guessText } from '../foodphoto';
 import { signInUrl } from '../auth';
 import { scannedRows } from '../barcode';
+import { isSister, sisNow } from '../sisters';
+import { health } from '../health';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 const foodOf = (s: AppState): FoodState => ({ meals: {}, rules: ['sweet'], clean: {}, sunna: {}, weight: {}, ...(s.food ?? {}) });
@@ -20,11 +22,34 @@ export function ModeLine({ state, today, onOpen }: { state: AppState; today: str
   const m = MODES.find((x) => x.id === (f.mode ?? 'mera'))!;
   const t = target(state, f, today);
   return (
+    <>
     <button type="button" className="fd-mode" onClick={onOpen}>
       <PIcon k={m.ic} cls="sm" />
       <span><b>{_tj("Режим: {0}", m.l)}</b><small>{t ? _tj("{0} ккал · белок {1} г", t.k, t.p) : f.mode && f.mode !== 'mera' ? _t("Заполни рост и вес, чтобы посчитать норму") : _t("Без калорий. Можно выбрать похудение или спорт")}</small></span>
       <em>{_t("Сменить ›")}</em>
     </button>
+    <SisFoodTips state={state} today={today} />
+    </>
+  );
+}
+
+/** «Сегодня важно» for a mother or on days without prayer. Only hints, not medical advice. */
+function SisFoodTips({ state, today }: { state: AppState; today: string }) {
+  const mode = foodOf(state).mode;
+  const mom = mode === 'preg' || mode === 'feed';
+  if (!mom && !sisNow(state)) return null;
+  const h = health(state);
+  const water = h.water[today] ?? 0;
+  const goal = mode === 'feed' ? Math.max(h.waterGoal, 10) : h.waterGoal;
+  return (
+    <div className="h-card sis-food">
+      <b>{_t("Сегодня важно")}</b>
+      {mom && <div className="sis-li"><i>{water >= goal ? '✓' : '💧'}</i><span>{_tj("Вода: {0} из {1} стаканов", water, goal)}<small>{mode === 'feed' ? _t("При кормлении нужно больше") : _t("Понемногу в течение дня")}</small></span></div>}
+      <div className="sis-li warn"><i>!</i><span>{mode === 'preg' ? _t("Железо, фолиевая кислота, кальций") : _t("Железо и кальций")}<small>{_t("Чечевица, нут, шпинат, финики, говядина, йогурт, творог")}</small></span></div>
+      {mode === 'feed' && <div className="sis-li warn"><i>!</i><span>{_t("Не худеть резко")}<small>{_t("Не меньше 1 800 ккал, пока кормишь")}</small></span></div>}
+      {mode === 'preg' && <div className="sis-li warn"><i>!</i><span>{_t("Осторожно")}<small>{_t("Сырое мясо и рыба, непастеризованные сыры, много кофе. Финики в последние недели — сунна Марьям (19:25)")}</small></span></div>}
+      <small className="fd-muted">{_t("Это подсказки, а не медицинский совет. При диабете, анемии и других вопросах спроси врача.")}</small>
+    </div>
   );
 }
 
@@ -77,7 +102,7 @@ export function ModeSetup({ state, update, today, onDone }: { state: AppState; u
     <div className="fd-setup">
       <p className="q-msg left">{_t("Выбери, как питаешься сейчас. Режим можно сменить в любой день, записи сохранятся.")}</p>
       <div className="fd-modes">
-        {MODES.map((m) => (
+        {modesFor(isSister(state), f.mode).map((m) => (
           <button key={m.id} type="button" aria-pressed={mode === m.id} disabled={m.id === 'lose' && young} onClick={() => setMode(m.id)}>
             <PIcon k={m.ic} ball cls={mode === m.id ? 'has' : 'off'} />
             <b>{m.l}</b><small>{m.d}</small>

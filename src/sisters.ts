@@ -22,6 +22,34 @@ export interface SisState {
   guess?: boolean;
   /** The «Включили для тебя» card after «Я сестра» was seen (privacy by default). */
   priv?: 'shown' | 'done' | 'own';
+  /** Режим «Мама»: expecting, breastfeeding or a baby under 2. */
+  mama?: Mama | null;
+  /** Ticks in «Пока малыш спит»: day -> item ids. */
+  nap?: Record<string, string[]>;
+}
+export type MamaKind = 'preg' | 'feed' | 'baby';
+export interface Mama { k: MamaKind; since: string; born?: string; easy?: boolean }
+
+export const mamaOf = (s: AppState): Mama | null => (isSister(s) ? s.sis?.mama ?? null : null);
+/** Habits show their minimum as enough. */
+export const mamaEasy = (s: AppState) => Boolean(mamaOf(s) && mamaOf(s)!.easy !== false);
+/** Missed days forgiven in a week: 3 for a mother, 1 otherwise. */
+export const forgiveLimit = (s: AppState) => (mamaOf(s) ? 3 : 1);
+export const MAMA_KINDS: { k: MamaKind; l: () => string }[] = [
+  { k: 'preg', l: () => _t("Жду малыша") },
+  { k: 'feed', l: () => _t("Кормлю") },
+  { k: 'baby', l: () => _t("Малыш до 2 лет") },
+];
+export function setMama(s: AppState, k: MamaKind | null, today: string): AppState {
+  if (!k) return put(s, { mama: null });
+  const m = sisOf(s).mama;
+  return put(s, { mama: { ...(m ?? {}), k, since: m?.k === k ? m.since : today } });
+}
+export function toggleNap(s: AppState, d: string, id: string): AppState {
+  const x = sisOf(s);
+  const list = x.nap?.[d] ?? [];
+  const nap = Object.fromEntries(Object.entries(x.nap ?? {}).filter(([k]) => daysBetween(k, d) <= 30));
+  return put(s, { nap: { ...nap, [d]: list.includes(id) ? list.filter((y) => y !== id) : [...list, id] } });
 }
 
 export const sisOf = (s: AppState): SisState => s.sis ?? {};

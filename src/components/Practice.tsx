@@ -1,4 +1,6 @@
 import { Hint } from './Guide';
+import { MamaNap } from './Sisters';
+import { mamaOf } from '../sisters';
 import { PIcon } from './PIcon';
 import { openPath } from './NewPath';
 import { pathNow } from '../newpath';
@@ -58,7 +60,7 @@ interface Props {
   onQuit?: () => void;
 }
 
-type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'course-ar' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body' | 'tests' | 'test-umrah' | 'test-salah';
+type Mode = 'home' | 'focus' | 'tasbih' | 'azkar' | 'quran' | 'books' | 'langs' | 'course' | 'course-ar' | 'health' | 'umrah' | 'food' | 'sadaqa' | 'videos' | 'body' | 'tests' | 'test-umrah' | 'test-salah' | 'nap';
 
 export function Practice({ state, update, today, suggestedId, onSafar, onHalal, onKhutba, onRamadan, start, umrah, onQuit, circle, joined, umrahStart }: Props) {
   const [mode, setMode] = useState<Mode>((start?.mode as Mode) ?? 'home');
@@ -102,6 +104,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   if (mode === 'test-salah') return <SalahTest state={state} update={update} today={today} onExit={() => setMode('home')} onOpen={(m) => setMode(m)} />;
   if (mode === 'tests') return <SelfTest state={state} update={update} today={today} onExit={() => setMode('home')} />;
   if (mode === 'azkar') return <Azkar state={state} update={update} today={today} onExit={() => setMode('home')} />;
+  if (mode === 'nap') return <MamaNap state={state} update={update} today={today} onExit={() => setMode('home')} onOpen={(m) => setMode(m)} />;
   if (mode === 'tasbih') return <Tasbih onExit={() => setMode('home')} onFinish={() => markHabit('done')} habitName={habit?.action} />;
 
   // ---- home: «Сейчас», favourites, groups ----
@@ -124,6 +127,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
     books: { ic: 'books', title: _t("Книги"), sub: state.books?.length ? _t("На полке: {0}", state.books.length) : _t("Атомные привычки и свои PDF"), open: () => setMode('books') },
     langs: { ic: 'lang', badge: due, title: _t("Языки"), sub: state.course ? _t("Английский A1: день {0}{1}", state.course.day + 1, due ? _t(" · {0} к повторению", due) : '') : state.courseAr ? _t("Арабский A1: день {0}{1}", state.courseAr.day + 1, due ? _t(" · {0} к повторению", due) : '') : due ? _t("{0} карточек к повторению", due) : isEn ? _t("Арабский A1, карточки слов") : _t("Курсы английского и арабского, карточки слов"), pct: state.course ? (state.course.day + 1) / A1.length : state.courseAr ? (state.courseAr.day + 1) / 30 : undefined, open: () => setMode('langs') },
     body: { ic: 'leaf', title: _t("Здоровье и питание"), sub: _t("Вода {0}/{1} · еда {2} из 3 · сон, посты", health(state).water[today] ?? 0, health(state).waterGoal, Object.keys(foodOf(state).meals[today] ?? {}).length), open: () => setMode('food') },
+    ...(mamaOf(state) ? { nap: { ic: 'moon', title: _t("Пока малыш спит"), sub: (() => { const n = state.sis?.nap?.[today]?.length ?? 0; return n ? _tj("Сегодня сделано: {0}", n) : _t("Дуа, аят, тасбих: по 1–3 минуты"); })(), open: () => setMode('nap') } } : {}),
     focus: { ic: 'timer', title: _t("Фокус-таймер"), sub: _t("Засечь время на любое дело"), open: () => setMode('focus') },
     umrah: { ic: 'kaaba', title: _t("Умра"), sub: state.umrah?.prep?.length || state.umrah?.ready ? _t("Готовность {0}%", umrahReady(state)) : _t("Обряды со счётчиком, подготовка, дуа"), open: () => setMode('umrah') },
     quit: { ic: 'shield', title: _t("Хочу оставить"), sub: (() => { const a = activeQuits(state); return a.length ? a.map((q) => _t("{0}: {1} дн.", q.what, cleanDays(q, today))).join(' · ') : _t("Оставить вредную привычку, тайно"); })(), open: () => onQuit?.() },
@@ -258,7 +262,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
       </button>
       {listOpen && (
         <>
-          {[[_t("Поклонение"), ['quran', 'azkar', 'tasbih', 'sadaqa']], [_t("Знания"), ['videos', 'books', 'langs', 'khutba']], [_t("Тело и время"), ['body', 'halal', 'focus']]].map(([name, ids]) => shown(ids as string[]).length > 0 && (
+          {[[_t("Поклонение"), ['nap', 'quran', 'azkar', 'tasbih', 'sadaqa']], [_t("Знания"), ['videos', 'books', 'langs', 'khutba']], [_t("Тело и время"), ['body', 'halal', 'focus']]].map(([name, ids]) => shown(ids as string[]).length > 0 && (
             <div key={name as string}>
               <div className="pgl">{name as string}</div>
               <div className="pgrp">{shown(ids as string[]).map(row)}</div>
@@ -292,7 +296,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
 }
 
 /** Practices offered in «Все практики» (tests sit in their own row there; umrah and safar are «Особые дни»). */
-const ALL_IDS = ['quran', 'azkar', 'tasbih', 'sadaqa', 'videos', 'books', 'langs', 'khutba', 'body', 'halal', 'focus', 'quit'];
+const ALL_IDS = ['nap', 'quran', 'azkar', 'tasbih', 'sadaqa', 'videos', 'books', 'langs', 'khutba', 'body', 'halal', 'focus', 'quit'];
 const FAV_MAX = 6;
 /** The button on a «Мои практики» row. */
 const VERB: Record<string, () => string> = {

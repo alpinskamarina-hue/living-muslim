@@ -124,12 +124,16 @@ export const FOODS: FoodRow[] = [
   r('gainer', _t("Гейнер"), 380, 20, 3, 70, 100, _t("порция")),
 ];
 
-export const MODES: { id: FoodMode; l: string; d: string; ic: string }[] = [
+export const MODES: { id: FoodMode; l: string; d: string; ic: string; sis?: boolean }[] = [
   { id: 'mera', l: _t("Мера"), d: _t("Без цифр: три приёма, правило трети, отказ и сунна"), ic: 'leaf' },
   { id: 'lose', l: _t("Похудеть"), d: _t("Мягкий дефицит, не ниже безопасного минимума"), ic: 'timer' },
   { id: 'sport', l: _t("Спорт и набор"), d: _t("Больше белка, в дни тренировок чуть больше еды"), ic: 'heart' },
   { id: 'keep', l: _t("Поддерживать"), d: _t("Держать вес и есть ровно"), ic: 'check' },
+  { id: 'preg', l: _t("Жду малыша"), d: _t("Без дефицита, чуть больше еды и белка"), ic: 'heart', sis: true },
+  { id: 'feed', l: _t("Кормлю"), d: _t("+450 ккал на кормление, не ниже 1 800"), ic: 'drop', sis: true },
 ];
+/** Modes offered: the two for mothers only to sisters (or a sister already in one). */
+export const modesFor = (sister: boolean, cur?: FoodMode) => MODES.filter((m) => !m.sis || sister || m.id === cur);
 
 export const ACT: { v: FoodBody['act']; l: string; d: string; x: number }[] = [
   { v: 1, l: _t("Мало движения"), d: _t("сидячая работа"), x: 1.2 },
@@ -160,6 +164,14 @@ export function target(s: AppState, f: FoodState, today: string): Target | null 
     const min = Math.max(bmr, b.sex === 'f' ? 1200 : 1500);
     if (k < min) { k = min; floor = true; }
     p = 1.6 * w;
+  } else if (mode === 'preg') {
+    // Pregnancy: never a deficit; about +300 kcal on average over the 2nd and 3rd trimesters.
+    k = tdee + 300;
+    p = 1.2 * w + 25;
+  } else if (mode === 'feed') {
+    // Breastfeeding: milk takes about 450–500 kcal a day; not below 1 800.
+    k = Math.max(tdee + 450, 1800);
+    p = 1.3 * w + 20;
   } else if (mode === 'sport') {
     k = tdee * 1.1 + extra;
     p = 1.8 * w; fatShare = 0.25;
