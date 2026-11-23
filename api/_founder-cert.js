@@ -1,4 +1,4 @@
-// The certificate PDF by its code: /api/founder-cert?code=F-0001-K7Q2ZX (the link in the letter and in «Мой вклад»).
+// The certificate PDF by its code (served by api/invest.js): /api/invest?op=cert&code=F-0001-K7Q2ZX (the link in the letter and in «Мой вклад»).
 // The code is the secret: without it there is no way to list certificates.
 import { rpc, certificatePdf, str } from './_founders.js';
 

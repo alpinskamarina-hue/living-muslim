@@ -82,10 +82,13 @@ async function brevo(payload) {
   return r.ok;
 }
 
+import { rawBody } from './_founders.js';
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   let b = req.body;
+  if (b === undefined) b = await rawBody(req); // api/invest.js leaves the body raw
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   b = b || {};
   if (str(b.website, 100)) return res.status(200).json({ ok: true }); // honeypot

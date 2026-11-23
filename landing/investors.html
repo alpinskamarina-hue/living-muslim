@@ -518,7 +518,7 @@ document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-set]').forEach(x => x.classList.toggle('on', x === b));
 });
 
-// Deck requests go to /api/invest-lead: saved in Supabase (supabase/invest.sql) and the deck is emailed via Brevo.
+// Deck requests go to /api/invest?op=lead: saved in Supabase (supabase/invest.sql) and the deck is emailed via Brevo.
 (function () {
   var f = document.getElementById('lead'), m = document.getElementById('lead-msg');
   var T = {
@@ -529,7 +529,7 @@ document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => {
     e.preventDefault();
     var l = document.documentElement.dataset.l === 'en' ? 'en' : 'ru', d = new FormData(f), b = f.querySelector('button');
     b.disabled = true;
-    fetch('/api/invest-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    fetch('/api/invest?op=lead', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: d.get('name'), email: d.get('email'), phone: d.get('phone'), country: d.get('country'), amount: d.get('amount'), about: d.get('about'), website: d.get('website'), lang: l }) })
       .then(function (r) { return r.ok ? r.json() : false; })
       .then(function (j) {

@@ -167,7 +167,20 @@ export function founderMail(f, site) {
 <div style="background:#FFFBF4;border:1px solid #E3D5BC;border-top:0;padding:24px 28px;border-radius:0 0 16px 16px">
 <p>${esc(T.hi)}</p><p>${esc(T.body)}</p><p>${esc(T.pro)}</p>${T.gifts ? `<p style="background:#F6EFE3;border-radius:12px;padding:12px 14px"><b>${esc(T.gifts)}</b></p>` : ''}
 <p style="margin:24px 0"><a href="${site}/app/?founder=mine" style="background:#11553A;color:#fff;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:bold">${T.btn}</a>
-&nbsp; <a href="${site}/api/founder-cert?code=${encodeURIComponent(f.code)}" style="color:#11553A;font-weight:bold">${T.cert}</a></p>
+&nbsp; <a href="${site}/api/invest?op=cert&code=${encodeURIComponent(f.code)}" style="color:#11553A;font-weight:bold">${T.cert}</a></p>
 <p style="font-size:12px;color:#9C9482;margin-top:24px">${T.disc}</p></div></div>`;
   return { subject: T.subject, html };
+}
+
+/** The request body as text (api/invest.js keeps it raw for the Stripe signature). */
+export function rawBody(req) {
+  return new Promise((resolve, reject) => {
+    if (typeof req.body === 'string') return resolve(req.body);
+    if (Buffer.isBuffer(req.body)) return resolve(req.body.toString('utf8'));
+    if (req.body && typeof req.body === 'object') return resolve(JSON.stringify(req.body));
+    const chunks = [];
+    req.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
 }

@@ -18,14 +18,8 @@
     }
   ],
   "functions": {
-    "api/invest-lead.js": {
-      "includeFiles": "landing/investors-deck.pdf"
-    },
-    "api/founder-paid.js": {
-      "includeFiles": "api/_fonts/*"
-    },
-    "api/founder-cert.js": {
-      "includeFiles": "api/_fonts/*"
+    "api/invest.js": {
+      "includeFiles": "{landing/investors-deck.pdf,api/_fonts/*}"
     }
   }
 }

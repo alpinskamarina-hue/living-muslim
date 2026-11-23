@@ -73,7 +73,7 @@ export async function checkout(o: Order, lang: string): Promise<{ url?: string; 
   const me = cloudMe();
   if (!me) return { error: 'input' };
   try {
-    const r = await fetch('/api/founder-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...o, lang, uid: me.uid, token: me.token }) });
+    const r = await fetch('/api/invest?op=checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...o, lang, uid: me.uid, token: me.token }) });
     const j = await r.json().catch(() => ({}));
     if (r.ok && j.url) return { url: j.url };
     return { error: j.error || 'net' };

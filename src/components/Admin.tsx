@@ -488,7 +488,7 @@ function AdminFounders() {
           <div key={x.code} className="fd-arow">
             <b>{x.no ? `F-${String(x.no).padStart(4, '0')}` : '—'} · {TIER_RU[x.tier] ?? x.tier} · €{(x.amount / 100).toLocaleString('ru-RU')}{x.status === 'test' ? ' · тест' : x.status === 'refunded' ? ' · возврат' : ''}</b>
             <small>{x.name} · {x.email}{x.country ? ` · ${x.country}` : ''} · на стене: {x.wall || 'анонимно'} · {new Date(x.paid || x.created).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small>
-            <small><a href={`/api/founder-cert?code=${encodeURIComponent(x.code)}`} target="_blank" rel="noopener">Сертификат</a>{x.session ? ` · Stripe ${x.session.slice(0, 18)}…` : ''}</small>
+            <small><a href={`/api/invest?op=cert&code=${encodeURIComponent(x.code)}`} target="_blank" rel="noopener">Сертификат</a>{x.session ? ` · Stripe ${x.session.slice(0, 18)}…` : ''}</small>
           </div>
         ))}
       </div>

@@ -1,22 +1,9 @@
-// «Круг основателей», step 2: the Stripe webhook (checkout.session.completed). Stripe → Developers → Webhooks →
-// endpoint https://living-muslim.vercel.app/api/founder-paid, event checkout.session.completed; its signing secret
+// «Круг основателей», step 2 (served by api/invest.js): the Stripe webhook (checkout.session.completed). Stripe → Developers → Webhooks →
+// endpoint https://living-muslim.vercel.app/api/invest?op=paid, event checkout.session.completed; its signing secret
 // goes to STRIPE_WEBHOOK_SECRET. We check the signature, mark the record paid in Supabase with the service role key
 // (lm_founder_paid), make the certificate PDF, send it by Brevo and tell the owner in Telegram.
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { TIERS, eur, esc, rpc, siteOf, certificatePdf, brevo, telegram, founderMail } from './_founders.js';
-
-export const config = { api: { bodyParser: false } };
-
-function rawBody(req) {
-  return new Promise((resolve, reject) => {
-    if (typeof req.body === 'string') return resolve(req.body);
-    if (Buffer.isBuffer(req.body)) return resolve(req.body.toString('utf8'));
-    const chunks = [];
-    req.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
-}
+import { TIERS, eur, esc, rpc, siteOf, certificatePdf, brevo, telegram, founderMail, rawBody } from './_founders.js';
 
 /** Stripe-Signature: t=<unix>,v1=<hmac sha256 of "<t>.<body>">; 5 minutes of tolerance. */
 export function verify(sig, body, secret, now = Date.now()) {

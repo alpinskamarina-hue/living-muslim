@@ -129,7 +129,7 @@ async function signup(pg, name, email) {
     await dp.locator('#founders').screenshot({ path: OUT + '12-landing-desktop.png' });
     await D.close();
   } finally {
-    const errs = L.errors.filter((e) => !/favicon|404|net::ERR|founder-checkout|founder-cert/.test(e));
+    const errs = L.errors.filter((e) => !/favicon|404|net::ERR|api\/invest/.test(e));
     say('errors:', errs.length ? errs : 'none');
     await br.close(); srv.close(); await L.db.end(); await su.end();
   }

@@ -6,7 +6,7 @@ import { cachedProfile } from './Nick';
 import { _t, _tj, LANG, LOC } from '../i18n';
 
 // «Круг основателей» in the Profile: the levels and the payment, «Мой вклад» after it, gift codes, the wall.
-// Payment: Stripe Checkout through /api/founder-checkout; the owner (lm_admins) has a test record without paying.
+// Payment: Stripe Checkout through /api/invest?op=checkout; the owner (lm_admins) has a test record without paying.
 
 export interface FounderStart { tier?: Tier; ok?: boolean; cancel?: boolean; mine?: boolean; terms?: boolean; gift?: string }
 const dateOf = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -69,8 +69,8 @@ function MyContribution({ list, onUpgrade, onTerms }: { list: FounderRec[]; onUp
           <div className="fd-m">{dateOf(r.paid)} · {r.pro_forever ? _t("Pro навсегда") : r.pro_until ? _t("Pro активен до {0}", dateOf(r.pro_until)) : ''}{r.status === 'test' ? ` · ${_t("тестовая запись")}` : ''}</div>
           <div className="fd-m">{_tj("Привилегии {0} · запись вклада {1}", eur(r.service), eur(r.contrib))}{r.wall ? ` · ${_t("на стене: {0}", r.wall)}` : ` · ${_t("на стене анонимно")}`}</div>
           <div className="fd-mini">
-            <a href={`/api/founder-cert?code=${encodeURIComponent(r.code)}`} target="_blank" rel="noopener">{_t("Открыть PDF")}</a>
-            <a href={`/api/founder-cert?code=${encodeURIComponent(r.code)}&dl=1`}>{_t("Скачать")}</a>
+            <a href={`/api/invest?op=cert&code=${encodeURIComponent(r.code)}`} target="_blank" rel="noopener">{_t("Открыть PDF")}</a>
+            <a href={`/api/invest?op=cert&code=${encodeURIComponent(r.code)}&dl=1`}>{_t("Скачать")}</a>
             {r.id === best.id && r.tier !== 'f1000' && <button type="button" className="link-btn" onClick={onUpgrade}>{_t("Поднять уровень")}</button>}
           </div>
         </div>

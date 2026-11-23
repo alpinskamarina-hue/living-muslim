@@ -2,12 +2,13 @@
 // Supabase (lm_founder_prepare) and open a Stripe Checkout session for the amount. The person pays on Stripe's page
 // and comes back to /app/?founder=ok. Without STRIPE_SECRET_KEY the answer is {error:'nostripe'} and the app
 // says payments are not connected yet (the owner still has the test path, lm_founder_test).
-import { TIERS, eur, str, isEmail, rpc, siteOf } from './_founders.js';
+import { TIERS, eur, str, isEmail, rpc, siteOf, rawBody } from './_founders.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method' });
   let b = req.body;
+  if (b === undefined) b = await rawBody(req); // api/invest.js leaves the body raw
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch { b = {}; } }
   b = b || {};
   const tier = TIERS[b.tier] ? b.tier : '';
