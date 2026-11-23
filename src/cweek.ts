@@ -12,8 +12,8 @@ import { prayersSeen } from './sisters';
 // Each member shares only weekly totals; the goal lives in the member docs of whoever set it (latest wins),
 // so no new server table is needed.
 
-export type GoalKind = 'prayers' | 'ontime' | 'fajr' | 'habits' | 'biz';
-export interface WeekTotals { w: string; p: number; o: number; f: number; h: number; b?: number } // b: business habit marks
+export type GoalKind = 'prayers' | 'ontime' | 'fajr' | 'habits' | 'biz' | 'sadaqa';
+export interface WeekTotals { w: string; p: number; o: number; f: number; h: number; b?: number; s?: number } // b: business habit marks; s: 1 = gave sadaqa this week (only when the person allowed it, never amounts)
 export interface CGoal { w: string; k: GoalKind | 'none'; n: number; at: string }
 
 export const GOAL_KINDS: Record<GoalKind, { ic: string; label: string; unit: [string, string, string]; per: number; step: number }> = {
@@ -22,10 +22,11 @@ export const GOAL_KINDS: Record<GoalKind, { ic: string; label: string; unit: [st
   fajr: { ic: '🌅', label: _t("Фаджр вовремя"), unit: [_t("Фаджр вовремя"), _t("Фаджра вовремя"), _t("Фаджров вовремя")], per: 5, step: 1 },
   habits: { ic: '🌱', label: _t("Привычки"), unit: [_t("отметка привычек"), _t("отметки привычек"), _t("отметок привычек")], per: 10, step: 5 },
   biz: { ic: '💼', label: _t("Дела у намазов"), unit: [_t("деловая отметка"), _t("деловые отметки"), _t("деловых отметок")], per: 12, step: 5 },
+  sadaqa: { ic: '🤲', label: _t("Садака"), unit: [_t("человек с садакой"), _t("человека с садакой"), _t("человек с садакой")], per: 1, step: 1 },
 };
 /** Goal kinds offered in a circle: business circles start with the business goal. */
-export const goalKindsFor = (biz: boolean): GoalKind[] => (biz ? ['biz', 'prayers', 'ontime', 'fajr'] : ['prayers', 'ontime', 'fajr', 'habits']);
-const KEY: Record<GoalKind, 'p' | 'o' | 'f' | 'h' | 'b'> = { prayers: 'p', ontime: 'o', fajr: 'f', habits: 'h', biz: 'b' };
+export const goalKindsFor = (biz: boolean): GoalKind[] => (biz ? ['biz', 'prayers', 'ontime', 'fajr', 'sadaqa'] : ['prayers', 'ontime', 'fajr', 'habits', 'sadaqa']);
+const KEY: Record<GoalKind, 'p' | 'o' | 'f' | 'h' | 'b' | 's'> = { prayers: 'p', ontime: 'o', fajr: 'f', habits: 'h', biz: 'b', sadaqa: 's' };
 export const valOf = (t: WeekTotals, k: GoalKind) => t[KEY[k]] ?? 0;
 
 /** Saturday that opens the week containing day. */
@@ -38,6 +39,8 @@ export const isFriday = (day: string) => fromKey(day).getDay() === 5;
 
 export function totals(s: AppState, w: string, today: string): WeekTotals {
   const t: WeekTotals = { w, p: 0, o: 0, f: 0, h: 0, b: bizMarks(s, w, today) };
+  // Sadaqa only as «yes this week», and only when the person turned on «Садака круга».
+  if (s.sadaqa?.circle) t.s = Array.from({ length: 7 }, (_, i) => addDays(w, i)).some((d) => d <= today && (s.sadaqa!.days[d]?.money || s.sadaqa!.days[d]?.deed)) ? 1 : 0;
   for (let i = 0; i < 7; i++) {
     const d = addDays(w, i);
     if (d > today) break;
@@ -73,11 +76,11 @@ export function goalFor(members: Member[], w: string): (CGoal & { by: string }) 
 
 /** Circle totals for week w from what each member shared. */
 export function circleTotals(members: Member[], w: string): WeekTotals & { people: number } {
-  const t = { w, p: 0, o: 0, f: 0, h: 0, b: 0, people: 0 };
+  const t = { w, p: 0, o: 0, f: 0, h: 0, b: 0, s: 0, people: 0 };
   for (const m of members) {
     const x = m.wk?.w === w ? m.wk : m.pw?.w === w ? m.pw : null;
     if (!x) continue;
-    t.p += x.p; t.o += x.o; t.f += x.f; t.h += x.h; t.b += x.b ?? 0;
+    t.p += x.p; t.o += x.o; t.f += x.f; t.h += x.h; t.b += x.b ?? 0; t.s += x.s ? 1 : 0;
     if (x.p + x.h > 0) t.people++;
   }
   return t;

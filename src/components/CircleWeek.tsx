@@ -64,9 +64,10 @@ export function CircleGoal({ members, me, today, nameOf, onSet }: Props) {
         <div className="cg-num">
           <button type="button" aria-label={_t("Меньше")} onClick={() => setN((v) => Math.max(GOAL_KINDS[k].step, v - GOAL_KINDS[k].step))}>−</button>
           <span><b>{n}</b><small>{unit(k, n)}</small></span>
-          <button type="button" aria-label={_t("Больше")} onClick={() => setN((v) => v + GOAL_KINDS[k].step)}>+</button>
+          <button type="button" aria-label={_t("Больше")} onClick={() => setN((v) => (k === 'sadaqa' ? Math.min(people, v + 1) : v + GOAL_KINDS[k].step))}>+</button>
         </div>
-        <p className="tiny">{_tj("На {0}  {1} это примерно {2} на каждого за неделю. Считается всё, что отмечено с субботы.{3}", people, plural(people, _t("человека"), _t("человек"), _t("человек")), Math.round((n / people) * 10) / 10, k === 'biz' ? _t(" Деловая отметка: любая привычка из раздела «Бизнес». Без сумм и цифр выручки.") : '')}</p>
+        {k === 'sadaqa' ? <p className="tiny">{_t("Сколько человек из круга отдадут садаку до пятницы, деньгами или добрым делом. Видно только общее число, без сумм и без имён. Считаются те, кто включил «Садака круга» в Практика → Садака.")}</p>
+          : <p className="tiny">{_tj("На {0}  {1} это примерно {2} на каждого за неделю. Считается всё, что отмечено с субботы.{3}", people, plural(people, _t("человека"), _t("человек"), _t("человек")), Math.round((n / people) * 10) / 10, k === 'biz' ? _t(" Деловая отметка: любая привычка из раздела «Бизнес». Без сумм и цифр выручки.") : '')}</p>}
         <div className="cg-row">
           <button type="button" className="pri-btn" onClick={save}>{goal ? _t("Сохранить") : _t("Поставить цель")}</button>
           <button type="button" className="link-btn" onClick={() => setEdit(false)}>{_t("Отмена")}</button>
@@ -127,6 +128,7 @@ export function WeekSummary({ members, reacts, today, title, nameOf }: Props) {
     _t("🕌 {0} {1}, из них {2}% вовремя", t.p, plural(t.p, _t("намаз"), _t("намаза"), _t("намазов")), pctOn),
     t.f ? _t("🌅 {0} {1} вовремя", t.f, plural(t.f, _t("Фаджр"), _t("Фаджра"), _t("Фаджров"))) : '',
     t.h ? _t("🌱 {0} {1} привычек", t.h, plural(t.h, _t("отметка"), _t("отметки"), _t("отметок"))) : '',
+    t.s ? _t("🤲 Садака: {0} из {1} отдали на этой неделе", t.s, members.length) : '',
     biz && t.b ? _t("💼 {0} {1} у намазов", t.b, plural(t.b, _t("деловая отметка"), _t("деловые отметки"), _t("деловых отметок"))) : '',
     shLine,
     crLine,

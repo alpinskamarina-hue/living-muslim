@@ -85,7 +85,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   if (mode === 'langs') return <Languages state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onCourse={() => setMode('course')} onCourseAr={() => setMode('course-ar')} />;
   if (mode === 'books') return <Books state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'health') return <Health state={state} update={update} today={today} habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} onFood={() => setMode('food')} />;
-  if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} onExit={() => setMode('home')} />;
+  if (mode === 'sadaqa') return <Sadaqa state={state} update={update} today={today} startSub={start?.mode === 'sadaqa' && start.ref === 'gift' ? 'gift' : undefined} onExit={() => setMode('home')} />;
   if (mode === 'food') return <Food state={state} update={update} today={today} onExit={() => setMode('home')} onHealth={() => setMode('health')} />;
   if (mode === 'umrah') return <UmrahHub state={state} update={update} today={today} api={umrah} nameOf={(id) => umrah.names[id] || _t("Участник")} circle={circle} joined={joined} start={uStart ?? umrahStart ?? 'rites'} backLabel={_t("Практика")} onExit={() => setMode('home')} />;
   if (mode === 'videos') return <Videos state={state} update={update} habitName={habit?.action} open={vref} onExit={() => setMode('home')} onFinish={markHabit} />;

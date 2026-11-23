@@ -6434,3 +6434,50 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .pp-founder { display: grid; justify-items: center; gap: 6px; margin-top: 8px; }
 .cc-who .fb, .wa-people small .fb { margin-left: 4px; }
 .fd-entry .fb { margin: 0 auto; }
+
+/* ── Садака: «за кого», месяц, «Подари Pro», «Куда отдать», «Поддержать» ── */
+.sq-for { width: 100%; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.sq-for > small { font-weight: 700; color: var(--ink) !important; }
+.sq-for-new { display: inline-flex; gap: 4px; }
+.sq-for-new input { width: 110px; font: inherit; font-size: 12.5px; border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 10px; background: var(--surface); color: var(--ink); }
+.sq-for-new button { font-size: 12px; font-weight: 700; border: 0; background: var(--green-2); color: #fff; border-radius: 999px; padding: 4px 10px; }
+.sq-cal .meal-h { width: 100%; }
+.sq-grid { width: 100%; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 6px; }
+.sq-grid i { font-style: normal; height: 26px; border-radius: 7px; background: var(--surface-2); display: grid; place-items: center; font-size: 10.5px; color: var(--ink-2); font-weight: 600; }
+.sq-grid i.pad { background: none; }
+.sq-grid i.fut { opacity: .45; }
+.sq-grid i.now { box-shadow: inset 0 0 0 1.5px var(--ink-2); }
+.sq-grid i.m, .sq-leg i.m { background: #e7c36f; color: #4a360c; }
+.sq-grid i.d, .sq-leg i.d { background: #a9cdb6; color: #173b28; }
+.sq-grid i.b, .sq-leg i.b { background: var(--green-2); color: #fff; }
+.sq-leg { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--ink-2); margin-top: 4px; }
+.sq-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.sq-gift { border-color: color-mix(in srgb, var(--gold) 45%, var(--line)); }
+.sq-row { flex-direction: row !important; align-items: center !important; gap: 10px !important; cursor: pointer; font: inherit; }
+.sq-row > span:not(.sq-ic) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sq-row > span b { font-size: 15px; }
+.sq-row > span small { color: var(--ink-2); font-size: 12px; }
+.sq-row > i { font-style: normal; color: var(--ink-2); font-size: 18px; }
+.sq-ic { width: 36px; height: 36px; border-radius: 11px; background: var(--gold-soft); display: grid; place-items: center; flex: none; }
+.sq-ic svg { width: 19px; height: 19px; stroke: var(--gold); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sq-list { padding: 4px 14px; gap: 0; }
+.sq-row.in { display: flex; width: 100%; padding: 10px 0; border-top: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.sq-row.in:first-child { border-top: 0; }
+.sq-amts { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.sq-amts button { text-align: left; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 9px 11px; font: inherit; display: flex; flex-direction: column; gap: 2px; min-width: 0; cursor: pointer; }
+.sq-amts button b { font-family: var(--f-display); font-size: 24px; line-height: 1; }
+.sq-amts button small { font-size: 11.5px; line-height: 1.3; }
+.sq-amts button[aria-checked="true"] { border-color: var(--green-2); background: var(--green-soft); box-shadow: 0 0 0 1px var(--green-2); }
+.sq-seg { width: 100%; margin: 8px 0 0 !important; }
+.sq-note { padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); }
+.sq-note small { color: var(--ink-2); font-size: 12.5px; line-height: 1.45; }
+.sq-ask-link { align-self: center; font-size: 13px; margin: 2px 0 6px; }
+.sq-got { background: var(--green-soft); border-color: transparent; }
+.sq-wall { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.sq-wall span { font-size: 12px; background: var(--surface-2); border-radius: 999px; padding: 3px 9px; }
+.sq-page { padding-top: 4px; }
+.sq-pbadge { background: #2f8f5a !important; color: #fff !important; display: grid; place-items: center; }
+.pp-tag.t-supporter { background: color-mix(in srgb, #2f8f5a 14%, transparent); color: #1f6e44; display: inline-flex; align-items: center; gap: 5px; }
+:root[data-theme="dark"] .pp-tag.t-supporter { color: #8fdcaf; }
+.sq-adm-form { display: flex; flex-direction: column; gap: 6px; }
+.sq-adm-form input:not([type]) { font: inherit; border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 10px; background: var(--surface); color: var(--ink); }

@@ -153,6 +153,18 @@ export function courseEvents(prefs, day, tz, courses) {
     }));
 }
 
+/** Sadaqa: Friday morning (default) or every morning at 8:30, never in quiet mode. */
+export function sadaqaEvents(prefs, day, tz) {
+  const v = prefs.sadaqa || 'fri';
+  if (v === 'off' || prefs.quiet) return [];
+  const fri = new Date(Date.UTC(day.y, day.m - 1, day.d)).getUTCDay() === 5;
+  if (v === 'fri' && !fri) return [];
+  const en = prefs.lang === 'en';
+  const title = fri ? (en ? 'Jumu\'ah Mubarak' : 'Джума мубарак') : en ? 'Sadaqa today' : 'Садака сегодня';
+  const body = en ? 'Every morning two angels ask: "O Allah, give the one who spends a replacement." Sadaqa today, even €1?' : 'Каждое утро два ангела просят: «О Аллах, дай расходующему замену». Садака сегодня, даже €1?';
+  return [{ key: `${day.key}:sadaqa`, at: zoned(tz, day.y, day.m, day.d, 8, 30), title, body, tag: 'sadaqa', url: '/app/?go=sadaqa' }];
+}
+
 export function events(prefs, now, courses = []) {
   const tz = prefs.tz || 'Europe/Amsterdam';
   const day = localParts(tz, new Date(now));
@@ -185,6 +197,7 @@ export function events(prefs, now, courses = []) {
   out.push(...ramadanEvents(prefs, day, tz, t, params, coords));
   out.push(...nudgeEvents(prefs, day, t));
   out.push(...courseEvents(prefs, day, tz, courses));
+  out.push(...sadaqaEvents(prefs, day, tz));
   if (/^\d\d:\d\d$/.test(prefs.muhasaba || '')) {
     const [hh, mm] = prefs.muhasaba.split(':').map(Number);
     out.push({ key: `${day.key}:muhasaba`, at: zoned(tz, day.y, day.m, day.d, hh, mm), title: prefs.lang === 'en' ? 'Muhasabah' : 'Мухасаба', body: prefs.lang === 'en' ? 'A couple of minutes to look back on the day: what went well and what you are grateful for.' : 'Пара минут, чтобы оглянуться на день: что получилось и за что ты благодарен.', tag: 'muhasaba', url: '/app/' });

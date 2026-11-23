@@ -107,6 +107,8 @@ export interface ReminderPrefs {
   habits?: boolean;
   /** «New course» notices; missing means on. */
   courses?: boolean;
+  /** Sadaqa reminder: Friday morning (default), every morning or off. */
+  sadaqa?: 'fri' | 'day' | 'off';
 }
 
 export interface RamadanPush {
@@ -402,7 +404,7 @@ export interface FoodBody { h: number; age: number; sex: 'm' | 'f'; act: 1 | 2 |
 /** One logged food: name, grams, kcal, protein, fat, carbs, meal slot. */
 export interface FoodItem { id: string; n: string; g: number; k: number; p: number; f: number; c: number; m: Meal }
 
-export interface SadaqaDay { money?: boolean; amt?: number; deed?: boolean }
+export interface SadaqaDay { money?: boolean; amt?: number; deed?: boolean; for?: string } // for: «за маму», on whose behalf
 export interface SadaqaState {
   days: Record<string, SadaqaDay>;
   secret: boolean; // amounts hidden until tapped
@@ -410,6 +412,10 @@ export interface SadaqaState {
   ramadan: { total: number; odd2: boolean; given: number[] } | null; // given = nights (21..30) already sent
   jariya: { id: string; title: string; kind: string; forWhom?: string; date: string }[];
   zakat?: ZakatState;
+  /** Circles may count «gave sadaqa this week» (a yes, never amounts). Off unless turned on. */
+  circle?: boolean;
+  /** Own «за кого» chips added with ＋. */
+  forList?: string[];
 }
 export interface ZakatState {
   basis: 'gold' | 'silver';

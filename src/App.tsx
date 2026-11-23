@@ -53,6 +53,7 @@ import { useSisSync } from './components/Sisters';
 import { famOf, kidSummaries, myLitDays, togWeek } from './family';
 import type { Page as ProfilePage } from './components/Profile';
 import { takeFounderStart } from './founders';
+import { takeSadaqaReturn } from './sadaqa';
 import { FirstWeek, Hint } from './components/Guide';
 import { useInvites } from './components/Nick';
 import { useNikahReady, useNikahMe, nikahTodo } from './nikah';
@@ -98,6 +99,7 @@ export function App() {
     try { if (new URLSearchParams(location.search).has('asks')) { sessionStorage.setItem('lm.asksGo', '1'); return 'circle' as Tab; } } catch { /* */ }
     try { const c = new URLSearchParams(location.search).get('chat'); if (c) { sessionStorage.setItem('lm.chat', c); return 'circle' as Tab; } } catch { /* */ }
     try { const q = new URLSearchParams(location.search); if (q.has('founder') || q.has('gift')) return 'profile' as Tab; } catch { /* */ }
+    try { const q = new URLSearchParams(location.search); if (q.has('sadaqa')) return (q.get('k') === 'support' ? 'profile' : 'practice') as Tab; } catch { /* */ }
     return 'today';
   });
   const [umStart, setUmStart] = useState(0);
@@ -203,6 +205,7 @@ export function App() {
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
   // ?umrah opens the umrah app right away (the phone shortcut and /umrah links).
   const [practiceStart, setPracticeStart] = useState<{ n: number; mode?: string; ref?: string }>(() => {
+    try { const q = new URLSearchParams(location.search); if (q.has('sadaqa') && q.get('k') !== 'support') { const r = takeSadaqaReturn(); try { sessionStorage.setItem('lm.sadaqaBack', r?.ok ? 'ok' : 'cancel'); } catch { /* */ } return { n: 0, mode: 'sadaqa', ref: 'gift' }; } } catch { /* */ }
     try { const q = new URLSearchParams(location.search); if (q.has('umrah') && !q.get('c')) { const r = q.get('umrah') || undefined; if (r === 'open' || r === 'guides' || r === 'become') try { sessionStorage.setItem('lm.umOpen', r === 'open' ? '1' : r); } catch { /* */ } return { n: 0, mode: 'umrah', ref: r === 'open' || r === 'guides' || r === 'become' ? 'group' : r }; } if (q.get('course')) return { n: 0, mode: 'videos', ref: q.get('course') || undefined }; } catch { /* */ }
     return { n: 0 };
   });
@@ -211,6 +214,8 @@ export function App() {
     // /app/?founder=… or ?gift=…: straight to «Круг основателей» (the details wait in sessionStorage for the page)
     const f = takeFounderStart();
     if (f) { try { sessionStorage.setItem('lm.founderStart', JSON.stringify(f)); } catch { /* */ } return { p: f.terms ? 'founders-terms' : 'founders', n: 0 }; }
+    const sq = new URLSearchParams(location.search).get('k') === 'support' ? takeSadaqaReturn() : null;
+    if (sq) { try { sessionStorage.setItem('lm.sadaqaBack', sq.ok ? 'ok' : 'cancel'); } catch { /* */ } return { p: 'support', n: 0 }; }
     return { p: 'main', n: 0 };
   });
   const openGarden = () => { setProfileStart((x) => ({ p: 'garden', n: x.n + 1 })); setTab('profile'); window.scrollTo(0, 0); };
@@ -409,6 +414,7 @@ export function App() {
       const g = u.searchParams.get('go');
       if (g === 'workouts') { try { sessionStorage.setItem('lm.hview', 'workouts'); } catch { /* */ } go({ practice: 'health' }); return true; }
       if (g === 'ai') { setAiOpen(true); return true; }
+      if (g === 'sadaqa') { go({ practice: 'sadaqa' }); return true; }
       if (g !== 'pings' && g !== 'ideas' && g !== 'plans') return false;
       if (g === 'plans') setPlanStart({ plan: u.searchParams.get('pl') || undefined, act: u.searchParams.get('do') || undefined, day: u.searchParams.get('d') || undefined });
       go({ profile: g });

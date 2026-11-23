@@ -19,6 +19,8 @@ import { dayKey } from '../dates';
 import { foundersReady, founderOf, type Tier } from '../founders';
 import { FounderBadge } from './FounderBadge';
 import { tierName } from './Founders';
+import { sadaqaReady, supporterOf } from '../sadaqa';
+import { SupporterTag } from './SadaqaPay';
 
 const daysSince = (iso: string) => Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 86400000));
 function sinceLine(iso: string) {
@@ -81,6 +83,8 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
   useEffect(() => { getPerson(uid).then(setP); }, [uid]);
   const [founder, setFounder] = useState<Tier | null>(null);
   useEffect(() => { setFounder(null); foundersReady().then((ok) => { if (ok) founderOf(uid).then(setFounder); }); }, [uid]);
+  const [supporter, setSupporter] = useState(false);
+  useEffect(() => { setSupporter(false); sadaqaReady().then((ok) => { if (ok) supporterOf(uid).then(setSupporter); }); }, [uid]);
   useEffect(() => { if (dmOn && uid !== me) dmCan(uid).then(setDmc); }, [dmOn, uid, me]);
   // the nikah card comes from the nikah feed of a circle we share, so the wali rules stay the same
   useEffect(() => {
@@ -143,6 +147,7 @@ function PersonPage({ uid, onClose, onSeek, state, update }: { uid: string; onCl
         <b>{p.name || _t("Участник")}</b>
         <small>{[p.nick && `@${p.nick}`, p.city, sinceLine(p.since)].filter(Boolean).join(' · ')}</small>
         {p.bio && <p className="pp-bio">{p.bio}</p>}
+        {supporter && !founder && <div className="pp-tags"><SupporterTag /></div>}
         {founder && <div className="pp-founder"><FounderBadge tier={founder} size={64} open title={tierName(founder)} /><div className="pp-tags"><span className={`pp-tag t-founder t-${founder}`}><FounderBadge tier={founder} size={14} /> {_t("Основатель Living Muslim")} · {tierName(founder)}</span></div></div>}
         {visible.length > 0 && <div className="pp-tags">{visible.map((i) => <span key={i.kind} className={`pp-tag t-${INTENTS[i.kind].cls}`}>{INTENTS[i.kind].ic} {i.kind === 'nikah' ? _t("Ищет никах") : modeOf(i).tag}</span>)}</div>}
         {self ? (

@@ -97,7 +97,7 @@ function serverPrefs(s: Settings, p: ReminderPrefs) {
     tz: Intl.DateTimeFormat().resolvedOptions().timeZone, prayers: p.prayers, before: p.before, muhasaba: p.muhasaba,
     ramadan: rpushOf(p), chat: p.chat !== false, quiet: Boolean(s.quiet), lang: s.lang ?? (/^en\b/i.test(navigator.language) ? 'en' : 'ru'),
     adhan: adhanServer(s),
-    habits: p.habits !== false, courses: p.courses !== false, nudge: p.habits !== false ? nudge : null, pings, ainame: aiName(s).slice(0, 30),
+    habits: p.habits !== false, courses: p.courses !== false, sadaqa: p.sadaqa ?? 'fri', nudge: p.habits !== false ? nudge : null, pings, ainame: aiName(s).slice(0, 30),
   };
 }
 

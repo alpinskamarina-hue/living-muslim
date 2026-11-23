@@ -59,7 +59,7 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach' | 'founders'>('stats');
+  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach' | 'founders' | 'sadaqa'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
@@ -71,8 +71,9 @@ export function AdminPage() {
         <button type="button" aria-pressed={tab === 'open'} onClick={() => setTab('open')}>👥 Открытые круги</button>
         <button type="button" aria-pressed={tab === 'teach'} onClick={() => setTab('teach')}>🎓 Учителя</button>
         <button type="button" aria-pressed={tab === 'founders'} onClick={() => setTab('founders')}>◆ Основатели</button>
+        <button type="button" aria-pressed={tab === 'sadaqa'} onClick={() => setTab('sadaqa')}>Садака</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : tab === 'founders' ? <AdminFounders /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : tab === 'founders' ? <AdminFounders /> : tab === 'sadaqa' ? <AdminSadaqa /> : <AdminReports />}
     </div>
   );
 }
@@ -492,6 +493,82 @@ function AdminFounders() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+interface ACharity { id?: number; title: string; org: string; kind: string; url: string; region: string; note: string; jariya: boolean; on: boolean; sort: number }
+interface ASadaqa {
+  sum: number; pool: number; charities: ACharity[];
+  pays: { kind: 'gift' | 'support'; eur: number; mode: string; sign: string; wall: string; status: string; periods: number; paid: string | null; nick: string | null; name: string | null; opened: number }[];
+  asks: { status: string; note: string; created: string; got: string | null; months: number; nick: string | null; name: string | null }[];
+}
+const CH_KIND: Record<string, string> = { water: 'Вода', orphans: 'Сироты', food: 'Еда', mosque: 'Мечети', urgent: 'Срочно', other: 'Другое' };
+const EMPTY_CH: ACharity = { title: '', org: '', kind: 'water', url: 'https://', region: '', note: '', jariya: false, on: true, sort: 0 };
+function AdminSadaqa() {
+  const [d, setD] = useState<ASadaqa | null>(null);
+  const [err, setErr] = useState('');
+  const [ed, setEd] = useState<ACharity | null>(null);
+  const [msg, setMsg] = useState('');
+  const load = () => call<ASadaqa>('lm_admin_sadaqa', {}).then((r) => setD(r)).catch((e) => setErr(/404|Could not find/.test(String(e)) ? 'Сначала запусти supabase/sadaqa.sql в Supabase → SQL Editor.' : 'Не получилось загрузить. Проверь интернет.'));
+  useEffect(() => { load(); }, []);
+  if (err) return <p className="pro-note">{err}</p>;
+  if (!d) return <p className="tiny">Загружаю…</p>;
+  const dt = (x: string | null) => (x ? new Date(x).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+  const save = async () => {
+    if (!ed) return;
+    const id = await call<number | null>('lm_admin_charity_save', { p: ed }).catch(() => null);
+    if (!id) { setMsg('Нужны название и ссылка, начинающаяся с https://'); return; }
+    setEd(null); setMsg(''); load();
+  };
+  const del = async (c: ACharity) => { if (!c.id || !confirm(`Удалить «${c.title}»?`)) return; await call('lm_admin_charity_del', { p_id: c.id }).catch(() => null); load(); };
+  const gifts = d.pays.filter((x) => x.kind === 'gift'), sup = d.pays.filter((x) => x.kind === 'support');
+  const set = (p: Partial<ACharity>) => setEd((x) => (x ? { ...x, ...p } : x));
+  return (
+    <div className="adm-sec">
+      <p><b>Собрано: €{d.sum.toLocaleString('ru-RU')}</b> · подарков Pro: {gifts.filter((x) => x.status !== 'test').length} · сторонников: {sup.filter((x) => x.status !== 'test').length} · просьб ждёт: {d.asks.filter((x) => x.status === 'wait').length} · месяцев в запасе: {d.pool}</p>
+      <p className="tiny">Оплата через Stripe, как у основателей. В вебхук Stripe (адрес /api/invest?op=paid) добавь ещё события invoice.paid и customer.subscription.deleted: они нужны для «каждый месяц». Тестовые записи на стене и в сумме не считаются.</p>
+
+      <h3 className="pf-sub">Куда отдать · фонды</h3>
+      <p className="tiny">Этот список видят все в Садака → «Куда отдать». Деньги идут прямо в фонд, мимо нас. «Джария» = колодец, мечеть, Коран: отметка добавит запись в «Джарию».</p>
+      {d.charities.map((c) => (
+        <div key={c.id} className="adm-card">
+          <b>{c.title}{!c.on ? ' · скрыт' : ''}</b>
+          <small>{CH_KIND[c.kind] ?? c.kind} · {[c.org, c.note, c.region].filter(Boolean).join(' · ')}{c.jariya ? ' · джария' : ''}</small>
+          <small><a href={c.url} target="_blank" rel="noopener noreferrer">{c.url}</a></small>
+          <div className="adm-act"><button type="button" className="ghost-btn" onClick={() => setEd(c)}>Изменить</button><button type="button" className="link-btn" onClick={() => del(c)}>Удалить</button></div>
+        </div>
+      ))}
+      {ed ? (
+        <div className="adm-card sq-adm-form">
+          <input value={ed.title} onChange={(e) => set({ title: e.target.value })} placeholder="Что: Колодец в Чаде" maxLength={80} />
+          <input value={ed.org} onChange={(e) => set({ org: e.target.value })} placeholder="Фонд" maxLength={80} />
+          <input value={ed.url} onChange={(e) => set({ url: e.target.value })} placeholder="https://…" maxLength={300} />
+          <input value={ed.note} onChange={(e) => set({ note: e.target.value })} placeholder="Сумма: от €5, €30/мес" maxLength={40} />
+          <input value={ed.region} onChange={(e) => set({ region: e.target.value })} placeholder="Где принимают: Европа, Россия, весь мир" maxLength={40} />
+          <div className="choices">{Object.entries(CH_KIND).map(([k, l]) => <button key={k} type="button" aria-pressed={ed.kind === k} onClick={() => set({ kind: k })}>{l}</button>)}</div>
+          <label className="check-row"><input type="checkbox" checked={ed.jariya} onChange={(e) => set({ jariya: e.target.checked })} /> Садака джария</label>
+          <label className="check-row"><input type="checkbox" checked={ed.on} onChange={(e) => set({ on: e.target.checked })} /> Показывать людям</label>
+          <label className="check-row">Порядок <input type="number" value={ed.sort} onChange={(e) => set({ sort: Number(e.target.value) || 0 })} style={{ width: 70 }} /></label>
+          <div className="adm-act"><button type="button" className="pri-btn" onClick={save}>Сохранить</button><button type="button" className="link-btn" onClick={() => { setEd(null); setMsg(''); }}>Отмена</button></div>
+          {msg && <small>{msg}</small>}
+        </div>
+      ) : <button type="button" className="ghost-btn" onClick={() => setEd({ ...EMPTY_CH })}>＋ Добавить фонд</button>}
+
+      <h3 className="pf-sub">Просьбы о Pro</h3>
+      {!d.asks.length && <p className="tiny">Пока никто не просил.</p>}
+      {d.asks.slice(0, 50).map((a, i) => (
+        <div key={i} className="fd-arow"><b>{a.name || 'Без имени'}{a.nick ? ` @${a.nick}` : ''} · {a.status === 'wait' ? 'ждёт' : `получил ${a.months} мес.`}</b><small>{a.note || 'без пояснения'} · {dt(a.created)}{a.got ? ` → ${dt(a.got)}` : ''}</small></div>
+      ))}
+
+      <h3 className="pf-sub">Оплаты</h3>
+      {!d.pays.length && <p className="tiny">Пока ни одной. Тестовую запись можно сделать на экранах «Подари Pro» и «Поддержать» (кнопка владельца).</p>}
+      {d.pays.map((p, i) => (
+        <div key={i} className="fd-arow">
+          <b>{p.kind === 'gift' ? 'Подарок Pro' : 'Сторонник'} · €{p.eur}{p.mode === 'month' ? ` × ${p.periods} мес.` : ''}{p.status === 'test' ? ' · тест' : p.status === 'ended' ? ' · остановлено' : ''}</b>
+          <small>{p.name || 'Без имени'}{p.nick ? ` @${p.nick}` : ''} · {p.kind === 'gift' ? `открыто людям: ${p.opened}${p.sign === 'nick' ? ' · от ника' : ' · тайно'}` : `на стене: ${p.wall || 'анонимно'}`} · {dt(p.paid)}</small>
+        </div>
+      ))}
     </div>
   );
 }

@@ -4,6 +4,7 @@
 // (lm_founder_paid), make the certificate PDF, send it by Brevo and tell the owner in Telegram.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { TIERS, eur, esc, rpc, siteOf, certificatePdf, brevo, telegram, founderMail, rawBody } from './_founders.js';
+import { sadaqaEvent, isSadaqaEvent } from './_sadaqa-paid.js';
 
 /** Stripe-Signature: t=<unix>,v1=<hmac sha256 of "<t>.<body>">; 5 minutes of tolerance. */
 export function verify(sig, body, secret, now = Date.now()) {
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
   if (!verify(req.headers['stripe-signature'], body, secret)) return res.status(400).json({ error: 'signature' });
   let ev = {};
   try { ev = JSON.parse(body); } catch { return res.status(400).json({ error: 'json' }); }
+  if (isSadaqaEvent(ev)) return sadaqaEvent(ev, res); // «Подари Pro» / «Поддержать» (api/_sadaqa-paid.js)
   if (ev.type !== 'checkout.session.completed') return res.status(200).json({ ok: true, skipped: ev.type });
   const s = ev.data?.object || {};
   const id = s.metadata?.founder || s.client_reference_id;

@@ -46,6 +46,8 @@ import { TeacherPage } from './Teacher';
 import { FoundersPage, FounderTerms, tierName, type FounderStart } from './Founders';
 import { FounderBadge } from './FounderBadge';
 import { useFoundersReady, cachedFounder } from '../founders';
+import { useSadaqaReady } from '../sadaqa';
+import { SupportPage } from './SadaqaPay';
 import { useSisCirclesReady } from '../sisCircles';
 
 interface Props {
@@ -74,6 +76,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const admin = useIsAdmin();
   const teachOn = useSisCirclesReady();
   const foundersOn = useFoundersReady();
+  const sadaqaOn = useSadaqaReady();
   const plan = usePlan();
   useEffect(() => { nicksReady().then(setNicks); }, []);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
@@ -118,6 +121,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'help') return <Sub title={_t("Помощь")} onBack={back} label={bl}><HelpPage /></Sub>;
   if (page === 'me') return <Sub title={_t("Аккаунт и приватность")} onBack={back} label={bl}><MyProfile name={s.name.trim() || authMe()?.name || ''} onName={(n) => set({ name: n })} onSex={(g) => set({ me: g })} />{!onClaude && <><h3 className="pf-sub">{_t("Вход по почте")}</h3><AccountCard /></>}</Sub>;
   if (page === 'teacher') return <Sub title={_t("Я учительница")} onBack={back} label={bl}><TeacherPage /></Sub>;
+  if (page === 'support') return <Sub title={_t("Поддержать Living Muslim")} onBack={back} label={bl}><SupportPage onFounders={foundersOn ? () => go('founders') : undefined} /></Sub>;
   if (page === 'founders') return <Sub title={_t("Круг основателей")} onBack={back} label={bl}><FoundersPage start={founderStart} admin={admin} onTerms={() => { setParent('founders'); setPage('founders-terms'); window.scrollTo(0, 0); }} /></Sub>;
   if (page === 'founders-terms') return <Sub title={_t("Условия Круга основателей")} onBack={() => { if (parent === 'founders') { setPage('founders'); setParent('main'); window.scrollTo(0, 0); } else back(); }} label={parent === 'founders' ? _t("← Круг основателей") : bl}><FounderTerms /></Sub>;
   if (page === 'sisters') return <Sub title={_t("Для сестёр")} onBack={back} label={bl}><SisterPrivacyCard state={state} update={update} onOwn={() => go(isCloud && nicks ? 'me' : 'account')} /><SistersPage state={state} update={update} today={dayKey(new Date())} onPrivacy={() => go(isCloud && nicks ? 'me' : 'account')} /></Sub>;
@@ -235,6 +239,14 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         </button>
       )}
 
+      {(sadaqaOn || isCloud) && (
+        <button type="button" className="pro-entry sq-entry" onClick={() => go('support')}>
+          <span className="pro-badge sq-pbadge" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" fill="currentColor" /></svg></span>
+          <span><b>{_t("Поддержать Living Muslim")}</b><small>{_t("От €5, один раз или каждый месяц. Значок «Сторонник»")}</small></span>
+          <i aria-hidden="true">›</i>
+        </button>
+      )}
+
       {LIMITS_ON && (
       <button type="button" className="pro-entry" onClick={() => go('pro')}>
         <span className="pro-badge">PRO</span>
@@ -284,7 +296,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'founders' | 'founders-terms' | 'teacher' | 'sisters' | 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'support' | 'founders' | 'founders-terms' | 'teacher' | 'sisters' | 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];

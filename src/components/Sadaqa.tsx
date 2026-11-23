@@ -1,12 +1,13 @@
 import { Zakat } from './Zakat';
 import { GiftPassCard } from './GiftPass';
+import { GiftProCard, GiftPro, WhereRow, WhereToGive } from './SadaqaPay';
 import { useState } from 'react';
 import type { AppState, SadaqaDay, SadaqaState } from '../types';
 import { addDays, fromKey } from '../dates';
 import { hijri } from '../health';
 import { _t, _tj, LOC } from '../i18n';
 
-interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void }
+interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void; startSub?: 'gift' }
 
 export const sadaqaOf = (s: AppState): SadaqaState => ({ days: {}, secret: true, cur: '€', ramadan: null, jariya: [], ...(s.sadaqa ?? {}) });
 const patch = (s: AppState, fn: (q: SadaqaState) => Partial<SadaqaState>): AppState => { const q = sadaqaOf(s); return { ...s, sadaqa: { ...q, ...fn(q) } }; };
@@ -28,6 +29,7 @@ export const DEEDS: { t: string; src: string }[] = [
   { t: _t("Посади растение или покорми птиц"), src: _t("«Если мусульманин посадит растение и от него поест птица или человек, это садака». аль-Бухари, 2320; Муслим, 1553") },
   { t: _t("Удержись сегодня от одного зла"), src: _t("«Пусть удерживается от зла, это для него садака». аль-Бухари, 1445") },
 ];
+const FOR_BASE = [_t("за себя"), _t("за маму"), _t("за отца"), _t("за умерших")];
 const JARIYA_KINDS = [_t("Вода и колодец"), _t("Мечеть"), _t("Коран и книги"), _t("Обучение"), _t("Дерево"), _t("Сироты"), _t("Другое")];
 
 export function deedOf(today: string) {
@@ -70,8 +72,9 @@ function Money({ v, cur, secret }: { v: number; cur: string; secret: boolean }) 
   return <button type="button" className="money hid" onClick={() => setShow(true)} aria-label={_t("Показать сумму")}>{txt}</button>;
 }
 
-export function Sadaqa({ state, update, today, onExit }: Props) {
+export function Sadaqa({ state, update, today, onExit, startSub }: Props) {
   const [tab, setTab] = useState<'day' | 'ramadan' | 'jariya' | 'zakat'>('day');
+  const [sub, setSub] = useState<'' | 'gift' | 'where'>(startSub ?? '');
   const q = sadaqaOf(state);
   const d = q.days[today] ?? {};
   const [amt, setAmt] = useState(d.amt ? String(d.amt) : '');
@@ -86,6 +89,34 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
   const streak = sadaqaStreak(q, today);
   const month = Object.entries(q.days).filter(([k]) => k.slice(0, 7) === today.slice(0, 7));
   const monthSum = month.reduce((a, [, x]) => a + (x.amt ?? 0), 0);
+  const rem = state.settings.reminders;
+  const remV = rem?.sadaqa ?? 'fri';
+  const setRem = (v: 'fri' | 'day' | 'off') => update((s) => ({ ...s, settings: { ...s.settings, reminders: { ...(s.settings.reminders ?? { on: false, prayers: [], before: 0, muhasaba: '' }), sadaqa: v } } }));
+  const forList = [...FOR_BASE, ...(q.forList ?? [])];
+  const [forNew, setForNew] = useState<string | null>(null);
+  const addFor = () => {
+    const v = (forNew ?? '').trim().slice(0, 30);
+    if (v) update((s) => patch(s, (y) => ({ forList: [...(y.forList ?? []).filter((x) => x !== v), v].slice(-6) })));
+    if (v) setDay((x) => ({ ...x, for: v }));
+    setForNew(null);
+  };
+
+  if (sub) return (
+    <div className="sess light-sess">
+      <div className="sess-top">
+        <button type="button" className="icon-btn" onClick={() => setSub('')} aria-label={_t("Назад")}>‹</button>
+        <div><b>{sub === 'gift' ? _t("Подари Pro") : _t("Куда отдать")}</b><small>{sub === 'gift' ? _t("тому, кто не может заплатить") : _t("проверенные фонды")}</small></div>
+      </div>
+      <div className="h-wrap">
+        {sub === 'gift' ? <GiftPro /> : (
+          <WhereToGive
+            onMark={() => setDay((x) => ({ ...x, money: true }))}
+            onJariya={(c) => update((s) => patch(s, (y) => ({ jariya: y.jariya.some((j) => j.title === c.title && j.date === today) ? y.jariya : [{ id: Date.now().toString(36), title: c.title, kind: c.kind === 'water' ? JARIYA_KINDS[0] : c.kind === 'mosque' ? JARIYA_KINDS[1] : c.kind === 'orphans' ? JARIYA_KINDS[5] : JARIYA_KINDS[6], forWhom: d.for && d.for !== FOR_BASE[0] ? d.for : undefined, date: today }, ...y.jariya] })))}
+          />
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="sess light-sess">
@@ -117,7 +148,23 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
                   <button type="button" className="ghost-btn" onClick={() => setDay((x) => ({ ...x, amt: Number(amt) > 0 ? Math.round(Number(amt) * 100) / 100 : undefined }))}>{_t("Сохранить")}</button>
                 </div>
               )}
+              {(d.money || d.deed) && (
+                <div className="sq-for">
+                  <small>{_t("За кого")}</small>
+                  <div className="choices">
+                    {forList.map((f) => <button key={f} type="button" aria-pressed={d.for === f} onClick={() => setDay((x) => ({ ...x, for: x.for === f ? undefined : f }))}>{f}</button>)}
+                    {forNew === null ? <button type="button" aria-label={_t("Добавить своё")} onClick={() => setForNew('')}>＋</button> : (
+                      <span className="sq-for-new"><input autoFocus value={forNew} maxLength={30} onChange={(e) => setForNew(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addFor()} placeholder={_t("за деда")} /><button type="button" onClick={addFor}>OK</button></span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
+            <MonthCal q={q} today={today} />
+
+            <GiftProCard onOpen={() => setSub('gift')} />
+            <WhereRow onOpen={() => setSub('where')} />
 
             <div className="h-card deed">
               <div className="meal-h"><b>{_t("Доброе дело дня")}</b><small>{_t("тоже садака")}</small></div>
@@ -132,7 +179,7 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
               <div className="meal-h"><b>{_t("Тайная садака")}</b>
                 <label className="switch"><input type="checkbox" checked={q.secret} onChange={(e) => update((s) => patch(s, () => ({ secret: e.target.checked })))} /><span /></label>
               </div>
-              <small>{q.secret ? _t("Суммы скрыты, пока не нажмёшь на них. В Круг садака не попадает никогда.") : _t("Суммы видны. В Круг садака всё равно не попадает.")}</small>
+              <small>{q.secret ? _t("Суммы скрыты, пока не нажмёшь на них. Суммы в Круг не попадают никогда.") : _t("Суммы видны только тебе. В Круг они не попадают никогда.")}</small>
               <small className="src">{_t("«…так, что его левая рука не знает, что расходует правая». аль-Бухари, 1423")}</small>
               {monthSum > 0 && <div className="meal-h"><small>{_t("За этот месяц")}</small><Money v={monthSum} cur={q.cur} secret={q.secret} /></div>}
               <div className="meal-h"><small>{_t("Валюта")}</small>
@@ -140,6 +187,21 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
                   {['€', '$', '₽', '£', '₸', _t("сум"), '₺', 'AED', 'SAR'].map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
+            </div>
+            <div className="h-card">
+              <div className="meal-h"><b>{_t("Напоминание")}</b></div>
+              <div className="choices">
+                {([['fri', _t("Пятница утром")], ['day', _t("Каждое утро")], ['off', _t("Выкл.")]] as const).map(([k, l]) => <button key={k} type="button" aria-pressed={remV === k} onClick={() => setRem(k)}>{l}</button>)}
+              </div>
+              {!rem?.on && remV !== 'off' && <small>{_t("Напоминания на телефоне выключены. Включи их в Профиль → Напоминания, и садака придёт вместе с ними.")}</small>}
+              <small className="src">{_t("«Каждый день, когда люди просыпаются, нисходят два ангела. Один говорит: „О Аллах, дай расходующему замену“». аль-Бухари, 1442")}</small>
+            </div>
+
+            <div className="h-card">
+              <div className="meal-h"><b>{_t("Садака круга")}</b>
+                <label className="switch"><input type="checkbox" checked={Boolean(q.circle)} onChange={(e) => update((s) => patch(s, () => ({ circle: e.target.checked })))} /><span /></label>
+              </div>
+              <small>{q.circle ? _t("Круг видит только общее число: «7 из 9 отдали садаку на этой неделе». Без сумм и без имён.") : _t("Выключено: круг ничего не знает о твоей садаке. Включи, если твой круг ставит общую цель садаки.")}</small>
             </div>
             <p className="q-msg left tiny-note">{_t("«Садака не уменьшает имущества». Муслим, 2588")}</p>
           </>
@@ -149,6 +211,29 @@ export function Sadaqa({ state, update, today, onExit }: Props) {
         {tab === 'jariya' && <Jariya q={q} update={update} today={today} />}
         {tab === 'zakat' && <Zakat state={state} update={update} l={state.settings.lang ?? 'ru'} />}
       </div>
+    </div>
+  );
+}
+
+/** This month: each day by colour (money, deed, both). Amounts never show here. */
+function MonthCal({ q, today }: { q: SadaqaState; today: string }) {
+  const first = `${today.slice(0, 8)}01`;
+  const lead = (fromKey(first).getDay() + 6) % 7; // weeks start on Monday
+  const n = new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0).getDate();
+  const cells = Array.from({ length: lead + n }, (_, i) => (i < lead ? '' : addDays(first, i - lead)));
+  const days = cells.filter(Boolean).filter((k) => k <= today && given(q.days[k])).length;
+  return (
+    <div className="h-card sq-cal">
+      <div className="meal-h"><b>{_t("Этот месяц")}</b><small>{_tj("{0} из {1} дней", days, Number(today.slice(8)))}</small></div>
+      <div className="sq-grid">
+        {cells.map((k, i) => {
+          if (!k) return <i key={i} className="pad" />;
+          const x = q.days[k];
+          const c = x?.money && x?.deed ? 'b' : x?.money ? 'm' : x?.deed ? 'd' : '';
+          return <i key={k} className={`${c}${k === today ? ' now' : ''}${k > today ? ' fut' : ''}`} title={x?.for ?? ''}>{Number(k.slice(8))}</i>;
+        })}
+      </div>
+      <div className="sq-leg"><span><i className="m" />{_t("деньгами")}</span><span><i className="d" />{_t("делом")}</span><span><i className="b" />{_t("и то и то")}</span></div>
     </div>
   );
 }
