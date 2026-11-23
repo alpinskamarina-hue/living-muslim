@@ -7,7 +7,9 @@ import { placeOf } from '../plansCloud';
 import { setAskFor } from '../cweek';
 import type { Member, Reacts } from '../circle';
 import { askAnswers } from '../cweek';
-import { blockUser } from '../cloud';
+import { blockUser, isDm } from '../cloud';
+import { ensureLive, useLoc, useLocReady } from '../location';
+import { LiveMap, LocCard, LocSheet } from './Location';
 import { prayerTimes } from '../prayer';
 import { enablePush, currentSubscription, DEFAULT_PREFS } from '../push';
 import type { AppState } from '../types';
@@ -336,6 +338,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
 }) {
   const main = Boolean(actions);
   const [plus, setPlus] = useState(false);
+  const [locSheet, setLocSheet] = useState(false);
+  const [liveMap, setLiveMap] = useState(false);
   const [unfold, setUnfold] = useState<number[]>([]);
   const chat = useTopic(all, topic);
   const [text, setText] = useState('');
@@ -397,6 +401,13 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
     }
   };
   const flash = (t: string) => { setNote(t); setTimeout(() => setNote(''), 2600); };
+  // «Место»: one point or live sharing (location.sql)
+  const locOk = useLocReady() && main;
+  const liveMsg = chat.msgs.some((m) => m.ref?.t === 'loc' && m.ref.lv && new Date(m.ref.lv).getTime() > Date.now() && !m.deleted);
+  const loc = useLoc(chat.code, locOk, liveMsg || liveMap);
+  useEffect(() => { ensureLive(); }, []);
+  const locDmWait = isDm(chat.code) && !chat.msgs.some((m) => m.uid !== me && m.kind !== 'event');
+  const locTile = locOk && loc.data?.on !== false && !locDmWait;
 
   const myAi = aiName(state.settings);
   const [thinking, setThinking] = useState(false);
@@ -531,6 +542,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
       { ic: '📷', label: _t("Камера"), c: '#ff2e74', run: () => pickKind(true, true) },
       { ic: '🖼', label: _t("Галерея"), c: '#bf59cf', run: () => pickKind(true) },
     ] : []),
+    ...(locTile ? [{ ic: '📍', label: _t("Место"), c: '#11553a', run: () => setLocSheet(true) }] : []),
     ...(actions ?? []),
     { ic: 'mosque-go', label: _t("Иду в мечеть"), c: '#1f7a4d', run: () => send(_t("📍 Иду в мечеть")) },
     ...(nowP && !prayed(nowP) ? [{ ic: 'prayed', label: _t("Помолился"), c: '#25a35a', run: sayPrayed }] : []),
@@ -546,6 +558,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
         <div className="cc-opts">
           <button type="button" onClick={toggleChatPush}>{chatPushOn ? _t("🔔 Уведомления о сообщениях: вкл") : _t("🔕 Уведомления о сообщениях: выкл")}</button>
           {isOwner && <button type="button" onClick={async () => { const on = !chat.voiceOn; if (await chat.setVoice(on)) flash(on ? _t("Голосовые включены") : _t("Теперь в круге только текст")); }}><IcT t={chat.voiceOn ? _t("🎙 Голосовые в круге: вкл") : _t("🎙 Голосовые в круге: выкл (только текст)")} /></button>}
+          {isOwner && locOk && loc.data && <button type="button" onClick={async () => { const on = !loc.data!.on; if (await loc.setOn(on)) flash(on ? _t("Место в круге включено") : _t("Место в круге выключено")); }}><IcT t={loc.data.on ? _t("📍 Место в круге: вкл") : _t("📍 Место в круге: выкл")} /></button>}
           {isOwner && chat.ai.ready && <button type="button" onClick={async () => { const on = !chat.ai.on; if (await chat.setAi(on, chat.ai.all)) flash(on ? _t("Помощник в круге включён") : _t("Помощника в круге больше нет")); }}>{chat.ai.on ? _t("✨ Помощник в круге: вкл") : _t("✨ Помощник в круге: выкл")}</button>}
           {isOwner && chat.ai.ready && chat.ai.on && <button type="button" onClick={async () => { const all = chat.ai.all === 'all' ? 'owner' : 'all'; if (await chat.setAi(true, all)) flash(all === 'all' ? _t("Напомнить всем может любой участник") : _t("Напомнить всем может только амир")); }}>{chat.ai.all === 'all' ? _t("📣 Напоминания всем: любой участник") : _t("📣 Напоминания всем: только амир")}</button>}
           {chat.ai.ready && chat.ai.on && <small>{_tj("Напиши «@{0}», чтобы попросить помощника: напомнить тебе или всем, записать просьбу о дуа, рассказать итоги круга. Без «@» он переписку не читает.", myAi)}</small>}
@@ -736,7 +749,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
                 {!mine && <b className="cc-who" onClick={personOk() ? (e) => { e.stopPropagation(); openPerson(m.uid); } : undefined}>{nm(m.uid)}<FounderMark uid={m.uid} /></b>}
                 {q && <span className="cc-q"><b>{nm(q.uid)}</b>{q.deleted ? _t("Сообщение удалено") : shortOf(q)}</span>}
                 {!q && m.ref?.t === 'st' && m.ref.to && <span className="cc-q cc-st"><b>{m.ref.to === me ? _t("Ответ на твою сторис") : _t("Ответ на сторис: {0}", nm(m.ref.to))}</b>{[m.ref.n, m.ref.k].filter(Boolean).join(' ')}</span>}
-                {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
+                {m.deleted ? <span className="cc-gone">{_t("Сообщение удалено")}</span> : m.ref?.t === 'loc' ? <LocCard m={m} mine={mine} live={loc.data?.live ?? []} onMap={() => { setLiveMap(true); loc.reload(); }} />
+                  : m.kind === 'voice' ? <Voice m={m} chat={chat} mine={mine} />
                   : m.kind === 'photo' && m.file ? <><Photo m={m} chat={chat} onOpen={setView} />{m.body && <TrText id={m.id} text={m.body} code={chat.code} mine={mine} cls="cc-t cc-cap" />}</>
                   : m.kind === 'file' && m.file ? <><FileCard m={m} chat={chat} />{m.body && <TrText id={m.id} text={m.body} code={chat.code} mine={mine} cls="cc-t cc-cap" />}</>
                   : <TrText id={m.id} text={m.body} code={chat.code} mine={mine} tl={m.ref?.tl} tt={m.ref?.tt} />}
@@ -856,6 +870,8 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
           </div>
         </>
       )}
+      {locSheet && chat.code && <LocSheet code={chat.code} send={(b, r) => chat.send(b, r)} onClose={() => setLocSheet(false)} flash={flash} />}
+      {liveMap && chat.code && <LiveMap code={chat.code} me={me} names={names} live={loc.data?.live ?? []} onClose={() => setLiveMap(false)} flash={flash} />}
       {view && (
         <div className="cc-view" onClick={() => setView('')}>
           <img src={view} alt="" />

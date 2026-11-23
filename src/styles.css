@@ -6481,6 +6481,49 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 :root[data-theme="dark"] .pp-tag.t-supporter { color: #8fdcaf; }
 .sq-adm-form { display: flex; flex-direction: column; gap: 6px; }
 .sq-adm-form input:not([type]) { font: inherit; border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 10px; background: var(--surface); color: var(--ink); }
+
+/* «Место»: location in circle chats */
+.lc-map { position: relative; overflow: hidden; border-radius: 10px; background: #e9e3d3; isolation: isolate; }
+.lc-map img { position: absolute; width: 256px; height: 256px; max-width: none; user-select: none; pointer-events: none; }
+.lc-osm { position: absolute; right: 4px; bottom: 2px; font-size: 9px; color: #555; background: rgba(255,255,255,.75); padding: 0 4px; border-radius: 4px; z-index: 3; }
+.lc-pin { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; z-index: 2; pointer-events: none; }
+.lc-pin i { width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--green-2, #11553a); border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,.3); }
+.lc-pin.g i { background: #b5832a; }
+.lc-pin.t i { background: #2f7f7a; }
+.lc-pin.p i { background: #7a3b5e; }
+.lc-pin b { font-size: 11px; font-weight: 700; background: #fff; color: #2b2219; border-radius: 8px; padding: 1px 6px; margin-top: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.2); white-space: nowrap; }
+.lc-me { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #2a7de1; border: 3px solid #fff; box-shadow: 0 0 0 7px rgba(42,125,225,.2); transform: translate(-50%, -50%); z-index: 2; }
+.lc-card { display: flex; flex-direction: column; gap: 4px; width: 250px; max-width: 100%; }
+.lc-card > a { display: block; }
+.lc-addr { font-size: 14px; margin-top: 2px; overflow-wrap: anywhere; }
+.lc-sub { font-size: 12.5px; color: var(--ink-2); display: block; }
+.lc-live { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #c0392b; margin-top: 2px; }
+.lc-live i { width: 8px; height: 8px; border-radius: 50%; background: #e74c3c; box-shadow: 0 0 0 4px rgba(231,76,60,.2); flex: none; }
+.lc-btns { display: flex; gap: 6px; margin-top: 2px; }
+.lc-btns a, .lc-btns button { flex: 1; text-align: center; border: 1px solid var(--line); border-radius: 10px; padding: 6px 0; font-size: 12.5px; font-weight: 600; color: var(--green-2); background: var(--surface); text-decoration: none; cursor: pointer; }
+.lc-sheet h3 { font-size: 18px; margin: 4px 0 2px; display: flex; align-items: baseline; gap: 8px; }
+.lc-sheet h3 small { font-size: 12.5px; color: var(--ink-2); font-weight: 500; }
+.lc-sheet > .lc-sub { margin: 0 0 8px; }
+.lc-sheet .lc-map { margin-bottom: 6px; }
+.lc-opt { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; margin-top: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.lc-opt.pri { border-color: var(--green-2); background: var(--green-soft); cursor: pointer; }
+.lc-opt > i { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-style: normal; background: var(--green-2); color: #fff; flex: none; }
+.lc-opt > i.r { background: #c0392b; }
+.lc-opt > span { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.lc-opt b { font-size: 14.5px; }
+.lc-opt small { font-size: 12.5px; color: var(--ink-2); }
+.lc-chips { display: flex; gap: 6px; margin: 8px 0 8px; flex-wrap: wrap; }
+.lc-chips button { flex: 1; min-width: 70px; border-radius: 999px; padding: 7px 0; font-size: 13px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.lc-chips button.on { background: var(--green-2); border-color: var(--green-2); color: #fff; font-weight: 700; }
+.lc-priv { font-size: 12px; color: var(--ink-2); margin: 10px 0 4px; line-height: 1.4; }
+.lc-err { font-size: 14px; color: #b4583a; margin: 8px 0; line-height: 1.4; }
+.lc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.lc-row b { flex: 1; min-width: 0; }
+.lc-row b small { display: block; font-weight: 400; font-size: 12px; color: var(--ink-2); }
+.lc-row em { font-style: normal; font-size: 12.5px; font-weight: 600; color: var(--green-2); }
+.lc-row a { font-size: 12.5px; font-weight: 600; color: var(--green-2); text-decoration: none; border: 1px solid var(--line); border-radius: 10px; padding: 4px 10px; }
+.lc-stop { width: 100%; margin-top: 12px; border-radius: 14px; padding: 12px; font-weight: 700; color: #b4583a; border: 1px solid #e9c3b4; background: #fff6f2; }
+.lc-full { max-height: 92vh; overflow-y: auto; }
 /* ───── «Мой цикл» (Profile → Для сестёр) ───── */
 .cy { display: flex; flex-direction: column; gap: 10px; }
 .cy-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
