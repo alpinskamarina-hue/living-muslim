@@ -128,7 +128,7 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
     L.push(`Food: ${bits.join(', ')}.`);
   }
   const rf = s.ramadan?.fasts?.[today];
-  if (rf) L.push(`Ramadan log today: ${rf}.`);
+  if (rf && rf !== 'period') L.push(`Ramadan log today: ${rf}.`); // a sister's days never go to the assistant
   const kids = s.family?.kids ?? [];
   if (kids.length) L.push('', `CHILDREN (family tasks): ${kids.map((k) => `[id:${k.id}] ${cut(k.name, 20)}, ${k.age}: ${k.tasks.map((t) => `[id:${t.id}] ${(k.log[today] ?? []).includes(t.id) ? '✓' : '○'} ${cut(t.t, 40)}`).join('; ')}`).join(' | ')}.`);
   const sd = s.sadaqa?.days;

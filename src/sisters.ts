@@ -26,7 +26,22 @@ export interface SisState {
   mama?: Mama | null;
   /** Ticks in «Пока малыш спит»: day -> item ids. */
   nap?: Record<string, string[]>;
+  // ───── «Мой цикл» (all on this phone) ─────
+  /** How she felt: day -> tags and a line for herself. */
+  notes?: Record<string, CycNote>;
+  /** Madhab for the limits of the days; missing means the app setting (hanafi or shafi). '?' = no limit hints. */
+  cmz?: CycMadhab;
+  /** PIN lock of «Мой цикл»: salted hash, and a passkey id when Face ID / fingerprint was added. */
+  lock?: { h: string; s: string; bio?: string } | null;
+  /** Notifications without words about the cycle (on by default). */
+  modest?: boolean;
+  /** Remind 2 days before the guessed start (on by default once the guess is on). */
+  rem?: boolean;
+  /** Weekdays (0 = Monday) when a make-up fast is suggested the evening before. */
+  qd?: number[];
 }
+export interface CycNote { t?: string[]; x?: string }
+export type CycMadhab = 'h' | 's' | 'm' | 'b' | '?';
 export type MamaKind = 'preg' | 'feed' | 'baby';
 export interface Mama { k: MamaKind; since: string; born?: string; easy?: boolean }
 
@@ -70,7 +85,7 @@ export const sisDayN = (s: AppState, today: string) => (s.sis?.cur ? daysBetween
 const put = (s: AppState, p: Partial<SisState>): AppState => ({ ...s, sis: { ...sisOf(s), ...p } });
 
 /** Ramadan days in a range get the «Месячные» fast mark, so the days to make up count themselves. */
-function markFasts(s: AppState, from: string, to: string): AppState {
+export function markFasts(s: AppState, from: string, to: string): AppState {
   if (!s.ramadan) return s;
   const fasts = { ...s.ramadan.fasts };
   let ch = false;
@@ -177,11 +192,39 @@ export function syncSw(s: AppState) {
   try {
     if (typeof caches === 'undefined') return;
     const on = Boolean(s.sis?.cur) && s.sis?.soft !== false;
-    const body = JSON.stringify({ on: true, en: LANG === 'en' });
+    const modest = s.sis?.modest !== false;
+    const body = JSON.stringify({ on: true, en: LANG === 'en', modest });
+    const cyc = cycFlag(s);
+    const json = (o: unknown) => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json' } });
     caches.open('lm-local').then(async (c) => {
-      if (on) await c.put('/__lm-sis', new Response(body, { headers: { 'content-type': 'application/json' } }));
+      if (on) await c.put('/__lm-sis', json(JSON.parse(body)));
       else await c.delete('/__lm-sis');
+      if (cyc) await c.put('/__lm-cyc', json(cyc));
+      else await c.delete('/__lm-cyc');
     }).catch(() => {});
   } catch { /* no cache storage */ }
 }
 
+
+/**
+ * What the service worker needs for «Мой цикл» reminders, shown on the phone itself when an ordinary
+ * prayer reminder arrives (Dhuhr: «through 2 days»; Isha: «tomorrow make up a fast»). The server sends
+ * only the usual prayer reminders and never learns any of this.
+ */
+export function cycFlag(s: AppState): { rem?: string; qd?: number[]; modest: boolean; en: boolean } | null {
+  const x = s.sis;
+  if (!x || !isSister(s)) return null;
+  const today = dayKeyNow();
+  const g = x.guess && x.rem !== false ? sisGuess(s, today) : null;
+  const rem = g && g.inDays >= 2 ? addDays(g.day, -2) : undefined;
+  const left = s.ramadan ? qadaLeft(s) : 0;
+  const qd = left > 0 && x.qd?.length ? x.qd : undefined;
+  if (!rem && !qd) return null;
+  return { rem, qd, modest: x.modest !== false, en: LANG === 'en' };
+}
+const dayKeyNow = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function qadaLeft(s: AppState) {
+  const r = s.ramadan!;
+  const missed = Object.values(r.fasts).filter((m) => m !== 'fast' && m !== 'chronic').length;
+  return Math.max(0, missed - r.qada.length);
+}

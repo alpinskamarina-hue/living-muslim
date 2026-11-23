@@ -6524,3 +6524,88 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .lc-row a { font-size: 12.5px; font-weight: 600; color: var(--green-2); text-decoration: none; border: 1px solid var(--line); border-radius: 10px; padding: 4px 10px; }
 .lc-stop { width: 100%; margin-top: 12px; border-radius: 14px; padding: 12px; font-weight: 700; color: #b4583a; border: 1px solid #e9c3b4; background: #fff6f2; }
 .lc-full { max-height: 92vh; overflow-y: auto; }
+/* ───── «Мой цикл» (Profile → Для сестёр) ───── */
+.cy { display: flex; flex-direction: column; gap: 10px; }
+.cy-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.cy-note { background: var(--gold-soft); color: var(--ink); border-radius: 14px; padding: 11px 13px; font-size: 13px; line-height: 1.45; }
+.cy-note b { display: block; margin-bottom: 2px; }
+.cy-next { display: flex; gap: 11px; align-items: center; padding: 11px 13px; border-radius: 16px; background: color-mix(in srgb, var(--sis) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--sis) 22%, var(--line)); }
+.cy-next b { display: block; font-size: 14.5px; }
+.cy-next small { display: block; color: var(--ink-2); font-size: 12px; margin-top: 1px; }
+.cy-next.off { background: var(--surface-2); border-color: var(--line); }
+.cy-next.off .cy-moon { background: var(--ink-2); }
+.cy-moon { width: 34px; height: 34px; border-radius: 50%; background: var(--sis); color: #fff; display: grid; place-items: center; flex: none; font-size: 17px; }
+.cy-mon { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.cy-mon > div { text-align: center; min-width: 0; }
+.cy-mon b { display: block; font-family: var(--f-display); font-size: 21px; color: var(--ink); }
+.cy-sheet .sis-h::first-letter, .cy-mon b::first-letter { text-transform: uppercase; }
+.cy-mon small { display: block; color: var(--ink-2); font-size: 11.5px; }
+.cy-arr { font: inherit; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font-size: 18px; line-height: 1; flex: none; }
+.cy-arr:disabled { opacity: .35; }
+.cy-wd, .cy-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cy-wd i { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--ink-2); padding-bottom: 2px; }
+.cy-cal button { font: inherit; font-size: 13px; height: 36px; border-radius: 10px; border: 0; background: none; color: var(--ink); position: relative; font-variant-numeric: tabular-nums; padding: 0; }
+.cy-cal .k-now, .cy-cal .k-past { background: var(--sis); color: #fff; font-weight: 700; }
+.cy-cal .k-now { box-shadow: inset 0 0 0 2px color-mix(in srgb, #fff 45%, var(--sis)); }
+.cy-cal .k-guess { border: 1.5px dashed var(--sis); color: var(--sis); font-weight: 700; }
+.cy-cal .k-rem { background: var(--gold-soft); color: var(--ink); font-weight: 700; }
+.cy-cal .td { box-shadow: inset 0 0 0 2px var(--green-2); font-weight: 800; }
+.cy-cal .fr { outline: 2px solid var(--gold); outline-offset: -2px; }
+.cy-cal button s { position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; opacity: .8; }
+.cy-leg { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 11.5px; color: var(--ink-2); }
+.cy-leg span { display: inline-flex; align-items: center; gap: 6px; }
+.cy-leg i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.cy-leg .k-past { background: var(--sis); }
+.cy-leg .k-guess { border: 1.5px dashed var(--sis); }
+.cy-leg .k-td { box-shadow: inset 0 0 0 2px var(--green-2); }
+.cy-hint { font-size: 12.5px; color: var(--ink-2); margin: 10px 0 0; }
+.cy-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cy-stats > * { font: inherit; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 9px 10px; color: var(--ink); min-width: 0; }
+.cy-stats b { display: block; font-size: 20px; color: var(--green-2); font-variant-numeric: tabular-nums; }
+.cy-stats small { display: block; font-size: 11px; line-height: 1.25; color: var(--ink-2); }
+.cy-sheet { max-height: 88vh; overflow-y: auto; }
+.cy-txt { width: 100%; resize: vertical; font: inherit; }
+.cy-big { display: flex; align-items: baseline; gap: 8px; }
+.cy-big b { font-family: var(--f-display); font-size: 52px; line-height: 1; color: var(--green-2); }
+.cy-big span { color: var(--ink-2); font-size: 13px; }
+.cy-bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; margin: 10px 0 6px; }
+.cy-bar i { display: block; height: 100%; background: var(--green-2); }
+.cy-mini { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cy-dots { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 4px; }
+.cy-dots i { font-style: normal; border-radius: 10px; padding: 7px 0; text-align: center; font-size: 12px; font-weight: 700; border: 1px solid var(--line); color: var(--ink-2); background: var(--surface-2); }
+.cy-dots i.ok { background: var(--green-soft); border-color: var(--green-2); color: var(--green-2); }
+.cy-dots i small { display: block; font-weight: 600; font-size: 9.5px; }
+.cy-wk { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cy-wk button { font: inherit; font-size: 12px; font-weight: 700; padding: 7px 0; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); }
+.cy-wk button[aria-pressed="true"] { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+.cy-rule { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.cy-rule:last-of-type { border-bottom: 0; }
+.cy-rule span { color: var(--ink-2); }
+.cy-rule b { text-align: right; font-variant-numeric: tabular-nums; }
+.cy-table .cy-rule { grid-template-columns: 1fr 44px 44px 50px; }
+.cy-table .cy-rule.hd b { font-size: 11px; color: var(--ink-2); font-weight: 700; }
+.cy-table .cy-rule.on span, .cy-table .cy-rule.on b { color: var(--green-2); font-weight: 800; }
+.cy-btn { margin-top: 0; }
+.cy-btn.danger { border-color: color-mix(in srgb, var(--sis) 45%, var(--line)); color: var(--sis); }
+.cy-sure b { display: block; margin-bottom: 4px; }
+.cy-row { display: flex; gap: 8px; }
+.cy-row > * { flex: 1; margin: 0; }
+.cy-del { background: var(--sis); }
+.cy-msg { font-size: 13px; color: var(--green-2); margin: 0; }
+.cy-pin { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 26px 12px 18px; border-radius: 22px; background: linear-gradient(170deg, #123d2a, #0b2a1d 75%); color: #fbf4e6; }
+.cy-pin h3 { font-family: var(--f-display); font-size: 28px; margin: 10px 0 4px; }
+.cy-pin p { color: rgba(251, 244, 230, .78); font-size: 13px; line-height: 1.45; margin: 0 0 20px; max-width: 30ch; }
+.cy-star { width: 52px; height: 52px; color: #e0b45c; }
+.cy-pd { display: flex; gap: 16px; margin-bottom: 22px; }
+.cy-pd i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #e0b45c; }
+.cy-pd i.on { background: #e0b45c; }
+.cy-err { color: #f3b6b6 !important; margin: -10px 0 12px !important; font-weight: 700; }
+.cy-keys { display: grid; grid-template-columns: repeat(3, 64px); gap: 12px 24px; }
+.cy-keys button { font: inherit; width: 64px; height: 64px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .09); color: #fbf4e6; font-size: 24px; font-weight: 600; }
+.cy-keys button:active { background: rgba(255, 255, 255, .2); }
+.cy-keys button.x { background: none; font-size: 20px; }
+.cy-keys button:focus-visible, .cy-cal button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+.cy-pin-row { display: flex; gap: 18px; margin-top: 16px; }
+.cy-link { color: #e0b45c !important; }
+.cy-pin .pri-btn { width: 100%; max-width: 280px; }
+.cy-sheet .sis-h { color: var(--ink); }

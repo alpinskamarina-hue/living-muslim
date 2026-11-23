@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import type { Anchor, AppState, PrayerMark } from '../types';
 import { ANCHOR_LABEL } from '../types';
 import { setPrayer } from '../store';
-import { addDays, fromKey } from '../dates';
+import { addDays } from '../dates';
 import { listsOf, pid, type Plan } from '../plans';
 import { newKid, patchF } from '../family';
-import { _t, _tj, LOC } from '../i18n';
+import { _t, _tj } from '../i18n';
 import { plural } from '../dates';
-import { MAMA_KINDS, isSister, mamaOf, setMama, toggleNap, setSis, sisCancel, sisDayN, sisEnd, sisGuess, sisOf, sisStart, sisSummary, sisNow, syncSw } from '../sisters';
+import { MAMA_KINDS, isSister, mamaOf, setMama, toggleNap, setSis, sisCancel, sisDayN, sisEnd, sisOf, sisStart, sisSummary, sisNow, syncSw } from '../sisters';
 import { cloudMe, getProfile, saveProfile } from '../cloud';
 import { rememberGender } from '../openCircles';
 
@@ -100,7 +100,7 @@ export function GhuslSheet({ onClose }: { onClose: () => void }) {
 }
 
 /** Profile → «Для сестёр». */
-export function SistersPage({ state, update, today, onPrivacy }: { state: AppState; update: Update; today: string; onPrivacy: () => void }) {
+export function SistersPage({ state, update, today, onPrivacy, onCycle }: { state: AppState; update: Update; today: string; onPrivacy: () => void; onCycle: () => void }) {
   const x = sisOf(state);
   const [born, setBorn] = useState(false);
   const on = sisNow(state);
@@ -108,8 +108,6 @@ export function SistersPage({ state, update, today, onPrivacy }: { state: AppSta
     const v = x[k] ?? def;
     return <span className="switch"><input type="checkbox" checked={v} onChange={(e) => update((s) => setSis(s, { [k]: e.target.checked }))} /><span /></span>;
   };
-  const guess = x.guess ? sisGuess(state, today) : null;
-  const fmt = (d: string) => fromKey(d).toLocaleDateString(LOC, { day: 'numeric', month: 'long' });
   return (
     <div className="sis-page">
       <div className="nk-sec">{_t("Дни без намаза")}</div>
@@ -121,7 +119,6 @@ export function SistersPage({ state, update, today, onPrivacy }: { state: AppSta
         <label className="nk-r"><span>{_t("Зикр на время намаза")}<small>{_t("Короткий, 1–6 минут")}</small></span>{sw('zikr', true)}</label>
         <label className="nk-r"><span>{_t("Коран на слух")}<small>{_t("Слушать можно всегда")}</small></span>{sw('quran', true)}</label>
         <label className="nk-r"><span>{_t("Напоминания о намазе")}<small>{_t("В эти дни телефон сам заменит их мягким «время зикра»")}</small></span>{sw('soft', true)}</label>
-        <label className="nk-r"><span>{_t("Подсказать, когда дни примерно начнутся")}<small>{guess ? (guess.inDays >= 0 ? _tj("Примерно {0} (через {1} {2})", fmt(guess.day), guess.inDays, plural(guess.inDays, _t("день"), _t("дня"), _t("дней"))) : _tj("Примерно {0}", fmt(guess.day))) : _t("Считает только телефон, нужно хотя бы 2 раза")}</small></span>{sw('guess', false)}</label>
       </div>
 
       <div className="nk-sec">{_t("Что видит круг")}</div>
@@ -130,17 +127,10 @@ export function SistersPage({ state, update, today, onPrivacy }: { state: AppSta
         <div className="nk-r"><span>{_t("На сервер не уходит ничего")}<small>{_t("Сменишь телефон: эта история начнётся заново (резервная копия в «Данных» её сохранит)")}</small></span></div>
       </div>
 
-      {(x.past?.length ?? 0) > 0 && (
-        <>
-          <div className="nk-sec">{_t("Прошлые дни")}</div>
-          <div className="nk-grp">
-            {x.past!.slice(0, 6).map((r) => (
-              <div key={r.from} className="nk-r"><span>{r.from === r.to ? fmt(r.from) : `${fmt(r.from)} – ${fmt(r.to)}`}{r.nifas && <small>{_t("нифас")}</small>}</span></div>
-            ))}
-            <button type="button" className="link-btn sis-clear" onClick={() => update((s) => setSis(s, { past: [] }))}>{_t("Стереть историю")}</button>
-          </div>
-        </>
-      )}
+      <div className="nk-sec">{_t("Мой цикл")}</div>
+      <div className="nk-grp">
+        <button type="button" className="nk-r sis-row" onClick={onCycle}><span>{_t("Календарь, прогноз, посты к восполнению")}<small>{x.lock ? _t("Закрыто PIN-кодом") : _t("Мазхаб, замок, только на телефоне")}</small></span><i aria-hidden="true">›</i></button>
+      </div>
 
       <MamaSection state={state} update={update} today={today} onBorn={() => setBorn(true)} />
       {born && <BabyBorn state={state} update={update} today={today} onClose={() => setBorn(false)} />}

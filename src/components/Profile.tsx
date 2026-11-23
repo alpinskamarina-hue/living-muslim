@@ -1,4 +1,5 @@
 import { BadgeShelf } from './Badges';
+import { CyclePage, type CyView } from './Cycle';
 import { SisterPrivacyCard, SistersPage } from './Sisters';
 import { isSister, sisDayN, sisNow } from '../sisters';
 import { Ic } from './LIcon';
@@ -82,6 +83,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
   // Pages opened from «Настройки» go back there; everything else goes back to the profile.
   const [parent, setParent] = useState<Page>('main');
+  const [cyView, setCyView] = useState<CyView>('main');
   const [sq, setSq] = useState('');
   const [seek, setSeek] = useState<Intent[]>([]);
   useEffect(() => {
@@ -124,7 +126,13 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   if (page === 'support') return <Sub title={_t("Поддержать Living Muslim")} onBack={back} label={bl}><SupportPage onFounders={foundersOn ? () => go('founders') : undefined} /></Sub>;
   if (page === 'founders') return <Sub title={_t("Круг основателей")} onBack={back} label={bl}><FoundersPage start={founderStart} admin={admin} onTerms={() => { setParent('founders'); setPage('founders-terms'); window.scrollTo(0, 0); }} /></Sub>;
   if (page === 'founders-terms') return <Sub title={_t("Условия Круга основателей")} onBack={() => { if (parent === 'founders') { setPage('founders'); setParent('main'); window.scrollTo(0, 0); } else back(); }} label={parent === 'founders' ? _t("← Круг основателей") : bl}><FounderTerms /></Sub>;
-  if (page === 'sisters') return <Sub title={_t("Для сестёр")} onBack={back} label={bl}><SisterPrivacyCard state={state} update={update} onOwn={() => go(isCloud && nicks ? 'me' : 'account')} /><SistersPage state={state} update={update} today={dayKey(new Date())} onPrivacy={() => go(isCloud && nicks ? 'me' : 'account')} /></Sub>;
+  if (page === 'sisters') return <Sub title={_t("Для сестёр")} onBack={back} label={bl}><SisterPrivacyCard state={state} update={update} onOwn={() => go(isCloud && nicks ? 'me' : 'account')} /><SistersPage state={state} update={update} today={dayKey(new Date())} onPrivacy={() => go(isCloud && nicks ? 'me' : 'account')} onCycle={() => { setParent('sisters'); setCyView('main'); setPage('cycle'); window.scrollTo(0, 0); }} /></Sub>;
+  if (page === 'cycle') {
+    const cyBack = () => { if (cyView !== 'main') { setCyView(cyView === 'setpin' ? 'privacy' : 'main'); window.scrollTo(0, 0); } else if (parent === 'sisters') { setPage('sisters'); setParent('main'); window.scrollTo(0, 0); } else back(); };
+    const cyTitle = { main: _t("Мой цикл"), qada: _t("Посты восполнить"), madhab: _t("Мазхаб"), privacy: _t("Приватность"), setpin: _t("PIN-код") }[cyView];
+    const cyLabel = cyView !== 'main' ? _t("← Мой цикл") : parent === 'sisters' ? _t("← Для сестёр") : bl;
+    return <Sub title={cyTitle} onBack={cyBack} label={cyLabel}><CyclePage state={state} update={update} today={dayKey(new Date())} view={cyView} setView={(v) => { setCyView(v); window.scrollTo(0, 0); }} /></Sub>;
+  }
   if (page === 'account') return <Sub title={_t("Аккаунт")} onBack={back} label={bl}><AccountPage s={s} set={set} /></Sub>;
 
   const me = authMe();
@@ -270,7 +278,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
         <>
           <div className="pf-h">{_t("Для сестёр")}</div>
           <div className="menu">
-            <Row icon="🌙" title={_t("Для сестёр")} sub={sisNow(state) ? _tj("Дни без намаза: день {0}", sisDayN(state, today)) : _t("Дни без намаза, приватность")} onClick={() => go('sisters')} />
+            <Row icon="🌙" title={_t("Для сестёр")} sub={sisNow(state) && !state.sis?.lock ? _tj("Дни без намаза: день {0}", sisDayN(state, today)) : _t("Мой цикл, приватность, режим «Мама»")} onClick={() => go('sisters')} />
             {teachOn && <Row icon="🎓" title={_t("Я учительница")} sub={_t("Значок «проверенная учительница» на твоих кругах")} onClick={() => go('teacher')} />}
           </div>
         </>
@@ -296,7 +304,7 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   );
 }
 
-export type Page = 'support' | 'founders' | 'founders-terms' | 'teacher' | 'sisters' | 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
+export type Page = 'cycle' | 'support' | 'founders' | 'founders-terms' | 'teacher' | 'sisters' | 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);
 const SUPPORT_EMAIL = 'alpinskamarina@gmail.com';
 const ANCHORS: Anchor[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
