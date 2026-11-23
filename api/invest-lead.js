@@ -1,6 +1,7 @@
 // /investors form: saves the request (Supabase lm_invest_lead, see supabase/invest.sql) and, when Brevo is
 // configured, emails the investor deck to the person and a copy of the request to the owner.
-// Env: BREVO_API_KEY (Brevo → SMTP & API → API keys), BREVO_SENDER (a sender address verified in Brevo).
+// Env: BREVO_API_KEY (Brevo → SMTP & API → API keys), BREVO_SENDER (a sender address verified in Brevo),
+// INVEST_NOTIFY (where the copy of each request goes, several addresses comma-separated; default BREVO_SENDER).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -32,6 +33,12 @@ const TEXT = {
     next: 'The founder will contact you within a few days, insha’Allah. If you have questions, simply reply to this email.',
     disc: 'This is not a public offer, an offer of securities or investment advice. Investing in an early-stage project carries high risk, up to total loss. Figures are estimates, not a forecast of returns.'
   }
+};
+
+/** Who gets the copy of a request: INVEST_NOTIFY (comma-separated), else the sender address itself. */
+const notifyTo = (sender) => {
+  const list = String(process.env.INVEST_NOTIFY || '').split(',').map((x) => x.trim()).filter(isEmail);
+  return (list.length ? list : [sender]).map((e) => ({ email: e }));
 };
 
 function mail(t, name, deck) {
@@ -88,7 +95,7 @@ export default async function handler(req, res) {
   const rows = [['Имя', name], ['Почта', email], ['Телефон', phone], ['Страна', str(b.country, 60)], ['Сумма', str(b.amount, 40)], ['О себе', str(b.about, 1000)], ['Язык', lang], ['Презентация отправлена', mailed ? 'да' : 'нет']];
   await brevo({
     sender: { name: 'Living Muslim', email: sender },
-    to: [{ email: sender }],
+    to: notifyTo(sender),
     replyTo: { email, name },
     subject: `Новая заявка инвестора: ${name}`,
     htmlContent: `<div style="font-family:Arial,sans-serif"><h3>Новая заявка с /investors</h3><table cellpadding="6">${rows.filter((r) => r[1]).map((r) => `<tr><td style="color:#6E5E49">${r[0]}</td><td>${esc(r[1])}</td></tr>`).join('')}</table><p>Все заявки: Supabase → Table Editor → invest_leads.</p></div>`
