@@ -13,6 +13,7 @@ import {
   OPEN_KINDS, openList, openView, openJoin, openAskCancel, openMine, openSet, openAnswer, openMe, useCommon, commonJuz, commonDuaAdd,
   commonAmin, commonReport, commonDuaDel, savedGender, rememberGender, type OpenCard, type OpenView, type OpenMine, type OpenSettings, type OpenMe, type OWho,
 } from '../openCircles';
+import { TOPICS, topicOf, subjectsText, useSisCirclesReady, openTopicGet, openTopicSet, myTown, sameTown, type Topic } from '../sisCircles';
 
 const KIND_BG: Record<string, string> = { brothers: '#e8f3ec', sisters: '#fbe8f0', friends: '#eef0f3', masjid: '#efe7fb', study: '#e6f4f6', startup: '#ece7fb', other: '#f6f0dc' };
 const WHO: Record<OWho, string> = { brothers: _t("только братья"), sisters: _t("только сёстры"), all: _t("для всех, только текст") };
@@ -175,6 +176,9 @@ const KIND_FILTERS: (CircleKind | '')[] = ['', 'brothers', 'sisters', 'study', '
 export function OpenCatalog({ today, g, pick, onView }: { today: string; g: '' | 'm' | 'f'; pick: (g: 'm' | 'f') => void; onView: (id: string) => void }) {
   const [list, setList] = useState<OpenCard[] | null>(null);
   const [k, setK] = useState<CircleKind | ''>('');
+  const [tp, setTp] = useState<Topic | 'near' | ''>('');
+  const themes = useSisCirclesReady() && g === 'f';
+  const town = useMemo(myTown, []);
   useEffect(() => { if (g) openList(g, today).then(setList); }, [g, today]);
   if (!g) {
     return (
@@ -186,9 +190,26 @@ export function OpenCatalog({ today, g, pick, onView }: { today: string; g: '' |
     );
   }
   const kinds = KIND_FILTERS.filter((x) => !x || (g === 'f' ? x !== 'brothers' : x !== 'sisters'));
-  const shown = (list ?? []).filter((c) => !k || c.kind === k);
+  const shown = (list ?? []).filter((c) => (!k || c.kind === k) && (!tp || (tp === 'near' ? sameTown(c.city, town) : c.topic === tp)));
+  const tiles = TOPICS.filter((t) => ['moms', 'new', 'hifz', 'tajwid', 'sport'].includes(t.k) || (list ?? []).some((c) => c.topic === t.k));
+  const cnt = (n: number) => (n ? _tj("{0} {1}", n, plural(n, _t("круг"), _t("круга"), _t("кругов"))) : _t("пока нет"));
   return (
     <div className={`oc-cat${g === 'f' ? ' sis' : ''}`}>
+      {themes && (
+        <div className="sc-tiles">
+          {tiles.map((t) => (
+            <button key={t.k} type="button" className="sc-tile" aria-pressed={tp === t.k} style={{ background: t.bg, color: t.fg }} onClick={() => setTp(tp === t.k ? '' : t.k)}>
+              {t.l()}<small>{cnt((list ?? []).filter((c) => c.topic === t.k).length)}</small>
+            </button>
+          ))}
+          {town && (
+            <button type="button" className="sc-tile" aria-pressed={tp === 'near'} style={{ background: '#f3e6dc', color: '#9a5a33' }} onClick={() => setTp(tp === 'near' ? '' : 'near')}>
+              {_t("Рядом со мной")}<small>{town}</small>
+            </button>
+          )}
+        </div>
+      )}
+      {tp && <p className="sc-on">{tp === 'near' ? _tj("Круги в городе {0}", town) : topicOf(tp)?.l()} <button type="button" className="link-btn" onClick={() => setTp('')}>{_t("Показать все")}</button></p>}
       <div className="wa-filt oc-filt">{kinds.filter((x) => !x || (list ?? []).some((c) => c.kind === x)).map((x) => <button key={x || 'all'} type="button" aria-pressed={k === x} onClick={() => setK(x)}>{x ? kindOf(x)?.ru : _t("Все")}</button>)}</div>
       <div className="oc-lbl">{g === 'f' ? _t("Открытые круги для сестёр") : _t("Открытые круги")}</div>
       {!list && <p className="tiny oc-pad">{_t("Загружаю круги…")}</p>}
@@ -206,7 +227,9 @@ export function OpenCatalog({ today, g, pick, onView }: { today: string; g: '' |
             {c.about && <small>{c.about.length > 90 ? c.about.slice(0, 88) + '…' : c.about}</small>}
             <span className="oc-tags">
               {c.today > 0 && <em className="gr">{_tj("{0} из {1} сегодня в деле", c.today, c.n)}</em>}
-              {c.verified && <em className="gd">{c.kind === 'masjid' ? _t("✓ проверенная мечеть") : _t("✓ проверено")}</em>}
+              {c.teacher && <em className="gd">{g === 'f' ? _t("✓ проверенная учительница") : _t("✓ проверенный учитель")}</em>}
+              {c.verified && !c.teacher && <em className="gd">{c.kind === 'masjid' ? _t("✓ проверенная мечеть") : _t("✓ проверено")}</em>}
+              {c.topic && topicOf(c.topic) && !tp && <em className="tp">{topicOf(c.topic)!.l()}</em>}
               {!c.today && <em>{_tj("{0} {1}", c.n, plural(c.n, _t("человек"), _t("человека"), _t("человек")))}</em>}
               <em>{c.city || _t("онлайн")}</em>
               {c.who === 'all' && <em>{_t("только текст")}</em>}
@@ -264,8 +287,14 @@ export function OpenPreview({ id, today, sex: g, onBack }: { id: string; today: 
         <span className="oc-av big" style={{ background: KIND_BG[v.kind] ?? '#eef0f3' }}><Ic e={kindOf(v.kind)?.ic ?? '👥'} /></span>
         <b>{v.title}</b>
         <small>{[v.join === 'open' ? _t("вход сразу") : _t("по просьбе"), WHO[v.who], v.amir ? _tj("амир: {0}", v.amir) : ''].filter(Boolean).join(' · ')}</small>
-        {v.verified && <em className="oc-ver">{v.kind === 'masjid' ? _t("✓ проверенная мечеть") : _t("✓ проверено командой")}</em>}
+        {v.verified && !v.teacher && <em className="oc-ver">{v.kind === 'masjid' ? _t("✓ проверенная мечеть") : _t("✓ проверено командой")}</em>}
       </div>
+      {v.teacher && (
+        <div className="oc-sec sc-teach">
+          <b>{g === 'f' ? _t("✓ Проверенная учительница") : _t("✓ Проверенный учитель")}</b>
+          <p>{subjectsText(v.tsub) ? _tj("Знания по предметам «{0}» проверены командой Living Muslim: иджаза или диплом и рекомендация.", subjectsText(v.tsub)) : _t("Иджаза или диплом и рекомендация проверены командой Living Muslim.")}</p>
+        </div>
+      )}
       <div className="oc-stats">
         <span><b>{v.n}</b>{plural(v.n, _t("участник"), _t("участника"), _t("участников"))}</span>
         <span><b>{v.today}</b>{_t("сегодня в деле")}</span>
@@ -379,6 +408,7 @@ export function OpenOwnerBox({ code, kind }: { code: string; kind?: CircleKind }
           </div>
         </div>
       )}
+      {m.open && !edit && <TopicPick code={code} />}
       {m.owner && m.open && !edit && (
         <p className="oc-sum">{[m.open.join === 'open' ? _t("вход сразу") : _t("по просьбе"), WHO[m.open.who], m.open.city || _t("онлайн"), _tj("до {0} человек", m.open.max)].join(' · ')}{m.open.wants_all && !m.open.verified ? _t(" · «для всех» ждёт проверки") : ''}{' '}
           <button type="button" className="link-btn" onClick={() => setEdit(cur)}>{_t("Изменить")}</button></p>
@@ -439,6 +469,29 @@ export function OpenOwnerBox({ code, kind }: { code: string; kind?: CircleKind }
         </div>
       )}
     </div>
+  );
+}
+
+/** The theme of an open circle: sisters find it by the tiles in «Найти круг». Saved at once. */
+function TopicPick({ code }: { code: string }) {
+  const on = useSisCirclesReady();
+  const [t, setT] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { if (on) openTopicGet(code).then(setT); }, [on, code]);
+  if (!on || t === null) return null;
+  const pick = async (v: Topic) => {
+    const old = t; setT(v); setMsg('');
+    const r = await openTopicSet(code, v);
+    if (r === 'ok') setMsg(_t("✓ Тема сохранена")); else { setT(old); setMsg(_t("Не получилось сохранить. Проверь интернет.")); }
+  };
+  return (
+    <label className="cl-f sc-pick"><span>{_t("Тема круга (по ней сёстры находят круг)")}</span>
+      <select value={t} onChange={(e) => pick(e.target.value as Topic)}>
+        <option value="">{_t("Без темы")}</option>
+        {TOPICS.map((x) => <option key={x.k} value={x.k}>{x.l()}</option>)}
+      </select>
+      {msg && <small className="tiny" role="status">{msg}</small>}
+    </label>
   );
 }
 

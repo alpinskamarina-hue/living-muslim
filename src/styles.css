@@ -6278,3 +6278,33 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .sis-mama > .sis-li { width: auto; }
 .sis-mama > .sis-born { width: calc(100% - 24px); margin: 10px 12px 0; }
 .sis-page .sis-li:last-of-type { border-bottom: 1px solid var(--line); }
+
+/* Sisters' circles by theme, verified teachers */
+.sc-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 16px 4px; }
+.sc-tile { border: 0; border-radius: 14px; padding: 12px; text-align: left; font: inherit; font-weight: 700; font-size: 14px; line-height: 1.25; min-height: 62px; display: flex; flex-direction: column; justify-content: space-between; }
+.sc-tile small { font-weight: 500; font-size: 12px; opacity: .8; margin-top: 4px; }
+.sc-tile[aria-pressed="true"] { box-shadow: inset 0 0 0 2px currentColor; }
+.sc-on { margin: 6px 16px 0; font-size: 13px; color: var(--ink-2); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.sc-teach { border-color: var(--green-2); background: var(--green-soft); }
+.sc-teach b { color: var(--green-2); }
+.sc-teach p { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+.sc-pick { margin: 8px 0; }
+.sc-pad { padding: 16px; }
+.sc-teacher { padding: 4px 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+.sc-lead { margin: 4px 0; font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.sc-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc-chips button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 13px; font: inherit; font-size: 13.5px; }
+.sc-chips button[aria-pressed="true"] { background: #f7ecec; color: var(--sis); border-color: var(--sis); font-weight: 700; }
+.sc-proof { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 11px 12px; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); }
+.sc-proof > span { flex: 1; min-width: 140px; display: flex; flex-direction: column; font-size: 14px; }
+.sc-proof > span small { color: var(--ink-2); font-size: 12px; }
+.sc-proof img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; }
+.sc-ok { color: var(--green-2); font-weight: 600; }
+.sc-st { padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.sc-st small { color: var(--ink-2); font-size: 12.5px; line-height: 1.4; }
+.sc-st.ok { border-color: var(--green-2); background: var(--green-soft); }
+.sc-st.ok b { color: var(--green-2); }
+.sc-st.pending b { color: #8a611b; }
+.sc-row { display: flex; gap: 10px; align-items: center; margin-top: 6px; }
+.adm-proof { border-radius: 8px; cursor: zoom-in; display: block; margin: 6px 0; }
+.oc-tags em.tp { white-space: nowrap; flex: none; }

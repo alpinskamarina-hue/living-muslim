@@ -8,6 +8,8 @@ export type OWho = 'brothers' | 'sisters' | 'all';
 export interface OpenCard {
   id: string; title: string; kind: CircleKind; about: string; who: OWho; join: 'open' | 'ask'; lang: string; city: string;
   max: number; verified: boolean; n: number; today: number; member: boolean; asked: 'pending' | 'accepted' | 'declined' | 'cancelled' | null; post_at?: string | null;
+  /** From sisters-circles.sql: the theme, and whether the owner is a teacher checked by the team. */
+  topic?: string; teacher?: boolean; tsub?: string[];
 }
 export interface OpenView extends OpenCard { rules: string[]; amir: string; fajr: number; days: number; code: string | null }
 export interface OpenSettings { id?: string; about: string; rules: string[]; who: OWho; wants_all?: boolean; join: 'open' | 'ask'; lang: string; city: string; max: number; helpers: string[]; verified?: boolean }
