@@ -17,6 +17,8 @@ export interface Habit {
   createdAt: string; // YYYY-MM-DD
   /** Hijri year: a habit taken on only for that Ramadan. */
   ramadan?: number;
+  /** Rested after a return («С возвращением»): archived for now, comes back one by one. */
+  rest?: boolean;
 }
 
 export type MethodId =
@@ -107,6 +109,8 @@ export interface ReminderPrefs {
   habits?: boolean;
   /** «New course» notices; missing means on. */
   courses?: boolean;
+  /** Gentle pushes after a few days away (day 3, day 7, then Friday mornings, up to 8 weeks); missing means on. */
+  back?: boolean;
 }
 
 export interface RamadanPush {
@@ -179,6 +183,10 @@ export interface AppState {
   /** «Планы»: things to do on a day, between the prayers. */
   plans?: import('./plans').Plan[];
   plansSet?: import('./plans').PlansSettings;
+  /** Last day the app was opened (for «С возвращением»). */
+  seen?: string;
+  /** The last return after a gap: answer, rested habits, when to offer the next one back. */
+  back?: import('./comeback').BackState;
 }
 
 export interface Idea { id: string; at: number; text: string }

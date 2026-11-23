@@ -6209,3 +6209,28 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .dm-bl { display: flex; align-items: center; gap: 10px; padding: 8px 14px; }
 .dm-bl b { flex: 1; font-size: 14px; }
 .dm-bl .nk-ava { border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; }
+
+/* «С возвращением» (comeback.ts) */
+.cb-sheet { padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+.cb-h { font-family: var(--f-display); font-size: 28px; color: var(--green-2); margin: 0 0 4px; line-height: 1.1; }
+.cb-ar { font-family: var(--f-ar); color: var(--gold); font-size: 20px; text-align: center; margin: 4px 0 0; }
+.cb-q { font-size: 13px; font-style: italic; color: var(--ink-2); margin: 2px 0 12px; }
+.cb-q small { font-style: normal; }
+.cb-garden { display: flex; gap: 12px; align-items: center; background: var(--green-soft); border-radius: 14px; padding: 10px 12px; margin-bottom: 12px; }
+.cb-garden b { font-size: 14px; display: block; }
+.cb-garden small { color: var(--ink-2); font-size: 12.5px; }
+.cb-tree { width: 44px; height: 44px; border-radius: 50%; background: var(--green-2); color: var(--gold-soft); display: grid; place-items: center; flex: none; }
+.cb-tree svg { width: 24px; height: 24px; }
+.cb-ask { margin: 0 0 6px; font-size: 14px; }
+.cb-ask small { color: var(--ink-2); font-weight: 400; font-size: 12px; }
+.cb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cb-chips button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 20px; padding: 7px 12px; font-size: 13px; }
+.cb-chips button.on { background: var(--green-2); border-color: var(--green-2); color: #fff; }
+.cb-note { margin: 8px 0 4px; }
+.cb-go { display: block; width: 100%; margin-top: 10px; }
+.cb-one { text-align: center; margin: 6px 0 0; }
+.cb-same { display: block; margin: 4px auto 0; }
+.cb-habit { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.cb-habit > i { width: 10px; height: 10px; border-radius: 50%; background: var(--cc, var(--green-2)); flex: none; }
+.cb-habit b { display: block; font-size: 14.5px; }
+.cb-habit small { color: var(--ink-2); font-size: 12px; }

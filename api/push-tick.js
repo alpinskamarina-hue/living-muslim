@@ -93,6 +93,35 @@ const ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 const NUDGE_AFTER_MS = 25 * 60 * 1000;
 const ruDeeds = (n) => (n % 10 === 1 && n % 100 !== 11 ? 'дело' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'дела' : 'дел');
 
+const BACK_FROM = 3;
+const BACK_UNTIL = 56;
+/**
+ * «С возвращением» (23.11): someone who has not opened the app for a while gets a gentle ladder instead of silence.
+ * Day 3 and day 7 after Dhuhr, then Friday mornings (09:00) up to 8 weeks; after that nothing.
+ * `seen` is the last day the phone reported (the app sends it on every open with reminders on).
+ */
+export function backEvents(prefs, day, tz, t) {
+  if (prefs.back === false) return [];
+  const seen = prefs.seen || prefs.nudge?.d;
+  if (!seen || !/^\d{4}-\d{2}-\d{2}$/.test(seen)) return [];
+  const quiet = Math.round((Date.parse(day.key) - Date.parse(seen)) / 86400000);
+  if (quiet < BACK_FROM || quiet > BACK_UNTIL) return [];
+  const en = prefs.lang === 'en';
+  const friday = new Date(Date.UTC(day.y, day.m - 1, day.d)).getUTCDay() === 5;
+  const afterDhuhr = t.dhuhr ? t.dhuhr.getTime() + 40 * 60000 : zoned(tz, day.y, day.m, day.d, 13, 30);
+  const ev = (k, at, title, body) => [{ key: `${day.key}:back-${k}`, at, title, body, tag: 'back', url: '/app/' }];
+  if (quiet === BACK_FROM) return ev('3', afterDhuhr,
+    en ? 'Your garden is waiting 🌱' : 'Твой сад ждёт 🌱',
+    en ? 'One minute is enough to come back. Even the smallest deed counts.' : 'Хватит одной минуты, чтобы вернуться. Засчитается даже самое малое дело.');
+  if (quiet === 7) return ev('7', afterDhuhr,
+    en ? 'Little but steady' : 'Мало, но постоянно',
+    en ? '"The deeds most loved by Allah are the most constant, even if small." Start again with one.' : '«Самые любимые дела у Аллаха — самые постоянные, даже если их мало». Начни снова с одного.');
+  if (friday && quiet > 7) return ev('fri', zoned(tz, day.y, day.m, day.d, 9, 0),
+    en ? "Jumu'ah Mubarak 🌙" : 'Джума мубарак 🌙',
+    en ? 'A good day to start again. One minute is enough.' : 'Хороший день, чтобы начать заново. Хватит одной минуты.');
+  return [];
+}
+
 /**
  * Habit nudges, 25 minutes after a prayer, at most 3 a day. The phone sends only counts per prayer
  * (b: all active habits, p: what is still open today, q: one of them is Quran), never habit names.
@@ -107,8 +136,9 @@ export function nudgeEvents(prefs, day, t) {
     .sort((x, y) => (N.b[y].q ? 1 : 0) - (N.b[x].q ? 1 : 0) || ORDER.indexOf(x) - ORDER.indexOf(y))
     .slice(0, 3);
   // Not opened for a while: one nudge a day, and none after two weeks of silence.
+  // With «Если я пропал» on (default), from day 3 the gentle ladder in backEvents takes over instead.
   const quiet = Math.round((Date.parse(day.key) - Date.parse(N.d || day.key)) / 86400000);
-  if (quiet > 14) return [];
+  if (quiet > 14 || (quiet >= BACK_FROM && prefs.back !== false)) return [];
   const open = N.d === day.key ? N.p || {} : N.b;
   const out = [];
   const chosen = quiet > 2 ? pick.slice(0, 1) : pick;
@@ -184,6 +214,7 @@ export function events(prefs, now, courses = []) {
   }
   out.push(...ramadanEvents(prefs, day, tz, t, params, coords));
   out.push(...nudgeEvents(prefs, day, t));
+  out.push(...backEvents(prefs, day, tz, t));
   out.push(...courseEvents(prefs, day, tz, courses));
   if (/^\d\d:\d\d$/.test(prefs.muhasaba || '')) {
     const [hh, mm] = prefs.muhasaba.split(':').map(Number);

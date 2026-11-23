@@ -13,6 +13,7 @@ import { Advice } from './Plan';
 import { GiftPass } from './GiftPass';
 import { Garden } from './Garden';
 import { garden, journey } from '../gamify';
+import { restoreHabit } from '../comeback';
 import { authMe, signInUrl, signOut } from '../auth';
 import { useEffect, useRef, useState } from 'react';
 import { ShareRow } from './ShareRow';
@@ -370,10 +371,11 @@ function HabitsSettings({ state, update, onEdit }: { state: AppState; update: Pr
       <p className="page-sub">{SOFT ? _tj("Активных: {0}. Нажми на привычку, чтобы изменить её.", used) : _tj("{0} из {1} мест занято. Нажми на привычку, чтобы изменить её.", used, activeLimit())}</p>
       <Advice k="habits" n={used} adding={0} />
       <HabitGroup title={_t("Активные")} list={byStatus('active')} onEdit={onEdit} action={(h) => [_t("В архив"), () => setStatus(h.id, 'archived')]} />
+      <HabitGroup title={_t("На паузе после перерыва")} list={state.habits.filter((h) => h.rest && h.status === 'archived')} onEdit={onEdit} action={(h) => [_t("Вернуть"), () => update((x) => restoreHabit(x, h.id, dayKey(new Date())))]} />
       <HabitGroup title={_t("Очередь «Скоро»")} list={byStatus('queued')} onEdit={onEdit} action={(h) => [_t("Убрать"), () => setStatus(h.id, 'archived')]} />
       <HabitGroup
         title={_t("Архив")}
-        list={byStatus('archived')}
+        list={byStatus('archived').filter((h) => !h.rest)}
         onEdit={onEdit}
         action={(h) => (used < activeLimit() ? [_t("Вернуть"), () => setStatus(h.id, 'active')] : [_t("Удалить"), () => remove(h.id)])}
       />
@@ -502,6 +504,7 @@ function RemindPage({ s, set, times }: { s: AppState['settings']; set: SetFn; ti
 
       <h2 className="sub-h">{_t("Мои дела и курсы")}</h2>
       <label className="check-row"><input type="checkbox" checked={r.habits !== false} onChange={(e) => setR({ habits: e.target.checked })} />{_t("Привычки после намаза: через 25 минут, если дело ещё не отмечено. Не больше 3 в день, Коран первым.")}</label>
+      <label className="check-row"><input type="checkbox" checked={r.back !== false} onChange={(e) => setR({ back: e.target.checked })} />{_t("Если я пропал: мягко позвать через 3 и 7 дней, потом по пятницам утром. После 8 недель тишина.")}</label>
       <label className="check-row"><input type="checkbox" checked={r.courses !== false} onChange={(e) => setR({ courses: e.target.checked })} />{_t("Когда выходит новый курс")}</label>
       <label className="check-row"><input type="checkbox" checked={r.chat !== false} onChange={(e) => setR({ chat: e.target.checked })} />{_t("Новые сообщения в кругу (во время намаза ждут)")}</label>
 

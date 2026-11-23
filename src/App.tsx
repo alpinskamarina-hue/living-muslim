@@ -20,6 +20,8 @@ import { Practice } from './components/Practice';
 import { Progress } from './components/Progress';
 import { Profile } from './components/Profile';
 import { syncPush, setNudge, nudgeOf, setPings } from './push';
+import { comebackDue, comebackDemo, nextBack, type BackInfo } from './comeback';
+import { ComebackSheet, ComebackMore } from './components/Comeback';
 import { planRings } from './plans';
 import { effectiveTheme, themeMode, setCurrentTheme, sysPrefersDark } from './theme';
 import { Circle } from './components/Circle';
@@ -194,6 +196,17 @@ export function App() {
     try { if (new URLSearchParams(location.search).get('path') === 'new' && !state.settings.path) setPathOpen({ v: 'list' }); } catch { /* */ }
     return () => window.removeEventListener(PATH_EVENT, f);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // «С возвращением»: greet once after 3+ missed days (?back=1 shows it on the test link), then remember today as seen.
+  const [backInfo, setBackInfo] = useState<BackInfo | null>(null);
+  useEffect(() => {
+    let demo = false;
+    try { const u = new URL(location.href); if (u.searchParams.get('back') === '1') { demo = true; u.searchParams.delete('back'); history.replaceState(null, '', u.toString()); } } catch { /* */ }
+    const b = demo ? comebackDemo(state, today) : comebackDue(state, today);
+    if (b) setBackInfo(b);
+    if (state.seen !== today) update((s) => ({ ...s, seen: today }));
+  }, [today]); // eslint-disable-line react-hooks/exhaustive-deps
+  const backMore = useMemo(() => (backInfo ? null : nextBack(state, today)), [backInfo, state.back, state.log, state.prayers, today]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [backMoreOff, setBackMoreOff] = useState('');
   const [ramadan, setRamadan] = useState<false | string>(false);
   const [goalOpen, setGoalOpen] = useState<string | null>(null);
   const [quitOpen, setQuitOpen] = useState<{ id?: string; view?: QuitView } | null>(null);
@@ -518,7 +531,11 @@ export function App() {
       {pathOpen && <PathScreen state={state} update={update} today={today} prayer={teachA} start={pathOpen} onClose={() => setPathOpen(null)} onGo={pathGo} />}
       {qiblaOpen && <QiblaScreen state={state} update={update} today={today} start={qiblaOpen} onClose={() => setQiblaOpen(null)} />}
 
-      {planSheet && !sheet && <PlanSheet k={planSheet} state={state} today={today} onClose={() => setPlanSheet(null)} />}
+      {backInfo && !sheet && <ComebackSheet state={state} update={update} today={today} info={backInfo} onClose={() => setBackInfo(null)} />}
+      {!backInfo && backMore && backMoreOff !== backMore.id + today && tab === 'today' && !sheet && !planSheet && (
+        <ComebackMore state={state} update={update} today={today} habit={backMore} onClose={() => setBackMoreOff(backMore.id + today)} />
+      )}
+      {planSheet && !sheet && !backInfo && <PlanSheet k={planSheet} state={state} today={today} onClose={() => setPlanSheet(null)} />}
 
       {sheet && (
         <HabitSheet
