@@ -230,8 +230,8 @@ export const TOOLS = [
   },
   {
     name: 'open_screen',
-    description: 'Open a screen of the app for the person (the chat closes). Use only when they ask to open or go somewhere, as the last action.',
-    input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders', 'plans', 'azkar', 'tests'] } }, required: ['screen'] },
+    description: 'Open a screen of the app for the person (the chat closes). Use when they ask to open or go somewhere, or say yes to a section you suggested; as the last action. cycle and sisters only for sisters.',
+    input_schema: { type: 'object', properties: { screen: { type: 'string', enum: ['today', 'circle', 'goals', 'profile', 'quran', 'tasbih', 'focus', 'books', 'courses', 'languages', 'health', 'food', 'sadaqa', 'umrah', 'ramadan', 'safar', 'add_habit', 'reminders', 'prayer_settings', 'my_habits', 'garden', 'account', 'ideas', 'my_reminders', 'plans', 'azkar', 'tests', 'halal', 'khutba', 'qibla', 'mosques', 'quit', 'nikah', 'adhan', 'cycle', 'sisters'] } }, required: ['screen'] },
   },
 ];
 

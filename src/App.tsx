@@ -404,6 +404,7 @@ export function App() {
     if ('ramadan' in t) { setRamadan('auto'); return; }
     if ('safar' in t) { setSafar(true); return; }
     if ('assistant' in t) { setAiOpen(true); return; }
+    if ('open' in t) { if (t.open === 'halal') setHalal('cam'); else if (t.open === 'khutba') setKhutba(true); else if (t.open === 'quit') setQuitOpen({}); else setQiblaOpen(t.open); return; }
     if ('muhasaba' in t) { setTab('today'); setTimeout(() => document.querySelector('.muhasaba')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150); }
   };
   // A tap on a reminder notification opens /app/?go=pings (Мои напоминания) or ?go=plans&pl=…&do=…&d=… (a plan,
