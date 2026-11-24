@@ -6609,3 +6609,13 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .cy-link { color: #e0b45c !important; }
 .cy-pin .pri-btn { width: 100%; max-width: 280px; }
 .cy-sheet .sis-h { color: var(--ink); }
+
+/* Assistant: topics in an empty chat and the «Открыть …» offer under an answer */
+.ai-topics { display: flex; flex-direction: column; gap: 7px; margin: 2px 0 6px 34px; }
+.ai-topics button { text-align: left; background: var(--card, #fff); border: 1px solid var(--line, #e3e8e2); border-radius: 12px; padding: 8px 11px; font: inherit; font-size: 13px; color: var(--ink-2, #5a6d61); cursor: pointer; }
+.ai-topics button:disabled { opacity: .6; cursor: default; }
+.ai-topics b { display: block; font-size: 13.5px; color: var(--ink, #0f5132); }
+.ai-topics em { font-style: normal; color: var(--accent, #1f7a4d); font-weight: 700; }
+.ai-offer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #d9ad55; }
+.ai-offer button { border-radius: 20px; padding: 6px 12px; font: inherit; font-weight: 800; font-size: 13px; background: transparent; border: 1.5px solid var(--line, #c9d6cc); color: var(--ink-2, #5a6d61); cursor: pointer; }
+.ai-offer button.go { background: #fff4dc; border-color: #d9ad55; color: #7a5a17; }

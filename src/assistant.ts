@@ -19,6 +19,8 @@ export interface AiMsg {
   plans?: boolean;
   /** A reminder the assistant set came due: its ping id (shown as the assistant's message, sent to the model as a note). */
   ping?: string;
+  /** The «Открыть …» offer under this answer was used or dismissed. */
+  off?: boolean;
 }
 
 const LS = 'lm.ai.chat';

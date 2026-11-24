@@ -11,6 +11,8 @@ import { authMe } from '../auth';
 import { _t, _tj, LANG } from '../i18n';
 import { hush, listen, speak, sttAvailable, ttsAvailable, type Listening } from '../speech';
 import { useOnb } from './Onboard';
+import { aiTopics, openLabel, splitOffer } from '../aiTopics';
+import { SCREENS } from '../aiActions';
 import { AI_COLORS, AI_FINISHES, AI_PEOPLE, AI_STYLES, Ai3D, AiFace, aiDefaultStyle, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
 
 interface Props {
@@ -222,17 +224,43 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo, topi
       </div>
 
       <div className="ai-list" aria-live="polite">
-        {msgs.length === 0 && (
+        {msgs.length === 0 && (um ? (
           <div className="ai-hello">
             <p>{_t("Ас-саляму алейкум! Я {0}, помощник Living Muslim. Задай вопрос о намазе, привычках, Коране или о приложении.", name)}</p>
             {signed && <div className="ai-chips">{starters.map((q) => <button key={q} type="button" onClick={() => send(q)}>{q}</button>)}</div>}
           </div>
-        )}
+        ) : (
+          <>
+            <div className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it">{s.me === 'f'
+              ? _t("Ас-саляму алейкум! Я {0}. Здесь есть всё для жизни мусульманки, а я помогу этим пользоваться. С чего начнём?", name)
+              : _t("Ас-саляму алейкум! Я {0}. Здесь есть всё для жизни мусульманина, а я помогу этим пользоваться. С чего начнём?", name)}</div></div>
+            <div className="ai-topics">
+              {aiTopics(s).map((t) => (
+                <button key={t.title} type="button" disabled={!signed} onClick={() => send(t.ask)}>
+                  <b>{t.ic} {t.title}</b>{t.line} <em>«{t.ask}»</em>
+                </button>
+              ))}
+            </div>
+          </>
+        ))}
         {msgs.map((m, i) => m.hidden ? null : m.role === 'user'
           ? <div key={i} className="ai-msg me">{m.voice && <span className="ai-vo" aria-label={_t("Голосом")}>🎙 </span>}{m.content}</div>
           : (!m.content && !m.acts?.length && !m.drafts?.length) ? null
           : <div key={i} className="ai-row"><AiFace s={s} size={26} /><div className={`ai-msg it${m.content ? '' : ' ai-bare'}`}>
-              {rich(m.content)}
+              {rich(splitOffer(m.content).text)}
+              {(() => {
+                // «Кстати, для этого есть …»: the assistant ends the answer with [[open:screen]] → a button, never a jump.
+                const sc = splitOffer(m.content).screen;
+                const g = sc ? SCREENS[sc] : undefined; const lb = sc ? openLabel(sc) : null;
+                if (!g || !lb || m.off || !onGo) return null;
+                const off = () => setMsgs((h) => h.map((x, k) => (k === i ? { ...x, off: true } : x)));
+                return (
+                  <div className="ai-offer">
+                    <button type="button" className="go" onClick={() => { off(); onGo(g); }}>{lb}</button>
+                    <button type="button" onClick={off}>{_t("Не сейчас")}</button>
+                  </div>
+                );
+              })()}
               {m.ping && i === msgs.length - 1 && signed && !busy && (
                 <div className="ai-book-acts">
                   <button type="button" onClick={() => send(_t("Сделано ✓"))}>{_t("Сделано ✓")}</button>
@@ -263,7 +291,7 @@ export function Assistant({ state, onClose, onSignIn, context, apply, onGo, topi
                 </div>
               ))}
             </div>
-            {ttsAvailable() && m.content && <button type="button" className={`ai-say${saying === i ? ' on' : ''}`} onClick={() => say(i, m.content)} aria-label={saying === i ? _t("Остановить") : _t("Прослушать")}>{saying === i ? '■' : '🔊'}</button>}</div>)}
+            {ttsAvailable() && m.content && <button type="button" className={`ai-say${saying === i ? ' on' : ''}`} onClick={() => say(i, splitOffer(m.content).text)} aria-label={saying === i ? _t("Остановить") : _t("Прослушать")}>{saying === i ? '■' : '🔊'}</button>}</div>)}
         {busy && <div className="ai-row"><AiFace s={s} size={26} /><div className="ai-msg it ai-typing" aria-label={_t("Пишет…")}><i /><i /><i /></div></div>}
         {err && <div className="ai-err">{err}{!signed && <button type="button" className="ghost-btn" onClick={onSignIn}>{_t("Войти по почте")}</button>}</div>}
         <div ref={end} />
@@ -424,12 +452,21 @@ export function AssistantSettings({ s, set, admin, onOpen }: { s: AppState['sett
 }
 
 /** The round button at the bottom right, on every tab. First time it greets once. */
-export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: () => void }) {
+export function AssistantFab({ s, onOpen, newbie = false }: { s: AppState['settings']; onOpen: () => void; newbie?: boolean }) {
   const onb = useOnb();
-  const [hint0, setHint] = useState(() => { try { return !localStorage.getItem('lm.ai.hint'); } catch { return false; } });
+  const day = dayKey(new Date());
+  // A new person (first week) sees the topics tip once a day on their first 3 days; everyone else the hello once.
+  const tipOf = () => { try { const x = JSON.parse(localStorage.getItem('lm.ai.tipd') || '{}'); return { d: String(x.d || ''), n: Number(x.n) || 0 }; } catch { return { d: '', n: 3 }; } };
+  const [hint0, setHint] = useState(() => {
+    try { if (!localStorage.getItem('lm.ai.hint')) return true; } catch { return false; }
+    const t = tipOf(); return newbie && t.n < 3 && t.d !== day;
+  });
   // While the first-day card is on Today, it does the greeting: the bubble would cover it.
   const hint = hint0 && (onb === 'done' || onb === 'skip');
-  const seen = () => { setHint(false); try { localStorage.setItem('lm.ai.hint', '1'); } catch { /* */ } };
+  const seen = () => {
+    setHint(false);
+    try { localStorage.setItem('lm.ai.hint', '1'); const t = tipOf(); if (newbie && t.d !== day) localStorage.setItem('lm.ai.tipd', JSON.stringify({ d: day, n: t.n + 1 })); } catch { /* */ }
+  };
   useEffect(() => { if (!hint) return; const t = setTimeout(seen, 9000); return () => clearTimeout(t); }, [hint]);
   // Hide while scrolling down (reading), come back on the first scroll up or at the top.
   const [away, setAway] = useState(false);
@@ -457,7 +494,7 @@ export function AssistantFab({ s, onOpen }: { s: AppState['settings']; onOpen: (
     <>
       {hint && (
         <button type="button" className="ai-tip" onClick={() => { seen(); onOpen(); }}>
-          <b>{name}</b>{_t("Ас-саляму алейкум! Спроси меня о чём угодно.")}
+          <b>{name}</b>{newbie ? _t("Спроси меня о поездке, умре, учёбе или халяльной еде. Я покажу, где это в приложении.") : _t("Ас-саляму алейкум! Спроси меня о чём угодно.")}
         </button>
       )}
       <button type="button" className={`ai-fab${away && !hint && !unread ? ' away' : ''}`} onClick={() => { seen(); onOpen(); }} aria-label={_t("Открыть помощника: {0}", name)}>
