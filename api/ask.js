@@ -3,7 +3,7 @@
 // The Claude API key (ANTHROPIC_API_KEY) lives only here, in Vercel settings, never in the browser.
 // Nothing of the conversation is stored on the server.
 import Anthropic from '@anthropic-ai/sdk';
-import { APP_GUIDE } from './_appguide.js';
+import { APP_GUIDE, SUGGEST } from './_appguide.js';
 import { TOOLS, TOOLS_PROMPT, cleanMessages } from './_tools.js';
 import { HAIKU, SONNET, logUsage, pickModel } from './_route.js';
 
@@ -60,7 +60,7 @@ function systemPrompt(cfg, b) {
     b.len === 'short' ? 'The person prefers short answers: 2 to 5 sentences unless they ask for more.' : b.len === 'long' ? 'The person prefers fuller, detailed answers, with steps when useful.' : '',
     b.tone === 'soft' ? 'Tone the person chose: especially gentle and encouraging.' : b.tone === 'warm' ? 'Tone the person chose: warm and friendly.' : b.tone === 'direct' ? 'Tone the person chose: direct and to the point, without extra words.' : '',
   ].filter(Boolean).join('\n');
-  const parts = [{ type: 'text', text: BASE }, { type: 'text', text: `<app_guide>\n${APP_GUIDE}\n</app_guide>\n\n${TOOLS_PROMPT}` }];
+  const parts = [{ type: 'text', text: BASE }, { type: 'text', text: `<app_guide>\n${APP_GUIDE}\n</app_guide>\n\n<suggest>\n${SUGGEST}\n</suggest>\n\n${TOOLS_PROMPT}` }];
   const owner = [
     cfg?.instructions?.trim() && `<owner_instructions>\n${cfg.instructions.trim()}\n</owner_instructions>`,
     cfg?.knowledge?.trim() && `<owner_knowledge>\nFacts and texts the app's owner gave you. Prefer them over your own memory when they apply.\n${cfg.knowledge.trim()}\n</owner_knowledge>`,

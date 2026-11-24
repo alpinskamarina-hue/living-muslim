@@ -22,6 +22,10 @@ export function buildContext(s: AppState, today: string, now: Date, times?: DayT
   const st = s.settings;
   L.push(`Today: ${today} (${now.toLocaleDateString('en-GB', { weekday: 'long' })}), local time ${hm(now)}. City: ${st.place || '—'}.`);
   if (st.name) L.push(`Name in the app: ${st.name}.`);
+  // How long they use the app (earliest marked prayer or habit): the first week gets «Кстати, здесь есть ещё…».
+  const first = [...Object.keys(s.prayers ?? {}), ...s.habits.map((h) => h.createdAt)].filter(Boolean).sort()[0];
+  if (first) { const d = Math.max(0, Math.round((Date.parse(today) - Date.parse(first)) / 864e5)); L.push(`Using the app for ${d + 1} day(s)${d < 7 ? ' (NEW USER: first week)' : ''}.`); }
+  else L.push('Using the app: just started (NEW USER: first week).');
   if (st.path) L.push(`Path chosen at start: ${st.path === 'new' ? 'new Muslim' : st.path === 'back' ? 'returning to prayer after a break' : 'praying, wants consistency'}.`);
 
   // Prayers

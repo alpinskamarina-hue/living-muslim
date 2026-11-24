@@ -34,6 +34,8 @@ export const SCREENS: Record<string, GoTo> = {
   languages: { practice: 'langs' }, health: { practice: 'health' }, food: { practice: 'food' }, sadaqa: { practice: 'sadaqa' }, umrah: { practice: 'umrah' }, tests: { practice: 'tests' },
   azkar: { practice: 'azkar' }, ramadan: { ramadan: true }, safar: { safar: true }, add_habit: { add: true }, reminders: { profile: 'remind' }, prayer_settings: { profile: 'prayer' },
   my_habits: { profile: 'habits' }, garden: { profile: 'garden' }, account: { profile: 'account' }, ideas: { profile: 'ideas' }, my_reminders: { profile: 'pings' }, plans: { profile: 'plans' },
+  halal: { open: 'halal' }, khutba: { open: 'khutba' }, qibla: { open: 'qibla' }, mosques: { open: 'mosques' }, quit: { open: 'quit' },
+  nikah: { profile: 'nikah' }, adhan: { profile: 'adhan' }, cycle: { profile: 'cycle' }, sisters: { profile: 'sisters' },
 };
 
 /** Runs one call on `s`. Returns the new state (or the same one on failure) and what happened. */
