@@ -179,6 +179,11 @@ export function App() {
   const [khutba, setKhutba] = useState(() => { try { return new URLSearchParams(location.search).has('khutba'); } catch { return false; } });
   const [halal, setHalal] = useState<'' | 'cam' | 'hist'>('');
   const [aiOpen, setAiOpen] = useState(false);
+  // First week in the app (earliest marked prayer or habit): the assistant's button shows the topics tip.
+  const newbie = useMemo(() => {
+    const first = [...Object.keys(state.prayers ?? {}), ...state.habits.map((h) => h.createdAt)].filter(Boolean).sort()[0];
+    return !first || Date.parse(today) - Date.parse(first) < 7 * 864e5;
+  }, [state.prayers, state.habits, today]);
   const [aiAsk, setAiAsk] = useState('');
   useEffect(() => { const f = (e: Event) => { setAiAsk(String((e as CustomEvent).detail || '')); setAiOpen(true); }; window.addEventListener('lm:ai', f); return () => window.removeEventListener('lm:ai', f); }, []);
   // Reminders the assistant set: when one comes due, it goes into her chat as a message (the FAB shows how many are new).
@@ -512,7 +517,7 @@ export function App() {
         </button>
       )}
 
-      {!aiOpen && <AssistantFab s={state.settings} onOpen={() => setAiOpen(true)} />}
+      {!aiOpen && <AssistantFab s={state.settings} newbie={newbie} onOpen={() => setAiOpen(true)} />}
 
       <nav className={`nav${tabs.length > 5 ? ' six' : ''}`} aria-label={_t("Разделы")} style={{ '--tabs': tabs.length } as CSSProperties}>
         {tabs.map((t) => (

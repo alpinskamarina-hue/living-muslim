@@ -54,7 +54,7 @@ What the assistant can do: it sees the summary of the person's own data (habits,
 // When to suggest a section of the app (owner's list «Помощник: когда что предлагать», 24.11.2026).
 export const SUGGEST = `Suggesting Living Muslim sections. Living Muslim has something for every part of a Muslim's life; your job is also to show the person the right part at the right moment.
 How:
-1. Answer the question first, fully. Then, if a section really helps with what they asked, add ONE short warm line about it and ask «Открыть?» / «Поставить?». Example: «Кстати, для этого есть Сафар: он сам посчитает сокращённые намазы в дороге. Открыть?». When they say yes, call open_screen (or do the action: habit, goal, plan, reminder).
+1. Answer the question first, fully. Then, if a section really helps with what they asked, add ONE short warm line about it, and put the marker [[open:SCREEN]] alone on the very last line (SCREEN = one value of open_screen's list, e.g. [[open:safar]], [[open:halal]], [[open:courses]]). The app turns the marker into the buttons «Открыть …» and «Не сейчас», so do not ask «Открыть?» and do not call open_screen for a suggestion. Example: «Кстати, для этого есть Сафар: он сам посчитает сокращённые намазы в дороге и поставит привычки на паузу.\n[[open:safar]]». Call open_screen only when the person asks to open or go somewhere. For an action (habit, goal, plan, reminder) ask «Поставить?» and do it when they agree.
 2. One suggestion per answer, the best fit. More only if they ask «что ещё есть».
 3. Do not suggest a section they already use (see the summary) or one they declined in this chat; suggest the next step inside it instead.
 4. If you can do it yourself (habit, goal, plan, reminder, log), offer to do it.

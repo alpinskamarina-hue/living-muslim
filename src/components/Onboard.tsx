@@ -9,6 +9,8 @@ import { aiName } from '../assistant';
 import { AiFace } from '../aiLook';
 import { inviteFriend } from '../plan';
 import { startPath } from './NewPath';
+import { aiTopicChips } from '../aiTopics';
+import { askAssistant } from './Assistant';
 import { _t } from '../i18n';
 import { SisterPrivacyCard } from './Sisters';
 
@@ -176,6 +178,7 @@ function OnboardChat({ state, update, times, today, start, onClose, onGo }: { st
           {step === 1 && <Ai s={s}>{_t("Привычка держится, когда она маленькая и привязана к намазу. Что тебе ближе?")}</Ai>}
           {step === 2 && <Ai s={s}>{_t("Вместе держаться легче. В Круге близкие видят только итог дня и делают дуа друг за друга. Позовём кого-нибудь?")}</Ai>}
           {step === 3 && <Ai s={s}>{_t("Всё готово, барак Аллаху фик 🤍")}<br /><br />{_t("Я всегда рядом: круглая кнопка внизу справа. Спрашивай, как что работает, или просто скажи, и я сделаю: «запиши, что я съел», «напомни в пятницу сделать дуа», «отметь Зухр».")}</Ai>}
+          {step === 3 && <Ai s={s}>{f ? <>{_t("И главное:")} <b>{_t("всё, что связано с жизнью мусульманки, здесь есть.")}</b></> : <>{_t("И главное:")} <b>{_t("всё, что связано с жизнью мусульманина, здесь есть.")}</b></>} {_t("Намаз, Коран, учёба, умра и поездки, халяльная еда, здоровье, садака, семья, дела. Просто спроси меня, и я покажу, где это и как пользоваться.")}</Ai>}
 
           {lines.map((l) => (l.ai ? <Ai key={l.k} s={s}>{l.node}</Ai> : <div key={l.k} className="onb-me">{l.node}</div>))}
           {busy && <Ai s={s}><span className="onb-dots"><i /><i /><i /></span></Ai>}
@@ -227,7 +230,10 @@ function OnboardChat({ state, update, times, today, start, onClose, onGo }: { st
           {step === 2 && sub === 'set' && <Chips><button type="button" className="f" onClick={() => { setLines([]); next(3); finish(); }}>{_t("Дальше →")}</button></Chips>}
 
           {step === 3 && <Chips>
-            <button type="button" className="f" onClick={() => { finish(); onGo('assistant'); }}>{_t("Задать вопрос")}</button>
+            {aiTopicChips(s).map((c) => <button key={c.label} type="button" onClick={() => { finish(); onClose(); askAssistant(c.ask); }}>{c.label}</button>)}
+          </Chips>}
+          {step === 3 && <Chips>
+            <button type="button" className="f" onClick={() => { finish(); onGo('assistant'); }}>{_t("Задать свой вопрос")}</button>
             <button type="button" onClick={() => { finish(); onClose(); }}>{_t("Готово")}</button>
           </Chips>}
         </div>
