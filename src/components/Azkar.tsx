@@ -4,6 +4,7 @@ import { isCounted, setMark } from '../store';
 import { plural } from '../dates';
 import { azkarHabits, azkarNow, azkarOf, isDone, markDone, pick, setFor, streak, textOf, type Part } from '../azkar';
 import { _t } from '../i18n';
+import { track } from '../usage';
 
 // Morning and evening adhkar: one dhikr per screen, a counter for the ones said 3, 7, 10 or 100 times.
 // Finishing the set marks the day (and an «азкары» habit, if the person has one).
@@ -32,6 +33,7 @@ export function Azkar({ state, update, today, onExit }: Props) {
   const d = list[Math.min(i, list.length - 1)];
   const tx = textOf(d, part);
   const finish = () => {
+    track('azkar', 'azkar_done');
     update((s) => {
       let x = markDone(s, day, part);
       for (const h of azkarHabits(x, part)) if (!isCounted(x.log[day]?.[h.id])) x = setMark(x, day, h.id, 'done');

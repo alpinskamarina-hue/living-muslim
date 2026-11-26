@@ -75,6 +75,7 @@ import type { OutGo } from './components/NewPathScreens';
 import { PersonHost } from './components/Person';
 import { usePersonReady, useAsks } from './person';
 import { syncPath, usePathReady } from './path';
+import { openSec } from './usage';
 const PathScreen = lazyNamed(() => import('./components/NewPathScreens').then((m) => m.PathScreen));
 
 type Tab = 'today' | 'practice' | 'circle' | 'umrah' | 'progress' | 'profile';
@@ -102,6 +103,8 @@ export function App() {
     try { const q = new URLSearchParams(location.search); if (q.has('sadaqa')) return (q.get('k') === 'support' ? 'profile' : 'practice') as Tab; } catch { /* */ }
     return 'today';
   });
+  // Anonymous section counter for the owner's analytics; Практика counts itself (its home and each section).
+  useEffect(() => { if (tab !== 'practice') openSec(tab === 'progress' ? 'goals' : tab); }, [tab]);
   const [umStart, setUmStart] = useState(0);
   const [umFrom, setUmFrom] = useState<'group' | undefined>();
   const chatUnread = useChatUnread();

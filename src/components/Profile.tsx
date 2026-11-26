@@ -50,6 +50,7 @@ import { useFoundersReady, cachedFounder } from '../founders';
 import { useSadaqaReady } from '../sadaqa';
 import { SupportPage } from './SadaqaPay';
 import { useSisCirclesReady } from '../sisCircles';
+import { openSec } from '../usage';
 
 interface Props {
   state: AppState;
@@ -80,6 +81,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
   const sadaqaOn = useSadaqaReady();
   const plan = usePlan();
   useEffect(() => { nicksReady().then(setNicks); }, []);
+  // Anonymous section counter (owner analytics). «Мой цикл» is never counted.
+  useEffect(() => { if (COUNTED.has(page)) openSec(page); }, [page]);
   useEffect(() => { if (isCloud && page === 'main') refreshProfile().then((ch) => ch && bump((n) => n + 1)); }, [page]);
   // Pages opened from «Настройки» go back there; everything else goes back to the profile.
   const [parent, setParent] = useState<Page>('main');
@@ -303,6 +306,8 @@ export function Profile({ state, update, replace, times, onEdit, start, onGo }: 
     </div>
   );
 }
+
+const COUNTED = new Set<string>(['plans', 'pings', 'ideas', 'nikah', 'sisters', 'adhan', 'seek', 'founders', 'support', 'teacher', 'garden', 'guide', 'words', 'remind', 'pro', 'me', 'look']);
 
 export type Page = 'cycle' | 'support' | 'founders' | 'founders-terms' | 'teacher' | 'sisters' | 'settings' | 'dm' | 'seek' | 'seekers' | 'assistant' | 'ideas' | 'pings' | 'plans' | 'adhan' | 'lang' | 'nikah' | 'admin' | 'guide' | 'main' | 'gift' | 'words' | 'me' | 'garden' | 'remind' | 'pro' | 'account' | 'prayer' | 'habits' | 'look' | 'data' | 'help';
 const onClaude = typeof location !== 'undefined' && /claude|anthropic/.test(location.hostname);

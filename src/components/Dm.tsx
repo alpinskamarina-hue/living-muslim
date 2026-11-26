@@ -10,6 +10,7 @@ import { Ticks, shortOf } from './CircleChat';
 import {
   type Dm, type DmPerson, type DmSettings, srcLine, dmPeople, openDm, dmWhy, dmPref, dmReport, dmSettings, dmSettingsSet, dmBlocked, dmUnblock, loadDms,
 } from '../dm';
+import { useSec } from '../usage';
 
 interface Row { last: Msg | null; rd: [number, number] | null }
 
@@ -27,6 +28,7 @@ export function DmTab({ list, rows, unread, me, circles, onOpen, asks }: {
   list: Dm[]; rows: Record<string, Row | undefined>; unread: Record<string, number>; me: string | null; circles: CircleRef[];
   onOpen: (c: CircleRef) => void; asks: ReactNode;
 }) {
+  useSec('dm');
   const [q, setQ] = useState('');
   const [pick, setPick] = useState(false);
   const mine = new Map(circles.map((c) => [c.code, c]));

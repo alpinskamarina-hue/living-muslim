@@ -9,6 +9,7 @@ import {
   UANSWERS, UMRAH_TEST, UPARTS, applyUmrahPlan, hasUmrahGoal, uDonePrep, uHabits, uLeft, uLevel, uLevelText, uLevelTitle,
   uPartName, uQuestions, uRuns, uScores, uTotal, U_LEVEL, type UHabit,
 } from '../umrahTest';
+import { track } from '../usage';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void; onUmrah: () => void }
 
@@ -49,6 +50,7 @@ export function UmrahTest({ state, update, today, onExit, onUmrah }: Props) {
       const run: TestRun = { day: today, a: next };
       const before = runs.filter((r) => r.day !== today);
       update((s) => saveRun(s, run, UMRAH_TEST));
+      track('test-umrah', 'test_done');
       setTimeout(() => go({ v: 'result', run, prev: before[before.length - 1] }), 180);
     };
     return (

@@ -10,6 +10,7 @@ import {
   keyOf, listTone, listsOf, live, movePlan, on, overdue, pid, planGoogle, planIcs, setPlans, toggleDone, weekPlans, weekStart, whenLabel,
 } from '../plans';
 import { googleSubUrl, icsKey, icsOff, icsUrl, signedIn, syncPlans, webcalUrl } from '../plansCloud';
+import { track } from '../usage';
 
 type Up = (fn: (s: AppState) => AppState) => void;
 const loc = () => (LANG === 'en' ? 'en-GB' : 'ru-RU');
@@ -320,6 +321,7 @@ function PlanForm({ state, update, today, init, onDone }: { state: AppState; upd
   const afters: PlanAfter[] = fri ? [...AFTERS.slice(0, 1), 'jumuah', ...AFTERS.slice(1)] : AFTERS;
   const save = () => {
     const t = text.trim(); if (!t) return;
+    track('plans', 'event');
     const lst = (own.trim() || list).slice(0, 30) || undefined;
     const rec: Plan = {
       id: p0?.id ?? pid(), text: t.slice(0, 200), date: week ? addDays(weekStart(date), 6) : date, made: p0?.made ?? Date.now(), upd: Date.now(), done: p0?.done,

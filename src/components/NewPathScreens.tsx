@@ -9,6 +9,7 @@ import {
   type Pose, prayerSura, setSura, SURA_ORDER, SURAS, teacherStep, turnOff, WEEKS, weekOf,
 } from '../newpath';
 import { type PathView, QuietToggle, startPath } from './NewPath';
+import { useSec } from '../usage';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 export type OutGo = Exclude<LessonGo, { sura: number } | { prayer: Anchor } | { poses: true }>;
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function PathScreen({ state, update, today, prayer, start, onClose, onGo }: Props) {
+  useSec('newpath');
   const [view, setView] = useState<PathView>(start);
   const [stack, setStack] = useState<PathView[]>([]);
   useEffect(() => { setView(start); setStack([]); }, [start]);

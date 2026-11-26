@@ -17,6 +17,7 @@ import { cachedNear, findMosques, findHalal, sortNear, distLabel, wayLabel, mosq
 import { hasVoice, speak, hush } from '../speech';
 import { ramadanDay, patchR, ramadanOf } from '../ramadan';
 import { pid } from '../plans';
+import { useSec } from '../usage';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 type Tab = 'trip' | 'road' | 'masah' | 'dua' | 'near' | 'qibla';
@@ -36,6 +37,7 @@ const dayCount = (a: string, b: string) => Math.round((fromKey(b).getTime() - fr
 const useNow = (ms = 30000) => { const [n, setN] = useState(() => new Date()); useEffect(() => { const t = setInterval(() => setN(new Date()), ms); return () => clearInterval(t); }, [ms]); return n; };
 
 export function Safar({ state, update, today, onClose, circle, joined }: Props) {
+  useSec('safar');
   const trip = state.trip;
   const on = tripOn(state, today);
   const [tab, setTab] = useState<Tab>('trip');

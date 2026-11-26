@@ -7,6 +7,7 @@ import { cloudMe } from '../cloud';
 import { CHECK_DAYS, IDEA_FIELDS, QUESTIONS, STAGES, checkDay, forecast, isThursday, keyOf, mondayOf, talkSummary, thursdayOf, type Idea, type SuApi, type Vote } from '../startup';
 import { askAssistant } from './Assistant';
 import { _t, _tj, LOC } from '../i18n';
+import { useSec } from '../usage';
 
 type Names = Record<string, { name: string } | undefined>;
 type Seg = 'path' | 'idea' | 'check' | 'talks' | 'pulse';
@@ -27,6 +28,7 @@ const dm = (k: string) => D(k).toLocaleDateString(LOC, { day: 'numeric', month: 
 const VOTE_L: Record<Vote, () => string> = { go: () => _t("Делаем"), change: () => _t("Меняем"), stop: () => _t("Стоп") };
 
 export function StartupPane(p: Props) {
+  useSec('startup');
   const [seg, setSeg] = useState<Seg>('path');
   const d = p.su.data;
   if (!d) return <p className="tiny bw-load">{_t("Загружаю…")}</p>;

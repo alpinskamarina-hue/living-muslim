@@ -18,6 +18,7 @@ import { _t, _tj, LOC } from '../i18n';
 import { BecomeStrip } from './Become';
 import { Advice } from './Plan';
 import { SOFT } from '../plan';
+import { track } from '../usage';
 
 interface Props {
   state: AppState;
@@ -71,9 +72,10 @@ export function Goals({ state, update, today, openId, setOpenId, reviewOpen, set
   const act = (g: Goal, st: Step) => {
     update((s) => markStarted(s, today, `g:${g.id}`));
     if (st.action !== 'add') return onDo(st);
+    track('goals', 'step');
     if (g.source === 'hifz') update((s) => patchGoal(s, g.id, hifzStep(g, 1)));
     else if (g.source === 'steps') update((s) => patchGoal(s, g.id, g.steps?.length && g.steps.every((x) => x.done) ? { status: 'done', doneAt: today } : stepsTick(g, today)));
-    else if (g.source === 'bookch') update((s) => patchGoal(s, g.id, g.manual >= g.target ? { status: 'done', doneAt: today } : { manual: g.manual + 1 }));
+    else if (g.source === 'bookch') { track('books', g.manual >= g.target ? 'book_done' : 'chapter'); update((s) => patchGoal(s, g.id, g.manual >= g.target ? { status: 'done', doneAt: today } : { manual: g.manual + 1 })); }
     else setOpenId(g.id);
   };
 
@@ -427,6 +429,7 @@ function Wizard({ state, update, today, onClose }: { state: AppState; update: Pr
         if (st === 'active') used++;
         return { id: uid(), action: h.action, min: h.min, anchor: h.anchor, sphere: h.sphere, status: st, createdAt: today };
       });
+      track('goals', 'goal_add'); if (source === 'bookch' || source === 'pages') track('books', 'goal_add');
       const g: Goal = {
         id, title: title.trim(), source, identity: identity.trim(), niyya: niyya.trim(), target, unit, start: 0, manual: source === 'bookch' ? Math.min(target, already) : 0,
         due: due || undefined, habitIds: [...pick, ...created.map((h) => h.id)], ref: ref || undefined,

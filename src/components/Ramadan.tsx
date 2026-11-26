@@ -17,6 +17,7 @@ import { type Lang, durL, langOf, nw, tr, _t } from '../i18n';
 import { loadQuran } from './Quran';
 import { rpushOf } from '../push';
 import { isCloud } from '../cloud';
+import { useSec } from '../usage';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 type Tab = 'prep' | 'day' | 'fast' | 'quran' | 'nights' | 'eid';
@@ -162,6 +163,7 @@ function FastLine({ l, now, times }: { l: Lang; now: Date; times: DayTimes }) {
 }
 
 export function Ramadan({ state, update, today, onClose, start }: { state: AppState; update: Update; today: string; onClose: () => void; start?: Tab }) {
+  useSec('ramadan');
   const l = langOf(state);
   const t = tr(l);
   const mon = ramadanMonth(today);

@@ -14,6 +14,7 @@ import { LANG, _t, _tj } from '../i18n';
 import { PIcon } from './PIcon';
 import { dropSign, saveShared, sendSign, sharedOf, type Shared } from '../halalCloud';
 import { authMe } from '../auth';
+import { track, useSec } from '../usage';
 
 type Stage =
   | { s: 'cam' }
@@ -99,7 +100,9 @@ async function shareText(title: string, text: string) {
 }
 
 export function HalalScan({ state, today, onClose, start }: { state: AppState; today: string; onClose: () => void; start?: 'cam' | 'hist' }) {
+  useSec('halal');
   const [stage, setStage] = useState<Stage>(start === 'hist' ? { s: 'hist' } : { s: 'cam' });
+  useEffect(() => { if (stage.s === 'result' || stage.s === 'none') track('halal', 'scan'); }, [stage.s]);
   const [camErr, setCamErr] = useState<'' | 'denied' | 'none'>('');
   const [torch, setTorch] = useState<boolean | null>(null);
   const [opts, setO] = useState<Opts>(() => optsOf(state.settings.madhab));

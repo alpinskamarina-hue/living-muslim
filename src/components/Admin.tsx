@@ -3,6 +3,7 @@ import { halalDecide, halalQueue, type QueueItem } from '../halalCloud';
 import { guideDecide, guideQueue, guideReportDone, guideReports, type GuideReport, type QueueGuide } from '../guides';
 import { accessToken, authMe } from '../auth';
 import { AdminCourses } from './AdminCourses';
+import { AdminSections } from './AdminSections';
 import { setOwner } from '../plan';
 
 // Owner analytics: who comes, from where, on what, and what they do. Shown only to emails listed in lm_admins.
@@ -59,11 +60,12 @@ const lang = (l: string) => (l === '?' ? 'Неизвестно' : langs?.of(l) ?
 const dShort = (d: string) => { const [, m, day] = d.split('-').map(Number); return `${day}.${String(m).padStart(2, '0')}`; };
 
 export function AdminPage() {
-  const [tab, setTab] = useState<'stats' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach' | 'founders' | 'sadaqa'>('stats');
+  const [tab, setTab] = useState<'stats' | 'sections' | 'courses' | 'reports' | 'halal' | 'guides' | 'open' | 'teach' | 'founders' | 'sadaqa'>('stats');
   return (
     <div className="adm">
       <div className="seg adm-tabs">
         <button type="button" aria-pressed={tab === 'stats'} onClick={() => setTab('stats')}>📊 Аналитика</button>
+        <button type="button" aria-pressed={tab === 'sections'} onClick={() => setTab('sections')}>📈 Разделы</button>
         <button type="button" aria-pressed={tab === 'courses'} onClick={() => setTab('courses')}>🎬 Курсы</button>
         <button type="button" aria-pressed={tab === 'reports'} onClick={() => setTab('reports')}>🚩 Жалобы</button>
         <button type="button" aria-pressed={tab === 'halal'} onClick={() => setTab('halal')}>☪ Халяль</button>
@@ -73,7 +75,7 @@ export function AdminPage() {
         <button type="button" aria-pressed={tab === 'founders'} onClick={() => setTab('founders')}>◆ Основатели</button>
         <button type="button" aria-pressed={tab === 'sadaqa'} onClick={() => setTab('sadaqa')}>Садака</button>
       </div>
-      {tab === 'stats' ? <AdminStats /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : tab === 'founders' ? <AdminFounders /> : tab === 'sadaqa' ? <AdminSadaqa /> : <AdminReports />}
+      {tab === 'stats' ? <AdminStats /> : tab === 'sections' ? <AdminSections /> : tab === 'courses' ? <AdminCourses /> : tab === 'halal' ? <AdminHalal /> : tab === 'guides' ? <AdminGuides /> : tab === 'open' ? <AdminOpen /> : tab === 'teach' ? <AdminTeachers /> : tab === 'founders' ? <AdminFounders /> : tab === 'sadaqa' ? <AdminSadaqa /> : <AdminReports />}
     </div>
   );
 }

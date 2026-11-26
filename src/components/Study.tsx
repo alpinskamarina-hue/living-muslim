@@ -17,6 +17,7 @@ import {
 import { askAssistant } from './Assistant';
 import { MAX_SEC, Voice, useRecorder } from './CircleChat';
 import { _t, _tj, LOC } from '../i18n';
+import { useSec } from '../usage';
 
 type Names = Record<string, { name: string } | undefined>;
 type Seg = 'plan' | 'hifz' | 'hw' | 'qs' | 'quiz';
@@ -39,6 +40,7 @@ function Av({ id, names, big }: { id: string; names: Names; big?: boolean }) {
 const STATUS_L: Record<StSub['status'], () => string> = { wait: () => _t("ждёт проверки"), ok: () => _t("✓ принято"), redo: () => _t("пересдать") };
 
 export function StudyPane(p: StudyProps) {
+  useSec('study');
   const d = p.st.data;
   const plan = d?.state.plan ?? {};
   const [seg, setSeg] = useState<Seg>('plan');

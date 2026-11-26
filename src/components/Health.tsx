@@ -17,6 +17,7 @@ import { lastWeight } from '../foodcalc';
 import { speak, ttsAvailable } from '../speech';
 import { PIcon } from './PIcon';
 import { _t, _tj, LANG } from '../i18n';
+import { track } from '../usage';
 
 interface Props {
   state: AppState;
@@ -58,7 +59,7 @@ export function Health({ state, update, today, habitName, onExit, onFinish, onFo
   const water = h.water[today] ?? 0;
   const fastToday = sunnahFast(fromKey(today));
   const setH = (fn: (x: HealthState) => Partial<HealthState>) => update((s) => patchHealth(s, fn));
-  const addEntry = (day: string, e: string) => setH((x) => ({ workouts: { ...x.workouts, [day]: [...(x.workouts[day] ?? []), e] } }));
+  const addEntry = (day: string, e: string) => { track('health', 'workout'); setH((x) => ({ workouts: { ...x.workouts, [day]: [...(x.workouts[day] ?? []), e] } })); }
   const go = (w: Workout) => { try { localStorage.setItem(LAST_KEY, w.id); } catch { /* */ } setRun(w); };
   // Sisters: own programmes, a woman's voice, and a softer choice on days without prayer or in pregnancy.
   const sister = isSister(state);
@@ -208,7 +209,7 @@ export function Health({ state, update, today, habitName, onExit, onFinish, onFo
           <div className="glasses" style={{ gridTemplateColumns: `repeat(${Math.min(h.waterGoal, 8)}, 1fr)` }}>
             {Array.from({ length: h.waterGoal }, (_, i) => (
               <button type="button" key={i} aria-label={_t("Стакан {0}", i + 1)} aria-pressed={i < water}
-                onClick={() => update((s) => patchHealth(s, (x) => ({ water: { ...x.water, [today]: i < (x.water[today] ?? 0) ? i : i + 1 } })))} />
+                onClick={() => { if (i >= water) track('health', 'water'); update((s) => patchHealth(s, (x) => ({ water: { ...x.water, [today]: i < (x.water[today] ?? 0) ? i : i + 1 } }))); }} />
             ))}
           </div>
         </div>

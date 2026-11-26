@@ -7,6 +7,7 @@ import { npOf } from '../newpath';
 import {
   MINUTES, RUNGS, SALAH_REPEAT, SALAH_TEST, SQUESTIONS, applySalahPlan, gaps, minutesOf, planOf, rungDone, rungOf, rungText, sRuns, type SHabit,
 } from '../salahTest';
+import { track } from '../usage';
 
 type Go = 'quran' | 'course-ar' | 'home';
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void; onOpen: (m: Go) => void }
@@ -48,6 +49,7 @@ export function SalahTest({ state, update, today, onExit, onOpen }: Props) {
       const run: TestRun = { day: today, a: next };
       const before = runs.filter((r) => r.day !== today);
       update((s) => saveRun(s, run, SALAH_TEST));
+      track('test-salah', 'test_done');
       setTimeout(() => go({ v: 'result', run, prev: before[before.length - 1] }), 180);
     };
     return (

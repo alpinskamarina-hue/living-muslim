@@ -6,6 +6,7 @@ import {
   BARRIERS, PARTS, QUESTIONS, SCALE, STRONG_TEXT, applyPlan, goalIdea, lastRun, partLow, partName, planReport,
   proposals, repeatIn, REPEAT_DAYS, result, runsOf, saveRun, zoneText, type Barrier, type Proposal, type TestRun,
 } from '../selftest';
+import { track } from '../usage';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void }
 
@@ -50,6 +51,7 @@ export function SelfTest({ state, update, today, onExit }: Props) {
       const before = runs.filter((r) => r.day !== today);
       const prev = before[before.length - 1];
       update((s) => saveRun(s, run));
+      track('tests', 'test_done');
       go({ v: 'result', run, prev });
     };
     return (

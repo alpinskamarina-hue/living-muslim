@@ -7,6 +7,7 @@ import { prayerTimes } from '../prayer';
 import { here } from '../safar';
 import { health, hijri, patchHealth, sunnahFast } from '../health';
 import { _t, _tj, LOC, isEn } from '../i18n';
+import { track } from '../usage';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void; onHealth?: () => void }
 
@@ -81,11 +82,11 @@ export function Food({ state, update, today, onExit, onHealth }: Props) {
   const [wordHidden, setWordHidden] = useState(() => { try { return localStorage.getItem('lm.foodWord') === today; } catch { return false; } });
   const f = foodOf(state);
   const day = f.meals[today] ?? {};
-  const setMeal = (m: Meal, v: 1 | 2 | 3 | 0) => update((s) => patch(s, (x) => {
+  const setMeal = (m: Meal, v: 1 | 2 | 3 | 0) => (v && track('food', 'meal'), update((s) => patch(s, (x) => {
     const d = { ...(x.meals[today] ?? {}) };
     if (!v || d[m] === v) delete d[m]; else d[m] = v;
     return { meals: { ...x.meals, [today]: d } };
-  }));
+  })));
   const toggleClean = (id: string) => update((s) => patch(s, (x) => {
     const l = x.clean[today] ?? [];
     return { clean: { ...x.clean, [today]: l.includes(id) ? l.filter((y) => y !== id) : [...l, id] } };

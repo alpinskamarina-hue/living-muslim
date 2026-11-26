@@ -14,6 +14,7 @@ import {
   commonAmin, commonReport, commonDuaDel, savedGender, rememberGender, type OpenCard, type OpenView, type OpenMine, type OpenSettings, type OpenMe, type OWho,
 } from '../openCircles';
 import { TOPICS, topicOf, subjectsText, useSisCirclesReady, openTopicGet, openTopicSet, myTown, sameTown, type Topic } from '../sisCircles';
+import { useSec } from '../usage';
 
 const KIND_BG: Record<string, string> = { brothers: '#e8f3ec', sisters: '#fbe8f0', friends: '#eef0f3', masjid: '#efe7fb', study: '#e6f4f6', startup: '#ece7fb', other: '#f6f0dc' };
 const WHO: Record<OWho, string> = { brothers: _t("только братья"), sisters: _t("только сёстры"), all: _t("для всех, только текст") };
@@ -69,6 +70,7 @@ const DUA_ERR: Record<string, string> = {
 };
 
 export function CommonCircle({ today, onBack, onFind }: { today: string; onBack: () => void; onFind: () => void }) {
+  useSec('open');
   const { c, month, reload } = useCommon(true, today);
   const postsOn = usePostsReady();
   const { api: posts, fresh } = useCommonNew(postsOn);
@@ -174,6 +176,7 @@ export function CommonCircle({ today, onBack, onFind }: { today: string; onBack:
 const KIND_FILTERS: (CircleKind | '')[] = ['', 'brothers', 'sisters', 'study', 'masjid', 'startup', 'friends', 'other'];
 
 export function OpenCatalog({ today, g, pick, onView }: { today: string; g: '' | 'm' | 'f'; pick: (g: 'm' | 'f') => void; onView: (id: string) => void }) {
+  useSec('open');
   const [list, setList] = useState<OpenCard[] | null>(null);
   const [k, setK] = useState<CircleKind | ''>('');
   const [tp, setTp] = useState<Topic | 'near' | ''>('');

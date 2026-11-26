@@ -9,6 +9,7 @@ import { SummaryBook } from './Summaries';
 import { ProGate } from './Plan';
 import { limitOf } from '../plan';
 import { _t, _tj, isEn } from '../i18n';
+import { track } from '../usage';
 
 interface Props {
   state: AppState;
@@ -36,6 +37,7 @@ export function Books({ state, update, habitName, onExit, onFinish }: Props) {
     try {
       const meta = await readBook(f);
       update((s) => ({ ...s, books: [...(s.books ?? []), meta] }));
+      track('books', 'book_add');
       setBusy('');
     } catch {
       setBusy(_t("Не получилось открыть файл. Возможно, он защищён паролем или повреждён."));

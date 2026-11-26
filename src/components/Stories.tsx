@@ -11,6 +11,7 @@ import {
 import { _t } from '../i18n';
 import { Ic } from './LIcon';
 import { plural } from '../dates';
+import { useSec } from '../usage';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string; gender?: string } | undefined>;
 const circleTitle = (code: string) => myCircles().find((c) => c.code === code)?.title ?? _t('Круг');
@@ -114,6 +115,7 @@ const SEC = 6000;
 export function StoryViewer({ groups, start, api, me, onClose, onCreate }: {
   groups: StoryGroup[]; start: number; api: StoriesApi; me: string | null; onClose: () => void; onCreate: () => void;
 }) {
+  useSec('stories');
   // the list can change while watching; keep the groups as they were when opened
   const [gs] = useState(groups);
   const [gi, setGi] = useState(start);

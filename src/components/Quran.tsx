@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppState, Mark } from '../types';
 import { _t, _tj, LANG } from '../i18n';
 import { surahTr } from '../quranTr';
+import { track } from '../usage';
 
 // [arabic name, transliteration, russian name, meccan|medinan, [[arabic, russian], ...]]
 type Surah = [string, string, string, string, [string, string][]];
@@ -114,7 +115,7 @@ export function Quran({ state, update, habitName, startSurah, onExit, onFinish }
           size={q.size}
           lang={q.lang}
           setQ={setQ}
-          onSeen={(id) => { if (!seen.current.has(id)) { seen.current.add(id); setSeenCount(seen.current.size); } }}
+          onSeen={(id) => { if (!seen.current.has(id)) { seen.current.add(id); track('quran', 'ayah'); setSeenCount(seen.current.size); } }}
           onNext={surah < 114 ? () => setSurah(surah + 1) : undefined}
         />
       )}
@@ -148,6 +149,8 @@ function Reader(props: {
   const box = useRef<HTMLDivElement>(null);
   // Russian letters for Russian speakers, Latin for everyone else.
   const reading = useMemo(() => (tr ? surahTr(n, s[4], LANG === 'ru' ? 'ru' : 'lat') : null), [n, s, tr]);
+
+  useEffect(() => { track('quran', 'surah'); if (tr) track('quran', 'tr'); }, [n]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const el = box.current?.querySelector(`[data-a="${startAyah}"]`);

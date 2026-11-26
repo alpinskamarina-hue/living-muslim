@@ -11,6 +11,7 @@ import {
   mosqueName, routeUrl, setMine, sortNear, toggleFriday, wayLabel,
 } from '../mosques';
 import { _t, _tj } from '../i18n';
+import { useSec } from '../usage';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 export type QiblaTab = 'qibla' | 'mosques';
@@ -107,6 +108,7 @@ export function MosqueCard({ state, update, today, now, times, next, onOpen }: {
 
 /** Full screen: compass and mosques nearby. */
 export function QiblaScreen({ state, update, today, start, onClose }: { state: AppState; update: Update; today: string; start: QiblaTab; onClose: () => void }) {
+  useSec('qibla');
   const [tab, setTab] = useState<QiblaTab>(start);
   const h = here(state, today);
   return (

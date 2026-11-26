@@ -6,6 +6,7 @@ import { _t, _tj, isEn } from '../i18n';
 import { hasVoice, speak, speechLang } from '../speech';
 import { lookupIpa, needsLookup, pronOf } from '../pron';
 import { sayAr } from '../course/arAudio';
+import { track } from '../usage';
 
 interface Lang { id: string; label: string; rtl?: boolean; starter: [string, string][] }
 
@@ -82,7 +83,7 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
   const learned = deck.filter((c) => c.box >= 4).length;
 
   const grade = (cardId: string, ok: boolean) =>
-    setLs((l) => ({
+    (track('langs', 'card'), setLs((l) => ({
       ...l,
       decks: {
         ...l.decks,
@@ -92,7 +93,7 @@ export function Languages({ state, update, habitName, onExit, onFinish, onCourse
           return { ...c, box, due: addDays(today, INTERVAL[box]) };
         }),
       },
-    }));
+    })));
 
   const setTr = (cardId: string, tr: string) =>
     setLs((l) => ({ ...l, decks: Object.fromEntries(Object.entries(l.decks).map(([k, d]) => [k, d.map((c) => (c.id === cardId ? { ...c, tr } : c))])) }));

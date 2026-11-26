@@ -5,6 +5,7 @@ import { hhmm } from '../dates';
 import type { DayTimes } from '../prayer';
 import { travelStatus } from '../safar';
 import { _t, _tj } from '../i18n';
+import { track } from '../usage';
 
 const NEXT: Record<string, PrayerMark | null> = { none: 'ontime', ontime: 'late', late: null };
 
@@ -19,12 +20,12 @@ export interface PrayerProps {
 /** Marking prayers: tap cycles on time → late → not marked; prayers whose time has not come are locked (a traveller who joins may mark Asr/Isha early). */
 export function prayerCtl({ state, update, today, now, times }: PrayerProps) {
   const day = state.prayers[today] ?? {};
-  const tap = (a: Anchor) => update((s) => setPrayer(s, today, a, NEXT[day[a] ?? 'none']));
+  const tap = (a: Anchor) => { if (!day[a]) track('today', 'prayer'); update((s) => setPrayer(s, today, a, NEXT[day[a] ?? 'none'])); }
   const travel = travelStatus(state, today);
   const canJoin = travel.traveler && state.settings.madhab === 'shafi';
   const passed = (a: Anchor) => times[a].getTime() <= now.getTime();
   const unlocked = (a: Anchor) => passed(a) || Boolean(canJoin && ((a === 'asr' && passed('dhuhr')) || (a === 'isha' && passed('maghrib'))));
-  const join = (a: Anchor, b: Anchor) => update((s) => setPrayer(setPrayer(s, today, a, 'ontime'), today, b, 'ontime'));
+  const join = (a: Anchor, b: Anchor) => { track('today', 'prayer', 2); update((s) => setPrayer(setPrayer(s, today, a, 'ontime'), today, b, 'ontime')); }
   return { day, tap, travel, canJoin, passed, unlocked, join };
 }
 

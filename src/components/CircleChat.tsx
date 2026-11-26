@@ -19,6 +19,7 @@ import { DAY_AYAHS } from '../ayahs';
 import { Globe, TrText } from './TrText';
 import { chatLangs, fromLabel, inLabel, langName, offerOn, outLang, rememberSent, setOutLang, translateOut, useTrSettings, voiceAuto } from '../translate';
 import { openPerson, personOk, INTENTS, type IntentKind } from '../person';
+import { useSec } from '../usage';
 
 type Names = Record<string, { name: string; avatarUrl: string; color: string } | undefined>;
 export interface Draft { text: string; ref: MsgRef | null; label?: string }
@@ -336,6 +337,7 @@ export function CircleChat({ chat: all, me, names, members, reacts, today, isOwn
   /** A business circle: a message can become a task, a meeting or a decision; their cards open the tab. */
   biz?: { make: (k: 'task' | 'event' | 'dec', m: Msg) => void; open: (k: 'task' | 'event' | 'dec') => void };
 }) {
+  useSec(other ? 'dm' : 'chat');
   const main = Boolean(actions);
   const [plus, setPlus] = useState(false);
   const [locSheet, setLocSheet] = useState(false);

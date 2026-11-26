@@ -41,6 +41,7 @@ import { dayPlan, markStarted, type PlanItem } from '../dayplan';
 import { Azkar } from './Azkar';
 import { activeQuits, cleanDays } from '../quit';
 import { azkarNow, streak as azkarStreak } from '../azkar';
+import { openSec, track } from '../usage';
 
 interface Props {
   state: AppState;
@@ -67,7 +68,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
   const active = state.habits.filter((h) => h.status === 'active');
   const [habitId, setHabitId] = useState<string>(suggestedId ?? active[0]?.id ?? '');
   const habit = active.find((h) => h.id === habitId);
-  const markHabit = (m: Mark) => habitId && update((s) => setMark(s, today, habitId, m));
+  const markHabit = (m: Mark) => { track(mode === 'home' ? 'practice' : mode, 'finish'); if (habitId) update((s) => setMark(s, today, habitId, m)); };
   const [editFav, setEditFav] = useState(false);
   const [testsOpen, setTestsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -77,7 +78,7 @@ export function Practice({ state, update, today, suggestedId, onSafar, onHalal, 
 
   // Opening a section greets once a day with one fitting ayah or hadith (the sections are full-screen sheets).
   const OPEN: Partial<Record<Mode, Trigger>> = { quran: 'quran_open', langs: 'langs_open', books: 'books_open', health: 'health_open', sadaqa: 'sadaqa_open', umrah: 'umrah_open' };
-  useEffect(() => { const t = OPEN[mode]; if (t) say(t); }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { openSec(mode === 'home' ? 'practice' : mode); const t = OPEN[mode]; if (t) say(t); }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
   if (mode === 'focus') return <Focus habitName={habit?.action} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'quran') return <Quran state={state} update={update} habitName={habit?.action} startSurah={start?.mode === 'quran' && start.ref ? Number(start.ref) : undefined} onExit={() => setMode('home')} onFinish={markHabit} />;
   if (mode === 'course') return <Course state={state} update={update} habitName={habit?.action} onExit={() => setMode('home')} onFinish={(m) => { markHabit(m); setMode('home'); }} />;
@@ -421,6 +422,7 @@ function Tasbih({ onExit, onFinish, habitName }: { onExit: () => void; onFinish:
     if (all) return;
     const next = count + 1;
     setCount(next);
+    track('tasbih', 'count');
     try { navigator.vibrate?.(next === 33 || next === 66 || next === 100 ? 120 : 15); } catch { /* ignore */ }
   };
 

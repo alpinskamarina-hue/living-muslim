@@ -8,6 +8,7 @@ import {
   ayahFor, hear, keepAwake, kh, rate, SPEECH, summarise, translate,
   type HearStatus, type Hearing, type KFrom, type KLine, type KTerm, type KTo, type KhutbaRec, type Summary,
 } from '../khutba';
+import { useSec } from '../usage';
 
 type Update = (fn: (s: AppState) => AppState) => void;
 
@@ -40,6 +41,7 @@ export function KhutbaCard({ onOpen, onHide }: { onOpen: () => void; onHide: () 
 }
 
 export function Khutba({ state, update, today, onClose }: { state: AppState; update: Update; today: string; onClose: () => void }) {
+  useSec('khutba');
   const k = kh(state);
   const [stage, setStage] = useState<'setup' | 'live' | 'end' | 'saved'>('setup');
   const [from, setFrom] = useState<KFrom>(k.from ?? 'ar');

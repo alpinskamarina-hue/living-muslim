@@ -7,6 +7,7 @@ import { addDays, keyOf, weekStart } from '../plans';
 import { anchorLabel, dueLabel, eventAt, isLate, jumuahClash, type BizApi, type BizEvent, type BizGoal, type BizTask, type TaskStatus } from '../bizWork';
 import { _t, _tj, LOC } from '../i18n';
 import { Ic, IcT } from './LIcon';
+import { useSec } from '../usage';
 
 type Names = Record<string, { name: string } | undefined>;
 export type BizTab = 'chat' | 'path' | 'tasks' | 'cal' | 'plan';
@@ -22,6 +23,7 @@ const PR_SHORT: Record<Anchor, () => string> = { fajr: () => _t("Фаджр"), d
 const AFTER_P: Record<Anchor, () => string> = { fajr: () => _t("после Фаджра"), dhuhr: () => _t("после Зухра"), asr: () => _t("после Асра"), maghrib: () => _t("после Магриба"), isha: () => _t("после Иши") };
 
 export function BizTabs({ tab, onTab, counts, startup, study }: { tab: BizTab; onTab: (t: BizTab) => void; counts: { tasks: number; path?: number }; startup?: boolean; study?: boolean }) {
+  useSec('biz');
   const T: [BizTab, string][] = study
     ? [['chat', _t("Чат")], ['path', _t("Учёба")], ['cal', _t("Занятия")]]
     : startup

@@ -6619,3 +6619,55 @@ body:has(.dm-fab) .ai-fab { bottom: calc(var(--nav-h) + 86px + env(safe-area-ins
 .ai-offer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #d9ad55; }
 .ai-offer button { border-radius: 20px; padding: 6px 12px; font: inherit; font-weight: 800; font-size: 13px; background: transparent; border: 1.5px solid var(--line, #c9d6cc); color: var(--ink-2, #5a6d61); cursor: pointer; }
 .ai-offer button.go { background: #fff4dc; border-color: #d9ad55; color: #7a5a17; }
+
+/* Owner analytics by section («Для владельца» → «Разделы») */
+.as-views { margin-bottom: 2px; }
+.as-views button { font-size: 12.5px; padding: 7px 2px; }
+.as-h { margin: 6px 0 0; font-size: 22px; color: var(--ink); }
+.as-kpi > div { position: relative; }
+.as-kpi3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.as-kpi3 b { font-size: 22px; }
+.as-tr { font-style: normal; font-size: 12.5px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.as-tr.up { color: var(--green-2); }
+.as-tr.down { color: var(--late); }
+.as-tr.new { color: var(--gold); font-weight: 600; }
+.as-kpi .as-tr { display: block; margin-top: 4px; }
+.as-tr.sm { font-size: 11.5px; }
+.as-ret { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.as-ret b { display: block; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.as-ret small { display: block; font-size: 11.5px; color: var(--ink-2); }
+.as-mute { opacity: .7; }
+.as-fun { display: grid; grid-template-columns: 118px minmax(0, 1fr) 46px; gap: 8px; align-items: center; padding: 4px 0; font-size: 13px; }
+.as-fun b { text-align: right; font-variant-numeric: tabular-nums; }
+.as-sec { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 7px 0; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; color: var(--ink); font: inherit; }
+.as-sec:first-of-type { border-top: 0; }
+.as-sec > i { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-style: normal; font-weight: 700; background: var(--green-soft); color: var(--green-2); }
+.as-sec > span:nth-child(2) { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.as-sec > span:nth-child(2) b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.as-num { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.as-num b { font-variant-numeric: tabular-nums; }
+.as-srv, .as-act { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.as-srv:first-of-type, .as-act:first-of-type { border-top: 0; }
+.as-srv span, .as-act span { min-width: 0; }
+.as-srv small, .as-act small { display: block; font-size: 12px; color: var(--ink-2); }
+.as-act b { text-align: right; font-variant-numeric: tabular-nums; }
+.as-ins { display: block; width: 100%; text-align: left; border: 1.5px solid var(--line); border-left: 4px solid var(--ink-2); background: var(--surface); border-radius: 12px; padding: 9px 12px; margin: 6px 0; color: var(--ink); font: inherit; }
+.as-ins b { display: block; font-size: 14px; }
+.as-ins span { display: block; font-size: 13.5px; margin-top: 4px; }
+.as-ins small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+.as-ins.big { padding: 12px 14px; margin: 10px 0; }
+.as-ins.up, .as-ins.good { border-left-color: var(--green-2); }
+.as-ins.warn { border-left-color: var(--gold); }
+.as-ins.down { border-left-color: var(--late); }
+.as-course { padding: 9px 0; border-top: 1px solid var(--line); }
+.as-course:first-of-type { border-top: 0; }
+.as-ct b { display: block; font-size: 14px; }
+.as-ct small { font-size: 12px; color: var(--gold); }
+.as-cn { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; text-align: center; }
+.as-cn b { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+.as-cn small { font-size: 11.5px; color: var(--ink-2); }
+.as-cbar { position: relative; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+.as-cbar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: color-mix(in srgb, var(--green-2) 40%, transparent); }
+.as-cbar i.dn { background: var(--green-2); }
+.as-chart .adm-stack > i.v { background: var(--green-2); }
+.as-chart .adm-stack > i.v.fri { background: var(--gold); }

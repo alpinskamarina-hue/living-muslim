@@ -16,6 +16,7 @@ import { _t, _tj, LOC } from '../i18n';
 import { canRate, lockedBy, opensAfter, rate, reviewsOf, starsText, suggestCourse, useStats, type CStat, type Review } from '../courseSocial';
 import { currentCircle, isCloud, kindOf, myCircles, switchCircle } from '../cloud';
 import { addDays, plural } from '../dates';
+import { track, trackOnce } from '../usage';
 
 interface Props {
   state: AppState;
@@ -239,6 +240,7 @@ function Course({ item, vs, setVs, by, stat, onOpenItem, onBack, onPlay, onQuiz,
   const begin = () => {
     if (needs) return false;
     if (locked) { setGate(true); return false; }
+    if (!item.mine) trackOnce('videos', `start:${item.id}`);
     if (!started.has(item.id)) setVs((v) => ({ ...v, started: [...new Set([...(v.started ?? []), item.id])] }));
     return true;
   };
@@ -432,6 +434,7 @@ function Cert({ item, state, vs, setVs, onBack, onNotes, onOpenItem }: { item: V
   useEffect(() => {
     if (!ready) return;
     if (!vs.doneC?.[item.id]) setVs((v) => ({ ...v, doneC: { ...(v.doneC ?? {}), [item.id]: day } }));
+    if (!item.mine) trackOnce('videos', `done:${item.id}`);
     let url = '';
     drawCard(spec).then((b) => { if (b) { url = URL.createObjectURL(b); setImg(url); } });
     return () => { if (url) URL.revokeObjectURL(url); };
@@ -662,6 +665,12 @@ function Player({ item, idx, vs, setVs, habitName, onBack, onIdx, onQuiz, onHabi
     setDone(true);
     setVs((v) => ({ ...v, lastDay: today(), pos: { ...v.pos, [vid]: { ...(v.pos[vid] ?? { t: 0 }), done: true } }, byCourse: { ...(v.byCourse ?? {}), [item.id]: [...new Set([...(v.byCourse?.[item.id] ?? []), vid])] } }));
     onWatched();
+    if (!item.mine && !vs.pos[vid]?.done) {
+      track('videos', 'lesson');
+      trackOnce('videos', `start:${item.id}`);
+      const n = new Set([...(vs.byCourse?.[item.id] ?? []), vid]).size;
+      if (items.length > 1 && n * 2 >= items.length) trackOnce('videos', `half:${item.id}`);
+    }
   };
 
   useEffect(() => {

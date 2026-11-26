@@ -8,6 +8,7 @@ import {
   TEMPLATES, TRIGGERS, triggerMap, updQuit, urgesThisWeek, type Quit,
 } from '../quit';
 import { _t, isEn } from '../i18n';
+import { useSec } from '../usage';
 
 // «Хочу оставить»: setup, the habit screen, «Тянет» (ten minutes to ride out the urge), tawba after a slip, the slip map.
 // Everything stays on the device; the circle never sees it.
@@ -68,6 +69,7 @@ export function QuitCheck({ state, update, today, onSlip }: { state: AppState; u
 
 /** Full-screen: list, setup, the habit, «Тянет», tawba, map. */
 export function QuitScreen({ state, update, today, start, onClose }: { state: AppState; update: Update; today: string; start: { id?: string; view?: QuitView }; onClose: () => void }) {
+  useSec('quit');
   const all = activeQuits(state);
   const [id, setId] = useState<string | undefined>(start.id ?? (all.length === 1 ? all[0].id : undefined));
   const [view, setView] = useState<QuitView>(start.view ?? (start.id || all.length === 1 ? 'home' : all.length ? 'list' : 'setup'));

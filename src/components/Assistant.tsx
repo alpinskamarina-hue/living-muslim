@@ -14,6 +14,7 @@ import { useOnb } from './Onboard';
 import { aiTopics, openLabel, splitOffer } from '../aiTopics';
 import { SCREENS } from '../aiActions';
 import { AI_COLORS, AI_FINISHES, AI_PEOPLE, AI_STYLES, Ai3D, AiFace, aiDefaultStyle, badgeUrl, photoToUrl, setAiPhoto, useAiPhoto } from '../aiLook';
+import { useSec } from '../usage';
 
 interface Props {
   state: AppState;
@@ -45,6 +46,7 @@ const ERR: Record<string, () => string> = {
 
 /** Full-screen chat with the assistant. The conversation stays on this device. */
 export function Assistant({ state, onClose, onSignIn, context, apply, onGo, topic, question }: Props) {
+  useSec('assistant');
   const s = state.settings;
   const name = aiName(s);
   const [msgs, setMsgs] = useState<AiMsg[]>(loadChat);

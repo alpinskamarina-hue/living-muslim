@@ -3,6 +3,7 @@ import type { AppState, Mark } from '../types';
 import { SUMMARY_BOOKS, type Summary } from '../summaries';
 import { dayKey } from '../dates';
 import { _t, _tj } from '../i18n';
+import { track } from '../usage';
 
 const key = (s: Summary) => `${s.book}:${s.n}`;
 
@@ -57,7 +58,7 @@ export function SummaryBook({ book, chapters, state, update, habitName, onClose,
   const [finish, setFinish] = useState(false);
   const [note, setNote] = useState('');
 
-  const markRead = (s: Summary) => update((st) => (st.summaryRead?.includes(key(s)) ? st : { ...st, summaryRead: [...(st.summaryRead ?? []), key(s)] }));
+  const markRead = (s: Summary) => { track('books', 'chapter'); update((st) => (st.summaryRead?.includes(key(s)) ? st : { ...st, summaryRead: [...(st.summaryRead ?? []), key(s)] })); };
   const saveNote = (s: Summary) => {
     if (!note.trim()) return;
     update((st) => ({ ...st, summaryNotes: [...(st.summaryNotes ?? []), { key: key(s), date: dayKey(new Date()), text: note.trim() }] }));

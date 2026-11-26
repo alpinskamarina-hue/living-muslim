@@ -6,6 +6,7 @@ import type { AppState, SadaqaDay, SadaqaState } from '../types';
 import { addDays, fromKey } from '../dates';
 import { hijri } from '../health';
 import { _t, _tj, LOC } from '../i18n';
+import { track } from '../usage';
 
 interface Props { state: AppState; update: (fn: (s: AppState) => AppState) => void; today: string; onExit: () => void; startSub?: 'gift' }
 
@@ -78,12 +79,13 @@ export function Sadaqa({ state, update, today, onExit, startSub }: Props) {
   const q = sadaqaOf(state);
   const d = q.days[today] ?? {};
   const [amt, setAmt] = useState(d.amt ? String(d.amt) : '');
-  const setDay = (fn: (x: SadaqaDay) => SadaqaDay) => update((s) => patch(s, (y) => {
+  // Owner analytics counts only that something was marked, never the amount.
+  const setDay = (fn: (x: SadaqaDay) => SadaqaDay) => (track('sadaqa', 'deed'), update((s) => patch(s, (y) => {
     const nd = fn({ ...(y.days[today] ?? {}) });
     const days = { ...y.days };
     if (!nd.money && !nd.deed) delete days[today]; else days[today] = nd;
     return { days };
-  }));
+  })));
   const week = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6));
   const deed = deedOf(today);
   const streak = sadaqaStreak(q, today);
