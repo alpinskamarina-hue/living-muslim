@@ -4784,6 +4784,8 @@ body:has(.wa-fab) .ai-tip { bottom: calc(var(--nav-h) + 92px + env(safe-area-ins
 
 /* gold buttons: a soft light passes over them now and then */
 :is(.gold-btn, .pnow-go, .g-go) { position: relative; overflow: hidden; isolation: isolate; }
+/* overflow: hidden lets a flex column squash the button and cut its text; keep it at least as tall as its content */
+:is(.gold-btn, .pnow-go, .g-go) { min-height: max-content; }
 :is(.gold-btn, .pnow-go, .g-go)::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .38) 50%, transparent 65%); transform: translateX(-120%); animation: b3-shine 5.5s ease-in-out 1.2s infinite; }
 @keyframes b3-shine { 0%, 72% { transform: translateX(-120%); } 92%, 100% { transform: translateX(120%); } }
 
